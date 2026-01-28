@@ -72,7 +72,7 @@ class Scope(models.Model):
         db_table = "permissions_scope"
         constraints = [
             models.CheckConstraint(
-                check=models.Q(scope_type__in=[SCOPE_TENANT, SCOPE_SITE, SCOPE_ASSET]),
+                check=models.Q(scope_type__in=["TENANT", "SITE", "ASSET"]),
                 name="ck_scope_type_valid",
             ),
         ]

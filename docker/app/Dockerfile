@@ -13,15 +13,19 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY packages/bfagent-core /app/packages/bfagent-core
 COPY packages/bfagent-llm /app/packages/bfagent-llm
 
-COPY pyproject.toml /app/pyproject.toml
-
+# Install shared packages
 RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir -e /app/packages/bfagent-core \
-    && pip install --no-cache-dir -e /app/packages/bfagent-llm \
-    && pip install --no-cache-dir -e .
+    && pip install --no-cache-dir /app/packages/bfagent-core \
+    && pip install --no-cache-dir /app/packages/bfagent-llm
+
+# Install main app dependencies
+COPY pyproject.toml /app/pyproject.toml
+RUN pip install --no-cache-dir Django dj-database-url "psycopg[binary]" python-dotenv django-htmx pydantic boto3 httpx structlog jinja2 jsonschema tenacity
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 COPY src /app/src
 WORKDIR /app/src
+
+ENV PYTHONPATH=/app/src
