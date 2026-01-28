@@ -12,7 +12,6 @@ class PermissionAdmin(admin.ModelAdmin):
 class RoleAdmin(admin.ModelAdmin):
     list_display = ("name", "tenant_id", "is_system", "created_at")
     list_filter = ("is_system",)
-    filter_horizontal = ("permissions",)
 
 
 @admin.register(Scope)

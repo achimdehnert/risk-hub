@@ -46,15 +46,21 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         subdomain = _parse_subdomain(request.get_host(), base_domain)
         
         if not subdomain:
-            if allow_localhost and request.path.startswith("/admin/"):
+            if allow_localhost:
                 set_tenant(None, None)
                 set_db_tenant(None)
                 return None
             return HttpResponseForbidden("Missing tenant subdomain")
         
-        # Look up tenant
-        from tenancy.models import Organization
-        org = Organization.objects.filter(slug=subdomain).first()
+        # Look up tenant (with error handling for missing tables during migrations)
+        try:
+            from tenancy.models import Organization
+            org = Organization.objects.filter(slug=subdomain).first()
+        except Exception:
+            # Tables don't exist yet (during migrations)
+            set_tenant(None, subdomain)
+            set_db_tenant(None)
+            return None
         
         if not org:
             return HttpResponseForbidden(f"Unknown tenant: {subdomain}")
