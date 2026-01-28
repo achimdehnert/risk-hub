@@ -1,0 +1,679 @@
+# Enterprise SaaS Risikomanagement – DB-Spezifikation + Prod Runbook (Addendum)
+Stand: 2026-01-28  
+Ziel: **konkrete DB-Schema-Spezifikation (SQL + Django Models)** für **permissions** + **reporting** sowie ein **Hetzner Prod Runbook** (VM sizing, LB, Backups, DR, Monitoring).  
+Stack: Hetzner (VM + Docker), Postgres 16, Django 5 + HTMX, Subdomain Tenancy, S3-kompatibles Object Storage.
+
+---
+
+## 1) DB-Schema-Spezifikation (Postgres SQL)
+
+### 1.1 Grundannahmen / Konventionen
+- Alle tenant-sensitiven Tabellen: `tenant_id uuid not null`
+- Primärschlüssel: `id uuid`
+- Zeitstempel: `created_at timestamptz not null default now()`
+- Soft delete **nur**, wenn wirklich nötig. Für Compliance/Retention bevorzugt: Retention-Policy + Legal Hold.
+- Optional (staging/prod): RLS aktiv und Session Variable `app.current_tenant` gesetzt.
+
+> **Hinweis:** Tabellenpräfixe sind bewusst „app-like“: `permissions_*`, `reporting_*`. Eure Tenancy-Tabellen wie `tenancy_organization` werden vorausgesetzt.
+
+---
+
+### 1.2 `permissions` Schema (RBAC + Scope)
+
+#### 1.2.1 Permission Registry
+```sql
+create table if not exists permissions_permission (
+  id uuid primary key,
+  code text not null unique,              -- e.g. 'risk.assessment.read'
+  description text not null default '',
+  created_at timestamptz not null default now()
+);
+1.2.2 Roles (pro Tenant)
+create table if not exists permissions_role (
+  id uuid primary key,
+  tenant_id uuid not null,
+  name text not null,
+  is_system boolean not null default false,
+  created_at timestamptz not null default now(),
+  constraint uq_permissions_role_name_per_tenant unique (tenant_id, name)
+);
+create index if not exists ix_permissions_role_tenant on permissions_role(tenant_id);
+1.2.3 Role ↔ Permission (m2m)
+create table if not exists permissions_role_permission (
+  role_id uuid not null references permissions_role(id) on delete cascade,
+  permission_id uuid not null references permissions_permission(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  primary key (role_id, permission_id)
+);
+create index if not exists ix_role_permission_permission on permissions_role_permission(permission_id);
+1.2.4 Scope (TENANT / SITE / ASSET)
+Scope-Form: genau eine der FKs ist gesetzt – passend zum scope_type.
+
+create table if not exists permissions_scope (
+  id uuid primary key,
+  tenant_id uuid not null,
+  scope_type text not null, -- 'TENANT' | 'SITE' | 'ASSET'
+  site_id uuid null,        -- references tenancy_site(id) (optional je nach Modell)
+  asset_id uuid null,       -- references assets_asset(id)
+  created_at timestamptz not null default now(),
+  constraint ck_scope_type_valid check (scope_type in ('TENANT','SITE','ASSET')),
+  constraint ck_scope_fk_match check (
+    (scope_type = 'TENANT' and site_id is null and asset_id is null) or
+    (scope_type = 'SITE'   and site_id is not null and asset_id is null) or
+    (scope_type = 'ASSET'  and site_id is null and asset_id is not null)
+  ),
+  constraint uq_scope_unique_per_tenant unique (tenant_id, scope_type, site_id, asset_id)
+);
+
+create index if not exists ix_scope_tenant_type on permissions_scope(tenant_id, scope_type);
+create index if not exists ix_scope_site on permissions_scope(site_id) where site_id is not null;
+create index if not exists ix_scope_asset on permissions_scope(asset_id) where asset_id is not null;
+Referenzen: Wenn eure tenancy_site / assets_asset Tabellen in anderen Apps liegen, könnt ihr die FK-Constraints ergänzen. Ich habe sie hier als uuid gelassen, um die Spezifikation unabhängig zu halten.
+
+1.2.5 Assignment (User ↔ Role ↔ Scope)
+create table if not exists permissions_assignment (
+  id uuid primary key,
+  tenant_id uuid not null,
+  user_id uuid not null,    -- references identity_user(id)
+  role_id uuid not null references permissions_role(id) on delete cascade,
+  scope_id uuid not null references permissions_scope(id) on delete cascade,
+
+  created_by_user_id uuid null,
+  created_at timestamptz not null default now(),
+
+  -- optional: validity
+  valid_from timestamptz null,
+  valid_to timestamptz null,
+
+  constraint uq_assignment unique (tenant_id, user_id, role_id, scope_id)
+);
+
+create index if not exists ix_assignment_tenant_user on permissions_assignment(tenant_id, user_id);
+create index if not exists ix_assignment_role on permissions_assignment(role_id);
+create index if not exists ix_assignment_scope on permissions_assignment(scope_id);
+1.2.6 (Optional) Materialized Access Cache (Performance)
+Für sehr große Tenants: Vorberechnete erlaubte Site/Asset IDs pro User.
+
+create table if not exists permissions_user_access_cache (
+  tenant_id uuid not null,
+  user_id uuid not null,
+  site_ids uuid[] not null default '{}',
+  asset_ids uuid[] not null default '{}',
+  computed_at timestamptz not null default now(),
+  primary key (tenant_id, user_id)
+);
+Wird durch Worker oder on-demand aktualisiert.
+
+Nur Optimierung, nicht Quelle der Wahrheit.
+
+1.3 reporting Schema (Export Jobs / Artefakte / Retention)
+1.3.1 Retention Policy (kann auch im documents-Modul liegen)
+Wenn ihr Retention zentral verwalten wollt:
+
+create table if not exists reporting_retention_policy (
+  id uuid primary key,
+  tenant_id uuid not null,                 -- optional: null für system-wide defaults
+  name text not null,
+  category text not null,                  -- e.g. 'brandschutz', 'audit_reports'
+  retention_days integer not null,         -- z.B. 3650 für 10 Jahre
+  delete_mode text not null default 'soft',-- 'soft'|'hard'|'never'
+  legal_hold_allowed boolean not null default true,
+  created_at timestamptz not null default now(),
+  constraint ck_delete_mode check (delete_mode in ('soft','hard','never')),
+  constraint ck_retention_days check (retention_days >= 0)
+);
+
+create index if not exists ix_retention_policy_tenant on reporting_retention_policy(tenant_id);
+create index if not exists ix_retention_policy_category on reporting_retention_policy(category);
+Alternative: Retention komplett ins documents Modul legen (oft sinnvoller). Dann referenziert reporting_export_job auf documents_retention_policy.
+
+1.3.2 Export Job
+create table if not exists reporting_export_job (
+  id uuid primary key,
+  tenant_id uuid not null,
+  requested_by_user_id uuid not null,  -- identity_user(id)
+
+  export_type text not null,           -- e.g. 'risk.assessment.pdf'
+  params_json jsonb not null default '{}'::jsonb,
+  params_hash text not null,           -- sha256 of canonicalized params
+
+  status text not null default 'queued', -- 'queued'|'running'|'done'|'failed'
+  priority integer not null default 0,
+
+  started_at timestamptz null,
+  finished_at timestamptz null,
+  error text null,
+
+  -- Artifact: prefer pointing to documents module
+  output_document_id uuid null,        -- documents_document(id)
+  output_document_version_id uuid null,-- documents_document_version(id)
+
+  retention_policy_id uuid null references reporting_retention_policy(id),
+
+  created_at timestamptz not null default now(),
+
+  constraint ck_export_status check (status in ('queued','running','done','failed'))
+);
+
+create index if not exists ix_export_job_tenant_status on reporting_export_job(tenant_id, status, created_at desc);
+create index if not exists ix_export_job_requested_by on reporting_export_job(requested_by_user_id);
+create index if not exists ix_export_job_type on reporting_export_job(export_type);
+1.3.3 Export Template (optional, später)
+create table if not exists reporting_report_template (
+  id uuid primary key,
+  tenant_id uuid not null,
+  code text not null,                  -- e.g. 'risk_assessment_pdf'
+  version integer not null default 1,
+  engine text not null,                -- 'reportlab'|'html2pdf'
+  config_json jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now(),
+  constraint uq_template unique (tenant_id, code, version)
+);
+1.4 RLS Policies (staging/prod empfohlen)
+Beispiel für permissions/reporting Tabellen:
+
+alter table permissions_role enable row level security;
+create policy tenant_isolation_role on permissions_role
+  using (tenant_id = current_setting('app.current_tenant')::uuid);
+
+alter table permissions_scope enable row level security;
+create policy tenant_isolation_scope on permissions_scope
+  using (tenant_id = current_setting('app.current_tenant')::uuid);
+
+alter table permissions_assignment enable row level security;
+create policy tenant_isolation_assignment on permissions_assignment
+  using (tenant_id = current_setting('app.current_tenant')::uuid);
+
+alter table reporting_export_job enable row level security;
+create policy tenant_isolation_export_job on reporting_export_job
+  using (tenant_id = current_setting('app.current_tenant')::uuid);
+2) Django Models (permissions + reporting)
+Die Models sind bewusst „review-fähig“: klare Constraints, db_table, Indizes, CheckConstraints.
+
+2.1 permissions/models.py
+import uuid
+from django.db import models
+
+class Permission(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    code = models.CharField(max_length=200, unique=True)  # 'risk.assessment.read'
+    description = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "permissions_permission"
+
+    def __str__(self) -> str:
+        return self.code
+
+
+class Role(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField()
+    name = models.CharField(max_length=120)
+    is_system = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    permissions = models.ManyToManyField(Permission, through="RolePermission", related_name="roles")
+
+    class Meta:
+        db_table = "permissions_role"
+        constraints = [
+            models.UniqueConstraint(fields=["tenant_id", "name"], name="uq_permissions_role_name_per_tenant"),
+        ]
+        indexes = [
+            models.Index(fields=["tenant_id"], name="ix_permissions_role_tenant"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.tenant_id}:{self.name}"
+
+
+class RolePermission(models.Model):
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    permission = models.ForeignKey(Permission, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "permissions_role_permission"
+        constraints = [
+            models.UniqueConstraint(fields=["role", "permission"], name="uq_role_permission"),
+        ]
+        indexes = [
+            models.Index(fields=["permission"], name="ix_role_permission_permission"),
+        ]
+
+
+class Scope(models.Model):
+    SCOPE_TENANT = "TENANT"
+    SCOPE_SITE = "SITE"
+    SCOPE_ASSET = "ASSET"
+    SCOPE_CHOICES = [(SCOPE_TENANT, "Tenant"), (SCOPE_SITE, "Site"), (SCOPE_ASSET, "Asset")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField()
+    scope_type = models.CharField(max_length=12, choices=SCOPE_CHOICES)
+
+    # Keep as UUIDField to avoid hard coupling; can be FK if your apps exist
+    site_id = models.UUIDField(null=True, blank=True)
+    asset_id = models.UUIDField(null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "permissions_scope"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(scope_type__in=[SCOPE_TENANT, SCOPE_SITE, SCOPE_ASSET]),
+                name="ck_scope_type_valid",
+            ),
+            models.CheckConstraint(
+                check=(
+                    (models.Q(scope_type=SCOPE_TENANT) & models.Q(site_id__isnull=True) & models.Q(asset_id__isnull=True)) |
+                    (models.Q(scope_type=SCOPE_SITE) & models.Q(site_id__isnull=False) & models.Q(asset_id__isnull=True)) |
+                    (models.Q(scope_type=SCOPE_ASSET) & models.Q(site_id__isnull=True) & models.Q(asset_id__isnull=False))
+                ),
+                name="ck_scope_fk_match",
+            ),
+            models.UniqueConstraint(
+                fields=["tenant_id", "scope_type", "site_id", "asset_id"],
+                name="uq_scope_unique_per_tenant",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["tenant_id", "scope_type"], name="ix_scope_tenant_type"),
+        ]
+
+    def __str__(self) -> str:
+        if self.scope_type == self.SCOPE_TENANT:
+            return f"{self.tenant_id}:TENANT"
+        if self.scope_type == self.SCOPE_SITE:
+            return f"{self.tenant_id}:SITE:{self.site_id}"
+        return f"{self.tenant_id}:ASSET:{self.asset_id}"
+
+
+class Assignment(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField()
+    user_id = models.UUIDField()  # FK to identity.User.id if you want
+
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    scope = models.ForeignKey(Scope, on_delete=models.CASCADE)
+
+    created_by_user_id = models.UUIDField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    valid_from = models.DateTimeField(null=True, blank=True)
+    valid_to = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "permissions_assignment"
+        constraints = [
+            models.UniqueConstraint(fields=["tenant_id", "user_id", "role", "scope"], name="uq_assignment"),
+        ]
+        indexes = [
+            models.Index(fields=["tenant_id", "user_id"], name="ix_assignment_tenant_user"),
+            models.Index(fields=["role"], name="ix_assignment_role"),
+            models.Index(fields=["scope"], name="ix_assignment_scope"),
+        ]
+2.2 reporting/models.py
+import uuid
+from django.db import models
+
+class RetentionPolicy(models.Model):
+    DELETE_SOFT = "soft"
+    DELETE_HARD = "hard"
+    DELETE_NEVER = "never"
+    DELETE_CHOICES = [(DELETE_SOFT, "Soft"), (DELETE_HARD, "Hard"), (DELETE_NEVER, "Never")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(null=True, blank=True)  # null = system default
+    name = models.CharField(max_length=160)
+    category = models.CharField(max_length=120)
+    retention_days = models.IntegerField()
+    delete_mode = models.CharField(max_length=12, choices=DELETE_CHOICES, default=DELETE_SOFT)
+    legal_hold_allowed = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "reporting_retention_policy"
+        constraints = [
+            models.CheckConstraint(check=models.Q(retention_days__gte=0), name="ck_retention_days"),
+        ]
+        indexes = [
+            models.Index(fields=["tenant_id"], name="ix_retention_policy_tenant"),
+            models.Index(fields=["category"], name="ix_retention_policy_category"),
+        ]
+
+
+class ExportJob(models.Model):
+    STATUS_QUEUED = "queued"
+    STATUS_RUNNING = "running"
+    STATUS_DONE = "done"
+    STATUS_FAILED = "failed"
+    STATUS_CHOICES = [
+        (STATUS_QUEUED, "Queued"),
+        (STATUS_RUNNING, "Running"),
+        (STATUS_DONE, "Done"),
+        (STATUS_FAILED, "Failed"),
+    ]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField()
+
+    requested_by_user_id = models.UUIDField()
+    export_type = models.CharField(max_length=200)
+    params_json = models.JSONField(default=dict)
+    params_hash = models.CharField(max_length=64)
+
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_QUEUED)
+    priority = models.IntegerField(default=0)
+
+    started_at = models.DateTimeField(null=True, blank=True)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    error = models.TextField(null=True, blank=True)
+
+    # Prefer referencing documents module (uuid ids)
+    output_document_id = models.UUIDField(null=True, blank=True)
+    output_document_version_id = models.UUIDField(null=True, blank=True)
+
+    retention_policy = models.ForeignKey(RetentionPolicy, null=True, blank=True, on_delete=models.SET_NULL)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "reporting_export_job"
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(status__in=[s for s, _ in STATUS_CHOICES]),
+                name="ck_export_status",
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["tenant_id", "status", "-created_at"], name="ix_export_job_tenant_status"),
+            models.Index(fields=["requested_by_user_id"], name="ix_export_job_requested_by"),
+            models.Index(fields=["export_type"], name="ix_export_job_type"),
+        ]
+
+
+class ReportTemplate(models.Model):
+    ENGINE_REPORTLAB = "reportlab"
+    ENGINE_HTML2PDF = "html2pdf"
+    ENGINE_CHOICES = [(ENGINE_REPORTLAB, "ReportLab"), (ENGINE_HTML2PDF, "HTML2PDF")]
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField()
+    code = models.CharField(max_length=120)     # e.g. 'risk_assessment_pdf'
+    version = models.IntegerField(default=1)
+    engine = models.CharField(max_length=24, choices=ENGINE_CHOICES)
+    config_json = models.JSONField(default=dict)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "reporting_report_template"
+        constraints = [
+            models.UniqueConstraint(fields=["tenant_id", "code", "version"], name="uq_template"),
+        ]
+3) Enforcement-Design (kurz, review-fähig)
+3.1 authorize() Contract
+Input: (user_id, tenant_id, permission_code, object_scope_ref)
+
+Output: allow/deny (exception)
+
+Scope ref kann sein:
+
+tenant_id (TENANT)
+
+site_id
+
+asset_id
+
+Enforcement:
+
+Write: immer authorize() vor Mutation
+
+Read lists: Query Helper filtert nach erlaubten Scopes
+
+3.2 Query Helper Pattern
+allowed_site_ids, allowed_asset_ids aus Assignments aggregieren
+
+Wenn Tenant-scope vorhanden → keine zusätzliche Filterung nötig
+
+Sonst:
+
+Objekte mit site_id: site_id__in=allowed_site_ids
+
+Objekte mit asset_id: asset_id__in=allowed_asset_ids
+
+Objekte ohne site/asset: nur mit explizitem Tenant-scope sichtbar (Default: hidden)
+
+4) Prod Runbook (Hetzner) – VM, LB, Backups, DR, Monitoring
+Ziel: robuste, wiederholbare Abläufe. Das Runbook ist bewusst „operational“, mit Checklisten.
+
+4.1 Rollen & Verantwortlichkeiten
+On-Call / Ops: Infrastruktur, Deployments, Monitoring, Incident Response
+
+DB Owner: Backups, Restore Tests, Postgres Tuning, Schema Changes (Migration Reviews)
+
+Security Owner: Secrets, Patching, Access Controls, Audit/Retention
+
+4.2 Referenz-Topologie (Prod, Start-HA)
+4.2.1 Komponenten
+LB: Hetzner Load Balancer (TLS termination)
+
+App: 2x VM (Django/Gunicorn) hinter LB
+
+Worker: 1x VM (Outbox Publisher, Exports, Schedules)
+
+DB: 1x VM Postgres (anfangs), optional 2. VM Standby
+
+Monitoring: 1x VM (Prometheus/Grafana/Loki)
+
+Object Storage: Hetzner Object Storage (S3) oder Storage Box für Backups
+
+4.2.2 Sizing Startpunkt (anpassbar)
+app-1, app-2: CPX31 (4 vCPU / 8GB)
+
+worker-1: CPX21 (2 vCPU / 4GB)
+
+db-1: CPX41 (8 vCPU / 16GB) + NVMe/Volume
+
+mon-1: CX32 (4 vCPU / 8GB)
+
+Hetzner LB: managed
+
+Skalierung: App horizontal, Worker separat für Exports (CPU spikes), DB vertikal + Read Replica später.
+
+4.3 Netzwerk & Security (Prod Checklist)
+ Private Network: DB/Apps/Workers nur intern erreichbar
+
+ Firewall: inbound public nur 80/443 auf LB, SSH nur via allowlist/VPN
+
+ SSH Keys: keine Passwörter, root login optional deaktiviert
+
+ Secrets: nicht in Git, zentral verwalten (mind. env files mit eingeschränkten Rechten, besser SOPS/Vault)
+
+ TLS: LB Termination + HSTS; Subdomain Wildcard Zertifikat (*.deine-domain.tld)
+
+ App: SECURE_PROXY_SSL_HEADER korrekt gesetzt
+
+4.4 Deployments (Docker on VMs)
+4.4.1 Golden Path (Blue/Green light)
+Build/publish Docker Image (CI)
+
+Deploy auf app-2 (new version)
+
+DB migrations (expand-only)
+
+Smoke tests (tenant routing, login, create assessment, doc upload, export job create)
+
+Switch LB weight to app-2
+
+Deploy app-1
+
+Worker deploy (exports/outbox)
+
+Monitor error rate + latency 15–30 min
+
+Rollback: LB zurück + container tag zurück (DB nur wenn expand-safe)
+
+Release Gates
+
+ Migration reviewed (expand/contract)
+
+ Backup green
+
+ Staging tests green (inkl. RLS on)
+
+ Observability OK
+
+4.5 Postgres Betrieb
+4.5.1 Baseline
+Postgres 16, pg_stat_statements aktiviert
+
+pgbouncer empfohlen (App connections stabil)
+
+Autovacuum Monitoring (Dead tuples, bloat)
+
+4.5.2 Backup & PITR (Pflicht)
+Tool: pgBackRest oder wal-g (eines standardisieren)
+
+Policy Beispiel
+
+Base backup: täglich
+
+WAL archiving: kontinuierlich
+
+Retention: 14–30 Tage PITR
+
+Monatliches Archiv: 12 Monate (optional, compliance)
+
+Backup Checklist
+
+ Backup Job läuft (Cron/Systemd)
+
+ Backup Ziel: Object Storage / Storage Box
+
+ Backups verschlüsselt (Server-side encryption + optional client-side)
+
+ Backup Monitoring: Alert bei fehlgeschlagenem Job
+
+4.5.3 Restore Test (Pflicht, Drill)
+Intervall: monatlich oder mindestens quarterly.
+
+Ablauf
+
+Neue Staging-DB VM (isoliert)
+
+Restore latest base backup + WAL bis Zeitpunkt T
+
+Start App gegen restored DB
+
+Smoke tests + RLS checks
+
+Dokumentation: Restore Dauer, RPO erreicht, Probleme, Maßnahmen
+
+Restore Acceptance
+
+ Restore erfolgreich < Zielzeit
+
+ Konsistenz OK (migrations, constraints)
+
+ Tenant isolation OK (RLS/guards)
+
+4.6 DR (Disaster Recovery)
+4.6.1 Ziele (Startpunkt)
+RPO: 15 Minuten (WAL)
+
+RTO: 2–4 Stunden (initial)
+
+4.6.2 DR Setup
+ Backups in zweites Hetzner Datacenter (Region)
+
+ IaC/Ansible für VM Aufbau
+
+ DNS Runbook (subdomain routing)
+
+4.6.3 DR Runbook (Kurzablauf)
+Incident declared (DB lost / region outage)
+
+Provision DB VM in DR Region
+
+Restore from backups (PITR to last safe point)
+
+Deploy app/worker (same images/tags)
+
+Update LB/DNS to DR endpoints
+
+Validate: auth, tenant routing, create/read, document access, exports
+
+Postmortem + Fixes
+
+4.7 Monitoring & Alerting
+4.7.1 Metrics
+Node exporter: CPU/RAM/Disk/IO
+
+Postgres exporter: connections, replication lag, checkpoints, bloat, slow queries
+
+App metrics: request count, latency p95, 5xx rate, htmx errors
+
+Worker: queue length (oder outbox pending count), export failures
+
+4.7.2 Logs
+Strukturierte Logs (JSON) mit:
+
+request_id, tenant_id, user_id, route, status_code, duration_ms
+
+Zentralisiert via Loki oder ELK
+
+4.7.3 Alerts (Minimum)
+DB Disk > 80%
+
+Backup job failed
+
+App 5xx rate > threshold
+
+Latency p95 > threshold
+
+Outbox pending age > threshold
+
+Export failure rate spikes
+
+Certificate expiry (LB)
+
+4.8 Retention / Compliance Ops (Betrieb)
+ Retention Policies dokumentiert und aktiv
+
+ Legal Hold Prozess (wer darf setzen/entfernen)
+
+ Cleanup Jobs laufen nur, wenn policy delete_mode != never und kein legal hold
+
+ Audit Log Retention mindestens so lang wie Compliance benötigt
+
+5) Appendix – Minimal-Checklisten
+5.1 Go-live Checklist
+ Wildcard DNS *.deine-domain.tld → LB
+
+ TLS cert wildcard aktiv
+
+ DB backups + PITR aktiv + erster Restore Test erfolgreich
+
+ RLS aktiv in prod (oder begründete Ausnahme) + Tests
+
+ Monitoring/Alerts aktiv
+
+ Admin-User + RBAC Grundrollen initialisiert
+
+ Retention Policies aktiv
+
+5.2 Incident Checklist (DB Performance)
+ pg_stat_statements Top queries
+
+ connections / pgbouncer stats
+
+ autovacuum status / bloat
+
+ slow query log sample + index review
+
+ roll back recent release if correlated
+

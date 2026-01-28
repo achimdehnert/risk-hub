@@ -1,0 +1,107 @@
+# =============================================================================
+# App Role - Django Application Deployment
+# =============================================================================
+
+---
+- name: Create app directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+    owner: deploy
+    group: deploy
+  loop:
+    - /opt/risk-hub
+    - /opt/risk-hub/static
+    - /opt/risk-hub/logs
+
+- name: Create .env file
+  template:
+    src: env.j2
+    dest: /opt/risk-hub/.env
+    mode: "0600"
+    owner: deploy
+    group: deploy
+  notify: restart app
+
+- name: Create docker-compose for app
+  copy:
+    dest: /opt/risk-hub/docker-compose.yml
+    owner: deploy
+    group: deploy
+    content: |
+      version: '3.8'
+      
+      services:
+        app:
+          image: {{ docker_registry }}/{{ docker_image_prefix }}-app:{{ app_version | default('latest') }}
+          container_name: risk-hub-app
+          restart: unless-stopped
+          env_file: .env
+          ports:
+            - "127.0.0.1:8000:8000"
+          volumes:
+            - /opt/risk-hub/static:/app/staticfiles:rw
+            - /opt/risk-hub/logs:/app/logs:rw
+          networks:
+            - risk-hub-network
+          healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 40s
+          deploy:
+            resources:
+              limits:
+                cpus: '2'
+                memory: 4G
+              reservations:
+                cpus: '0.5'
+                memory: 512M
+      
+      networks:
+        risk-hub-network:
+          external: true
+  notify: restart app
+
+- name: Pull latest app image
+  docker_image:
+    name: "{{ docker_registry }}/{{ docker_image_prefix }}-app:{{ app_version | default('latest') }}"
+    source: pull
+    force_source: yes
+  notify: restart app
+
+- name: Start app container
+  docker_compose:
+    project_src: /opt/risk-hub
+    state: present
+    restarted: "{{ app_force_restart | default(false) }}"
+
+- name: Run migrations
+  command: >
+    docker exec risk-hub-app python manage.py migrate --noinput
+  register: migration_result
+  changed_when: "'Applying' in migration_result.stdout"
+
+- name: Collect static files
+  command: >
+    docker exec risk-hub-app python manage.py collectstatic --noinput
+  register: collectstatic_result
+  changed_when: "'Copying' in collectstatic_result.stdout"
+
+- name: Wait for app to be healthy
+  uri:
+    url: "http://127.0.0.1:8000/health/"
+    status_code: 200
+  register: health_check
+  retries: 10
+  delay: 5
+  until: health_check.status == 200
+
+handlers:
+  - name: restart app
+    docker_compose:
+      project_src: /opt/risk-hub
+      state: present
+      restarted: yes

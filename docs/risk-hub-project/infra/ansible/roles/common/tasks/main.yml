@@ -1,0 +1,111 @@
+# =============================================================================
+# Common Role - Base Server Setup
+# =============================================================================
+
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install base packages
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - software-properties-common
+      - vim
+      - htop
+      - iotop
+      - net-tools
+      - jq
+      - unzip
+      - fail2ban
+      - ufw
+    state: present
+
+- name: Set timezone
+  timezone:
+    name: Europe/Berlin
+
+- name: Configure sysctl for performance
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: present
+    reload: yes
+  loop:
+    - { name: "vm.swappiness", value: "10" }
+    - { name: "net.core.somaxconn", value: "65535" }
+    - { name: "net.ipv4.tcp_max_syn_backlog", value: "65535" }
+    - { name: "fs.file-max", value: "2097152" }
+
+- name: Configure limits
+  copy:
+    dest: /etc/security/limits.d/99-risk-hub.conf
+    content: |
+      * soft nofile 65535
+      * hard nofile 65535
+      * soft nproc 65535
+      * hard nproc 65535
+
+- name: Configure UFW defaults
+  ufw:
+    direction: "{{ item.direction }}"
+    policy: "{{ item.policy }}"
+  loop:
+    - { direction: incoming, policy: deny }
+    - { direction: outgoing, policy: allow }
+
+- name: Allow SSH
+  ufw:
+    rule: allow
+    port: "22"
+    proto: tcp
+
+- name: Allow internal network
+  ufw:
+    rule: allow
+    src: "10.0.0.0/16"
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+
+- name: Configure fail2ban
+  copy:
+    dest: /etc/fail2ban/jail.local
+    content: |
+      [DEFAULT]
+      bantime = 3600
+      findtime = 600
+      maxretry = 5
+      
+      [sshd]
+      enabled = true
+      port = ssh
+      filter = sshd
+      logpath = /var/log/auth.log
+  notify: restart fail2ban
+
+- name: Create app user
+  user:
+    name: deploy
+    shell: /bin/bash
+    groups: sudo
+    append: yes
+
+- name: Add SSH key for deploy user
+  authorized_key:
+    user: deploy
+    key: "{{ lookup('file', '~/.ssh/id_rsa.pub') }}"
+  ignore_errors: yes
+
+handlers:
+  - name: restart fail2ban
+    service:
+      name: fail2ban
+      state: restarted

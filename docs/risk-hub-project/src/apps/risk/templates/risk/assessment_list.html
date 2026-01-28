@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Gefährdungsbeurteilungen - risk-hub{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h1>Gefährdungsbeurteilungen</h1>
+        <button class="btn btn-primary" hx-get="#" hx-target="#modal">
+            + Neue Beurteilung
+        </button>
+    </div>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Titel</th>
+                <th>Status</th>
+                <th>Erstellt</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for assessment in assessments %}
+            <tr>
+                <td>{{ assessment.title }}</td>
+                <td class="status-{{ assessment.status }}">{{ assessment.get_status_display }}</td>
+                <td>{{ assessment.created_at|date:"d.m.Y H:i" }}</td>
+                <td>
+                    <a href="#" class="btn btn-primary">Öffnen</a>
+                    {% if assessment.status == "draft" %}
+                    <form method="post" action="#" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">Freigeben</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center; padding: 2rem; color: #666;">
+                    Keine Gefährdungsbeurteilungen vorhanden.
+                    <br><br>
+                    <button class="btn btn-primary">Erste Beurteilung erstellen</button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div id="modal"></div>
+{% endblock %}

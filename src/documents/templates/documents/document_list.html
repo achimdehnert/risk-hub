@@ -1,0 +1,40 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Dokumente - Risk-Hub</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+    </style>
+</head>
+<body>
+    <h1>Dokumente</h1>
+    <p><a href="/risk/assessments/">← Zurück zu Beurteilungen</a></p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Titel</th>
+                <th>Kategorie</th>
+                <th>Erstellt</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for doc in documents %}
+            <tr>
+                <td><a href="{% url 'documents:document_detail' doc.id %}">{{ doc.title }}</a></td>
+                <td>{{ doc.get_category_display }}</td>
+                <td>{{ doc.created_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3">Keine Dokumente vorhanden.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

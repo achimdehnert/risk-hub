@@ -1,0 +1,151 @@
+# =============================================================================
+# PostgreSQL Role - Database Setup with Docker
+# =============================================================================
+
+---
+- name: Create Postgres directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: "0755"
+  loop:
+    - /opt/postgres
+    - /opt/postgres/data
+    - /opt/postgres/backups
+    - /opt/postgres/scripts
+
+- name: Mount data volume (if attached)
+  mount:
+    path: /opt/postgres/data
+    src: /dev/sdb
+    fstype: ext4
+    state: mounted
+  ignore_errors: yes
+
+- name: Create Postgres docker-compose
+  copy:
+    dest: /opt/postgres/docker-compose.yml
+    content: |
+      version: '3.8'
+      
+      services:
+        postgres:
+          image: postgres:16-alpine
+          container_name: postgres
+          restart: unless-stopped
+          environment:
+            POSTGRES_DB: {{ db_name }}
+            POSTGRES_USER: {{ db_user }}
+            POSTGRES_PASSWORD: {{ db_password }}
+          volumes:
+            - /opt/postgres/data:/var/lib/postgresql/data
+            - /opt/postgres/scripts:/docker-entrypoint-initdb.d:ro
+          ports:
+            - "{{ db_host }}:5432:5432"
+          command:
+            - postgres
+            - -c
+            - shared_buffers=2GB
+            - -c
+            - effective_cache_size=6GB
+            - -c
+            - maintenance_work_mem=512MB
+            - -c
+            - work_mem=32MB
+            - -c
+            - max_connections=200
+            - -c
+            - wal_buffers=64MB
+            - -c
+            - checkpoint_completion_target=0.9
+            - -c
+            - random_page_cost=1.1
+            - -c
+            - effective_io_concurrency=200
+            - -c
+            - log_statement=ddl
+            - -c
+            - log_min_duration_statement=1000
+          networks:
+            - risk-hub-network
+          healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U {{ db_user }} -d {{ db_name }}"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        
+        pgbouncer:
+          image: edoburu/pgbouncer:1.22.1
+          container_name: pgbouncer
+          restart: unless-stopped
+          environment:
+            DATABASE_URL: postgres://{{ db_user }}:{{ db_password }}@postgres:5432/{{ db_name }}
+            POOL_MODE: transaction
+            MAX_CLIENT_CONN: 500
+            DEFAULT_POOL_SIZE: 20
+          ports:
+            - "{{ db_host }}:6432:5432"
+          depends_on:
+            - postgres
+          networks:
+            - risk-hub-network
+      
+      networks:
+        risk-hub-network:
+          external: true
+
+- name: Create init script for RLS
+  copy:
+    dest: /opt/postgres/scripts/00-init.sql
+    content: |
+      -- RLS Setup für risk-hub
+      CREATE SCHEMA IF NOT EXISTS app;
+      
+      -- Extension für UUID
+      CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+      
+      -- Session Variable für Tenant ID
+      -- Wird von App gesetzt: SET LOCAL app.current_tenant = '<uuid>'
+
+- name: Start Postgres containers
+  docker_compose:
+    project_src: /opt/postgres
+    state: present
+    pull: yes
+
+- name: Wait for Postgres to be ready
+  wait_for:
+    host: "{{ db_host }}"
+    port: 5432
+    delay: 5
+    timeout: 60
+
+- name: Setup backup cron job
+  cron:
+    name: "Postgres Backup"
+    minute: "0"
+    hour: "3"
+    job: "/opt/postgres/backup.sh >> /var/log/postgres-backup.log 2>&1"
+
+- name: Create backup script
+  copy:
+    dest: /opt/postgres/backup.sh
+    mode: "0755"
+    content: |
+      #!/bin/bash
+      set -e
+      
+      BACKUP_DIR="/opt/postgres/backups"
+      DATE=$(date +%Y%m%d_%H%M%S)
+      BACKUP_FILE="${BACKUP_DIR}/risk_hub_${DATE}.sql.gz"
+      
+      # Backup erstellen
+      docker exec postgres pg_dump -U {{ db_user }} {{ db_name }} | gzip > "${BACKUP_FILE}"
+      
+      # Alte Backups löschen (älter als 14 Tage)
+      find "${BACKUP_DIR}" -name "*.sql.gz" -mtime +14 -delete
+      
+      # Optional: Upload zu S3
+      # aws s3 cp "${BACKUP_FILE}" s3://risk-hub-backups/postgres/
+      
+      echo "[$(date)] Backup completed: ${BACKUP_FILE}"

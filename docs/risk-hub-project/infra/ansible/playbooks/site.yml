@@ -1,0 +1,71 @@
+# =============================================================================
+# risk-hub Site Playbook
+# =============================================================================
+#
+# Vollständiges Setup aller Server:
+#
+#   ansible-playbook -i inventory/prod playbooks/site.yml
+#
+# Nur bestimmte Roles:
+#
+#   ansible-playbook -i inventory/prod playbooks/site.yml --tags docker
+#   ansible-playbook -i inventory/prod playbooks/site.yml --tags app
+# =============================================================================
+
+---
+- name: Common Setup (all servers)
+  hosts: all
+  become: true
+  roles:
+    - role: common
+      tags: [common, always]
+
+- name: Docker Setup
+  hosts: docker
+  become: true
+  roles:
+    - role: docker
+      tags: [docker]
+
+- name: PostgreSQL Setup
+  hosts: database
+  become: true
+  roles:
+    - role: postgres
+      tags: [postgres, database]
+
+- name: Redis Setup
+  hosts: database
+  become: true
+  roles:
+    - role: redis
+      tags: [redis, database]
+
+- name: App Deployment
+  hosts: app
+  become: true
+  roles:
+    - role: app
+      tags: [app, deploy]
+
+- name: Worker Deployment
+  hosts: worker
+  become: true
+  roles:
+    - role: worker
+      tags: [worker, deploy]
+
+- name: Nginx Setup (App Servers)
+  hosts: app
+  become: true
+  roles:
+    - role: nginx
+      tags: [nginx]
+
+- name: Monitoring Setup
+  hosts: monitoring
+  become: true
+  roles:
+    - role: monitoring
+      tags: [monitoring]
+  when: "'monitoring' in groups"

@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>{{ assessment.title }} - Risk-Hub</title>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 20px; }
+        .back { margin-bottom: 20px; }
+        .meta { color: #666; margin-bottom: 20px; }
+        .status { padding: 4px 12px; border-radius: 4px; }
+        .status-draft { background: #f0f0f0; }
+        .status-approved { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="back">
+        <a href="{% url 'risk:assessment_list' %}">← Zurück zur Liste</a>
+    </div>
+
+    <h1>{{ assessment.title }}</h1>
+    
+    <div class="meta">
+        <span class="status status-{{ assessment.status }}">{{ assessment.get_status_display }}</span>
+        | Kategorie: {{ assessment.get_category_display }}
+        | Erstellt: {{ assessment.created_at|date:"d.m.Y H:i" }}
+    </div>
+
+    {% if assessment.description %}
+    <p>{{ assessment.description }}</p>
+    {% endif %}
+
+    <h2>Gefährdungen</h2>
+    {% if assessment.hazards.exists %}
+    <ul>
+        {% for hazard in assessment.hazards.all %}
+        <li>
+            <strong>{{ hazard.title }}</strong> 
+            (Risiko: {{ hazard.risk_score }})
+            <br>{{ hazard.description }}
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>Keine Gefährdungen erfasst.</p>
+    {% endif %}
+
+    {% if assessment.status == "draft" or assessment.status == "in_review" %}
+    <form method="post" action="{% url 'risk:assessment_approve' assessment.id %}">
+        {% csrf_token %}
+        <button type="submit">Freigeben</button>
+    </form>
+    {% endif %}
+</body>
+</html>

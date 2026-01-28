@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Gefährdungsbeurteilungen - Risk-Hub</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        .status-draft { color: #666; }
+        .status-approved { color: green; font-weight: bold; }
+        .status-archived { color: #999; }
+        form { margin: 20px 0; }
+        input, select, button { padding: 8px; margin-right: 8px; }
+        .header { display: flex; gap: 20px; align-items: center; }
+        .tenant-badge { background: #e0e0e0; padding: 4px 12px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Gefährdungsbeurteilungen</h1>
+        <span class="tenant-badge">Tenant: {{ tenant_slug }}</span>
+        <a href="/documents/">Dokumente</a>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <input name="title" placeholder="Neue Beurteilung..." required />
+        <select name="category">
+            <option value="general">Allgemein</option>
+            <option value="brandschutz">Brandschutz</option>
+            <option value="explosionsschutz">Explosionsschutz</option>
+            <option value="arbeitssicherheit">Arbeitssicherheit</option>
+            <option value="arbeitsschutz">Arbeitsschutz</option>
+        </select>
+        <button type="submit">Erstellen</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Titel</th>
+                <th>Kategorie</th>
+                <th>Status</th>
+                <th>Erstellt</th>
+                <th>Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for a in assessments %}
+            <tr>
+                <td><a href="{% url 'risk:assessment_detail' a.id %}">{{ a.title }}</a></td>
+                <td>{{ a.get_category_display }}</td>
+                <td class="status-{{ a.status }}">{{ a.get_status_display }}</td>
+                <td>{{ a.created_at|date:"d.m.Y H:i" }}</td>
+                <td>
+                    {% if a.status == "draft" or a.status == "in_review" %}
+                    <form method="post" action="{% url 'risk:assessment_approve' a.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit">Freigeben</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">Keine Beurteilungen vorhanden.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>
