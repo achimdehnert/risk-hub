@@ -1,3 +1,6 @@
+# Packages (copied from platform for Docker build)
+# packages/
+
 # Python
 __pycache__/
 *.py[cod]

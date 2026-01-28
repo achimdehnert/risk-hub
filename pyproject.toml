@@ -19,9 +19,9 @@ dependencies = [
     "boto3>=1.34",
     "httpx>=0.27",
     "structlog>=24.0",
-    # Shared packages from platform
-    "bfagent-core @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/bfagent-core",
-    "bfagent-llm @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/bfagent-llm",
+    "jinja2>=3.1",
+    "jsonschema>=4.21",
+    "tenacity>=8.2",
 ]
 
 [project.optional-dependencies]
