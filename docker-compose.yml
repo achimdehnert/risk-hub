@@ -5,8 +5,9 @@ services:
       POSTGRES_DB: app
       POSTGRES_USER: app
       POSTGRES_PASSWORD: app
-    ports:
-      - "5434:5432"
+    # No external port - only accessible within docker network
+    # ports:
+    #   - "5434:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -17,8 +18,9 @@ services:
 
   redis:
     image: redis:7
-    ports:
-      - "6379:6379"
+    # No external port - only accessible within docker network
+    # ports:
+    #   - "6379:6379"
 
   app:
     build:
@@ -60,8 +62,8 @@ services:
       MINIO_ROOT_USER: minio
       MINIO_ROOT_PASSWORD: minio123
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "9002:9000"
+      - "9003:9001"
     volumes:
       - miniodata:/data
 
