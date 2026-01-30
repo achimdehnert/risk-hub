@@ -1,0 +1,77 @@
+services:
+  risk-hub-db:
+    image: postgres:16-alpine
+    container_name: risk_hub_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-risk_hub}
+      POSTGRES_USER: ${POSTGRES_USER:-risk_hub}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - risk_hub_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-risk_hub} -d ${POSTGRES_DB:-risk_hub}"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - risk_hub_network
+
+  risk-hub-redis:
+    image: redis:7-alpine
+    container_name: risk_hub_redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - risk_hub_network
+
+  risk-hub-web:
+    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-risk-hub}/risk-hub-web:${IMAGE_TAG:-latest}
+    container_name: risk_hub_web
+    restart: unless-stopped
+    environment:
+      DJANGO_ENV: production
+      DJANGO_SETTINGS_MODULE: config.settings
+      DATABASE_URL: postgres://${POSTGRES_USER:-risk_hub}:${POSTGRES_PASSWORD}@risk-hub-db:5432/${POSTGRES_DB:-risk_hub}
+      REDIS_URL: redis://risk-hub-redis:6379/0
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-risk-hub.schutztat.de,schutztat.de,localhost}
+      SECRET_KEY: ${SECRET_KEY}
+      DEBUG: "false"
+    depends_on:
+      risk-hub-db:
+        condition: service_healthy
+      risk-hub-redis:
+        condition: service_healthy
+    command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "config.wsgi:application"]
+    networks:
+      - risk_hub_network
+
+  risk-hub-worker:
+    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-risk-hub}/risk-hub-web:${IMAGE_TAG:-latest}
+    container_name: risk_hub_worker
+    restart: unless-stopped
+    environment:
+      DJANGO_ENV: production
+      DJANGO_SETTINGS_MODULE: config.settings
+      DATABASE_URL: postgres://${POSTGRES_USER:-risk_hub}:${POSTGRES_PASSWORD}@risk-hub-db:5432/${POSTGRES_DB:-risk_hub}
+      REDIS_URL: redis://risk-hub-redis:6379/0
+      SECRET_KEY: ${SECRET_KEY}
+    depends_on:
+      risk-hub-db:
+        condition: service_healthy
+      risk-hub-redis:
+        condition: service_healthy
+    command: ["python", "-m", "outbox.publisher"]
+    networks:
+      - risk_hub_network
+
+volumes:
+  risk_hub_pgdata:
+
+networks:
+  risk_hub_network:
+    driver: bridge

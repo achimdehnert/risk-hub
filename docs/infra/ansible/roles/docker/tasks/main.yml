@@ -1,0 +1,92 @@
+# =============================================================================
+# Docker Role - Docker Engine Setup
+# =============================================================================
+
+---
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+    state: present
+
+- name: Install Docker
+  apt:
+    name:
+      - docker-ce
+      - docker-ce-cli
+      - containerd.io
+      - docker-compose-plugin
+    state: present
+    update_cache: yes
+
+- name: Create Docker config directory
+  file:
+    path: /etc/docker
+    state: directory
+    mode: "0755"
+
+- name: Configure Docker daemon
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "100m",
+          "max-file": "5"
+        },
+        "storage-driver": "overlay2",
+        "live-restore": true,
+        "default-ulimits": {
+          "nofile": {
+            "Name": "nofile",
+            "Hard": 65535,
+            "Soft": 65535
+          }
+        }
+      }
+  notify: restart docker
+
+- name: Enable Docker service
+  service:
+    name: docker
+    enabled: yes
+    state: started
+
+- name: Add users to docker group
+  user:
+    name: "{{ item }}"
+    groups: docker
+    append: yes
+  loop:
+    - deploy
+    - ubuntu
+  ignore_errors: yes
+
+- name: Login to Docker Registry
+  docker_login:
+    registry: "{{ docker_registry }}"
+    username: "{{ docker_registry_user | default(omit) }}"
+    password: "{{ docker_registry_token | default(omit) }}"
+  when: docker_registry_token is defined
+
+- name: Create Docker network for risk-hub
+  docker_network:
+    name: risk-hub-network
+    driver: bridge
+
+- name: Install Docker Compose standalone (fallback)
+  get_url:
+    url: "https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64"
+    dest: /usr/local/bin/docker-compose
+    mode: "0755"
+
+handlers:
+  - name: restart docker
+    service:
+      name: docker
+      state: restarted

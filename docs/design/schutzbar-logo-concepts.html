@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Schutzbar – Logo-Konzepte & Brand Identity</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-blue: #0066CC;
+            --primary-dark: #003D7A;
+            --accent-green: #00A67E;
+            --accent-orange: #FF6B35;
+            --neutral-900: #1A1A2E;
+            --neutral-700: #3D3D5C;
+            --neutral-400: #8E8EA0;
+            --neutral-100: #F5F5F7;
+            --white: #FFFFFF;
+            --gradient-primary: linear-gradient(135deg, #0066CC 0%, #003D7A 100%);
+            --gradient-accent: linear-gradient(135deg, #00A67E 0%, #00D4A1 100%);
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--neutral-100);
+            color: var(--neutral-900);
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 80px;
+        }
+        
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 16px;
+            letter-spacing: -0.02em;
+        }
+        
+        .subtitle {
+            font-size: 1.25rem;
+            color: var(--neutral-700);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            margin-bottom: 80px;
+        }
+        
+        .section-title {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--neutral-900);
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 2px solid var(--primary-blue);
+            display: inline-block;
+        }
+        
+        .logo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 32px;
+        }
+        
+        .logo-card {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 48px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s ease;
+        }
+        
+        .logo-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .logo-card.dark {
+            background: var(--neutral-900);
+            color: var(--white);
+        }
+        
+        .logo-card h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        
+        .logo-card p {
+            font-size: 0.9rem;
+            color: var(--neutral-400);
+            margin-bottom: 32px;
+        }
+        
+        .logo-card.dark p {
+            color: var(--neutral-400);
+        }
+        
+        .logo-display {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 120px;
+        }
+        
+        .logo-display svg {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        /* Color Palette Section */
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+        }
+        
+        .color-swatch {
+            background: var(--white);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+        }
+        
+        .color-preview {
+            height: 100px;
+        }
+        
+        .color-info {
+            padding: 16px;
+        }
+        
+        .color-name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        
+        .color-hex {
+            font-family: 'Space Grotesk', monospace;
+            font-size: 0.85rem;
+            color: var(--neutral-400);
+        }
+        
+        /* Typography Section */
+        .typography-demo {
+            background: var(--white);
+            border-radius: 24px;
+            padding: 48px;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        }
+        
+        .font-demo {
+            margin-bottom: 40px;
+            padding-bottom: 40px;
+            border-bottom: 1px solid var(--neutral-100);
+        }
+        
+        .font-demo:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+        
+        .font-label {
+            font-size: 0.85rem;
+            color: var(--neutral-400);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 12px;
+        }
+        
+        .font-primary {
+            font-family: 'Outfit', sans-serif;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--neutral-900);
+        }
+        
+        .font-secondary {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 1.25rem;
+            color: var(--neutral-700);
+        }
+        
+        /* Tagline Options */
+        .tagline-list {
+            display: grid;
+            gap: 16px;
+        }
+        
+        .tagline-item {
+            background: var(--white);
+            border-radius: 16px;
+            padding: 24px 32px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
+            transition: all 0.2s ease;
+        }
+        
+        .tagline-item:hover {
+            background: var(--primary-blue);
+            color: var(--white);
+        }
+        
+        .tagline-item:hover .tagline-rating {
+            background: rgba(255,255,255,0.2);
+            color: var(--white);
+        }
+        
+        .tagline-text {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.25rem;
+            font-weight: 600;
+            flex: 1;
+        }
+        
+        .tagline-rating {
+            background: var(--accent-green);
+            color: var(--white);
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        
+        /* Summary Table */
+        .summary-table {
+            background: var(--white);
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+        }
+        
+        .summary-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .summary-table th,
+        .summary-table td {
+            padding: 20px 24px;
+            text-align: left;
+            border-bottom: 1px solid var(--neutral-100);
+        }
+        
+        .summary-table th {
+            background: var(--neutral-900);
+            color: var(--white);
+            font-family: 'Outfit', sans-serif;
+            font-weight: 600;
+        }
+        
+        .summary-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .summary-table tr:hover td {
+            background: var(--neutral-100);
+        }
+        
+        .status-available {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-green);
+            font-weight: 600;
+        }
+        
+        .status-available::before {
+            content: '✓';
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 20px;
+            height: 20px;
+            background: var(--accent-green);
+            color: var(--white);
+            border-radius: 50%;
+            font-size: 12px;
+        }
+        
+        /* Recommendations */
+        .recommendation-box {
+            background: linear-gradient(135deg, #0066CC 0%, #003D7A 100%);
+            color: var(--white);
+            border-radius: 24px;
+            padding: 48px;
+        }
+        
+        .recommendation-box h3 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 24px;
+        }
+        
+        .recommendation-box ul {
+            list-style: none;
+        }
+        
+        .recommendation-box li {
+            padding: 12px 0;
+            padding-left: 32px;
+            position: relative;
+        }
+        
+        .recommendation-box li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--accent-green);
+            font-weight: 700;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 40px 20px;
+            }
+            
+            h1 {
+                font-size: 2.5rem;
+            }
+            
+            .logo-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .logo-card {
+                padding: 32px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Schutzbar</h1>
+            <p class="subtitle">Brand Identity & Logo-Konzepte für die deutsche EHS/Risikomanagement-Plattform</p>
+        </header>
+        
+        <!-- Logo Concepts -->
+        <section class="section">
+            <h2 class="section-title">Logo-Konzepte</h2>
+            <div class="logo-grid">
+                
+                <!-- Konzept 1: Shield + Check -->
+                <div class="logo-card">
+                    <h3>Konzept 1: Schutzschild mit Check</h3>
+                    <p>Klassisches Schild-Symbol kombiniert mit einem Häkchen – symbolisiert Schutz & Compliance</p>
+                    <div class="logo-display">
+                        <svg width="280" height="80" viewBox="0 0 280 80">
+                            <!-- Shield with Check -->
+                            <defs>
+                                <linearGradient id="shieldGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#0066CC"/>
+                                    <stop offset="100%" style="stop-color:#003D7A"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M25 12 L45 8 L45 35 C45 50 35 58 25 62 C15 58 5 50 5 35 L5 8 Z" fill="url(#shieldGrad1)"/>
+                            <polyline points="14,32 22,40 36,24" stroke="#00D4A1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            <!-- Text -->
+                            <text x="60" y="45" font-family="Outfit, sans-serif" font-size="32" font-weight="700" fill="#1A1A2E">schutz</text>
+                            <text x="168" y="45" font-family="Outfit, sans-serif" font-size="32" font-weight="700" fill="#0066CC">bar</text>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Konzept 2: Abstract Shield -->
+                <div class="logo-card dark">
+                    <h3>Konzept 2: Abstraktes Schild (Dark Mode)</h3>
+                    <p>Moderne, geometrische Interpretation – für Tech-affine Zielgruppe</p>
+                    <div class="logo-display">
+                        <svg width="280" height="80" viewBox="0 0 280 80">
+                            <defs>
+                                <linearGradient id="shieldGrad2" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#00D4A1"/>
+                                    <stop offset="100%" style="stop-color:#00A67E"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Abstract geometric shield -->
+                            <polygon points="25,8 45,16 45,45 25,58 5,45 5,16" fill="none" stroke="url(#shieldGrad2)" stroke-width="3"/>
+                            <polygon points="25,18 38,24 38,40 25,50 12,40 12,24" fill="url(#shieldGrad2)" opacity="0.3"/>
+                            <circle cx="25" cy="34" r="6" fill="url(#shieldGrad2)"/>
+                            <!-- Text -->
+                            <text x="60" y="45" font-family="Outfit, sans-serif" font-size="32" font-weight="700" fill="#FFFFFF">schutz</text>
+                            <text x="168" y="45" font-family="Outfit, sans-serif" font-size="32" font-weight="700" fill="#00D4A1">bar</text>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Konzept 3: Minimalist -->
+                <div class="logo-card">
+                    <h3>Konzept 3: Minimalistisch</h3>
+                    <p>Reduziertes Design – fokussiert auf Typografie mit subtiler Schild-Andeutung</p>
+                    <div class="logo-display">
+                        <svg width="280" height="80" viewBox="0 0 280 80">
+                            <!-- Minimal bar/shield combo -->
+                            <rect x="5" y="20" width="6" height="40" rx="3" fill="#0066CC"/>
+                            <rect x="15" y="15" width="6" height="50" rx="3" fill="#0066CC"/>
+                            <rect x="25" y="20" width="6" height="40" rx="3" fill="#0066CC"/>
+                            <!-- Text -->
+                            <text x="50" y="48" font-family="Outfit, sans-serif" font-size="36" font-weight="600" fill="#1A1A2E">Schutzbar</text>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Konzept 4: Premium/Enterprise -->
+                <div class="logo-card">
+                    <h3>Konzept 4: Enterprise Premium</h3>
+                    <p>Hochwertiger Look für Enterprise-Kunden – seriös und vertrauenswürdig</p>
+                    <div class="logo-display">
+                        <svg width="280" height="80" viewBox="0 0 280 80">
+                            <defs>
+                                <linearGradient id="premiumGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" style="stop-color:#003D7A"/>
+                                    <stop offset="100%" style="stop-color:#001F3F"/>
+                                </linearGradient>
+                            </defs>
+                            <!-- Premium shield -->
+                            <path d="M25 10 L45 6 L45 38 C45 52 36 60 25 65 C14 60 5 52 5 38 L5 6 Z" fill="url(#premiumGrad)"/>
+                            <path d="M25 16 L40 13 L40 36 C40 47 33 53 25 57 C17 53 10 47 10 36 L10 13 Z" fill="none" stroke="#C9A227" stroke-width="1.5"/>
+                            <text x="25" y="42" font-family="Outfit, sans-serif" font-size="14" font-weight="700" fill="#C9A227" text-anchor="middle">S</text>
+                            <!-- Text -->
+                            <text x="60" y="42" font-family="Outfit, sans-serif" font-size="28" font-weight="700" fill="#003D7A">SCHUTZBAR</text>
+                            <text x="60" y="58" font-family="DM Sans, sans-serif" font-size="10" font-weight="500" fill="#8E8EA0" letter-spacing="0.15em">RISIKOMANAGEMENT</text>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Konzept 5: Friendly/Modern -->
+                <div class="logo-card" style="background: linear-gradient(135deg, #F0F7FF 0%, #E8F4F8 100%);">
+                    <h3>Konzept 5: Modern & Freundlich</h3>
+                    <p>Zugängliches Design für KMU – weniger "Enterprise", mehr Nahbarkeit</p>
+                    <div class="logo-display">
+                        <svg width="280" height="80" viewBox="0 0 280 80">
+                            <!-- Rounded friendly shield -->
+                            <path d="M25 12 Q45 8 45 8 L45 35 Q45 55 25 62 Q5 55 5 35 L5 8 Q5 8 25 12" fill="#0066CC" rx="8"/>
+                            <path d="M18 30 L23 35 L33 25" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                            <!-- Text with rounded feel -->
+                            <text x="58" y="46" font-family="DM Sans, sans-serif" font-size="30" font-weight="700" fill="#1A1A2E">schutzbar</text>
+                            <!-- Dot accent -->
+                            <circle cx="252" cy="46" r="5" fill="#00A67E"/>
+                        </svg>
+                    </div>
+                </div>
+                
+                <!-- Icon Only -->
+                <div class="logo-card dark">
+                    <h3>Icon-Only Varianten (Favicon/App)</h3>
+                    <p>Für kleine Größen, App-Icons, Favicons</p>
+                    <div class="logo-display" style="gap: 40px; display: flex;">
+                        <svg width="60" height="60" viewBox="0 0 60 60">
+                            <rect width="60" height="60" rx="12" fill="#0066CC"/>
+                            <path d="M30 12 L48 8 L48 38 C48 52 40 58 30 62 C20 58 12 52 12 38 L12 8 Z" fill="#FFFFFF" opacity="0.9"/>
+                            <polyline points="20,35 27,42 40,28" stroke="#00D4A1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <svg width="60" height="60" viewBox="0 0 60 60">
+                            <rect width="60" height="60" rx="12" fill="#003D7A"/>
+                            <text x="30" y="42" font-family="Outfit, sans-serif" font-size="28" font-weight="800" fill="#FFFFFF" text-anchor="middle">S</text>
+                            <rect x="12" y="48" width="36" height="3" rx="1.5" fill="#00D4A1"/>
+                        </svg>
+                        <svg width="60" height="60" viewBox="0 0 60 60">
+                            <rect width="60" height="60" rx="30" fill="url(#shieldGrad1)"/>
+                            <path d="M30 15 L44 12 L44 35 C44 47 38 52 30 55 C22 52 16 47 16 35 L16 12 Z" fill="#FFFFFF"/>
+                            <polyline points="22,33 28,39 38,28" stroke="#0066CC" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                </div>
+                
+            </div>
+        </section>
+        
+        <!-- Color Palette -->
+        <section class="section">
+            <h2 class="section-title">Farbpalette</h2>
+            <div class="color-palette">
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #0066CC;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Primary Blue</div>
+                        <div class="color-hex">#0066CC</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #003D7A;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Primary Dark</div>
+                        <div class="color-hex">#003D7A</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #00A67E;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Success Green</div>
+                        <div class="color-hex">#00A67E</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #FF6B35;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Alert Orange</div>
+                        <div class="color-hex">#FF6B35</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #1A1A2E;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Neutral Dark</div>
+                        <div class="color-hex">#1A1A2E</div>
+                    </div>
+                </div>
+                <div class="color-swatch">
+                    <div class="color-preview" style="background: #F5F5F7;"></div>
+                    <div class="color-info">
+                        <div class="color-name">Background</div>
+                        <div class="color-hex">#F5F5F7</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Typography -->
+        <section class="section">
+            <h2 class="section-title">Typografie</h2>
+            <div class="typography-demo">
+                <div class="font-demo">
+                    <div class="font-label">Primär – Headlines & Logo</div>
+                    <div class="font-primary">Outfit – Modern & Bold</div>
+                </div>
+                <div class="font-demo">
+                    <div class="font-label">Sekundär – Body & UI</div>
+                    <div class="font-secondary">DM Sans – Lesbar & Professionell für längere Texte und Interfaces</div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Taglines -->
+        <section class="section">
+            <h2 class="section-title">Tagline-Vorschläge</h2>
+            <div class="tagline-list">
+                <div class="tagline-item">
+                    <span class="tagline-text">Schutz, der zählt.</span>
+                    <span class="tagline-rating">⭐ Top</span>
+                </div>
+                <div class="tagline-item">
+                    <span class="tagline-text">Risiken erkennen. Sicherheit schaffen.</span>
+                    <span class="tagline-rating">⭐ Top</span>
+                </div>
+                <div class="tagline-item">
+                    <span class="tagline-text">Compliance. Einfach. Digital.</span>
+                    <span class="tagline-rating">Gut</span>
+                </div>
+                <div class="tagline-item">
+                    <span class="tagline-text">Ihr Partner für Arbeitssicherheit</span>
+                    <span class="tagline-rating">Gut</span>
+                </div>
+                <div class="tagline-item">
+                    <span class="tagline-text">Sicherheit systematisch managen</span>
+                    <span class="tagline-rating">Gut</span>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Domain Summary -->
+        <section class="section">
+            <h2 class="section-title">Domain-Verfügbarkeit</h2>
+            <div class="summary-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Domain</th>
+                            <th>Status</th>
+                            <th>Priorität</th>
+                            <th>Verwendung</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>schutzbar.de</strong></td>
+                            <td><span class="status-available">Wahrscheinlich verfügbar</span></td>
+                            <td>🥇 Höchste</td>
+                            <td>Hauptdomain für DACH</td>
+                        </tr>
+                        <tr>
+                            <td><strong>schutzbar.com</strong></td>
+                            <td><span class="status-available">Wahrscheinlich verfügbar</span></td>
+                            <td>🥈 Hoch</td>
+                            <td>Internationale Expansion</td>
+                        </tr>
+                        <tr>
+                            <td><strong>schutzbar.eu</strong></td>
+                            <td><span class="status-available">Wahrscheinlich verfügbar</span></td>
+                            <td>🥉 Mittel</td>
+                            <td>EU-Markt / Redirect</td>
+                        </tr>
+                        <tr>
+                            <td><strong>schutzbar.io</strong></td>
+                            <td><span class="status-available">Wahrscheinlich verfügbar</span></td>
+                            <td>Optional</td>
+                            <td>Tech/API-Dokumentation</td>
+                        </tr>
+                        <tr>
+                            <td><strong>schutzbar.app</strong></td>
+                            <td><span class="status-available">Wahrscheinlich verfügbar</span></td>
+                            <td>Optional</td>
+                            <td>Mobile App / PWA</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+        
+        <!-- Recommendations -->
+        <section class="section">
+            <div class="recommendation-box">
+                <h3>🎯 Empfohlene nächste Schritte</h3>
+                <ul>
+                    <li><strong>Domains sichern:</strong> schutzbar.de + schutzbar.com SOFORT registrieren (z.B. bei united-domains.de, INWX oder Hetzner)</li>
+                    <li><strong>Markenrecherche:</strong> DPMA-Recherche unter register.dpma.de durchführen</li>
+                    <li><strong>Markenanmeldung:</strong> "Schutzbar" als Wortmarke in Klasse 9 (Software) und 42 (SaaS) anmelden – ca. 290€</li>
+                    <li><strong>Social Media:</strong> @schutzbar auf LinkedIn, Twitter/X, GitHub sichern</li>
+                    <li><strong>Logo finalisieren:</strong> Konzept 1 (Schild + Check) oder Konzept 5 (Modern) für KMU-Fokus</li>
+                </ul>
+            </div>
+        </section>
+        
+    </div>
+</body>
+</html>

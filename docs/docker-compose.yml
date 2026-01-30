@@ -1,0 +1,161 @@
+# =============================================================================
+# risk-hub Local Development Environment
+# =============================================================================
+# Usage:
+#   docker compose up -d
+#   docker compose exec app python manage.py migrate
+#   docker compose exec app python manage.py seed_demo
+# =============================================================================
+
+services:
+  # ===========================================================================
+  # Application Layer
+  # ===========================================================================
+  
+  app:
+    build:
+      context: .
+      dockerfile: infra/docker/app/Dockerfile
+      target: development
+    env_file: .env
+    volumes:
+      - ./src:/app/src:cached
+      - ./tests:/app/tests:cached
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build:
+      context: .
+      dockerfile: infra/docker/app/Dockerfile
+      target: development
+    env_file: .env
+    volumes:
+      - ./src:/app/src:cached
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    command: ["celery", "-A", "config.celery", "worker", "-l", "INFO", "-c", "2"]
+
+  beat:
+    build:
+      context: .
+      dockerfile: infra/docker/app/Dockerfile
+      target: development
+    env_file: .env
+    volumes:
+      - ./src:/app/src:cached
+    depends_on:
+      - worker
+    command: ["celery", "-A", "config.celery", "beat", "-l", "INFO"]
+
+  # ===========================================================================
+  # Data Layer
+  # ===========================================================================
+  
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: risk_hub
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: app
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/docker/postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U app -d risk_hub"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  minio:
+    image: minio/minio:RELEASE.2024-10-13T13-34-11Z
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio
+      MINIO_ROOT_PASSWORD: minio123
+    ports:
+      - "9000:9000"   # API
+      - "9001:9001"   # Console
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  # ===========================================================================
+  # Reverse Proxy (Subdomain-Routing)
+  # ===========================================================================
+  
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "8080:80"
+    volumes:
+      - ./infra/docker/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+
+  # ===========================================================================
+  # Development Tools (optional)
+  # ===========================================================================
+  
+  # Mailhog für Email-Testing
+  mailhog:
+    image: mailhog/mailhog:latest
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Web UI
+    profiles:
+      - tools
+
+  # pgAdmin für DB-Verwaltung
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@localhost
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    profiles:
+      - tools
+
+volumes:
+  pgdata:
+  redisdata:
+  miniodata:
+
+networks:
+  default:
+    name: risk-hub-network

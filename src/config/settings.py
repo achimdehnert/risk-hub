@@ -1,14 +1,18 @@
 """Django settings for Risk-Hub."""
 
-from pathlib import Path
 import os
+from pathlib import Path
+
 import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-in-production")
 DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
-ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", ".localhost,localhost,127.0.0.1").split(",")
+ALLOWED_HOSTS = os.getenv(
+    "DJANGO_ALLOWED_HOSTS",
+    ".localhost,localhost,127.0.0.1",
+).split(",")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -79,14 +83,32 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Tenancy
-TENANT_BASE_DOMAIN = os.getenv("TENANT_BASE_DOMAIN", "localhost")
+TENANT_BASE_DOMAINS = [
+    d.strip()
+    for d in os.getenv("TENANT_BASE_DOMAINS", "").split(",")
+    if d.strip()
+]
+TENANT_BASE_DOMAIN = (
+    TENANT_BASE_DOMAINS[0]
+    if TENANT_BASE_DOMAINS
+    else os.getenv("TENANT_BASE_DOMAIN", "localhost")
+)
 TENANT_ALLOW_LOCALHOST = os.getenv("TENANT_ALLOW_LOCALHOST", "1") == "1"
+TENANT_RESERVED_SUBDOMAINS = [
+    s.strip().lower()
+    for s in os.getenv("TENANT_RESERVED_SUBDOMAINS", "www").split(",")
+    if s.strip()
+]
 TENANT_MODEL = "tenancy.Organization"
 TENANT_SLUG_FIELD = "slug"
 TENANT_ID_FIELD = "tenant_id"
 
 # CSRF
-CSRF_TRUSTED_ORIGINS = [o for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if o]
+CSRF_TRUSTED_ORIGINS = [
+    o
+    for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+    if o
+]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 

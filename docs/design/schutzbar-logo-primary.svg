@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="80" viewBox="0 0 300 80">
+    <defs>
+        <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#0066CC"/>
+            <stop offset="100%" style="stop-color:#003D7A"/>
+        </linearGradient>
+    </defs>
+    <!-- Shield with Check -->
+    <path d="M30 12 L55 7 L55 40 C55 58 42 68 30 72 C18 68 5 58 5 40 L5 7 Z" fill="url(#shieldGrad)"/>
+    <polyline points="16,38 26,48 44,28" stroke="#00D4A1" stroke-width="5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Text -->
+    <text x="70" y="52" font-family="Outfit, Arial, sans-serif" font-size="38" font-weight="700" fill="#1A1A2E">schutz</text>
+    <text x="195" y="52" font-family="Outfit, Arial, sans-serif" font-size="38" font-weight="700" fill="#0066CC">bar</text>
+</svg>

@@ -1,0 +1,66 @@
+# =============================================================================
+# risk-hub Ansible Inventory
+# =============================================================================
+#
+# Dynamisch befüllen nach Terraform Apply:
+#   terraform output -json | ./scripts/generate_inventory.py > inventory/hosts
+#
+# Oder manuell anpassen:
+# =============================================================================
+
+[all:vars]
+ansible_user=root
+ansible_python_interpreter=/usr/bin/python3
+environment=prod
+domain=risk-hub.de
+
+# Docker Registry (GitHub Container Registry)
+docker_registry=ghcr.io
+docker_image_prefix=bfagent/risk-hub
+
+# Database
+db_host=10.0.2.10
+db_port=5432
+db_name=risk_hub
+db_user=app
+
+# Redis
+redis_host=10.0.2.10
+redis_port=6379
+
+# S3 (Hetzner Object Storage)
+s3_endpoint=https://fsn1.your-objectstorage.com
+s3_bucket=risk-hub-documents
+
+# =============================================================================
+# Server Groups
+# =============================================================================
+
+[app]
+risk-hub-app-prod-1 ansible_host=10.0.1.10
+risk-hub-app-prod-2 ansible_host=10.0.1.11
+
+[worker]
+risk-hub-worker-prod ansible_host=10.0.1.50
+
+[database]
+risk-hub-db-prod ansible_host=10.0.2.10
+
+[monitoring]
+# Optional: Separater Monitoring Server
+# risk-hub-mon-prod ansible_host=10.0.1.100
+
+# =============================================================================
+# Group Assignments
+# =============================================================================
+
+[docker:children]
+app
+worker
+database
+
+[risk_hub:children]
+app
+worker
+database
+monitoring

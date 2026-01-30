@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="80" viewBox="0 0 300 80">
+    <defs>
+        <linearGradient id="accentGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#00D4A1"/>
+            <stop offset="100%" style="stop-color:#00A67E"/>
+        </linearGradient>
+    </defs>
+    <!-- Shield outline -->
+    <path d="M30 12 L55 7 L55 40 C55 58 42 68 30 72 C18 68 5 58 5 40 L5 7 Z" fill="none" stroke="url(#accentGrad)" stroke-width="3"/>
+    <!-- Inner shield fill -->
+    <path d="M30 18 L50 14 L50 38 C50 53 40 61 30 65 C20 61 10 53 10 38 L10 14 Z" fill="url(#accentGrad)" opacity="0.2"/>
+    <!-- Checkmark -->
+    <polyline points="18,38 26,46 42,28" stroke="#00D4A1" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Text White -->
+    <text x="70" y="52" font-family="Outfit, Arial, sans-serif" font-size="38" font-weight="700" fill="#FFFFFF">schutz</text>
+    <text x="195" y="52" font-family="Outfit, Arial, sans-serif" font-size="38" font-weight="700" fill="#00D4A1">bar</text>
+</svg>
