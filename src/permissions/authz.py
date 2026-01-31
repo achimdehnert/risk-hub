@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from bfagent_core import get_context
+from common.context import get_context
 from django.db.models import Q
 from django.utils import timezone
 

@@ -10,7 +10,8 @@ django.setup()
 
 from django.db import transaction
 from django.utils import timezone
-from bfagent_core.models import OutboxMessage
+
+from outbox.models import OutboxMessage
 
 POLL_SECONDS = 2
 

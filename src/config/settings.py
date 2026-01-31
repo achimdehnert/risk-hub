@@ -24,8 +24,6 @@ INSTALLED_APPS = [
     "django_htmx",
     "rest_framework",
     "django_filters",
-    # Shared packages
-    "bfagent_core",
     # Risk-Hub apps
     "common",
     "tenancy",

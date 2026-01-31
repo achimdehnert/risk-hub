@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from bfagent_core import get_context
+from common.context import get_context
 
 from documents.models import Document
 from permissions.authz import require_permission

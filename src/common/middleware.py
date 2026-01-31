@@ -2,7 +2,7 @@
 
 import uuid
 
-from bfagent_core import set_db_tenant, set_request_id, set_tenant, set_user_id
+from common.context import set_db_tenant, set_request_id, set_tenant, set_user_id
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
 from django.utils.deprecation import MiddlewareMixin

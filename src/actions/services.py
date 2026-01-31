@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
 
-from bfagent_core import get_context
+from common.context import get_context
 
 from actions.models import ActionItem
 from permissions.authz import require_permission

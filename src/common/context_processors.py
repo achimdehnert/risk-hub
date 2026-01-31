@@ -1,7 +1,8 @@
 """Template context processors."""
 
 from django.http import HttpRequest
-from bfagent_core import get_context
+
+from common.context import get_context
 
 
 def tenant_context(request: HttpRequest) -> dict:

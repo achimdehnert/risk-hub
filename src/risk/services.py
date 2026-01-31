@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from bfagent_core import emit_audit_event, emit_outbox_event, get_context
+from common.context import emit_audit_event, emit_outbox_event, get_context
 from django.db import transaction
 from django.utils import timezone
 
