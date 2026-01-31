@@ -55,6 +55,13 @@ from .services import (
     CreateExplosionConceptCmd,
     ValidateExplosionConceptCmd,
 )
+from .calculations import (
+    get_substance_properties,
+    list_substances,
+    calculate_zone_extent,
+    analyze_ventilation_effectiveness,
+    check_equipment_suitability,
+)
 
 
 class TenantAwareViewSet(viewsets.ModelViewSet):
@@ -479,3 +486,119 @@ class ZoneSummaryReportView(APIView):
             })
         
         return Response(result)
+
+
+# =============================================================================
+# CALCULATION TOOLS (migriert von expert_hub)
+# =============================================================================
+
+
+class SubstanceListView(APIView):
+    """Liste aller verfügbaren Stoffe in der Datenbank."""
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def get(self, request):
+        return Response({
+            "success": True,
+            "substances": list_substances(),
+            "count": len(list_substances()),
+        })
+
+
+class SubstanceDetailView(APIView):
+    """Stoffeigenschaften für einen bestimmten Stoff."""
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def get(self, request, name: str):
+        result = get_substance_properties(name)
+        if result.get("success"):
+            return Response(result)
+        return Response(result, status=404)
+
+
+class ZoneCalculateView(APIView):
+    """
+    Zonenberechnung nach TRGS 721.
+    
+    POST: {
+        "release_rate_kg_s": 0.001,
+        "ventilation_rate_m3_s": 0.5,
+        "substance_name": "aceton",  // optional
+        "room_volume_m3": 100,       // optional
+        "release_type": "jet"        // jet, pool, diffuse
+    }
+    """
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        data = request.data
+        
+        try:
+            result = calculate_zone_extent(
+                release_rate_kg_s=float(data.get("release_rate_kg_s", 0.001)),
+                ventilation_rate_m3_s=float(data.get("ventilation_rate_m3_s", 0.5)),
+                substance_name=data.get("substance_name"),
+                room_volume_m3=float(data["room_volume_m3"]) if data.get("room_volume_m3") else None,
+                release_type=data.get("release_type", "jet"),
+            )
+            return Response(result)
+        except (ValueError, TypeError) as e:
+            return Response({"success": False, "error": str(e)}, status=400)
+
+
+class EquipmentCheckView(APIView):
+    """
+    Equipment-Eignungsprüfung nach ATEX.
+    
+    POST: {
+        "ex_marking": "II 2G Ex d IIB T4",
+        "zone": "1"
+    }
+    """
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        data = request.data
+        
+        ex_marking = data.get("ex_marking", "")
+        zone = data.get("zone", "1")
+        
+        if not ex_marking:
+            return Response({
+                "success": False,
+                "error": "ex_marking ist erforderlich"
+            }, status=400)
+        
+        result = check_equipment_suitability(ex_marking, zone)
+        return Response(result)
+
+
+class VentilationAnalyzeView(APIView):
+    """
+    Lüftungseffektivität nach TRGS 722.
+    
+    POST: {
+        "room_volume_m3": 100,
+        "air_flow_m3_h": 1000,
+        "ventilation_type": "technisch"  // technisch, natürlich, keine
+    }
+    """
+    
+    permission_classes = [permissions.AllowAny]
+    
+    def post(self, request):
+        data = request.data
+        
+        try:
+            result = analyze_ventilation_effectiveness(
+                room_volume_m3=float(data.get("room_volume_m3", 100)),
+                air_flow_m3_h=float(data.get("air_flow_m3_h", 1000)),
+                ventilation_type=data.get("ventilation_type", "technisch"),
+            )
+            return Response(result)
+        except (ValueError, TypeError) as e:
+            return Response({"success": False, "error": str(e)}, status=400)

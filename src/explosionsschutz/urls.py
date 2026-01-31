@@ -63,6 +63,33 @@ urlpatterns = [
         name="concept-export-pdf"
     ),
     
+    # Calculation Tools (migriert von expert_hub)
+    path(
+        "tools/substances/",
+        views.SubstanceListView.as_view(),
+        name="substance-list"
+    ),
+    path(
+        "tools/substances/<str:name>/",
+        views.SubstanceDetailView.as_view(),
+        name="substance-detail"
+    ),
+    path(
+        "tools/zone-calculate/",
+        views.ZoneCalculateView.as_view(),
+        name="zone-calculate"
+    ),
+    path(
+        "tools/equipment-check/",
+        views.EquipmentCheckView.as_view(),
+        name="equipment-check"
+    ),
+    path(
+        "tools/ventilation-analyze/",
+        views.VentilationAnalyzeView.as_view(),
+        name="ventilation-analyze"
+    ),
+    
     # Dashboard & Reports
     path(
         "dashboard/",
