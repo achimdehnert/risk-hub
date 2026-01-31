@@ -71,7 +71,7 @@ class ZoneDefinitionForm(forms.ModelForm):
 
     class Meta:
         model = ZoneDefinition
-        fields = ["zone_type", "name", "description", "geometry_wkt"]
+        fields = ["zone_type", "name", "description", "justification"]
         widgets = {
             "zone_type": forms.Select(attrs={
                 "class": "w-full px-4 py-2 border border-gray-300 rounded-lg",
@@ -84,10 +84,10 @@ class ZoneDefinitionForm(forms.ModelForm):
                 "class": "w-full px-4 py-2 border border-gray-300 rounded-lg",
                 "rows": 3,
             }),
-            "geometry_wkt": forms.Textarea(attrs={
-                "class": "w-full px-4 py-2 border border-gray-300 rounded-lg font-mono",
+            "justification": forms.Textarea(attrs={
+                "class": "w-full px-4 py-2 border border-gray-300 rounded-lg",
                 "rows": 2,
-                "placeholder": "POLYGON((...)) - optional",
+                "placeholder": "Begründung für Zoneneinteilung",
             }),
         }
 
