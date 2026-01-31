@@ -286,11 +286,49 @@ class ExplosionConceptViewSet(TenantAwareViewSet):
     def export_pdf(self, request, pk=None):
         """Exportiert Ex-Konzept als PDF"""
         concept = self.get_object()
-        # PDF-Export wird über separaten Service implementiert
         return Response(
             {"message": "PDF export not yet implemented", "concept_id": str(concept.id)},
             status=status.HTTP_501_NOT_IMPLEMENTED
         )
+
+    @action(detail=True, methods=["get"])
+    def export_docx(self, request, pk=None):
+        """Exportiert Ex-Konzept als Word-Dokument"""
+        from django.http import HttpResponse
+        from .document_generator import ExSchutzDocumentGenerator
+
+        concept = self.get_object()
+        generator = ExSchutzDocumentGenerator(concept)
+
+        try:
+            generator.create_document()
+            buffer = generator.save_to_buffer()
+            filename = generator.get_filename()
+
+            response = HttpResponse(
+                buffer.getvalue(),
+                content_type="application/vnd.openxmlformats-officedocument"
+                             ".wordprocessingml.document"
+            )
+            response["Content-Disposition"] = f'attachment; filename="{filename}"'
+            return response
+        except ImportError:
+            return Response(
+                {"error": "python-docx nicht installiert"},
+                status=status.HTTP_501_NOT_IMPLEMENTED
+            )
+
+    @action(detail=True, methods=["get"])
+    def preview_html(self, request, pk=None):
+        """HTML-Vorschau des Ex-Konzepts"""
+        from django.http import HttpResponse
+        from .document_generator import ExSchutzDocumentGenerator
+
+        concept = self.get_object()
+        generator = ExSchutzDocumentGenerator(concept)
+        html = generator.get_html_preview()
+
+        return HttpResponse(html, content_type="text/html")
 
 
 class ZoneDefinitionViewSet(TenantAwareViewSet):
