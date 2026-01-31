@@ -17,6 +17,7 @@ from .template_views import (
     EquipmentListView,
     EquipmentDetailView,
     EquipmentCreateView,
+    ToolsView,
 )
 
 app_name = "explosionsschutz"
@@ -44,4 +45,6 @@ urlpatterns = [
         EquipmentDetailView.as_view(),
         name="equipment-detail-html"
     ),
+    # Tools
+    path("tools/", ToolsView.as_view(), name="tools"),
 ]

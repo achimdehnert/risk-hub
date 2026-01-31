@@ -3,13 +3,12 @@
 Template-basierte Views für Explosionsschutz-Modul (HTML-Seiten)
 """
 
-from uuid import UUID
-
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from .forms import AreaForm, ExplosionConceptForm, EquipmentForm
+from .calculations import list_substances
 from .models import (
     Area,
     ExplosionConcept,
@@ -347,4 +346,17 @@ class EquipmentCreateView(View):
         return render(request, self.template_name, {
             "form": form,
             "title": "Neues Betriebsmittel",
+        })
+
+
+class ToolsView(View):
+    """Berechnungstools für Explosionsschutz"""
+
+    template_name = "explosionsschutz/tools.html"
+
+    def get(self, request):
+        substances = list_substances()
+        return render(request, self.template_name, {
+            "substances": substances,
+            "substance_count": len(substances),
         })
