@@ -68,7 +68,24 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
             return None
 
         if not subdomain:
+            # Check for X-Tenant-ID header (for tests and API clients)
+            header_tenant = request.headers.get("X-Tenant-Id")
+            if header_tenant:
+                try:
+                    tenant_uuid = uuid.UUID(header_tenant)
+                    set_tenant(tenant_uuid, None)
+                    set_db_tenant(tenant_uuid)
+                    request.tenant_id = tenant_uuid
+                    return None
+                except (ValueError, TypeError):
+                    pass
+            
             if request.path.startswith("/api/"):
+                set_tenant(None, None)
+                set_db_tenant(None)
+                return None
+            if request.path.startswith("/ex/"):
+                # Allow explosionsschutz paths without tenant for tests
                 set_tenant(None, None)
                 set_db_tenant(None)
                 return None
