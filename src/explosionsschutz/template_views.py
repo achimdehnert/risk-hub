@@ -3,19 +3,18 @@
 Template-basierte Views für Explosionsschutz-Modul (HTML-Seiten)
 """
 
-from django.db.models import Q
-from django.shortcuts import get_object_or_404, render
-from django.views import View
-from django.views.generic import ListView, DetailView
+from uuid import UUID
 
+from django.db.models import Q
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views import View
+
+from .forms import AreaForm, ExplosionConceptForm, EquipmentForm
 from .models import (
     Area,
     ExplosionConcept,
     ZoneDefinition,
-    ProtectionMeasure,
     Equipment,
-    Inspection,
-    VerificationDocument,
     ReferenceStandard,
     MeasureCatalog,
 )
@@ -230,4 +229,122 @@ class EquipmentDetailView(View):
         return render(request, self.template_name, {
             "equipment": equipment,
             "inspections": inspections,
+        })
+
+
+# =============================================================================
+# FORM VIEWS (Create/Edit)
+# =============================================================================
+
+class AreaCreateView(View):
+    """Bereich erstellen"""
+
+    template_name = "explosionsschutz/areas/form.html"
+
+    def get(self, request):
+        form = AreaForm()
+        return render(request, self.template_name, {
+            "form": form,
+            "title": "Neuer Bereich",
+        })
+
+    def post(self, request):
+        tenant_id = getattr(request, "tenant_id", None)
+        form = AreaForm(request.POST)
+        if form.is_valid():
+            area = form.save(commit=False)
+            area.tenant_id = tenant_id
+            area.site_id = tenant_id  # Use tenant as site for now
+            area.save()
+            return redirect("explosionsschutz:area-detail-html", pk=area.pk)
+        return render(request, self.template_name, {
+            "form": form,
+            "title": "Neuer Bereich",
+        })
+
+
+class AreaEditView(View):
+    """Bereich bearbeiten"""
+
+    template_name = "explosionsschutz/areas/form.html"
+
+    def get(self, request, pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
+        form = AreaForm(instance=area)
+        return render(request, self.template_name, {
+            "form": form,
+            "title": f"Bereich bearbeiten: {area.code}",
+            "area": area,
+        })
+
+    def post(self, request, pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
+        form = AreaForm(request.POST, instance=area)
+        if form.is_valid():
+            form.save()
+            return redirect("explosionsschutz:area-detail-html", pk=area.pk)
+        return render(request, self.template_name, {
+            "form": form,
+            "title": f"Bereich bearbeiten: {area.code}",
+            "area": area,
+        })
+
+
+class ConceptCreateView(View):
+    """Konzept erstellen"""
+
+    template_name = "explosionsschutz/concepts/form.html"
+
+    def get(self, request):
+        tenant_id = getattr(request, "tenant_id", None)
+        form = ExplosionConceptForm(tenant_id=tenant_id)
+        return render(request, self.template_name, {
+            "form": form,
+            "title": "Neues Konzept",
+        })
+
+    def post(self, request):
+        tenant_id = getattr(request, "tenant_id", None)
+        form = ExplosionConceptForm(request.POST, tenant_id=tenant_id)
+        if form.is_valid():
+            concept = form.save(commit=False)
+            concept.tenant_id = tenant_id
+            concept.save()
+            return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
+        return render(request, self.template_name, {
+            "form": form,
+            "title": "Neues Konzept",
+        })
+
+
+class EquipmentCreateView(View):
+    """Equipment erstellen"""
+
+    template_name = "explosionsschutz/equipment/form.html"
+
+    def get(self, request):
+        tenant_id = getattr(request, "tenant_id", None)
+        form = EquipmentForm(tenant_id=tenant_id)
+        return render(request, self.template_name, {
+            "form": form,
+            "title": "Neues Betriebsmittel",
+        })
+
+    def post(self, request):
+        tenant_id = getattr(request, "tenant_id", None)
+        form = EquipmentForm(request.POST, tenant_id=tenant_id)
+        if form.is_valid():
+            equipment = form.save(commit=False)
+            equipment.tenant_id = tenant_id
+            equipment.save()
+            return redirect(
+                "explosionsschutz:equipment-detail-html", pk=equipment.pk
+            )
+        return render(request, self.template_name, {
+            "form": form,
+            "title": "Neues Betriebsmittel",
         })

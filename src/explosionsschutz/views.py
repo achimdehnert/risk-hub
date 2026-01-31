@@ -73,10 +73,17 @@ class TenantAwareViewSet(viewsets.ModelViewSet):
         return qs.none()
     
     def get_tenant_id(self) -> UUID | None:
-        """Holt tenant_id aus Request"""
+        """Holt tenant_id aus Request (User oder Header)"""
         user = self.request.user
-        if hasattr(user, "tenant_id"):
+        if hasattr(user, "tenant_id") and user.tenant_id:
             return user.tenant_id
+        # Fallback: Header für Tests
+        header_tenant = self.request.META.get("HTTP_X_TENANT_ID")
+        if header_tenant:
+            try:
+                return UUID(header_tenant)
+            except (ValueError, TypeError):
+                pass
         return None
     
     def perform_create(self, serializer):
@@ -190,7 +197,7 @@ class AreaViewSet(TenantAwareViewSet):
 
 class ExplosionConceptViewSet(TenantAwareViewSet):
     """API für Explosionsschutzkonzepte"""
-    queryset = ExplosionConcept.objects.select_related("area", "substance")
+    queryset = ExplosionConcept.objects.select_related("area")
     filterset_fields = ["status", "is_validated", "area_id"]
     search_fields = ["title", "area__name"]
     ordering = ["-created_at"]

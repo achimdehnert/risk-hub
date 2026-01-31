@@ -405,7 +405,7 @@ class TestIgnitionSourceAssessment:
         assessment = ZoneIgnitionSourceAssessment.objects.create(
             tenant_id=fixture_tenant_id,
             zone=fixture_zone_1,
-            ignition_source=IgnitionSource.HOT_SURFACES,
+            ignition_source=IgnitionSource.S1_HOT_SURFACES,
             is_present=True,
             is_effective=False,
             mitigation="Oberflächentemperatur < Zündtemperatur",
@@ -421,7 +421,7 @@ class TestIgnitionSourceAssessment:
         ZoneIgnitionSourceAssessment.objects.create(
             tenant_id=fixture_tenant_id,
             zone=fixture_zone_1,
-            ignition_source=IgnitionSource.ELECTRICAL_SPARKS,
+            ignition_source=IgnitionSource.S4_ELECTRICAL,
             is_present=True,
             is_effective=True,
         )
@@ -430,7 +430,7 @@ class TestIgnitionSourceAssessment:
             ZoneIgnitionSourceAssessment.objects.create(
                 tenant_id=fixture_tenant_id,
                 zone=fixture_zone_1,
-                ignition_source=IgnitionSource.ELECTRICAL_SPARKS,
+                ignition_source=IgnitionSource.S4_ELECTRICAL,
                 is_present=False,
                 is_effective=False,
             )

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Explosionsschutz{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="/ex/" class="hover:text-gray-700">Explosionsschutz</a>
+            <span class="mx-2">/</span>
+            <a href="/ex/concepts/" class="hover:text-gray-700">Konzepte</a>
+            <span class="mx-2">/</span>
+            <span>{{ title }}</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+    </div>
+
+    <!-- Form -->
+    <form method="post" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-center text-red-700">
+                <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
+                <span class="font-medium">Bitte korrigiere die Fehler:</span>
+            </div>
+            <ul class="mt-2 text-sm text-red-600 list-disc list-inside">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div>
+            <label for="id_area" class="block text-sm font-medium text-gray-700 mb-1">
+                Bereich *
+            </label>
+            {{ form.area }}
+            <p class="mt-1 text-sm text-gray-500">Bereich, für den das Konzept gilt</p>
+        </div>
+
+        <div>
+            <label for="id_title" class="block text-sm font-medium text-gray-700 mb-1">
+                Titel *
+            </label>
+            {{ form.title }}
+        </div>
+
+        <div>
+            <label for="id_substance_name" class="block text-sm font-medium text-gray-700 mb-1">
+                Gefahrstoff
+            </label>
+            {{ form.substance_name }}
+            <p class="mt-1 text-sm text-gray-500">z.B. Ethanol, Lösungsmittel</p>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <a href="/ex/concepts/" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                Abbrechen
+            </a>
+            <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                <i data-lucide="save" class="w-4 h-4 inline mr-2"></i>
+                Speichern
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

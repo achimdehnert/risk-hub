@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Explosionsschutz{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <!-- Header -->
+    <div class="mb-6">
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="/ex/" class="hover:text-gray-700">Explosionsschutz</a>
+            <span class="mx-2">/</span>
+            <a href="/ex/equipment/" class="hover:text-gray-700">Betriebsmittel</a>
+            <span class="mx-2">/</span>
+            <span>{{ title }}</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+    </div>
+
+    <!-- Form -->
+    <form method="post" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+        {% csrf_token %}
+        
+        {% if form.errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-center text-red-700">
+                <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
+                <span class="font-medium">Bitte korrigiere die Fehler:</span>
+            </div>
+            <ul class="mt-2 text-sm text-red-600 list-disc list-inside">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="id_area" class="block text-sm font-medium text-gray-700 mb-1">
+                    Bereich *
+                </label>
+                {{ form.area }}
+            </div>
+
+            <div>
+                <label for="id_zone" class="block text-sm font-medium text-gray-700 mb-1">
+                    Zone
+                </label>
+                {{ form.zone }}
+            </div>
+        </div>
+
+        <div>
+            <label for="id_equipment_type" class="block text-sm font-medium text-gray-700 mb-1">
+                Gerätetyp *
+            </label>
+            {{ form.equipment_type }}
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="id_serial_number" class="block text-sm font-medium text-gray-700 mb-1">
+                    Seriennummer *
+                </label>
+                {{ form.serial_number }}
+            </div>
+
+            <div>
+                <label for="id_asset_number" class="block text-sm font-medium text-gray-700 mb-1">
+                    Anlagennummer
+                </label>
+                {{ form.asset_number }}
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label for="id_installation_date" class="block text-sm font-medium text-gray-700 mb-1">
+                    Inbetriebnahme
+                </label>
+                {{ form.installation_date }}
+            </div>
+
+            <div>
+                <label for="id_location_description" class="block text-sm font-medium text-gray-700 mb-1">
+                    Standort
+                </label>
+                {{ form.location_description }}
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <a href="/ex/equipment/" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                Abbrechen
+            </a>
+            <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                <i data-lucide="save" class="w-4 h-4 inline mr-2"></i>
+                Speichern
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

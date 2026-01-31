@@ -481,14 +481,14 @@ class TestAssessIgnitionSource:
         ZoneIgnitionSourceAssessment.objects.create(
             tenant_id=fixture_tenant_id,
             zone=fixture_zone_1,
-            ignition_source=IgnitionSource.S3_ELECTRICAL_SPARKS,
+            ignition_source=IgnitionSource.S4_ELECTRICAL,
             is_present=True,
             is_effective=True,
         )
 
         cmd = AssessIgnitionSourceCmd(
             zone_id=fixture_zone_1.id,
-            ignition_source=IgnitionSource.S3_ELECTRICAL_SPARKS,
+            ignition_source=IgnitionSource.S4_ELECTRICAL,
             is_present=True,
             is_effective=False,
             mitigation="Ex-Schutz installiert",
