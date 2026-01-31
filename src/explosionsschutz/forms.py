@@ -104,7 +104,7 @@ class EquipmentForm(forms.ModelForm):
             "serial_number",
             "asset_number",
             "installation_date",
-            "location_description",
+            "location_detail",
         ]
         widgets = {
             "area": forms.Select(attrs={
@@ -128,7 +128,7 @@ class EquipmentForm(forms.ModelForm):
                 "class": "w-full px-4 py-2 border border-gray-300 rounded-lg",
                 "type": "date",
             }),
-            "location_description": forms.TextInput(attrs={
+            "location_detail": forms.TextInput(attrs={
                 "class": "w-full px-4 py-2 border border-gray-300 rounded-lg",
                 "placeholder": "z.B. Raum 101, neben Abfüllanlage",
             }),
