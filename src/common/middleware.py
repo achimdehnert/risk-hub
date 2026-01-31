@@ -79,13 +79,15 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                     return None
                 except (ValueError, TypeError):
                     pass
-            
-            if request.path.startswith("/api/"):
+
+            # Allow public paths without tenant
+            public_paths = ["/", "/api/", "/ex/", "/static/"]
+            if any(request.path == p or request.path.startswith(p)
+                   for p in public_paths if p != "/"):
                 set_tenant(None, None)
                 set_db_tenant(None)
                 return None
-            if request.path.startswith("/ex/"):
-                # Allow explosionsschutz paths without tenant for tests
+            if request.path == "/":
                 set_tenant(None, None)
                 set_db_tenant(None)
                 return None
