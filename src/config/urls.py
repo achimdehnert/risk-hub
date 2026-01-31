@@ -13,4 +13,6 @@ urlpatterns = [
     path("risk/", include("risk.urls")),
     path("documents/", include("documents.urls")),
     path("actions/", include("actions.urls")),
+    path("api/ex/", include("explosionsschutz.urls")),
+    path("ex/", include("explosionsschutz.html_urls")),
 ]

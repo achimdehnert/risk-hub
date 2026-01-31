@@ -20,7 +20,7 @@ RUN pip install --no-cache-dir -U pip \
 
 # Install main app dependencies
 COPY pyproject.toml /app/pyproject.toml
-RUN pip install --no-cache-dir Django dj-database-url "psycopg[binary]" python-dotenv django-htmx django-ninja pydantic boto3 httpx structlog jinja2 jsonschema tenacity gunicorn
+RUN pip install --no-cache-dir Django dj-database-url "psycopg[binary]" python-dotenv django-htmx django-ninja djangorestframework django-filter pydantic boto3 httpx structlog jinja2 jsonschema tenacity gunicorn
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

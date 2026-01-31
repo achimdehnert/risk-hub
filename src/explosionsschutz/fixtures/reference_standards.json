@@ -1,0 +1,242 @@
+[
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000001",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "ATEX 2014/34/EU",
+      "title": "ATEX-Produktrichtlinie - Geräte und Schutzsysteme zur bestimmungsgemäßen Verwendung in explosionsgefährdeten Bereichen",
+      "category": "directive",
+      "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:32014L0034",
+      "valid_from": "2016-04-20",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000002",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "ATEX 1999/92/EG",
+      "title": "ATEX-Betriebsrichtlinie - Mindestvorschriften zur Verbesserung des Gesundheitsschutzes und der Sicherheit der Arbeitnehmer",
+      "category": "directive",
+      "url": "https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:31999L0092",
+      "valid_from": "2003-07-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000010",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "EN 60079-10-1",
+      "title": "Explosionsfähige Atmosphäre - Einteilung der Bereiche - Gasexplosionsgefährdete Bereiche",
+      "category": "norm",
+      "url": "",
+      "valid_from": "2021-05-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000011",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "EN 60079-10-2",
+      "title": "Explosionsfähige Atmosphäre - Einteilung der Bereiche - Staubexplosionsgefährdete Bereiche",
+      "category": "norm",
+      "url": "",
+      "valid_from": "2015-09-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000012",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "EN 1127-1",
+      "title": "Explosionsfähige Atmosphären - Explosionsschutz - Grundlagen und Methodik",
+      "category": "norm",
+      "url": "",
+      "valid_from": "2019-10-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000013",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "EN 60079-0",
+      "title": "Explosionsfähige Atmosphäre - Betriebsmittel - Allgemeine Anforderungen",
+      "category": "norm",
+      "url": "",
+      "valid_from": "2018-04-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000014",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "EN 60079-14",
+      "title": "Explosionsfähige Atmosphäre - Projektierung, Auswahl und Errichtung elektrischer Anlagen",
+      "category": "norm",
+      "url": "",
+      "valid_from": "2014-08-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000015",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "EN 60079-17",
+      "title": "Explosionsfähige Atmosphäre - Prüfung und Instandhaltung elektrischer Anlagen",
+      "category": "norm",
+      "url": "",
+      "valid_from": "2014-02-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000020",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "TRGS 720",
+      "title": "Gefährliche explosionsfähige Gemische - Allgemeines",
+      "category": "trgs",
+      "url": "https://www.baua.de/DE/Angebote/Rechtstexte-und-Technische-Regeln/Regelwerk/TRGS/TRGS-720.html",
+      "valid_from": "2022-03-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000021",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "TRGS 721",
+      "title": "Gefährliche explosionsfähige Gemische - Beurteilung der Explosionsgefährdung",
+      "category": "trgs",
+      "url": "https://www.baua.de/DE/Angebote/Rechtstexte-und-Technische-Regeln/Regelwerk/TRGS/TRGS-721.html",
+      "valid_from": "2022-03-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000022",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "TRGS 722",
+      "title": "Vermeidung oder Einschränkung gefährlicher explosionsfähiger Gemische",
+      "category": "trgs",
+      "url": "https://www.baua.de/DE/Angebote/Rechtstexte-und-Technische-Regeln/Regelwerk/TRGS/TRGS-722.html",
+      "valid_from": "2022-03-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000023",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "TRGS 723",
+      "title": "Gefährliche explosionsfähige Gemische - Vermeidung der Entzündung gefährlicher explosionsfähiger Gemische",
+      "category": "trgs",
+      "url": "https://www.baua.de/DE/Angebote/Rechtstexte-und-Technische-Regeln/Regelwerk/TRGS/TRGS-723.html",
+      "valid_from": "2022-03-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000024",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "TRGS 724",
+      "title": "Gefährliche explosionsfähige Gemische - Konstruktiver Explosionsschutz, Maßnahmen zur Schadensbegrenzung",
+      "category": "trgs",
+      "url": "https://www.baua.de/DE/Angebote/Rechtstexte-und-Technische-Regeln/Regelwerk/TRGS/TRGS-724.html",
+      "valid_from": "2022-03-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000030",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "TRBS 2152",
+      "title": "Gefährliche explosionsfähige Atmosphäre",
+      "category": "trgs",
+      "url": "https://www.baua.de/DE/Angebote/Rechtstexte-und-Technische-Regeln/Regelwerk/TRBS/TRBS-2152.html",
+      "valid_from": "2022-03-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.referencestandard",
+    "pk": "00000000-0000-0000-0001-000000000031",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "TRBS 1201",
+      "title": "Prüfungen und Kontrollen von Arbeitsmitteln und überwachungsbedürftigen Anlagen",
+      "category": "trgs",
+      "url": "https://www.baua.de/DE/Angebote/Rechtstexte-und-Technische-Regeln/Regelwerk/TRBS/TRBS-1201.html",
+      "valid_from": "2019-10-01",
+      "valid_until": null,
+      "is_system": true
+    }
+  }
+]

@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+
+{% block title %}{{ area.name }} - Explosionsschutz{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <nav class="text-sm text-gray-500 mb-2">
+                <a href="/ex/" class="hover:text-gray-700">Explosionsschutz</a>
+                <span class="mx-2">/</span>
+                <a href="/ex/areas/" class="hover:text-gray-700">Bereiche</a>
+                <span class="mx-2">/</span>
+                <span>{{ area.code }}</span>
+            </nav>
+            <div class="flex items-center space-x-3">
+                <h1 class="text-2xl font-bold text-gray-900">{{ area.name }}</h1>
+                {% if area.has_explosion_hazard %}
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 mr-1"></i>
+                    Ex-Bereich
+                </span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex space-x-3">
+            <a href="/ex/areas/{{ area.id }}/edit/" class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
+                Bearbeiten
+            </a>
+            <a href="/ex/concepts/new/?area={{ area.id }}" class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Neues Konzept
+            </a>
+        </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Ex-Konzepte</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ concepts|length }}</p>
+                </div>
+                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="file-text" class="w-5 h-5 text-orange-600"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Betriebsmittel</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ equipment|length }}</p>
+                </div>
+                <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="cpu" class="w-5 h-5 text-purple-600"></i>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Zonen</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ zones_count }}</p>
+                </div>
+                <div class="w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="target" class="w-5 h-5 text-red-600"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Details</h2>
+        </div>
+        <div class="p-6">
+            <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Code</dt>
+                    <dd class="mt-1 text-gray-900">{{ area.code }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm font-medium text-gray-500">Standort-ID</dt>
+                    <dd class="mt-1 text-gray-900 font-mono text-sm">{{ area.site_id }}</dd>
+                </div>
+                <div class="md:col-span-2">
+                    <dt class="text-sm font-medium text-gray-500">Beschreibung</dt>
+                    <dd class="mt-1 text-gray-900">{{ area.description|default:"Keine Beschreibung" }}</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+
+    <!-- Concepts -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-900">Explosionsschutzkonzepte</h2>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for concept in concepts %}
+            <a href="/ex/concepts/{{ concept.id }}/" class="block px-6 py-4 hover:bg-gray-50">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-medium text-gray-900">{{ concept.title }}</p>
+                        <p class="text-sm text-gray-500">Version {{ concept.version }}</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        {% if concept.status == "draft" %}
+                        <span class="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Entwurf</span>
+                        {% elif concept.status == "approved" %}
+                        <span class="px-2 py-1 text-xs rounded bg-green-100 text-green-800">Freigegeben</span>
+                        {% elif concept.status == "archived" %}
+                        <span class="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800">Archiviert</span>
+                        {% endif %}
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="px-6 py-8 text-center text-gray-500">
+                <p>Keine Konzepte vorhanden</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Equipment -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <h2 class="text-lg font-semibold text-gray-900">Betriebsmittel</h2>
+            <a href="/ex/equipment/new/?area={{ area.id }}" class="text-sm text-orange-600 hover:text-orange-700">
+                + Hinzufügen
+            </a>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for eq in equipment %}
+            <a href="/ex/equipment/{{ eq.id }}/" class="block px-6 py-4 hover:bg-gray-50">
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="font-medium text-gray-900">{{ eq.equipment_type.manufacturer }} {{ eq.equipment_type.model }}</p>
+                        <p class="text-sm text-gray-500">S/N: {{ eq.serial_number }}</p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span class="text-xs text-gray-500">{{ eq.equipment_type.full_atex_marking }}</span>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-gray-400"></i>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="px-6 py-8 text-center text-gray-500">
+                <p>Keine Betriebsmittel vorhanden</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

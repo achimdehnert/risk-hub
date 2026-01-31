@@ -1,0 +1,268 @@
+[
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000001",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "P-SUB-001",
+      "title": "Substitution brennbarer durch nicht brennbare Stoffe",
+      "description_template": "Ersatz brennbarer Stoffe durch nicht brennbare Alternativen, z.B. wasserbasierte statt lösemittelhaltige Produkte.",
+      "default_type": "primary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000002",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "P-CON-001",
+      "title": "Konzentrationsbegrenzung unter UEG",
+      "description_template": "Begrenzung der Konzentration brennbarer Stoffe auf einen Wert deutlich unter der unteren Explosionsgrenze (UEG) durch Verdünnung oder Absaugung.",
+      "default_type": "primary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000003",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "P-INE-001",
+      "title": "Inertisierung mit Stickstoff",
+      "description_template": "Verdrängung des Sauerstoffs durch Stickstoff zur Vermeidung explosionsfähiger Gemische. Sauerstoffgehalt < LOC.",
+      "default_type": "primary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000004",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "P-INE-002",
+      "title": "Inertisierung mit Kohlendioxid",
+      "description_template": "Verdrängung des Sauerstoffs durch CO2 zur Vermeidung explosionsfähiger Gemische.",
+      "default_type": "primary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000005",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "P-VEN-001",
+      "title": "Technische Lüftung / Absaugung",
+      "description_template": "Installation einer technischen Lüftungsanlage zur Verdünnung und Abführung brennbarer Dämpfe/Gase unter die UEG.",
+      "default_type": "primary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000010",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "S-EQU-001",
+      "title": "Einsatz explosionsgeschützter Betriebsmittel",
+      "description_template": "Auswahl und Einsatz von Betriebsmitteln mit geeigneter ATEX-Kategorie entsprechend der Zoneneinteilung.",
+      "default_type": "secondary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000011",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "S-GRO-001",
+      "title": "Potentialausgleich / Erdung",
+      "description_template": "Installation eines Potentialausgleichssystems zur Vermeidung elektrostatischer Aufladung und Funkenbildung.",
+      "default_type": "secondary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000012",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "S-TEM-001",
+      "title": "Temperaturüberwachung",
+      "description_template": "Überwachung der Oberflächentemperaturen zur Sicherstellung, dass diese unter der Zündtemperatur des Stoffes bleiben.",
+      "default_type": "secondary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000013",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "S-SPA-001",
+      "title": "Funkenfreies Werkzeug",
+      "description_template": "Verwendung von funkenfreiem Werkzeug aus Bronze, Beryllium-Kupfer oder Kunststoff in Ex-Bereichen.",
+      "default_type": "secondary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000014",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "S-ESD-001",
+      "title": "Antistatische Kleidung und Schuhe",
+      "description_template": "Tragen von antistatischer Arbeitskleidung und ableitfähigem Schuhwerk zur Vermeidung elektrostatischer Entladungen.",
+      "default_type": "secondary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000020",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "T-VEN-001",
+      "title": "Explosionsdruckentlastung",
+      "description_template": "Installation von Berstscheiben oder Explosionsklappen zur kontrollierten Druckentlastung im Explosionsfall.",
+      "default_type": "tertiary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000021",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "T-SUP-001",
+      "title": "Explosionsunterdrückung",
+      "description_template": "Automatisches Löschsystem zur aktiven Unterdrückung einer beginnenden Explosion durch Löschmitteleinspritzung.",
+      "default_type": "tertiary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000022",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "T-ISO-001",
+      "title": "Explosionsentkopplung / -isolation",
+      "description_template": "Verhinderung der Explosionsübertragung auf benachbarte Anlagenteile durch Schieber, Zellenradschleusen oder Löschmittelsperren.",
+      "default_type": "tertiary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000023",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "T-RES-001",
+      "title": "Explosionsfeste Bauweise",
+      "description_template": "Auslegung von Behältern und Anlagenteilen für den maximalen Explosionsdruck (explosionsfest/druckstoßfest).",
+      "default_type": "tertiary",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000030",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "O-TRA-001",
+      "title": "Schulung und Unterweisung",
+      "description_template": "Regelmäßige Schulung der Mitarbeiter zu Explosionsgefahren, Schutzmaßnahmen und Verhaltensregeln.",
+      "default_type": "organizational",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000031",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "O-PER-001",
+      "title": "Arbeitsfreigabeverfahren",
+      "description_template": "Schriftliches Freigabeverfahren für Arbeiten in Ex-Bereichen mit Risikobeurteilung und Schutzmaßnahmen.",
+      "default_type": "organizational",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000032",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "O-SIG-001",
+      "title": "Ex-Zonen-Kennzeichnung",
+      "description_template": "Sichtbare Kennzeichnung aller Ex-Bereiche mit genormten Warnschildern an allen Zugängen.",
+      "default_type": "organizational",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000033",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "O-INS-001",
+      "title": "Wiederkehrende Prüfungen",
+      "description_template": "Regelmäßige Prüfung aller Ex-geschützten Betriebsmittel nach TRBS 1201 durch befähigte Personen.",
+      "default_type": "organizational",
+      "is_system": true
+    }
+  },
+  {
+    "model": "explosionsschutz.measurecatalog",
+    "pk": "00000000-0000-0000-0002-000000000034",
+    "fields": {
+      "tenant_id": null,
+      "created_at": "2024-01-01T00:00:00Z",
+      "updated_at": "2024-01-01T00:00:00Z",
+      "code": "O-DOC-001",
+      "title": "Explosionsschutzdokument",
+      "description_template": "Erstellung und Pflege des Explosionsschutzdokuments nach GefStoffV § 6 und BetrSichV.",
+      "default_type": "organizational",
+      "is_system": true
+    }
+  }
+]

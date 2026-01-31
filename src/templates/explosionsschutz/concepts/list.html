@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Ex-Konzepte - Explosionsschutz{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <nav class="text-sm text-gray-500 mb-2">
+                <a href="/ex/" class="hover:text-gray-700">Explosionsschutz</a>
+                <span class="mx-2">/</span>
+                <span>Ex-Konzepte</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900">Explosionsschutzkonzepte</h1>
+        </div>
+        <a href="/ex/concepts/new/" class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
+            <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+            Neues Konzept
+        </a>
+    </div>
+
+    <!-- Filter -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <form method="get" class="flex flex-wrap gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <input type="text" name="search" value="{{ request.GET.search }}" 
+                       placeholder="Titel suchen..." 
+                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500">
+            </div>
+            <div>
+                <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg" aria-label="Status Filter">
+                    <option value="">Alle Status</option>
+                    <option value="draft" {% if request.GET.status == "draft" %}selected{% endif %}>Entwurf</option>
+                    <option value="in_review" {% if request.GET.status == "in_review" %}selected{% endif %}>In Prüfung</option>
+                    <option value="approved" {% if request.GET.status == "approved" %}selected{% endif %}>Freigegeben</option>
+                    <option value="archived" {% if request.GET.status == "archived" %}selected{% endif %}>Archiviert</option>
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Filtern
+            </button>
+        </form>
+    </div>
+
+    <!-- Concepts Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for concept in concepts %}
+        <a href="/ex/concepts/{{ concept.id }}/" class="block bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition">
+            <div class="p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <i data-lucide="file-text" class="w-5 h-5 text-orange-600"></i>
+                    </div>
+                    {% if concept.status == "draft" %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Entwurf</span>
+                    {% elif concept.status == "in_review" %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">In Prüfung</span>
+                    {% elif concept.status == "approved" %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Freigegeben</span>
+                    {% elif concept.status == "archived" %}
+                    <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">Archiviert</span>
+                    {% endif %}
+                </div>
+                <h3 class="font-semibold text-gray-900 mb-1">{{ concept.title }}</h3>
+                <p class="text-sm text-gray-500 mb-3">{{ concept.area.name }}</p>
+                <div class="flex items-center justify-between text-sm">
+                    <span class="text-gray-500">Version {{ concept.version }}</span>
+                    <div class="flex items-center space-x-2">
+                        {% if concept.is_validated %}
+                        <span class="text-green-600" title="Validiert">
+                            <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        </span>
+                        {% endif %}
+                        <span class="text-gray-400">{{ concept.zones.count }} Zonen</span>
+                    </div>
+                </div>
+            </div>
+        </a>
+        {% empty %}
+        <div class="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+            <i data-lucide="file-text" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
+            <h3 class="font-medium text-gray-900 mb-2">Keine Konzepte vorhanden</h3>
+            <p class="text-gray-500 mb-4">Erstelle dein erstes Explosionsschutzkonzept</p>
+            <a href="/ex/concepts/new/" class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Neues Konzept
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if is_paginated %}
+    <div class="flex justify-center">
+        <nav class="flex space-x-2">
+            {% if page_obj.has_previous %}
+            <a href="?page={{ page_obj.previous_page_number }}" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Zurück</a>
+            {% endif %}
+            <span class="px-4 py-2 text-gray-600">Seite {{ page_obj.number }} von {{ page_obj.paginator.num_pages }}</span>
+            {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="px-4 py-2 border rounded-lg hover:bg-gray-50">Weiter</a>
+            {% endif %}
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

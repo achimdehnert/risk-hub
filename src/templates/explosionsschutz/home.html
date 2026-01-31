@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Explosionsschutz - Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <h1 class="text-3xl font-bold text-gray-900">Explosionsschutz</h1>
+            <p class="mt-1 text-gray-500">Verwaltung von Ex-Konzepten nach ATEX/BetrSichV</p>
+        </div>
+        <a href="/ex/concepts/new/" class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
+            <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+            Neues Konzept
+        </a>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Bereiche</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ stats.areas }}</p>
+                </div>
+                <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="map-pin" class="w-6 h-6 text-blue-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Ex-Konzepte</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ stats.concepts }}</p>
+                </div>
+                <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="file-text" class="w-6 h-6 text-orange-600"></i>
+                </div>
+            </div>
+            <div class="mt-2 flex space-x-2 text-xs">
+                <span class="px-2 py-1 bg-yellow-100 text-yellow-700 rounded">{{ stats.concepts_draft }} Entwurf</span>
+                <span class="px-2 py-1 bg-green-100 text-green-700 rounded">{{ stats.concepts_approved }} Freigegeben</span>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Zonen</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ stats.zones }}</p>
+                </div>
+                <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm text-gray-500">Betriebsmittel</p>
+                    <p class="text-3xl font-bold text-gray-900">{{ stats.equipment }}</p>
+                </div>
+                <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="cpu" class="w-6 h-6 text-purple-600"></i>
+                </div>
+            </div>
+            {% if stats.inspections_due > 0 %}
+            <div class="mt-2">
+                <span class="px-2 py-1 bg-red-100 text-red-700 rounded text-xs">{{ stats.inspections_due }} Prüfung fällig</span>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="/ex/areas/" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-blue-500 rounded-lg flex items-center justify-center">
+                    <i data-lucide="map" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-900">Bereiche verwalten</h3>
+                    <p class="text-sm text-gray-500">Betriebsbereiche anlegen und bearbeiten</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="/ex/concepts/" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-orange-500 rounded-lg flex items-center justify-center">
+                    <i data-lucide="clipboard-list" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-900">Ex-Konzepte</h3>
+                    <p class="text-sm text-gray-500">Explosionsschutzkonzepte erstellen</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="/ex/equipment/" class="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+            <div class="flex items-center space-x-4">
+                <div class="w-12 h-12 bg-purple-500 rounded-lg flex items-center justify-center">
+                    <i data-lucide="settings" class="w-6 h-6 text-white"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-900">Betriebsmittel</h3>
+                    <p class="text-sm text-gray-500">ATEX-Geräte und Prüfungen</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Letzte Aktivitäten</h2>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for activity in recent_activities %}
+            <div class="px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
+                        <i data-lucide="{{ activity.icon }}" class="w-4 h-4 text-gray-600"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">{{ activity.title }}</p>
+                        <p class="text-xs text-gray-500">{{ activity.description }}</p>
+                    </div>
+                </div>
+                <span class="text-xs text-gray-400">{{ activity.time }}</span>
+            </div>
+            {% empty %}
+            <div class="px-6 py-8 text-center text-gray-500">
+                <i data-lucide="inbox" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+                <p>Noch keine Aktivitäten</p>
+                <p class="text-sm">Erstelle dein erstes Ex-Konzept um loszulegen</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Master Data Section -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-900">Regelwerke</h2>
+                <span class="text-sm text-gray-500">{{ stats.standards }} Einträge</span>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-4">ATEX-Richtlinien, EN-Normen, TRGS/TRBS</p>
+                <a href="/api/ex/master/standards/" class="text-sm text-orange-600 hover:text-orange-700">
+                    Alle anzeigen →
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                <h2 class="text-lg font-semibold text-gray-900">Maßnahmenkatalog</h2>
+                <span class="text-sm text-gray-500">{{ stats.measures }} Vorlagen</span>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 mb-4">Primäre, sekundäre und tertiäre Schutzmaßnahmen</p>
+                <a href="/api/ex/master/catalog/" class="text-sm text-orange-600 hover:text-orange-700">
+                    Alle anzeigen →
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -38,7 +38,7 @@ services:
       DJANGO_SETTINGS_MODULE: config.settings
       DATABASE_URL: postgres://${POSTGRES_USER:-risk_hub}:${POSTGRES_PASSWORD}@risk-hub-db:5432/${POSTGRES_DB:-risk_hub}
       REDIS_URL: redis://risk-hub-redis:6379/0
-      ALLOWED_HOSTS: ${ALLOWED_HOSTS:-risk-hub.schutztat.de,schutztat.de,localhost}
+      DJANGO_ALLOWED_HOSTS: ${ALLOWED_HOSTS:-risk-hub.schutztat.de,schutztat.de,localhost}
       SECRET_KEY: ${SECRET_KEY}
       DEBUG: "false"
     depends_on:
@@ -47,6 +47,8 @@ services:
       risk-hub-redis:
         condition: service_healthy
     command: ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "config.wsgi:application"]
+    ports:
+      - "127.0.0.1:8090:8000"
     networks:
       - risk_hub_network
 

@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>LLM Registry &#8212; Platform Documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=d1102ebc" />
+    <link rel="stylesheet" type="text/css" href="../../_static/basic.css?v=686e5160" />
+    <link rel="stylesheet" type="text/css" href="../../_static/alabaster.css?v=27fed22d" />
+    <script src="../../_static/documentation_options.js?v=8d563738"></script>
+    <script src="../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Usage Tracker" href="usage-tracker.html" />
+    <link rel="prev" title="LLM Client" href="llm-client.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+
+  
+  
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <section id="llm-registry">
+<h1>LLM Registry<a class="headerlink" href="#llm-registry" title="Link to this heading">¶</a></h1>
+<p>The registry system enables dynamic, tier-based LLM selection without code changes.</p>
+<section id="concepts">
+<h2>Concepts<a class="headerlink" href="#concepts" title="Link to this heading">¶</a></h2>
+<section id="llmtier">
+<h3>LLMTier<a class="headerlink" href="#llmtier" title="Link to this heading">¶</a></h3>
+<p>Quality/cost tiers for model selection:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">class</span> <span class="nc">LLMTier</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">Enum</span><span class="p">):</span>
+    <span class="n">ECONOMY</span> <span class="o">=</span> <span class="s2">&quot;economy&quot;</span>    <span class="c1"># Cheapest, high volume</span>
+    <span class="n">STANDARD</span> <span class="o">=</span> <span class="s2">&quot;standard&quot;</span>  <span class="c1"># Balanced quality/cost</span>
+    <span class="n">PREMIUM</span> <span class="o">=</span> <span class="s2">&quot;premium&quot;</span>    <span class="c1"># Best quality</span>
+    <span class="n">LOCAL</span> <span class="o">=</span> <span class="s2">&quot;local&quot;</span>        <span class="c1"># Privacy, offline</span>
+</pre></div>
+</div>
+</section>
+<section id="llmentry">
+<h3>LLMEntry<a class="headerlink" href="#llmentry" title="Link to this heading">¶</a></h3>
+<p>Represents a configured LLM:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">LLMEntry</span><span class="p">:</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">provider</span><span class="p">:</span> <span class="nb">str</span>          <span class="c1"># &quot;openai&quot;, &quot;anthropic&quot;, etc.</span>
+    <span class="n">model</span><span class="p">:</span> <span class="nb">str</span>             <span class="c1"># &quot;gpt-4o-mini&quot;, etc.</span>
+    <span class="n">tier</span><span class="p">:</span> <span class="n">LLMTier</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">api_endpoint</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+    <span class="n">max_tokens</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4096</span>
+    <span class="n">temperature</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.7</span>
+    <span class="n">cost_per_1k_input</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">cost_per_1k_output</span><span class="p">:</span> <span class="nb">float</span>
+    <span class="n">is_active</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="registry-implementations">
+<h2>Registry Implementations<a class="headerlink" href="#registry-implementations" title="Link to this heading">¶</a></h2>
+<section id="dictregistry">
+<h3>DictRegistry<a class="headerlink" href="#dictregistry" title="Link to this heading">¶</a></h3>
+<p>In-memory registry for simple deployments:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">creative_services</span> <span class="kn">import</span> <span class="n">DictRegistry</span>
+
+<span class="c1"># Create from environment variables</span>
+<span class="n">registry</span> <span class="o">=</span> <span class="n">DictRegistry</span><span class="o">.</span><span class="n">from_env</span><span class="p">()</span>
+
+<span class="c1"># List active LLMs</span>
+<span class="k">for</span> <span class="n">llm</span> <span class="ow">in</span> <span class="n">registry</span><span class="o">.</span><span class="n">list_active</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">llm</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s2"> (</span><span class="si">{</span><span class="n">llm</span><span class="o">.</span><span class="n">tier</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+
+<span class="c1"># Get by tier</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get_by_tier</span><span class="p">(</span><span class="n">LLMTier</span><span class="o">.</span><span class="n">STANDARD</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="djangollmregistry">
+<h3>DjangoLLMRegistry<a class="headerlink" href="#djangollmregistry" title="Link to this heading">¶</a></h3>
+<p>Database-driven registry for production:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">creative_services.adapters</span> <span class="kn">import</span> <span class="n">DjangoLLMRegistry</span>
+
+<span class="c1"># Uses Django Llms model</span>
+<span class="n">registry</span> <span class="o">=</span> <span class="n">DjangoLLMRegistry</span><span class="p">()</span>
+
+<span class="c1"># Same interface as DictRegistry</span>
+<span class="n">llm</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get_by_tier</span><span class="p">(</span><span class="n">LLMTier</span><span class="o">.</span><span class="n">PREMIUM</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="dynamicllmclient">
+<h2>DynamicLLMClient<a class="headerlink" href="#dynamicllmclient" title="Link to this heading">¶</a></h2>
+<p>Client that uses registry for model selection:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">creative_services</span> <span class="kn">import</span> <span class="n">DictRegistry</span><span class="p">,</span> <span class="n">DynamicLLMClient</span><span class="p">,</span> <span class="n">LLMTier</span>
+
+<span class="n">registry</span> <span class="o">=</span> <span class="n">DictRegistry</span><span class="o">.</span><span class="n">from_env</span><span class="p">()</span>
+<span class="n">client</span> <span class="o">=</span> <span class="n">DynamicLLMClient</span><span class="p">(</span><span class="n">registry</span><span class="p">)</span>
+
+<span class="c1"># Automatically selects best model for tier</span>
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Write a story&quot;</span><span class="p">,</span>
+    <span class="n">tier</span><span class="o">=</span><span class="n">LLMTier</span><span class="o">.</span><span class="n">STANDARD</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="c1"># Or specify LLM by ID</span>
+<span class="n">response</span> <span class="o">=</span> <span class="k">await</span> <span class="n">client</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
+    <span class="n">prompt</span><span class="o">=</span><span class="s2">&quot;Write a story&quot;</span><span class="p">,</span>
+    <span class="n">llm_id</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="tier-mappings">
+<h2>Tier Mappings<a class="headerlink" href="#tier-mappings" title="Link to this heading">¶</a></h2>
+<p>Default models per tier when using <code class="docutils literal notranslate"><span class="pre">DictRegistry.from_env()</span></code>:</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 15.0%" />
+<col style="width: 30.0%" />
+<col style="width: 30.0%" />
+<col style="width: 25.0%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p>Tier</p></th>
+<th class="head"><p>OpenAI</p></th>
+<th class="head"><p>Anthropic</p></th>
+<th class="head"><p>Groq</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ECONOMY</p></td>
+<td><p>GPT-3.5 Turbo</p></td>
+<td><p>Claude 3 Haiku</p></td>
+<td><p>Llama 3.3 70B</p></td>
+</tr>
+<tr class="row-odd"><td><p>STANDARD</p></td>
+<td><p>GPT-4o-mini</p></td>
+<td><p>Claude 3.5 Sonnet</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-even"><td><p>PREMIUM</p></td>
+<td><p>GPT-4o</p></td>
+<td><p>Claude 3 Opus</p></td>
+<td><p>N/A</p></td>
+</tr>
+<tr class="row-odd"><td><p>LOCAL</p></td>
+<td><p>N/A</p></td>
+<td><p>N/A</p></td>
+<td><p>Ollama</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="selection-logic">
+<h2>Selection Logic<a class="headerlink" href="#selection-logic" title="Link to this heading">¶</a></h2>
+<p>When requesting a tier, the registry:</p>
+<ol class="arabic simple">
+<li><p>Filters active LLMs matching the tier</p></li>
+<li><p>Sorts by cost (cheapest first)</p></li>
+<li><p>Returns the first available LLM</p></li>
+</ol>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">get_by_tier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tier</span><span class="p">:</span> <span class="n">LLMTier</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LLMEntry</span><span class="p">]:</span>
+    <span class="n">matching</span> <span class="o">=</span> <span class="p">[</span><span class="n">e</span> <span class="k">for</span> <span class="n">e</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_entries</span> <span class="k">if</span> <span class="n">e</span><span class="o">.</span><span class="n">tier</span> <span class="o">==</span> <span class="n">tier</span> <span class="ow">and</span> <span class="n">e</span><span class="o">.</span><span class="n">is_active</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">matching</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
+    <span class="k">return</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">matching</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="n">e</span><span class="o">.</span><span class="n">cost_per_1k_input</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+</div>
+</section>
+<section id="custom-registry">
+<h2>Custom Registry<a class="headerlink" href="#custom-registry" title="Link to this heading">¶</a></h2>
+<p>Implement the <code class="docutils literal notranslate"><span class="pre">LLMRegistry</span></code> protocol for custom backends:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">creative_services.core.llm_registry</span> <span class="kn">import</span> <span class="n">LLMRegistry</span>
+
+<span class="k">class</span> <span class="nc">MyCustomRegistry</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">get_by_id</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">llm_id</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LLMEntry</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span> <span class="nf">get_by_tier</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tier</span><span class="p">:</span> <span class="n">LLMTier</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="n">LLMEntry</span><span class="p">]:</span>
+        <span class="o">...</span>
+
+    <span class="k">def</span> <span class="nf">list_active</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="n">LLMEntry</span><span class="p">]:</span>
+        <span class="o">...</span>
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../../index.html">Platform</a></h1>
+
+
+
+
+
+
+
+
+
+<search id="searchbox" style="display: none" role="search">
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" placeholder="Search"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p class="caption" role="heading"><span class="caption-text">Overview</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../architecture.html">Architecture</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Packages</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="index.html">Creative Services Package</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="index.html#overview">Overview</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#installation">Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#quick-start">Quick Start</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#environment-variables">Environment Variables</a></li>
+<li class="toctree-l2"><a class="reference internal" href="index.html#package-structure">Package Structure</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="index.html#contents">Contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="llm-client.html">LLM Client</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">LLM Registry</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#concepts">Concepts</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#registry-implementations">Registry Implementations</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#dynamicllmclient">DynamicLLMClient</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#tier-mappings">Tier Mappings</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#selection-logic">Selection Logic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#custom-registry">Custom Registry</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="usage-tracker.html">Usage Tracker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="adapters.html">Adapters</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Integration</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../integration/bfagent.html">BFAgent Integration</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../integration/travel-beat.html">TravelBeat Integration</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Modules</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../explosionsschutz/index.html">Explosionsschutz-Modul</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Development</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/contributing.html">Contributing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../dev/testing.html">Testing</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="index.html">Creative Services Package</a><ul>
+      <li>Previous: <a href="llm-client.html" title="previous chapter">LLM Client</a></li>
+      <li>Next: <a href="usage-tracker.html" title="next chapter">Usage Tracker</a></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &#169;2026, Platform Team.
+      
+      |
+      Powered by <a href="https://www.sphinx-doc.org/">Sphinx 8.1.3</a>
+      &amp; <a href="https://alabaster.readthedocs.io">Alabaster 1.0.0</a>
+      
+      |
+      <a href="../../_sources/packages/creative-services/llm-registry.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
