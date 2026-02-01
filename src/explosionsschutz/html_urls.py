@@ -31,6 +31,7 @@ urlpatterns = [
     path("areas/<uuid:pk>/edit/", AreaEditView.as_view(), name="area-edit"),
     # Concepts
     path("concepts/", ConceptListView.as_view(), name="concept-list-html"),
+    path("concepts/new/", ConceptCreateView.as_view(), name="concept-new"),
     path("concepts/create/", ConceptCreateView.as_view(), name="concept-create"),
     path(
         "concepts/<uuid:pk>/",
