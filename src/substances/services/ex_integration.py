@@ -229,18 +229,17 @@ class ExIntegrationService:
                 )
 
         # Temperaturklasse prüfen
-        if required_temp_class and required_temp_class not in equipment_marking:
-            # Prüfe ob höhere Temp-Klasse vorhanden
+        # T6 ist die niedrigste Zündtemp (<85°C), T1 die höchste (>450°C)
+        # Geräte mit niedrigerer Temp-Klasse (T6<T5<T4<T3<T2<T1) sind sicherer
+        if required_temp_class:
             temp_order = ["T6", "T5", "T4", "T3", "T2", "T1"]
             req_idx = temp_order.index(required_temp_class)
-            found_higher = False
-            for t in temp_order[req_idx:]:
-                if t in equipment_marking:
-                    found_higher = True
-                    break
-            if not found_higher:
+            # Alle Klassen bis inkl. der erforderlichen sind akzeptabel
+            acceptable_classes = temp_order[:req_idx + 1]
+            found = any(t in equipment_marking for t in acceptable_classes)
+            if not found:
                 issues.append(
-                    f"Temperaturklasse {required_temp_class} oder höher "
+                    f"Temperaturklasse {required_temp_class} oder niedriger "
                     f"erforderlich (Zündtemp. {ex_data.ignition_temperature_c}°C)"
                 )
 
