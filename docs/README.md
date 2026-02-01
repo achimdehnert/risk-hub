@@ -20,9 +20,10 @@ Enterprise SaaS Platform für EHS/Risikomanagement (Brandschutz, Explosionsschut
 │  │  │   risk   │ │ actions  │ │documents │ │reporting │  DOMAIN   │   │
 │  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘           │   │
 │  │                                                                  │   │
-│  │  ┌──────────┐ ┌──────────┐                                      │   │
-│  │  │  outbox  │ │integrations│                         INFRA     │   │
-│  │  └──────────┘ └──────────┘                                      │   │
+│  │  ┌──────────┐ ┌──────────┐ ┌──────────┐                         │   │
+│  │  │explosions│ │substances│ │  outbox  │               DOMAIN   │   │
+│  │  │  schutz  │ │   (SDS)  │ │          │                         │   │
+│  │  └──────────┘ └──────────┘ └──────────┘                         │   │
 │  └─────────────────────────────────────────────────────────────────┘   │
 │                                                                         │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                  │

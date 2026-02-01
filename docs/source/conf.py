@@ -1,16 +1,16 @@
-# Platform - Sphinx Documentation Configuration
+# Risk-Hub - Sphinx Documentation Configuration
 
 import os
 import sys
 
 # Add packages to path for autodoc
-sys.path.insert(0, os.path.abspath('../../packages/creative-services'))
+sys.path.insert(0, os.path.abspath('../../src'))
 
 # Project information
-project = 'Platform'
-copyright = '2026, Platform Team'
-author = 'Platform Team'
-release = '1.0.0'
+project = 'Risk-Hub'
+copyright = '2026, Schutztat'
+author = 'Schutztat Team'
+release = '1.1.0'
 
 # Extensions
 extensions = [

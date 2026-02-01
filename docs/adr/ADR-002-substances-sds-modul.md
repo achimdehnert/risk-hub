@@ -2,7 +2,7 @@
 
 | Status | Datum | Entscheidungsträger |
 |--------|-------|---------------------|
-| **PROPOSED** | 2026-01-31 | Tech Lead |
+| **IMPLEMENTED** | 2026-02-01 | Tech Lead |
 
 ## Kontext
 
@@ -189,6 +189,52 @@ Eigenentwicklung mit allen rechtlichen Anforderungen.
 | 2 | Services, SDS-Upload | 21 |
 | 3 | Workflow, Inventar, Views | 21 |
 | 4 | Exports, Integration Ex-Schutz | 13 |
+
+## Implementierungsstatus (2026-02-01)
+
+### ✅ Implementiert
+
+| Komponente | Status | Details |
+|------------|--------|---------|
+| **Models** | ✅ | Party, Substance, Identifier, SdsRevision, SiteInventoryItem |
+| **Referenztabellen** | ✅ | H-Sätze, P-Sätze, Piktogramme, Lagerklassen |
+| **REST API** | ✅ | ViewSets für alle Entitäten |
+| **HTML Views** | ✅ | Dashboard, Listen, Detail, Formulare |
+| **SDS Parser** | ✅ | PDF-Text-Extraktion mit pdfplumber + PyPDF2 |
+| **Ex-Integration** | ✅ | ExIntegrationService für Explosionsschutz |
+
+### SDS Parser Service
+
+```python
+# src/substances/services/sds_parser.py
+class SdsParserService:
+    """Extrahiert Daten aus Sicherheitsdatenblättern (PDF)"""
+    
+    def parse_pdf(self, pdf_file) -> SdsParseResult:
+        # Extrahiert:
+        # - H-Sätze (H200-H420)
+        # - P-Sätze (P101-P502)
+        # - GHS-Piktogramme
+        # - Signalwort (Gefahr/Achtung)
+        # - Flammpunkt
+        # - Zündtemperatur
+        # - Explosionsgrenzen (UEG/OEG)
+```
+
+### URL-Konfiguration
+
+```python
+# HTML Views: /substances/
+app_name = "substances"  # html_urls.py
+
+# API Endpoints: /api/substances/
+app_name = "substances-api"  # urls.py
+```
+
+### Tests
+
+- **52 Unit-Tests** für Models und Services
+- **14 Parser-Tests** für SDS-Extraktion (deutsche Formate)
 
 ## Referenzen
 
