@@ -25,6 +25,13 @@ except ImportError:
 
 from .models import ExplosionConcept, Equipment
 
+# Substances Integration
+try:
+    from substances.services import ExIntegrationService
+    SUBSTANCES_AVAILABLE = True
+except ImportError:
+    SUBSTANCES_AVAILABLE = False
+
 
 class ExSchutzDocumentGenerator:
     """Generiert Explosionsschutzdokumente als Word-Datei."""
@@ -32,6 +39,17 @@ class ExSchutzDocumentGenerator:
     def __init__(self, concept: ExplosionConcept):
         self.concept = concept
         self.document = None
+        self.substance_data = None
+
+    def _load_substance_data(self):
+        """Lädt Ex-relevante Stoffdaten aus dem Substances-Modul."""
+        if not SUBSTANCES_AVAILABLE:
+            return
+        if hasattr(self.concept, 'substance_id') and self.concept.substance_id:
+            self.substance_data = ExIntegrationService.get_ex_data(
+                self.concept.substance_id,
+                self.concept.tenant_id
+            )
 
     def create_document(self, template_path: Optional[str] = None) -> "Document":
         """

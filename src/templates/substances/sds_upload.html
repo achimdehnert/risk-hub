@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}SDS hochladen - {{ substance.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="flex items-center space-x-4 mb-6">
+        <a href="{% url 'substances:detail' pk=substance.pk %}" class="text-gray-400 hover:text-gray-600">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Sicherheitsdatenblatt hochladen</h1>
+            <p class="text-sm text-gray-500">{{ substance.name }}</p>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">SDS-Datei (PDF) *</label>
+                    <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-orange-400 transition-colors">
+                        <div class="space-y-1 text-center">
+                            <i data-lucide="upload-cloud" class="mx-auto h-12 w-12 text-gray-400"></i>
+                            <div class="flex text-sm text-gray-600">
+                                <label class="relative cursor-pointer rounded-md font-medium text-orange-600 hover:text-orange-500">
+                                    <span>Datei auswählen</span>
+                                    {{ form.pdf_file }}
+                                </label>
+                                <p class="pl-1">oder per Drag & Drop</p>
+                            </div>
+                            <p class="text-xs text-gray-500">PDF bis 10MB</p>
+                        </div>
+                    </div>
+                    {% if form.pdf_file.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.pdf_file.errors.0 }}</p>
+                    {% endif %}
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Revisionsdatum *</label>
+                    {{ form.revision_date }}
+                    {% if form.revision_date.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.revision_date.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-blue-50 rounded-lg p-4">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i data-lucide="info" class="h-5 w-5 text-blue-400"></i>
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-blue-800">Automatische Erkennung</h3>
+                    <div class="mt-2 text-sm text-blue-700">
+                        <p>Das System extrahiert automatisch:</p>
+                        <ul class="list-disc list-inside mt-1">
+                            <li>H-Sätze (Gefahrenhinweise)</li>
+                            <li>P-Sätze (Sicherheitshinweise)</li>
+                            <li>GHS-Piktogramme</li>
+                            <li>Physikalische Eigenschaften (Flammpunkt, Zündtemperatur, etc.)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end space-x-4">
+            <a href="{% url 'substances:detail' pk=substance.pk %}"
+               class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                Abbrechen
+            </a>
+            <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <i data-lucide="upload" class="w-4 h-4 inline mr-2"></i>
+                Hochladen & Parsen
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% if substances %}
+<ul class="divide-y divide-gray-200">
+    {% for substance in substances %}
+    <li>
+        <a href="{% url 'substances:detail' pk=substance.pk %}" 
+           class="block px-4 py-3 hover:bg-gray-50">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-900">{{ substance.name }}</p>
+                    <p class="text-xs text-gray-500">
+                        {{ substance.trade_name|default:"" }}
+                        {% if substance.cas_number %}| CAS: {{ substance.cas_number }}{% endif %}
+                    </p>
+                </div>
+                {% if substance.is_cmr %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                    CMR
+                </span>
+                {% endif %}
+            </div>
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+{% else %}
+<div class="px-4 py-6 text-center text-sm text-gray-500">
+    Keine Ergebnisse gefunden
+</div>
+{% endif %}

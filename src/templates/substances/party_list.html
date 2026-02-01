@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+
+{% block title %}Hersteller & Lieferanten - Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Hersteller & Lieferanten</h1>
+            <p class="mt-1 text-sm text-gray-500">{{ parties|length }} Parteien</p>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="bg-white rounded-lg shadow p-4">
+        <form method="get" class="flex items-center space-x-4">
+            <label class="text-sm font-medium text-gray-700">Typ:</label>
+            <select name="type" onchange="this.form.submit()"
+                    class="rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                <option value="">Alle</option>
+                {% for value, label in party_types %}
+                <option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+
+    <!-- Party Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {% for party in parties %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-start justify-between">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        {% if party.party_type == 'manufacturer' %}
+                        <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-blue-100">
+                            <i data-lucide="factory" class="w-5 h-5 text-blue-600"></i>
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
+                            <i data-lucide="truck" class="w-5 h-5 text-green-600"></i>
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="ml-4">
+                        <h3 class="text-sm font-medium text-gray-900">{{ party.name }}</h3>
+                        <p class="text-sm text-gray-500">{{ party.get_party_type_display }}</p>
+                    </div>
+                </div>
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                    {{ party.substance_count }} Stoffe
+                </span>
+            </div>
+            
+            {% if party.email or party.phone %}
+            <div class="mt-4 pt-4 border-t border-gray-200 space-y-2">
+                {% if party.email %}
+                <div class="flex items-center text-sm text-gray-500">
+                    <i data-lucide="mail" class="w-4 h-4 mr-2"></i>
+                    <a href="mailto:{{ party.email }}" class="hover:text-orange-600">{{ party.email }}</a>
+                </div>
+                {% endif %}
+                {% if party.phone %}
+                <div class="flex items-center text-sm text-gray-500">
+                    <i data-lucide="phone" class="w-4 h-4 mr-2"></i>
+                    {{ party.phone }}
+                </div>
+                {% endif %}
+                {% if party.website %}
+                <div class="flex items-center text-sm text-gray-500">
+                    <i data-lucide="globe" class="w-4 h-4 mr-2"></i>
+                    <a href="{{ party.website }}" target="_blank" class="hover:text-orange-600">Website</a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+        {% empty %}
+        <div class="col-span-full text-center py-12 text-gray-500">
+            <i data-lucide="building-2" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
+            <p>Keine Parteien gefunden</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

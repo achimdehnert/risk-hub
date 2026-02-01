@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Gefahrstoff-Management - Schutztat{% endblock %}
+
+{% block nav_items %}
+<a href="/ex/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+    Explosionsschutz
+</a>
+<a href="/substances/" class="px-3 py-2 rounded-md text-sm font-medium bg-orange-100 text-orange-700">
+    Gefahrstoffe
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Gefahrstoff-Management</h1>
+            <p class="mt-1 text-sm text-gray-500">Übersicht und Verwaltung von Gefahrstoffen nach GefStoffV</p>
+        </div>
+        <div class="flex space-x-3">
+            <a href="{% url 'substances:create' %}" 
+               class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Neuer Gefahrstoff
+            </a>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <i data-lucide="flask-conical" class="w-6 h-6 text-blue-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Gefahrstoffe</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.total_substances }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Aktiv</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.active_substances }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-red-100 rounded-lg">
+                    <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">CMR-Stoffe</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.cmr_substances }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <i data-lucide="file-clock" class="w-6 h-6 text-yellow-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">SDS ausstehend</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.sds_pending }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center">
+                <div class="p-2 bg-purple-100 rounded-lg">
+                    <i data-lucide="warehouse" class="w-6 h-6 text-purple-600"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm text-gray-500">Inventar</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.inventory_items }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <a href="{% url 'substances:list' %}" 
+           class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="p-3 bg-blue-100 rounded-lg">
+                    <i data-lucide="list" class="w-6 h-6 text-blue-600"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="font-medium text-gray-900">Gefahrstoff-Liste</h3>
+                    <p class="text-sm text-gray-500">Alle Stoffe anzeigen und filtern</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="{% url 'substances:hazard-register' %}" 
+           class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="p-3 bg-orange-100 rounded-lg">
+                    <i data-lucide="file-spreadsheet" class="w-6 h-6 text-orange-600"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="font-medium text-gray-900">Gefahrstoffverzeichnis</h3>
+                    <p class="text-sm text-gray-500">GefStoffV §6 konform</p>
+                </div>
+            </div>
+        </a>
+
+        <a href="{% url 'substances:party-list' %}" 
+           class="bg-white rounded-lg shadow p-6 hover:shadow-lg transition-shadow">
+            <div class="flex items-center">
+                <div class="p-3 bg-green-100 rounded-lg">
+                    <i data-lucide="building-2" class="w-6 h-6 text-green-600"></i>
+                </div>
+                <div class="ml-4">
+                    <h3 class="font-medium text-gray-900">Hersteller & Lieferanten</h3>
+                    <p class="text-sm text-gray-500">Parteien verwalten</p>
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <!-- Recent Substances -->
+    <div class="bg-white rounded-lg shadow">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-lg font-medium text-gray-900">Zuletzt bearbeitet</h2>
+        </div>
+        <div class="divide-y divide-gray-200">
+            {% for substance in recent_substances %}
+            <a href="{% url 'substances:detail' pk=substance.pk %}" 
+               class="block px-6 py-4 hover:bg-gray-50">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            {% if substance.is_cmr %}
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100">
+                                <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i>
+                            </span>
+                            {% else %}
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100">
+                                <i data-lucide="flask-conical" class="w-4 h-4 text-blue-600"></i>
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-900">{{ substance.name }}</p>
+                            <p class="text-sm text-gray-500">
+                                {{ substance.trade_name|default:"-" }} 
+                                {% if substance.cas_number %}| CAS: {{ substance.cas_number }}{% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                            {% if substance.status == 'active' %}bg-green-100 text-green-800
+                            {% elif substance.status == 'inactive' %}bg-gray-100 text-gray-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            {{ substance.get_status_display }}
+                        </span>
+                        <span class="text-sm text-gray-500">{{ substance.updated_at|timesince }} ago</span>
+                        <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="px-6 py-8 text-center text-gray-500">
+                <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
+                <p>Noch keine Gefahrstoffe angelegt</p>
+                <a href="{% url 'substances:create' %}" class="mt-2 text-orange-600 hover:text-orange-700">
+                    Ersten Gefahrstoff anlegen →
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

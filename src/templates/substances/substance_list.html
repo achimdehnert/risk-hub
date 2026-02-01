@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+
+{% block title %}Gefahrstoffe - Schutztat{% endblock %}
+
+{% block nav_items %}
+<a href="/ex/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+    Explosionsschutz
+</a>
+<a href="/substances/" class="px-3 py-2 rounded-md text-sm font-medium bg-orange-100 text-orange-700">
+    Gefahrstoffe
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Gefahrstoff-Liste</h1>
+            <p class="mt-1 text-sm text-gray-500">{{ substances|length }} Gefahrstoffe</p>
+        </div>
+        <a href="{% url 'substances:create' %}" 
+           class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+            <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+            Neuer Gefahrstoff
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="bg-white rounded-lg shadow p-4">
+        <form method="get" class="flex flex-wrap gap-4 items-end">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-sm font-medium text-gray-700 mb-1">Suche</label>
+                <input type="text" name="search" value="{{ filters.search }}"
+                       placeholder="Name, CAS-Nr., Handelsname..."
+                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                       hx-get="{% url 'substances:list' %}"
+                       hx-trigger="keyup changed delay:300ms"
+                       hx-target="#substance-table"
+                       hx-include="[name='status'],[name='storage_class'],[name='cmr']">
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                <select name="status" 
+                        class="rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                        hx-get="{% url 'substances:list' %}"
+                        hx-trigger="change"
+                        hx-target="#substance-table"
+                        hx-include="[name='search'],[name='storage_class'],[name='cmr']">
+                    <option value="">Alle</option>
+                    <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Aktiv</option>
+                    <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inaktiv</option>
+                    <option value="pending" {% if filters.status == 'pending' %}selected{% endif %}>Ausstehend</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Lagerklasse</label>
+                <select name="storage_class"
+                        class="rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                        hx-get="{% url 'substances:list' %}"
+                        hx-trigger="change"
+                        hx-target="#substance-table"
+                        hx-include="[name='search'],[name='status'],[name='cmr']">
+                    <option value="">Alle</option>
+                    {% for value, label in storage_classes %}
+                    <option value="{{ value }}" {% if filters.storage_class == value %}selected{% endif %}>
+                        {{ label }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-center">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" name="cmr" value="1"
+                           {% if filters.cmr_only %}checked{% endif %}
+                           class="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+                           hx-get="{% url 'substances:list' %}"
+                           hx-trigger="change"
+                           hx-target="#substance-table"
+                           hx-include="[name='search'],[name='status'],[name='storage_class']">
+                    <span class="text-sm text-gray-700">Nur CMR-Stoffe</span>
+                </label>
+            </div>
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div id="substance-table" class="bg-white rounded-lg shadow overflow-hidden">
+        {% include "substances/partials/substance_table.html" %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} - Schutztat{% endblock %}
+
+{% block extra_head %}
+<style>
+    .form-input, .form-select, .form-textarea {
+        @apply w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500;
+    }
+    .form-checkbox {
+        @apply rounded border-gray-300 text-orange-600 focus:ring-orange-500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="flex items-center space-x-4 mb-6">
+        <a href="{% if substance %}{% url 'substances:detail' pk=substance.pk %}{% else %}{% url 'substances:list' %}{% endif %}" 
+           class="text-gray-400 hover:text-gray-600">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+    </div>
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Grunddaten -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Grunddaten</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Stoffname *</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="mt-1 text-sm text-red-600">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Handelsname</label>
+                    {{ form.trade_name }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">CAS-Nummer</label>
+                    {{ form.cas_number }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    {{ form.status }}
+                </div>
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Beschreibung</label>
+                    {{ form.description }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Klassifizierung -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Klassifizierung</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Lagerklasse</label>
+                    {{ form.storage_class }}
+                </div>
+                <div class="flex items-center pt-6">
+                    {{ form.is_cmr }}
+                    <label class="ml-2 text-sm text-gray-700">CMR-Stoff (krebserzeugend, keimzellmutagen, reproduktionstoxisch)</label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parteien -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">Hersteller & Lieferant</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Hersteller</label>
+                    {{ form.manufacturer }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Lieferant</label>
+                    {{ form.supplier }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Ex-Schutz Eigenschaften -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-medium text-gray-900 mb-4">
+                <i data-lucide="zap" class="w-5 h-5 inline mr-2 text-yellow-500"></i>
+                Ex-Schutz relevante Eigenschaften
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Flammpunkt (°C)</label>
+                    {{ form.flash_point_c }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Zündtemperatur (°C)</label>
+                    {{ form.ignition_temperature_c }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Dampfdichte (Luft=1)</label>
+                    {{ form.vapor_density }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">UEG (Vol.%)</label>
+                    {{ form.lower_explosion_limit }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">OEG (Vol.%)</label>
+                    {{ form.upper_explosion_limit }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Temperaturklasse</label>
+                    {{ form.temperature_class }}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Explosionsgruppe</label>
+                    {{ form.explosion_group }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end space-x-4">
+            <a href="{% if substance %}{% url 'substances:detail' pk=substance.pk %}{% else %}{% url 'substances:list' %}{% endif %}"
+               class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                Abbrechen
+            </a>
+            <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                {% if substance %}Speichern{% else %}Anlegen{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Gefahrstoffverzeichnis - Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Gefahrstoffverzeichnis</h1>
+            <p class="mt-1 text-sm text-gray-500">Gemäß GefStoffV §6 - {{ substances|length }} aktive Stoffe</p>
+        </div>
+        <a href="{% url 'substances:hazard-register' %}?format=excel"
+           class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+            <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+            Excel-Export
+        </a>
+    </div>
+
+    <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nr.</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Bezeichnung</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CAS-Nr.</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Einstufung/Kennzeichnung</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mengenbereiche</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Arbeitsbereiche</th>
+                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lagerklasse</th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for substance in substances %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-4 py-3 text-sm text-gray-500">{{ forloop.counter }}</td>
+                        <td class="px-4 py-3">
+                            <a href="{% url 'substances:detail' pk=substance.pk %}" class="text-sm font-medium text-gray-900 hover:text-orange-600">
+                                {{ substance.name }}
+                            </a>
+                            {% if substance.is_cmr %}
+                            <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">CMR</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-3 text-sm font-mono text-gray-500">{{ substance.cas_number|default:"-" }}</td>
+                        <td class="px-4 py-3">
+                            {% with sds=substance.current_sds %}
+                            {% if sds %}
+                            <div class="flex flex-wrap gap-1">
+                                {% for pic in sds.pictograms.all %}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-50 text-red-700 border border-red-200">
+                                    {{ pic.code }}
+                                </span>
+                                {% endfor %}
+                            </div>
+                            <div class="mt-1 text-xs text-gray-500">
+                                {% for h in sds.hazard_statements.all|slice:":3" %}{{ h.code }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                {% if sds.hazard_statements.count > 3 %}...{% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-xs text-gray-400">Kein SDS</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-500">
+                            {% for item in substance.inventory_items.all|slice:":2" %}
+                            {{ item.quantity }} {{ item.unit }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}-{% endfor %}
+                        </td>
+                        <td class="px-4 py-3 text-sm text-gray-500">
+                            {% for item in substance.inventory_items.all|slice:":2" %}
+                            {{ item.location|default:"Allgemein" }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}-{% endfor %}
+                        </td>
+                        <td class="px-4 py-3">
+                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800">
+                                {{ substance.get_storage_class_display|default:"-" }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="px-4 py-8 text-center text-gray-500">
+                            Keine aktiven Gefahrstoffe vorhanden
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="bg-gray-50 rounded-lg p-4 text-xs text-gray-500">
+        <p><strong>Hinweis:</strong> Dieses Verzeichnis enthält alle aktiven Gefahrstoffe gemäß GefStoffV §6. 
+        Die Einstufung und Kennzeichnung erfolgt nach CLP-Verordnung (EG) Nr. 1272/2008.</p>
+    </div>
+</div>
+{% endblock %}
