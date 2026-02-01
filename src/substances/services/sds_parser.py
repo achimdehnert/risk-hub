@@ -66,13 +66,15 @@ class SdsParserService:
         re.IGNORECASE
     )
     LEL_PATTERN = re.compile(
-        r'(?:UEG|LEL|[Uu]ntere\s+[Ee]xplosions(?:grenze)?)[:\s]*'
-        r'(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)',
+        r'(?:UEG|LEL|[Uu]ntere\s+[Ee]xplosions(?:grenze)?)'
+        r'(?:\s*\([^)]*\))?'  # optional (UEG) etc.
+        r'[:\s]*(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)',
         re.IGNORECASE
     )
     UEL_PATTERN = re.compile(
-        r'(?:OEG|UEL|[Oo]bere\s+[Ee]xplosions(?:grenze)?)[:\s]*'
-        r'(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)',
+        r'(?:OEG|UEL|[Oo]bere\s+[Ee]xplosions(?:grenze)?)'
+        r'(?:\s*\([^)]*\))?'  # optional (OEG) etc.
+        r'[:\s]*(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)',
         re.IGNORECASE
     )
 
