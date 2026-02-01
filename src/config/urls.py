@@ -15,4 +15,5 @@ urlpatterns = [
     path("actions/", include("actions.urls")),
     path("api/ex/", include("explosionsschutz.urls")),
     path("ex/", include("explosionsschutz.html_urls")),
+    path("api/substances/", include("substances.urls")),
 ]

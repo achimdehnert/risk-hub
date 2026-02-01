@@ -11,8 +11,28 @@ Enthält:
 - Referenztabellen (H-/P-Sätze, Piktogramme)
 """
 
+import uuid
 from django.db import models
-from common.models import TenantScopedModel
+
+
+# =============================================================================
+# BASE CLASS (Tenant-Scoped)
+# =============================================================================
+
+class TenantScopedModel(models.Model):
+    """Abstrakte Basisklasse für tenant-isolierte Models."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(
+        db_index=True,
+        help_text="Tenant-ID für Mandantentrennung"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.UUIDField(null=True, blank=True)
+
+    class Meta:
+        abstract = True
 
 
 # =============================================================================
