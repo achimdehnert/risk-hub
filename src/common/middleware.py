@@ -81,7 +81,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                     pass
 
             # Allow public paths without tenant
-            public_paths = ["/", "/api/", "/ex/", "/static/"]
+            public_paths = ["/", "/api/", "/ex/", "/substances/", "/static/"]
             if any(request.path == p or request.path.startswith(p)
                    for p in public_paths if p != "/"):
                 set_tenant(None, None)
