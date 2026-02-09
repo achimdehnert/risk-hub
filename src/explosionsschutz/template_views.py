@@ -90,9 +90,13 @@ class AreaListView(View):
 
         hazard = request.GET.get("hazard")
         if hazard == "1":
-            areas = areas.filter(has_explosion_hazard=True)
+            areas = areas.filter(
+                explosion_concepts__status__in=["approved", "in_review"]
+            ).distinct()
         elif hazard == "0":
-            areas = areas.filter(has_explosion_hazard=False)
+            areas = areas.exclude(
+                explosion_concepts__status__in=["approved", "in_review"]
+            )
 
         areas_list = []
         for area in areas:
