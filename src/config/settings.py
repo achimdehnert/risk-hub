@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "explosionsschutz",
     "substances",
     "notifications",
+    "dashboard",
 ]
 
 MIDDLEWARE = [

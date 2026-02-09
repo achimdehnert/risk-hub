@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Schutztat{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Compliance Dashboard</h1>
+    <p class="text-sm text-gray-500 mt-1">Übersicht aller sicherheitsrelevanten Kennzahlen</p>
+</div>
+
+<!-- KPI Cards (HTMX-refreshable) -->
+<div id="kpi-cards"
+     hx-get="{% url 'dashboard:kpi-partial' %}"
+     hx-trigger="every 120s"
+     hx-swap="innerHTML">
+    {% include "dashboard/partials/kpi_cards.html" %}
+</div>
+
+<!-- Two-column layout: Charts + Activity -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+
+    <!-- Left: Module Status -->
+    <div class="lg:col-span-2 space-y-6">
+
+        <!-- Ex-Schutz Status -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i data-lucide="zap" class="w-5 h-5 inline text-orange-500 mr-1"></i>
+                Explosionsschutz
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ kpis.areas_total }}</div>
+                    <div class="text-xs text-gray-500">Bereiche</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-orange-600">{{ kpis.areas_with_hazard }}</div>
+                    <div class="text-xs text-gray-500">mit Ex-Gefahr</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ kpis.zones_total }}</div>
+                    <div class="text-xs text-gray-500">Zonen</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ kpis.equipment_total }}</div>
+                    <div class="text-xs text-gray-500">Betriebsmittel</div>
+                </div>
+            </div>
+
+            <!-- Concept Status Bar -->
+            {% if kpis.concepts_total %}
+            <div class="mt-4">
+                <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+                    <span>Konzepte: {{ kpis.concepts_total }}</span>
+                    <span>{{ kpis.concepts_approved }} freigegeben</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    {% widthratio kpis.concepts_approved kpis.concepts_total 100 as approved_pct %}
+                    <div class="bg-green-500 h-2 rounded-full" style="width: {% widthratio kpis.concepts_approved kpis.concepts_total 100 %}%"></div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Gefahrstoffe Status -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i data-lucide="flask-conical" class="w-5 h-5 inline text-purple-500 mr-1"></i>
+                Gefahrstoffe
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ kpis.substances_total }}</div>
+                    <div class="text-xs text-gray-500">Stoffe gesamt</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">{{ kpis.sds_current }}</div>
+                    <div class="text-xs text-gray-500">SDB aktuell</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold {% if kpis.sds_outdated %}text-red-600{% else %}text-gray-400{% endif %}">{{ kpis.sds_outdated }}</div>
+                    <div class="text-xs text-gray-500">SDB veraltet</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ kpis.site_inventory_items }}</div>
+                    <div class="text-xs text-gray-500">Lagerbestand</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risikobewertung -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i data-lucide="shield-alert" class="w-5 h-5 inline text-red-500 mr-1"></i>
+                Risikobewertung & Maßnahmen
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ kpis.assessments_total }}</div>
+                    <div class="text-xs text-gray-500">Bewertungen</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold {% if kpis.assessments_open %}text-yellow-600{% else %}text-gray-400{% endif %}">{{ kpis.assessments_open }}</div>
+                    <div class="text-xs text-gray-500">offen</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold {% if kpis.actions_open %}text-yellow-600{% else %}text-gray-400{% endif %}">{{ kpis.actions_open }}</div>
+                    <div class="text-xs text-gray-500">Maßnahmen offen</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold {% if kpis.actions_overdue %}text-red-600{% else %}text-gray-400{% endif %}">{{ kpis.actions_overdue }}</div>
+                    <div class="text-xs text-gray-500">überfällig</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Activity Feed + Quick Links -->
+    <div class="space-y-6">
+
+        <!-- Alert Summary -->
+        {% if kpis.inspections_overdue or kpis.notifications_critical %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-red-800 mb-2">
+                <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>
+                Handlungsbedarf
+            </h3>
+            <ul class="text-sm text-red-700 space-y-1">
+                {% if kpis.inspections_overdue %}
+                <li>{{ kpis.inspections_overdue }} Prüfung{{ kpis.inspections_overdue|pluralize:"en" }} überfällig</li>
+                {% endif %}
+                {% if kpis.actions_overdue %}
+                <li>{{ kpis.actions_overdue }} Maßnahme{{ kpis.actions_overdue|pluralize:"n" }} überfällig</li>
+                {% endif %}
+                {% if kpis.measures_open %}
+                <li>{{ kpis.measures_open }} Schutzmaßnahme{{ kpis.measures_open|pluralize:"n" }} offen</li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Upcoming Deadlines -->
+        {% if kpis.inspections_due_7d or kpis.inspections_due_30d %}
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-yellow-800 mb-2">
+                <i data-lucide="calendar-clock" class="w-4 h-4 inline mr-1"></i>
+                Anstehende Fristen
+            </h3>
+            <ul class="text-sm text-yellow-700 space-y-1">
+                {% if kpis.inspections_due_7d %}
+                <li>{{ kpis.inspections_due_7d }} Prüfung{{ kpis.inspections_due_7d|pluralize:"en" }} in 7 Tagen</li>
+                {% endif %}
+                {% if kpis.inspections_due_30d %}
+                <li>{{ kpis.inspections_due_30d }} Prüfung{{ kpis.inspections_due_30d|pluralize:"en" }} in 30 Tagen</li>
+                {% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Activity Feed -->
+        <div class="bg-white rounded-lg shadow p-4"
+             id="activity-feed"
+             hx-get="{% url 'dashboard:activity-partial' %}"
+             hx-trigger="every 120s"
+             hx-swap="innerHTML">
+            {% include "dashboard/partials/activity_feed.html" %}
+        </div>
+
+        <!-- Quick Links -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Schnellzugriff</h3>
+            <div class="space-y-2">
+                <a href="/ex/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="zap" class="w-4 h-4"></i> Explosionsschutz
+                </a>
+                <a href="/substances/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="flask-conical" class="w-4 h-4"></i> Gefahrstoffe
+                </a>
+                <a href="/risk/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="shield-alert" class="w-4 h-4"></i> Risikobewertung
+                </a>
+                <a href="/notifications/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="bell" class="w-4 h-4"></i> Benachrichtigungen
+                    {% if kpis.notifications_unread %}
+                    <span class="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{{ kpis.notifications_unread }}</span>
+                    {% endif %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

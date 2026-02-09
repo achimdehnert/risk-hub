@@ -8,6 +8,7 @@ from config.views import home
 
 urlpatterns = [
     path("", home),
+    path("dashboard/", include("dashboard.urls")),
     path("admin/", admin.site.urls),
     path("api/v1/", api.urls),
     path("risk/", include("risk.urls")),
