@@ -1,7 +1,12 @@
 # substances/services/__init__.py
 """Service Layer für Substances Module."""
 
-from .substance_service import SubstanceService
 from .ex_integration import ExIntegrationService
+from .substance_import import SubstanceImportService
+from .substance_service import SubstanceService
 
-__all__ = ["SubstanceService", "ExIntegrationService"]
+__all__ = [
+    "SubstanceService",
+    "ExIntegrationService",
+    "SubstanceImportService",
+]
