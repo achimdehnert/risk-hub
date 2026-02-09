@@ -6,20 +6,13 @@ from django.contrib import messages
 from django.http import (
     HttpRequest,
     HttpResponse,
-    HttpResponseForbidden,
     HttpResponseRedirect,
 )
 from django.shortcuts import get_object_or_404, redirect, render
 
+from common.tenant import require_tenant as _require_tenant
 from documents.models import Document, DocumentVersion
 from documents.services import download_url, upload_document
-
-
-def _require_tenant(request: HttpRequest) -> HttpResponse | None:
-    tenant_id = getattr(request, "tenant_id", None)
-    if tenant_id is None:
-        return HttpResponseForbidden("Missing tenant")
-    return None
 
 
 def document_list(request: HttpRequest) -> HttpResponse:

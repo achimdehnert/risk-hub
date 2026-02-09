@@ -10,7 +10,7 @@ from rest_framework.routers import DefaultRouter
 
 from . import views
 
-app_name = "explosionsschutz"
+app_name = "explosionsschutz-api"
 
 router = DefaultRouter()
 router.register(r"areas", views.AreaViewSet, basename="area")

@@ -97,8 +97,8 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
 
     # --- Risikobewertung ---
     try:
-        from risk.models import RiskAssessment
-        assessments = RiskAssessment.objects.filter(tf)
+        from risk.models import Assessment
+        assessments = Assessment.objects.filter(tf)
         assessments_total = assessments.count()
         assessments_open = assessments.exclude(
             status="approved"
@@ -144,11 +144,11 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
         assessments_total=assessments_total,
         assessments_open=assessments_open,
         actions_open=actions_qs.exclude(
-            status="done"
+            status="completed"
         ).count(),
         actions_overdue=actions_qs.filter(
             due_date__lt=today,
-        ).exclude(status="done").count(),
+        ).exclude(status="completed").count(),
         notifications_unread=notifs.count(),
         notifications_critical=notifs.filter(
             severity="critical"

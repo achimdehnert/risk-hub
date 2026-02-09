@@ -223,7 +223,7 @@ def _entity_to_workflow_type(entity_type: str) -> str:
     """Map entity_type string to workflow type."""
     mapping = {
         "explosionsschutz.ExplosionConcept": "ex_concept",
-        "risk.RiskAssessment": "risk_assessment",
+        "risk.Assessment": "risk_assessment",
         "explosionsschutz.ProtectionMeasure": "protection_measure",
     }
     wf_type = mapping.get(entity_type)
@@ -275,9 +275,9 @@ def _on_fully_approved(request: ApprovalRequest) -> None:
                 tenant_id=request.tenant_id,
             ).update(status="approved")
 
-        elif request.entity_type == "risk.RiskAssessment":
-            from risk.models import RiskAssessment
-            RiskAssessment.objects.filter(
+        elif request.entity_type == "risk.Assessment":
+            from risk.models import Assessment
+            Assessment.objects.filter(
                 id=request.entity_id,
                 tenant_id=request.tenant_id,
             ).update(status="approved")

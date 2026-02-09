@@ -6,10 +6,10 @@ from django.http import (
     HttpRequest,
     HttpResponse,
     HttpResponseBadRequest,
-    HttpResponseForbidden,
 )
 from django.shortcuts import get_object_or_404, redirect, render
 
+from common.tenant import require_tenant as _require_tenant
 from risk.models import Assessment
 from risk.services import (
     ApproveAssessmentCmd,
@@ -17,15 +17,6 @@ from risk.services import (
     approve_assessment,
     create_assessment,
 )
-
-
-def _require_tenant(
-    request: HttpRequest,
-) -> HttpResponse | None:
-    tenant_id = getattr(request, "tenant_id", None)
-    if tenant_id is None:
-        return HttpResponseForbidden("Missing tenant")
-    return None
 
 
 def assessment_list(
