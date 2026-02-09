@@ -40,7 +40,7 @@
                 <div class="flex items-center space-x-4">
                     {% if user.is_authenticated %}
                     <!-- Notification Bell -->
-                    <div class="relative" x-data="{ open: false }">
+                    <div class="relative">
                         <button hx-get="{% url 'notifications:dropdown' %}"
                                 hx-target="#notif-panel"
                                 hx-trigger="click"
@@ -56,10 +56,53 @@
                         </button>
                         <div id="notif-panel"></div>
                     </div>
-                    <span class="text-sm text-gray-600">{{ user.username }}</span>
-                    <a href="/admin/" class="text-sm text-gray-600 hover:text-gray-900">Admin</a>
+                    <!-- User Dropdown -->
+                    <div class="relative" id="user-menu">
+                        <button onclick="document.getElementById('user-dropdown').classList.toggle('hidden')"
+                                class="flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-900 focus:outline-none">
+                            <div class="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center">
+                                <i data-lucide="user" class="w-4 h-4 text-gray-600"></i>
+                            </div>
+                            <span class="hidden sm:inline">{{ user.email|default:user.username }}</span>
+                            <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                        </button>
+                        <div id="user-dropdown"
+                             class="hidden absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <p class="text-sm font-medium text-gray-900">{{ user.get_full_name|default:user.username }}</p>
+                                <p class="text-xs text-gray-500 truncate">{{ user.email }}</p>
+                            </div>
+                            <div class="py-1">
+                                <a href="{% url 'user-profile' %}"
+                                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i data-lucide="user" class="w-4 h-4 mr-3 text-gray-400"></i>
+                                    Profil &amp; Einstellungen
+                                </a>
+                                {% if user.is_staff %}
+                                <a href="/admin/"
+                                   class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i data-lucide="settings" class="w-4 h-4 mr-3 text-gray-400"></i>
+                                    Admin-Bereich
+                                </a>
+                                {% endif %}
+                            </div>
+                            <div class="border-t border-gray-100">
+                                <form method="post" action="{% url 'logout' %}">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="flex w-full items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                        <i data-lucide="log-out" class="w-4 h-4 mr-3"></i>
+                                        Abmelden
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
                     {% else %}
-                    <a href="/admin/login/" class="text-sm text-orange-600 hover:text-orange-700">Login</a>
+                    <a href="{% url 'login' %}"
+                       class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700">
+                        Anmelden
+                    </a>
                     {% endif %}
                 </div>
             </div>
@@ -70,7 +113,16 @@
         {% block content %}{% endblock %}
     </main>
 
-    <script>lucide.createIcons();</script>
+    <script>
+        lucide.createIcons();
+        document.addEventListener("click", function(e) {
+            var menu = document.getElementById("user-menu");
+            var dd = document.getElementById("user-dropdown");
+            if (menu && dd && !menu.contains(e.target)) {
+                dd.classList.add("hidden");
+            }
+        });
+    </script>
     {% block extra_scripts %}{% endblock %}
 </body>
 </html>

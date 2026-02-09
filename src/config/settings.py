@@ -122,6 +122,10 @@ CSRF_TRUSTED_ORIGINS = [
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/dashboard/"
+LOGOUT_REDIRECT_URL = "/"
+
 # Documents / S3
 S3_ENDPOINT = os.getenv("S3_ENDPOINT", "")
 S3_REGION = os.getenv("S3_REGION", "us-east-1")

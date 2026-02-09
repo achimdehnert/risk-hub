@@ -1,15 +1,33 @@
 """URL configuration for Risk-Hub."""
 
 from django.contrib import admin
+from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
 from config.api import api
-from config.views import home
+from config.views import home, user_profile
 
 urlpatterns = [
     path("", home),
     path("dashboard/", include("dashboard.urls")),
     path("admin/", admin.site.urls),
+    path(
+        "accounts/login/",
+        auth_views.LoginView.as_view(
+            template_name="registration/login.html",
+        ),
+        name="login",
+    ),
+    path(
+        "accounts/logout/",
+        auth_views.LogoutView.as_view(),
+        name="logout",
+    ),
+    path(
+        "accounts/profile/",
+        user_profile,
+        name="user-profile",
+    ),
     path("api/v1/", api.urls),
     path("risk/", include("risk.urls")),
     path("documents/", include("documents.urls")),

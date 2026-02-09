@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Anmelden - Schutztat{% endblock %}
+
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center">
+    <div class="w-full max-w-md">
+        <div class="bg-white shadow-lg rounded-lg px-8 py-10">
+            <div class="flex justify-center mb-6">
+                <div class="w-12 h-12 bg-orange-500 rounded-xl flex items-center justify-center">
+                    <i data-lucide="shield-check" class="w-7 h-7 text-white"></i>
+                </div>
+            </div>
+            <h2 class="text-center text-2xl font-bold text-gray-900 mb-8">
+                Anmelden
+            </h2>
+
+            {% if form.errors %}
+            <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p class="text-sm text-red-700">
+                    Benutzername oder Passwort ist ungueltig.
+                </p>
+            </div>
+            {% endif %}
+
+            <form method="post" class="space-y-5">
+                {% csrf_token %}
+                <div>
+                    <label for="id_username"
+                           class="block text-sm font-medium text-gray-700 mb-1">
+                        Benutzername
+                    </label>
+                    <input type="text" name="username" id="id_username"
+                           autofocus autocomplete="username" required
+                           class="w-full px-3 py-2 border border-gray-300
+                                  rounded-md shadow-sm focus:outline-none
+                                  focus:ring-2 focus:ring-orange-500
+                                  focus:border-orange-500"/>
+                </div>
+                <div>
+                    <label for="id_password"
+                           class="block text-sm font-medium text-gray-700 mb-1">
+                        Passwort
+                    </label>
+                    <input type="password" name="password" id="id_password"
+                           autocomplete="current-password" required
+                           class="w-full px-3 py-2 border border-gray-300
+                                  rounded-md shadow-sm focus:outline-none
+                                  focus:ring-2 focus:ring-orange-500
+                                  focus:border-orange-500"/>
+                </div>
+                {% if next %}
+                <input type="hidden" name="next" value="{{ next }}"/>
+                {% endif %}
+                <button type="submit"
+                        class="w-full flex justify-center py-2.5 px-4 border
+                               border-transparent rounded-md shadow-sm text-sm
+                               font-medium text-white bg-orange-600
+                               hover:bg-orange-700 focus:outline-none
+                               focus:ring-2 focus:ring-offset-2
+                               focus:ring-orange-500">
+                    Anmelden
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
