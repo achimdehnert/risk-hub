@@ -1034,26 +1034,9 @@ class Inspection(models.Model):
     def __str__(self):
         return f"{self.get_inspection_type_display()} - {self.equipment} ({self.inspection_date})"
     
-    def save(self, *args, **kwargs):
-        """Aktualisiert next_inspection_date des Equipment"""
-        super().save(*args, **kwargs)
-        
-        if self.result in (self.Result.PASSED, self.Result.PASSED_WITH_NOTES):
-            from dateutil.relativedelta import relativedelta
-            
-            interval = (
-                self.equipment.inspection_interval_months or
-                self.equipment.equipment_type.default_inspection_interval_months
-            )
-            self.equipment.last_inspection_date = self.inspection_date
-            self.equipment.next_inspection_date = (
-                self.inspection_date + relativedelta(months=interval)
-            )
-            self.equipment.save(update_fields=[
-                "last_inspection_date", 
-                "next_inspection_date",
-                "updated_at"
-            ])
+    # NOTE: Equipment inspection date updates are handled in
+    # explosionsschutz.services.create_inspection() to keep
+    # the model free of hidden side-effects (F-07).
 
 
 # =============================================================================

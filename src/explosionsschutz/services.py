@@ -643,6 +643,8 @@ def create_inspection(
     if cmd.result not in valid_results:
         raise ValidationError(f"Ungültiges Prüfergebnis: {cmd.result}")
     
+    require_permission("ex_inspection.create")
+
     inspection = Inspection.objects.create(
         tenant_id=tenant_id,
         equipment=equipment,
@@ -655,7 +657,33 @@ def create_inspection(
         certificate_number=cmd.certificate_number or "",
         created_by_id=user_id,
     )
-    
+
+    # Update equipment inspection schedule (moved from
+    # Inspection.save() to keep model side-effect-free)
+    if inspection.result in (
+        Inspection.Result.PASSED,
+        Inspection.Result.PASSED_WITH_NOTES,
+    ):
+        from dateutil.relativedelta import relativedelta
+
+        interval = (
+            equipment.inspection_interval_months
+            or equipment.equipment_type
+            .default_inspection_interval_months
+        )
+        equipment.last_inspection_date = (
+            inspection.inspection_date
+        )
+        equipment.next_inspection_date = (
+            inspection.inspection_date
+            + relativedelta(months=interval)
+        )
+        equipment.save(update_fields=[
+            "last_inspection_date",
+            "next_inspection_date",
+            "updated_at",
+        ])
+
     emit_audit_event(
         tenant_id=tenant_id,
         category=AuditCategory.INSPECTION,
