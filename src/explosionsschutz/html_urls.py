@@ -5,6 +5,11 @@ HTML-Template URLs für Explosionsschutz-Modul
 
 from django.urls import path
 
+from .export_views import (
+    ConceptExportDocxView,
+    ConceptExportPdfView,
+    ConceptPreviewView,
+)
 from .template_views import (
     HomeView,
     AreaListView,
@@ -45,6 +50,22 @@ urlpatterns = [
         "equipment/<uuid:pk>/",
         EquipmentDetailView.as_view(),
         name="equipment-detail-html"
+    ),
+    # Export
+    path(
+        "concepts/<uuid:pk>/preview/",
+        ConceptPreviewView.as_view(),
+        name="concept-preview",
+    ),
+    path(
+        "concepts/<uuid:pk>/export/docx/",
+        ConceptExportDocxView.as_view(),
+        name="concept-export-docx",
+    ),
+    path(
+        "concepts/<uuid:pk>/export/pdf/",
+        ConceptExportPdfView.as_view(),
+        name="concept-export-pdf",
     ),
     # Tools
     path("tools/", ToolsView.as_view(), name="tools"),
