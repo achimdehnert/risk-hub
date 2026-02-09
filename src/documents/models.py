@@ -6,20 +6,23 @@ from django.db import models
 
 class Document(models.Model):
     """Document with versioning."""
-    
-    CATEGORY_CHOICES = [
-        ("brandschutz", "Brandschutz"),
-        ("explosionsschutz", "Explosionsschutz"),
-        ("arbeitssicherheit", "Arbeitssicherheit"),
-        ("nachweis", "Nachweis"),
-        ("general", "Allgemein"),
-    ]
+
+    class Category(models.TextChoices):
+        BRANDSCHUTZ = "brandschutz", "Brandschutz"
+        EXPLOSIONSSCHUTZ = "explosionsschutz", "Explosionsschutz"
+        ARBEITSSICHERHEIT = "arbeitssicherheit", "Arbeitssicherheit"
+        NACHWEIS = "nachweis", "Nachweis"
+        GENERAL = "general", "Allgemein"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     title = models.CharField(max_length=240)
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default="general")
+    category = models.CharField(
+        max_length=50, choices=Category.choices,
+        default=Category.GENERAL,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "documents_document"

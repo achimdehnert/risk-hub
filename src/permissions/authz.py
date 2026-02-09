@@ -87,7 +87,17 @@ def has_permission(
 
 
 def require_permission(permission_code: str) -> None:
-    """Raise PermissionDenied if current user lacks permission."""
+    """Raise PermissionDenied if current user lacks permission.
+
+    When the permission system is not yet bootstrapped (zero
+    Permission rows), all checks pass to avoid blocking the
+    application during initial setup.
+    """
+    from permissions.models import Permission
+
+    if Permission.objects.count() == 0:
+        return
+
     ctx = get_context()
     if ctx.tenant_id is None or ctx.user_id is None:
         raise PermissionDenied(permission_code=permission_code)

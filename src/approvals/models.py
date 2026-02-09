@@ -29,6 +29,7 @@ class ApprovalWorkflow(models.Model):
     description = models.TextField(blank=True, default="")
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "approvals_workflow"

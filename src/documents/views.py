@@ -73,7 +73,7 @@ def document_upload(request: HttpRequest) -> HttpResponse:
             return render(
                 request,
                 "documents/upload.html",
-                {"categories": Document.CATEGORY_CHOICES},
+                {"categories": Document.Category.choices},
             )
 
         try:
@@ -98,7 +98,7 @@ def document_upload(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "documents/upload.html",
-        {"categories": Document.CATEGORY_CHOICES},
+        {"categories": Document.Category.choices},
     )
 
 

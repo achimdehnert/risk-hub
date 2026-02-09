@@ -43,14 +43,14 @@ DEFAULT_PERMISSIONS: list[dict[str, str]] = [
     {"code": "substance.create", "module": "substance", "resource": "substance", "action": "create"},
     {"code": "substance.edit", "module": "substance", "resource": "substance", "action": "edit"},
     {"code": "substance.delete", "module": "substance", "resource": "substance", "action": "delete"},
-    # Documents
-    {"code": "document.view", "module": "document", "resource": "document", "action": "view"},
-    {"code": "document.upload", "module": "document", "resource": "document", "action": "create"},
-    {"code": "document.delete", "module": "document", "resource": "document", "action": "delete"},
-    # Actions
-    {"code": "action.view", "module": "action", "resource": "action_item", "action": "view"},
-    {"code": "action.create", "module": "action", "resource": "action_item", "action": "create"},
-    {"code": "action.edit", "module": "action", "resource": "action_item", "action": "edit"},
+    # Documents (services use documents.read / documents.create)
+    {"code": "documents.read", "module": "document", "resource": "document", "action": "view"},
+    {"code": "documents.create", "module": "document", "resource": "document", "action": "create"},
+    {"code": "documents.delete", "module": "document", "resource": "document", "action": "delete"},
+    # Actions (services use actions.read / actions.write)
+    {"code": "actions.read", "module": "action", "resource": "action_item", "action": "view"},
+    {"code": "actions.write", "module": "action", "resource": "action_item", "action": "create"},
+    {"code": "actions.edit", "module": "action", "resource": "action_item", "action": "edit"},
     # Audit
     {"code": "audit.view", "module": "audit", "resource": "audit", "action": "view"},
     {"code": "audit.export", "module": "audit", "resource": "audit", "action": "export"},

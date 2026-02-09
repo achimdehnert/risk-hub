@@ -541,26 +541,9 @@ class PictogramRef(models.Model):
 
 # =============================================================================
 # HAZARDOUS SUBSTANCE REGISTRY (TRGS 510 / Seveso III)
+# NOTE: Standalone StorageClass removed (Finding 4a).
+# Use Substance.StorageClass for all storage class references.
 # =============================================================================
-
-class StorageClass(models.TextChoices):
-    """TRGS 510 Lagerklassen."""
-
-    LGK_1 = "1", "LGK 1 – Explosive Stoffe"
-    LGK_2A = "2A", "LGK 2A – Verdichtete Gase (brennbar)"
-    LGK_2B = "2B", "LGK 2B – Verdichtete Gase (nicht brennbar)"
-    LGK_3 = "3", "LGK 3 – Entzündbare Flüssigkeiten"
-    LGK_4_1 = "4.1", "LGK 4.1 – Entzündbare feste Stoffe"
-    LGK_4_2 = "4.2", "LGK 4.2 – Selbstentzündliche Stoffe"
-    LGK_4_3 = "4.3", "LGK 4.3 – Stoffe mit Wasserreaktion"
-    LGK_5_1 = "5.1", "LGK 5.1 – Oxidierende Stoffe"
-    LGK_5_2 = "5.2", "LGK 5.2 – Organische Peroxide"
-    LGK_6_1 = "6.1", "LGK 6.1 – Giftige Stoffe"
-    LGK_8 = "8", "LGK 8 – Ätzende Stoffe"
-    LGK_10 = "10", "LGK 10 – Brennbare Flüssigkeiten"
-    LGK_11 = "11", "LGK 11 – Brennbare Feststoffe"
-    LGK_12 = "12", "LGK 12 – Nicht brennbare Flüssigkeiten"
-    LGK_13 = "13", "LGK 13 – Nicht brennbare Feststoffe"
 
 
 class SevesoCategory(models.TextChoices):
@@ -608,8 +591,8 @@ class LocationSubstanceEntry(TenantScopedModel):
 
     # TRGS 510
     storage_class = models.CharField(
-        max_length=5,
-        choices=StorageClass.choices,
+        max_length=10,
+        choices=Substance.StorageClass.choices,
         blank=True, default="",
         db_index=True,
     )

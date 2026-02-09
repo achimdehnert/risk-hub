@@ -148,10 +148,13 @@ class ReferenceStandard(TenantScopedMasterData):
             ),
         ]
         indexes = [
-            models.Index(fields=["tenant_id", "category"]),
+            models.Index(
+                fields=["tenant_id", "category"],
+                name="idx_refstd_tenant_category",
+            ),
         ]
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.code}: {self.title}"
 
 
@@ -207,10 +210,13 @@ class MeasureCatalog(TenantScopedMasterData):
             ),
         ]
         indexes = [
-            models.Index(fields=["tenant_id", "default_type"]),
+            models.Index(
+                fields=["tenant_id", "default_type"],
+                name="idx_meascat_tenant_type",
+            ),
         ]
     
-    def __str__(self):
+    def __str__(self) -> str:
         prefix = f"[{self.code}] " if self.code else ""
         return f"{prefix}{self.title}"
 
@@ -297,7 +303,7 @@ class SafetyFunction(TenantScopedMasterData):
             ),
         ]
     
-    def __str__(self):
+    def __str__(self) -> str:
         levels = []
         if self.performance_level:
             levels.append(f"PL {self.performance_level}")
@@ -342,7 +348,7 @@ class Area(models.Model):
             )
         ]
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.code} - {self.name}" if self.code else self.name
     
     @property
@@ -413,11 +419,9 @@ class ExplosionConcept(models.Model):
     validated_at = models.DateTimeField(null=True, blank=True)
     
     # Audit
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        related_name="created_concepts"
+    created_by = models.UUIDField(
+        null=True, blank=True,
+        help_text="User-ID des Erstellers",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -428,10 +432,13 @@ class ExplosionConcept(models.Model):
         verbose_name_plural = "Explosionsschutzkonzepte"
         ordering = ["-created_at"]
         indexes = [
-            models.Index(fields=["tenant_id", "status"]),
+            models.Index(
+                fields=["tenant_id", "status"],
+                name="idx_concept_tenant_status",
+            ),
         ]
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.title} (v{self.version})"
     
     @property
@@ -546,7 +553,7 @@ class ZoneDefinition(models.Model):
         verbose_name = "Zonendefinition"
         verbose_name_plural = "Zonendefinitionen"
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.get_zone_type_display()} - {self.name}"
     
     @property
@@ -652,7 +659,7 @@ class ProtectionMeasure(models.Model):
         verbose_name_plural = "Schutzmaßnahmen"
         ordering = ["category", "title"]
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"[{self.get_category_display()}] {self.title}"
     
     @property
@@ -817,11 +824,17 @@ class EquipmentType(TenantScopedMasterData):
             ),
         ]
         indexes = [
-            models.Index(fields=["tenant_id", "atex_category"]),
-            models.Index(fields=["tenant_id", "manufacturer"]),
+            models.Index(
+                fields=["tenant_id", "atex_category"],
+                name="idx_eqtype_tenant_atex",
+            ),
+            models.Index(
+                fields=["tenant_id", "manufacturer"],
+                name="idx_eqtype_tenant_mfr",
+            ),
         ]
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.manufacturer} {self.model} ({self.full_atex_marking})"
     
     @property
@@ -926,10 +939,13 @@ class Equipment(models.Model):
         verbose_name = "Betriebsmittel"
         verbose_name_plural = "Betriebsmittel"
         indexes = [
-            models.Index(fields=["tenant_id", "next_inspection_date"]),
+            models.Index(
+                fields=["tenant_id", "next_inspection_date"],
+                name="idx_equip_tenant_inspect",
+            ),
         ]
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.equipment_type} ({self.asset_number or self.serial_number or 'N/A'})"
     
     @property
@@ -1031,7 +1047,7 @@ class Inspection(models.Model):
         verbose_name_plural = "Prüfungen"
         ordering = ["-inspection_date"]
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.get_inspection_type_display()} - {self.equipment} ({self.inspection_date})"
     
     # NOTE: Equipment inspection date updates are handled in
@@ -1119,7 +1135,7 @@ class ZoneIgnitionSourceAssessment(models.Model):
             ),
         ]
     
-    def __str__(self):
+    def __str__(self) -> str:
         status = "wirksam" if self.is_effective else (
             "vorhanden" if self.is_present else "nicht vorhanden"
         )
@@ -1190,5 +1206,5 @@ class VerificationDocument(models.Model):
         verbose_name_plural = "Nachweisdokumente"
         ordering = ["-issued_at"]
     
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.title} ({self.get_document_type_display()})"

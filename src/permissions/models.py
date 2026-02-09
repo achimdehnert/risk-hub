@@ -32,6 +32,7 @@ class Permission(models.Model):
     description = models.TextField(blank=True, default="")
     is_system = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "permissions_permission"
@@ -60,6 +61,7 @@ class Role(models.Model):
         Permission, through="RolePermission", related_name="roles",
     )
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "permissions_role"
@@ -83,6 +85,7 @@ class RolePermission(models.Model):
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     permission = models.ForeignKey(Permission, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
         db_table = "permissions_role_permission"

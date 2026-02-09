@@ -6,29 +6,33 @@ from django.db import models
 
 class Assessment(models.Model):
     """Risk assessment / Gefährdungsbeurteilung."""
-    
-    STATUS_CHOICES = [
-        ("draft", "Draft"),
-        ("in_review", "In Review"),
-        ("approved", "Approved"),
-        ("archived", "Archived"),
-    ]
-    
-    CATEGORY_CHOICES = [
-        ("brandschutz", "Brandschutz"),
-        ("explosionsschutz", "Explosionsschutz"),
-        ("arbeitssicherheit", "Arbeitssicherheit"),
-        ("arbeitsschutz", "Arbeitsschutz"),
-        ("general", "Allgemein"),
-    ]
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        IN_REVIEW = "in_review", "In Review"
+        APPROVED = "approved", "Approved"
+        ARCHIVED = "archived", "Archived"
+
+    class Category(models.TextChoices):
+        BRANDSCHUTZ = "brandschutz", "Brandschutz"
+        EXPLOSIONSSCHUTZ = "explosionsschutz", "Explosionsschutz"
+        ARBEITSSICHERHEIT = "arbeitssicherheit", "Arbeitssicherheit"
+        ARBEITSSCHUTZ = "arbeitsschutz", "Arbeitsschutz"
+        GENERAL = "general", "Allgemein"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     
     title = models.CharField(max_length=240)
     description = models.TextField(blank=True, default="")
-    category = models.CharField(max_length=50, choices=CATEGORY_CHOICES, default="general")
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
+    category = models.CharField(
+        max_length=50, choices=Category.choices,
+        default=Category.GENERAL,
+    )
+    status = models.CharField(
+        max_length=20, choices=Status.choices,
+        default=Status.DRAFT,
+    )
     
     site_id = models.UUIDField(null=True, blank=True, db_index=True)
     
@@ -52,8 +56,14 @@ class Assessment(models.Model):
             ),
         ]
         indexes = [
-            models.Index(fields=["tenant_id", "status"]),
-            models.Index(fields=["tenant_id", "category"]),
+            models.Index(
+                fields=["tenant_id", "status"],
+                name="idx_assessment_tenant_status",
+            ),
+            models.Index(
+                fields=["tenant_id", "category"],
+                name="idx_assessment_tenant_category",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -62,22 +72,20 @@ class Assessment(models.Model):
 
 class Hazard(models.Model):
     """Individual hazard within an assessment."""
-    
-    SEVERITY_CHOICES = [
-        (1, "Gering"),
-        (2, "Mittel"),
-        (3, "Hoch"),
-        (4, "Sehr hoch"),
-        (5, "Kritisch"),
-    ]
-    
-    PROBABILITY_CHOICES = [
-        (1, "Unwahrscheinlich"),
-        (2, "Selten"),
-        (3, "Gelegentlich"),
-        (4, "Wahrscheinlich"),
-        (5, "Häufig"),
-    ]
+
+    class Severity(models.IntegerChoices):
+        LOW = 1, "Gering"
+        MEDIUM = 2, "Mittel"
+        HIGH = 3, "Hoch"
+        VERY_HIGH = 4, "Sehr hoch"
+        CRITICAL = 5, "Kritisch"
+
+    class Probability(models.IntegerChoices):
+        UNLIKELY = 1, "Unwahrscheinlich"
+        RARE = 2, "Selten"
+        OCCASIONAL = 3, "Gelegentlich"
+        PROBABLE = 4, "Wahrscheinlich"
+        FREQUENT = 5, "Häufig"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
@@ -86,8 +94,12 @@ class Hazard(models.Model):
     title = models.CharField(max_length=240)
     description = models.TextField(blank=True, default="")
     
-    severity = models.IntegerField(choices=SEVERITY_CHOICES, default=1)
-    probability = models.IntegerField(choices=PROBABILITY_CHOICES, default=1)
+    severity = models.IntegerField(
+        choices=Severity.choices, default=Severity.LOW,
+    )
+    probability = models.IntegerField(
+        choices=Probability.choices, default=Probability.UNLIKELY,
+    )
     
     mitigation = models.TextField(blank=True, default="")
     residual_risk = models.IntegerField(null=True, blank=True)
@@ -98,7 +110,10 @@ class Hazard(models.Model):
     class Meta:
         db_table = "risk_hazard"
         indexes = [
-            models.Index(fields=["tenant_id", "assessment"]),
+            models.Index(
+                fields=["tenant_id", "assessment"],
+                name="idx_hazard_tenant_assessment",
+            ),
         ]
 
     def __str__(self) -> str:

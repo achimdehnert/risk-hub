@@ -6,18 +6,21 @@ from django.db import models
 
 class RetentionPolicy(models.Model):
     """Retention policy for documents/exports."""
-    
-    DELETE_SOFT = "soft"
-    DELETE_HARD = "hard"
-    DELETE_NEVER = "never"
-    DELETE_CHOICES = [(DELETE_SOFT, "Soft"), (DELETE_HARD, "Hard"), (DELETE_NEVER, "Never")]
+
+    class DeleteMode(models.TextChoices):
+        SOFT = "soft", "Soft"
+        HARD = "hard", "Hard"
+        NEVER = "never", "Never"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     name = models.CharField(max_length=160)
     category = models.CharField(max_length=120)
     retention_days = models.IntegerField()
-    delete_mode = models.CharField(max_length=12, choices=DELETE_CHOICES, default=DELETE_SOFT)
+    delete_mode = models.CharField(
+        max_length=12, choices=DeleteMode.choices,
+        default=DeleteMode.SOFT,
+    )
     legal_hold_allowed = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -30,17 +33,12 @@ class RetentionPolicy(models.Model):
 
 class ExportJob(models.Model):
     """Export job for PDF/Excel generation."""
-    
-    STATUS_QUEUED = "queued"
-    STATUS_RUNNING = "running"
-    STATUS_DONE = "done"
-    STATUS_FAILED = "failed"
-    STATUS_CHOICES = [
-        (STATUS_QUEUED, "Queued"),
-        (STATUS_RUNNING, "Running"),
-        (STATUS_DONE, "Done"),
-        (STATUS_FAILED, "Failed"),
-    ]
+
+    class Status(models.TextChoices):
+        QUEUED = "queued", "Queued"
+        RUNNING = "running", "Running"
+        DONE = "done", "Done"
+        FAILED = "failed", "Failed"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
@@ -48,7 +46,10 @@ class ExportJob(models.Model):
     export_type = models.CharField(max_length=200)
     params_json = models.JSONField(default=dict)
     params_hash = models.CharField(max_length=64)
-    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default=STATUS_QUEUED)
+    status = models.CharField(
+        max_length=16, choices=Status.choices,
+        default=Status.QUEUED,
+    )
     priority = models.IntegerField(default=0)
     started_at = models.DateTimeField(null=True, blank=True)
     finished_at = models.DateTimeField(null=True, blank=True)
@@ -60,7 +61,10 @@ class ExportJob(models.Model):
     class Meta:
         db_table = "reporting_export_job"
         indexes = [
-            models.Index(fields=["tenant_id", "status", "-created_at"]),
+            models.Index(
+                fields=["tenant_id", "status", "-created_at"],
+                name="idx_export_tenant_status",
+            ),
         ]
 
     def __str__(self) -> str:
