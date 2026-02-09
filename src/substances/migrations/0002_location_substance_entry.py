@@ -82,7 +82,10 @@ class Migration(migrations.Migration):
                         choices=[
                             ("1", "LGK 1 – Explosive Stoffe"),
                             ("2A", "LGK 2A – Verdichtete Gase (brennbar)"),
-                            ("2B", "LGK 2B – Verdichtete Gase (nicht brennbar)"),
+                            (
+                                "2B",
+                                "LGK 2B – Verdichtete Gase (nicht brennbar)",
+                            ),
                             ("3", "LGK 3 – Entzündbare Flüssigkeiten"),
                             ("4.1", "LGK 4.1 – Entzündbare feste Stoffe"),
                             ("4.2", "LGK 4.2 – Selbstentzündliche Stoffe"),

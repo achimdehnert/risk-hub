@@ -19,7 +19,7 @@
     <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Ereignistyp</label>
-            <select name="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            <select name="event_type" aria-label="Ereignistyp" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 <option value="">Alle</option>
                 {% for value, label in event_types %}
                 <option value="{{ value }}" {% if filters.event_type == value %}selected{% endif %}>{{ label }}</option>
@@ -28,7 +28,7 @@
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Ressource</label>
-            <select name="resource_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+            <select name="resource_type" aria-label="Ressource" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
                 <option value="">Alle</option>
                 {% for rt in resource_types %}
                 <option value="{{ rt }}" {% if filters.resource_type == rt %}selected{% endif %}>{{ rt }}</option>
@@ -37,12 +37,12 @@
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Von</label>
-            <input type="date" name="date_from" value="{{ filters.date_from }}"
+            <input type="date" name="date_from" value="{{ filters.date_from }}" aria-label="Von-Datum"
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
         </div>
         <div>
             <label class="block text-xs font-medium text-gray-500 mb-1">Bis</label>
-            <input type="date" name="date_to" value="{{ filters.date_to }}"
+            <input type="date" name="date_to" value="{{ filters.date_to }}" aria-label="Bis-Datum"
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
         </div>
         <div class="flex items-end">

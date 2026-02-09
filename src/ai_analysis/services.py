@@ -89,7 +89,9 @@ def analyze_substance(
         flash_point=getattr(sub, "flash_point", "") or "unbekannt",
         lel=getattr(sub, "lel", "") or "?",
         uel=getattr(sub, "uel", "") or "?",
-        auto_ignition_temp=getattr(sub, "auto_ignition_temp", "") or "unbekannt",
+        auto_ignition_temp=(
+            getattr(sub, "auto_ignition_temp", "") or "unbekannt"
+        ),
     )
 
     try:
