@@ -12,7 +12,7 @@ echo "Running migrations..."
 python manage.py migrate --noinput --skip-checks
 
 echo "Collecting static files..."
-python manage.py collectstatic --noinput --clear 2>/dev/null || true
+python manage.py collectstatic --noinput
 
 if [ "$1" = "web" ]; then
     echo "Starting web server (gunicorn)..."
