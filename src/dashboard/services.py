@@ -115,8 +115,8 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
     return ComplianceKPI(
         areas_total=areas.count(),
         areas_with_hazard=areas.filter(
-            has_explosion_hazard=True
-        ).count(),
+            explosion_concepts__status__in=["approved", "in_review"]
+        ).distinct().count(),
         concepts_total=concepts.count(),
         concepts_draft=concepts.filter(status="draft").count(),
         concepts_validated=concepts.filter(
@@ -169,12 +169,12 @@ def get_recent_activities(
 
     activities = []
     for ev in events:
-        icon = _event_icon(ev.category)
+        icon = _event_icon(ev.resource_type or "")
         activities.append({
             "icon": icon[0],
             "color": icon[1],
-            "title": f"{ev.category}.{ev.action}",
-            "detail": str(ev.entity_type or ""),
+            "title": f"{ev.event_type}.{ev.resource_type or ''}",
+            "detail": str(ev.resource_id or ""),
             "timestamp": ev.created_at.strftime("%d.%m. %H:%M"),
             "url": "",
         })
