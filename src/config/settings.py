@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     "notifications",
     "dashboard",
     "approvals",
+    "ai_analysis",
 ]
 
 MIDDLEWARE = [
