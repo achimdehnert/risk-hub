@@ -1,0 +1,53 @@
+<div class="relative" id="notification-dropdown">
+    <div class="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+        <div class="p-3 border-b border-gray-100 flex items-center justify-between">
+            <span class="text-sm font-semibold text-gray-900">Benachrichtigungen</span>
+            {% if unread_count %}
+            <form hx-post="{% url 'notifications:mark-all-read' %}"
+                  hx-target="#notification-badge"
+                  hx-swap="innerHTML">
+                {% csrf_token %}
+                <button type="submit" class="text-xs text-orange-600 hover:text-orange-700">
+                    Alle gelesen
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        <div class="max-h-80 overflow-y-auto divide-y divide-gray-50">
+            {% for notif in notifications %}
+            <a href="{{ notif.action_url|default:'#' }}"
+               class="block px-4 py-3 hover:bg-gray-50 transition"
+               hx-post="{% url 'notifications:mark-read' notif.id %}"
+               hx-swap="none">
+                {% csrf_token %}
+                <div class="flex items-start gap-3">
+                    {% if notif.severity == "critical" %}
+                    <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0"></i>
+                    {% elif notif.severity == "warning" %}
+                    <i data-lucide="alert-circle" class="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0"></i>
+                    {% else %}
+                    <i data-lucide="info" class="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0"></i>
+                    {% endif %}
+                    <div class="min-w-0">
+                        <p class="text-sm text-gray-900 font-medium truncate">{{ notif.title }}</p>
+                        <p class="text-xs text-gray-400 mt-0.5">{{ notif.created_at|timesince }}</p>
+                    </div>
+                </div>
+            </a>
+            {% empty %}
+            <div class="px-4 py-6 text-center text-sm text-gray-400">
+                Keine neuen Benachrichtigungen
+            </div>
+            {% endfor %}
+        </div>
+        {% if notifications %}
+        <div class="p-2 border-t border-gray-100 text-center">
+            <a href="{% url 'notifications:list' %}"
+               class="text-xs text-orange-600 hover:text-orange-700 font-medium">
+                Alle anzeigen
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+<script>lucide.createIcons();</script>

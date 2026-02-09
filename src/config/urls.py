@@ -17,4 +17,8 @@ urlpatterns = [
     path("ex/", include("explosionsschutz.html_urls")),
     path("api/substances/", include("substances.urls")),
     path("substances/", include("substances.html_urls")),
+    path(
+        "notifications/",
+        include("notifications.urls"),
+    ),
 ]

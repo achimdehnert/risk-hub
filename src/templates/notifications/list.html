@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Benachrichtigungen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+        <i data-lucide="bell" class="w-6 h-6 inline mr-2"></i>
+        Benachrichtigungen
+        {% if unread_count %}
+        <span class="ml-2 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+            {{ unread_count }} ungelesen
+        </span>
+        {% endif %}
+    </h1>
+    {% if unread_count %}
+    <form hx-post="{% url 'notifications:mark-all-read' %}" hx-swap="none">
+        {% csrf_token %}
+        <button type="submit"
+                class="text-sm text-orange-600 hover:text-orange-700 font-medium">
+            Alle als gelesen markieren
+        </button>
+    </form>
+    {% endif %}
+</div>
+
+{% if notifications %}
+<div class="bg-white shadow rounded-lg divide-y divide-gray-100">
+    {% for notif in notifications %}
+    <div class="p-4 flex items-start gap-4 {% if not notif.is_read %}bg-orange-50{% endif %}"
+         id="notif-{{ notif.id }}">
+        <div class="flex-shrink-0 mt-1">
+            {% if notif.severity == "critical" %}
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-red-100">
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-red-600"></i>
+            </span>
+            {% elif notif.severity == "warning" %}
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-yellow-100">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-yellow-600"></i>
+            </span>
+            {% else %}
+            <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100">
+                <i data-lucide="info" class="w-4 h-4 text-blue-600"></i>
+            </span>
+            {% endif %}
+        </div>
+        <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-gray-900 {% if not notif.is_read %}font-semibold{% endif %}">
+                {{ notif.title }}
+            </p>
+            {% if notif.message %}
+            <p class="mt-1 text-sm text-gray-500 whitespace-pre-line">{{ notif.message }}</p>
+            {% endif %}
+            <div class="mt-2 flex items-center gap-4 text-xs text-gray-400">
+                <span>{{ notif.created_at|timesince }} ago</span>
+                <span class="px-2 py-0.5 bg-gray-100 rounded">{{ notif.get_category_display }}</span>
+            </div>
+        </div>
+        <div class="flex-shrink-0 flex items-center gap-2">
+            {% if notif.action_url %}
+            <a href="{{ notif.action_url }}"
+               class="text-xs text-orange-600 hover:text-orange-700 font-medium">
+                Anzeigen
+            </a>
+            {% endif %}
+            {% if not notif.is_read %}
+            <button hx-post="{% url 'notifications:mark-read' notif.id %}"
+                    hx-target="#notif-{{ notif.id }}"
+                    hx-swap="outerHTML"
+                    class="text-xs text-gray-400 hover:text-gray-600">
+                {% csrf_token %}
+                <i data-lucide="check" class="w-4 h-4"></i>
+            </button>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="text-center py-12">
+    <i data-lucide="bell-off" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+    <p class="text-gray-500">Keine Benachrichtigungen vorhanden.</p>
+</div>
+{% endif %}
+{% endblock %}
