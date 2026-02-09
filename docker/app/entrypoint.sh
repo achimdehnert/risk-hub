@@ -11,9 +11,16 @@ echo "Database ready!"
 echo "Running migrations..."
 python manage.py migrate --noinput --skip-checks
 
+echo "Collecting static files..."
+python manage.py collectstatic --noinput --clear 2>/dev/null || true
+
 if [ "$1" = "web" ]; then
-    echo "Starting web server..."
-    exec python manage.py runserver 0.0.0.0:8000
+    echo "Starting web server (gunicorn)..."
+    exec gunicorn config.wsgi:application \
+        --bind 0.0.0.0:8000 \
+        --workers "${GUNICORN_WORKERS:-2}" \
+        --timeout 120 \
+        --access-logfile -
 fi
 
 if [ "$1" = "worker" ]; then
