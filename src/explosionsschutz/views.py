@@ -8,14 +8,17 @@ Features:
 - Optimierte Queries mit select_related/prefetch_related
 """
 
-from uuid import UUID
-
 from django.db.models import Count, Q
 from django.utils import timezone
-from rest_framework import viewsets, status, permissions
+from rest_framework import status, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from common.views import (
+    TenantAwareViewSet,
+    ReadOnlyMasterDataViewSet,
+)
 
 from .models import (
     ReferenceStandard,
@@ -62,72 +65,6 @@ from .calculations import (
     analyze_ventilation_effectiveness,
     check_equipment_suitability,
 )
-
-
-class TenantAwareViewSet(viewsets.ModelViewSet):
-    """
-    Base ViewSet mit Tenant-Awareness.
-    
-    - Filtert automatisch nach tenant_id
-    - Setzt tenant_id beim Erstellen
-    """
-    
-    def get_queryset(self):
-        qs = super().get_queryset()
-        tenant_id = self.get_tenant_id()
-        if tenant_id:
-            return qs.filter(tenant_id=tenant_id)
-        return qs.none()
-    
-    def get_tenant_id(self) -> UUID | None:
-        """Holt tenant_id aus Request (User oder Header)"""
-        user = self.request.user
-        if hasattr(user, "tenant_id") and user.tenant_id:
-            return user.tenant_id
-        # Fallback: Header für Tests
-        header_tenant = self.request.META.get("HTTP_X_TENANT_ID")
-        if header_tenant:
-            try:
-                return UUID(header_tenant)
-            except (ValueError, TypeError):
-                pass
-        return None
-    
-    def perform_create(self, serializer):
-        tenant_id = self.get_tenant_id()
-        serializer.save(tenant_id=tenant_id)
-
-
-class ReadOnlyMasterDataViewSet(TenantAwareViewSet):
-    """
-    ViewSet für Stammdaten mit Hybrid-Isolation.
-    
-    - Lesen: Globale + eigene Daten
-    - Schreiben: Nur eigene Daten
-    """
-    
-    def get_queryset(self):
-        qs = self.queryset
-        tenant_id = self.get_tenant_id()
-        if tenant_id:
-            return qs.filter(Q(tenant_id__isnull=True) | Q(tenant_id=tenant_id))
-        return qs.filter(tenant_id__isnull=True)
-    
-    def perform_create(self, serializer):
-        tenant_id = self.get_tenant_id()
-        if not tenant_id:
-            raise permissions.PermissionDenied("Tenant erforderlich")
-        serializer.save(tenant_id=tenant_id, is_system=False)
-    
-    def perform_update(self, serializer):
-        if serializer.instance.is_system:
-            raise permissions.PermissionDenied("System-Daten können nicht geändert werden")
-        super().perform_update(serializer)
-    
-    def perform_destroy(self, instance):
-        if instance.is_system:
-            raise permissions.PermissionDenied("System-Daten können nicht gelöscht werden")
-        super().perform_destroy(instance)
 
 
 # =============================================================================

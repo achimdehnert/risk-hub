@@ -6,6 +6,7 @@ from uuid import UUID
 
 from django.db import transaction
 
+from permissions.authz import require_permission
 from substances.models import (
     Substance,
     SdsRevision,
@@ -22,6 +23,7 @@ class SubstanceService:
         tenant_id: UUID
     ) -> Optional[Substance]:
         """Holt Gefahrstoff nach ID."""
+        require_permission("substance.view")
         try:
             return Substance.objects.select_related(
                 "manufacturer", "supplier"
@@ -37,6 +39,7 @@ class SubstanceService:
         tenant_id: UUID
     ) -> Optional[Substance]:
         """Holt Gefahrstoff nach CAS-Nummer."""
+        require_permission("substance.view")
         try:
             identifier = Identifier.objects.select_related(
                 "substance"
@@ -56,6 +59,7 @@ class SubstanceService:
         limit: int = 20
     ) -> list[Substance]:
         """Sucht Gefahrstoffe nach Name, Handelsname oder CAS."""
+        require_permission("substance.view")
         from django.db.models import Q
 
         return list(
@@ -78,6 +82,7 @@ class SubstanceService:
         **kwargs
     ) -> Substance:
         """Erstellt Gefahrstoff mit initialer SDS-Revision."""
+        require_permission("substance.create")
         substance = Substance.objects.create(
             tenant_id=tenant_id,
             created_by=created_by,

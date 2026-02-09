@@ -2,10 +2,12 @@
 """API Views für Substances Module."""
 
 from django.http import HttpResponse
-from rest_framework import viewsets, permissions, status
+from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.decorators import action
+
+from common.views import TenantAwareViewSet, ReadOnlyRefViewSet
 
 from .models import (
     Party,
@@ -27,37 +29,6 @@ from .serializers import (
     PrecautionaryStatementRefSerializer,
     PictogramRefSerializer,
 )
-
-
-# =============================================================================
-# BASE VIEWSETS
-# =============================================================================
-
-class TenantAwareViewSet(viewsets.ModelViewSet):
-    """Basis-ViewSet mit Tenant-Filterung."""
-
-    def get_tenant_id(self):
-        """Holt Tenant-ID aus Request."""
-        return getattr(self.request, "tenant_id", None)
-
-    def get_queryset(self):
-        """Filtert nach Tenant."""
-        qs = super().get_queryset()
-        tenant_id = self.get_tenant_id()
-        if tenant_id:
-            qs = qs.filter(tenant_id=tenant_id)
-        return qs
-
-    def perform_create(self, serializer):
-        """Setzt Tenant-ID bei Erstellung."""
-        tenant_id = self.get_tenant_id()
-        user_id = self.request.user.id if self.request.user else None
-        serializer.save(tenant_id=tenant_id, created_by=user_id)
-
-
-class ReadOnlyRefViewSet(viewsets.ReadOnlyModelViewSet):
-    """Read-Only ViewSet für Referenzdaten."""
-    permission_classes = [permissions.AllowAny]
 
 
 # =============================================================================

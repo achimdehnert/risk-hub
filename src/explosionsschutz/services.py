@@ -17,6 +17,8 @@ from django.db import transaction
 from django.core.exceptions import ValidationError, PermissionDenied
 from django.utils import timezone
 
+from permissions.authz import require_permission
+
 from .models import (
     Area,
     ExplosionConcept,
@@ -160,50 +162,44 @@ def emit_audit_event(
     entity_type: str,
     entity_id: UUID,
     payload: dict,
-    user_id: Optional[UUID] = None
+    user_id: Optional[UUID] = None,
 ):
     """
-    Emittiert ein Audit-Event.
-    
-    In Produktion würde dies in die audit_audit_event Tabelle schreiben.
+    Emittiert ein Audit-Event via common.context.
+
+    Raises ImportError if audit module is missing — this is
+    intentional to catch misconfiguration early.
     """
-    try:
-        from audit.services import emit_audit_event as _emit
-        _emit(
-            tenant_id=tenant_id,
-            category=category,
-            action=action,
-            entity_type=entity_type,
-            entity_id=entity_id,
-            payload=payload,
-            user_id=user_id,
-        )
-    except ImportError:
-        # Audit-Modul nicht verfügbar - Log stattdessen
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(
-            f"AUDIT: {category}.{action} | {entity_type}:{entity_id} | {payload}"
-        )
+    from common.context import (
+        emit_audit_event as _emit,
+    )
+    _emit(
+        tenant_id=tenant_id,
+        category=category,
+        action=action,
+        entity_type=entity_type,
+        entity_id=entity_id,
+        payload=payload,
+        user_id=user_id,
+    )
 
 
-def create_outbox_message(tenant_id: UUID, topic: str, payload: dict):
+def create_outbox_message(
+    tenant_id: UUID, topic: str, payload: dict,
+):
     """
     Erstellt eine Outbox-Nachricht für async Verarbeitung.
-    
-    In Produktion würde dies in die outbox_outbox_message Tabelle schreiben.
+
+    Raises ImportError if outbox module is missing.
     """
-    try:
-        from outbox.models import OutboxMessage
-        OutboxMessage.objects.create(
-            tenant_id=tenant_id,
-            topic=topic,
-            payload=payload,
-        )
-    except ImportError:
-        import logging
-        logger = logging.getLogger(__name__)
-        logger.info(f"OUTBOX: {topic} | {payload}")
+    from common.context import (
+        emit_outbox_event as _emit_outbox,
+    )
+    _emit_outbox(
+        topic=topic,
+        payload=payload,
+        tenant_id=tenant_id,
+    )
 
 
 # =============================================================================
@@ -224,7 +220,9 @@ def create_explosion_concept(
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
-    
+
+    require_permission("ex_concept.create")
+
     # Validierung: Area muss zum Tenant gehören
     area = Area.objects.get(id=cmd.area_id)
     if area.tenant_id != tenant_id:
@@ -298,7 +296,9 @@ def update_explosion_concept(
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
-    
+
+    require_permission("ex_concept.create")
+
     concept = ExplosionConcept.objects.select_for_update().get(
         id=cmd.concept_id,
         tenant_id=tenant_id
@@ -359,12 +359,14 @@ def validate_explosion_concept(
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
-    
+
+    require_permission("ex_concept.approve")
+
     concept = ExplosionConcept.objects.select_for_update().get(
         id=cmd.concept_id,
         tenant_id=tenant_id
     )
-    
+
     if concept.status != ExplosionConcept.Status.DRAFT:
         raise ValidationError("Nur Entwürfe können validiert werden")
     

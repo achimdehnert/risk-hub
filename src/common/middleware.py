@@ -80,10 +80,17 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 except (ValueError, TypeError):
                     pass
 
-            # Allow public paths without tenant
-            public_paths = ["/", "/api/", "/ex/", "/substances/", "/static/"]
-            if any(request.path == p or request.path.startswith(p)
-                   for p in public_paths if p != "/"):
+            # Allow only truly public paths without tenant
+            public_prefixes = [
+                "/static/",
+                "/health/",
+                "/favicon.ico",
+                "/__debug__/",
+            ]
+            if any(
+                request.path.startswith(p)
+                for p in public_prefixes
+            ):
                 set_tenant(None, None)
                 set_db_tenant(None)
                 return None
@@ -91,7 +98,10 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 set_tenant(None, None)
                 set_db_tenant(None)
                 return None
-            if allow_localhost and request.path.startswith("/admin/"):
+            if allow_localhost and (
+                request.path.startswith("/admin/")
+                or request.path.startswith("/api/schema")
+            ):
                 set_tenant(None, None)
                 set_db_tenant(None)
                 return None

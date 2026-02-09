@@ -69,15 +69,17 @@ def set_request_id(request_id: str | None = None) -> str:
 def set_db_tenant(tenant_id: UUID | None) -> None:
     """Set PostgreSQL session variable for RLS (ADR-003 §4.3).
 
-    Sets ``app.tenant_id`` via ``SET LOCAL`` so RLS policies
-    can enforce tenant isolation at the DB level.
+    Uses session-scoped ``SET`` (not ``SET LOCAL``) so the
+    variable persists across autocommit queries until the
+    next request resets it via middleware.
     """
     from django.db import connection
 
     if tenant_id is not None:
         with connection.cursor() as cursor:
             cursor.execute(
-                "SET LOCAL app.tenant_id = %s", [str(tenant_id)],
+                "SET app.tenant_id = %s",
+                [str(tenant_id)],
             )
     else:
         with connection.cursor() as cursor:
