@@ -5,8 +5,11 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
+# System deps (weasyprint needs libpango, libgdk-pixbuf, libffi)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential curl \
+    libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 \
+    libffi-dev libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy shared packages first
@@ -20,7 +23,12 @@ RUN pip install --no-cache-dir -U pip \
 
 # Install main app dependencies
 COPY pyproject.toml /app/pyproject.toml
-RUN pip install --no-cache-dir Django dj-database-url "psycopg[binary]" python-dotenv django-htmx django-ninja djangorestframework django-filter pydantic boto3 httpx structlog jinja2 jsonschema tenacity gunicorn
+RUN pip install --no-cache-dir \
+    Django dj-database-url "psycopg[binary]" python-dotenv \
+    django-htmx django-ninja djangorestframework django-filter \
+    pydantic boto3 httpx structlog jinja2 jsonschema tenacity \
+    weasyprint python-docx "celery[redis]" \
+    gunicorn whitenoise
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
