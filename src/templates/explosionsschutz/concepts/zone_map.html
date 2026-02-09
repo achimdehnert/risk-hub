@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+{% block title %}Zonenplan: {{ concept.title }} — Schutztat{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{% url 'explosionsschutz:concept-detail-html' concept.pk %}"
+       class="text-sm text-gray-500 hover:text-gray-700">&larr; Zurück zum Konzept</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-2">
+        <i data-lucide="map" class="w-6 h-6 inline mr-2"></i>
+        Zonenplan: {{ concept.title }}
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">Bereich: {{ concept.area.name }}</p>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- SVG Zone Map -->
+    <div class="lg:col-span-2 bg-white rounded-lg shadow p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-gray-900">Zonenvisualisierung</h2>
+            <div class="flex items-center gap-2 text-xs text-gray-500">
+                <span class="inline-flex items-center gap-1">
+                    <span class="w-3 h-3 rounded-full bg-red-500"></span> Zone 0/20
+                </span>
+                <span class="inline-flex items-center gap-1">
+                    <span class="w-3 h-3 rounded-full bg-orange-400"></span> Zone 1/21
+                </span>
+                <span class="inline-flex items-center gap-1">
+                    <span class="w-3 h-3 rounded-full bg-yellow-300"></span> Zone 2/22
+                </span>
+            </div>
+        </div>
+
+        <div id="zone-map-container" class="border border-gray-200 rounded-lg overflow-hidden bg-gray-50"
+             style="min-height: 500px;">
+            <svg id="zone-map" viewBox="0 0 800 600" class="w-full h-full"
+                 xmlns="http://www.w3.org/2000/svg">
+                <!-- Background grid -->
+                <defs>
+                    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#e5e7eb" stroke-width="0.5"/>
+                    </pattern>
+                </defs>
+                <rect width="800" height="600" fill="url(#grid)"/>
+
+                <!-- Area outline -->
+                <rect x="100" y="50" width="600" height="500" rx="8"
+                      fill="none" stroke="#374151" stroke-width="2" stroke-dasharray="8,4"/>
+                <text x="110" y="40" font-size="14" fill="#374151" font-weight="bold">
+                    {{ concept.area.name }}
+                </text>
+
+                {% for zone in zones %}
+                <!-- Zone {{ zone.zone_type }} -->
+                <g class="zone-group" data-zone-id="{{ zone.id }}" data-zone-type="{{ zone.zone_type }}">
+                    {% if zone.zone_type == "0" or zone.zone_type == "20" %}
+                    <circle cx="{{ zone.cx|default:'400' }}" cy="{{ zone.cy|default:'300' }}"
+                            r="{{ zone.radius|default:'60' }}"
+                            fill="rgba(239, 68, 68, 0.3)" stroke="#ef4444" stroke-width="2"/>
+                    <text x="{{ zone.cx|default:'400' }}" y="{{ zone.cy|default:'300' }}"
+                          text-anchor="middle" dominant-baseline="middle"
+                          font-size="12" font-weight="bold" fill="#991b1b">
+                        Zone {{ zone.zone_type }}
+                    </text>
+                    {% elif zone.zone_type == "1" or zone.zone_type == "21" %}
+                    <circle cx="{{ zone.cx|default:'400' }}" cy="{{ zone.cy|default:'300' }}"
+                            r="{{ zone.radius|default:'120' }}"
+                            fill="rgba(251, 146, 60, 0.2)" stroke="#fb923c" stroke-width="2"/>
+                    <text x="{{ zone.cx|default:'400' }}" y="{{ zone.text_y|default:'200' }}"
+                          text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">
+                        Zone {{ zone.zone_type }}
+                    </text>
+                    {% elif zone.zone_type == "2" or zone.zone_type == "22" %}
+                    <circle cx="{{ zone.cx|default:'400' }}" cy="{{ zone.cy|default:'300' }}"
+                            r="{{ zone.radius|default:'180' }}"
+                            fill="rgba(253, 224, 71, 0.15)" stroke="#fde047" stroke-width="2"/>
+                    <text x="{{ zone.cx|default:'400' }}" y="{{ zone.text_y|default:'140' }}"
+                          text-anchor="middle" font-size="12" font-weight="bold" fill="#854d0e">
+                        Zone {{ zone.zone_type }}
+                    </text>
+                    {% endif %}
+                </g>
+                {% empty %}
+                <text x="400" y="300" text-anchor="middle" font-size="16" fill="#9ca3af">
+                    Keine Zonen definiert
+                </text>
+                {% endfor %}
+
+                <!-- Equipment markers -->
+                {% for eq in equipment %}
+                <g class="equipment-marker" data-eq-id="{{ eq.id }}">
+                    <circle cx="{{ eq.map_x|default:'250' }}" cy="{{ eq.map_y|default:'350' }}" r="8"
+                            fill="#3b82f6" stroke="white" stroke-width="2"/>
+                    <text x="{{ eq.map_x|default:'250' }}" y="{{ eq.label_y|default:'372' }}"
+                          text-anchor="middle" font-size="9" fill="#1e40af">
+                        {{ eq.serial_number|truncatechars:12 }}
+                    </text>
+                </g>
+                {% endfor %}
+
+                <!-- Scale -->
+                <line x1="120" y1="570" x2="220" y2="570" stroke="#374151" stroke-width="2"/>
+                <text x="170" y="585" text-anchor="middle" font-size="10" fill="#6b7280">10 m</text>
+            </svg>
+        </div>
+    </div>
+
+    <!-- Zone Details Sidebar -->
+    <div class="space-y-4">
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Zonen</h3>
+            {% for zone in zones %}
+            <div class="mb-3 p-3 rounded border border-gray-100 hover:border-orange-200 transition cursor-pointer"
+                 data-zone-id="{{ zone.id }}">
+                <div class="flex items-center gap-2 mb-1">
+                    {% if zone.zone_type == "0" or zone.zone_type == "20" %}
+                    <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                    {% elif zone.zone_type == "1" or zone.zone_type == "21" %}
+                    <span class="w-3 h-3 rounded-full bg-orange-400"></span>
+                    {% else %}
+                    <span class="w-3 h-3 rounded-full bg-yellow-300"></span>
+                    {% endif %}
+                    <span class="text-sm font-medium">{{ zone.get_zone_type_display }} — {{ zone.name }}</span>
+                </div>
+                {% if zone.extent_horizontal_m or zone.extent_vertical_m %}
+                <p class="text-xs text-gray-500">
+                    Ausdehnung: {{ zone.extent_horizontal_m|default:"-" }}m h / {{ zone.extent_vertical_m|default:"-" }}m v
+                </p>
+                {% endif %}
+                {% if zone.justification %}
+                <p class="text-xs text-gray-400 mt-1 truncate">{{ zone.justification }}</p>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p class="text-sm text-gray-400">Keine Zonen definiert</p>
+            {% endfor %}
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Betriebsmittel</h3>
+            {% for eq in equipment %}
+            <div class="mb-2 flex items-center gap-2 text-sm">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span class="text-gray-700">{{ eq.serial_number }}</span>
+                {% if eq.equipment_type %}
+                <span class="text-xs text-gray-400">{{ eq.equipment_type.name }}</span>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p class="text-sm text-gray-400">Keine Betriebsmittel im Bereich</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

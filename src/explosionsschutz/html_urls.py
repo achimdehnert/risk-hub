@@ -9,6 +9,7 @@ from .export_views import (
     ConceptExportDocxView,
     ConceptExportPdfView,
     ConceptPreviewView,
+    ZoneMapView,
 )
 from .template_views import (
     HomeView,
@@ -50,6 +51,12 @@ urlpatterns = [
         "equipment/<uuid:pk>/",
         EquipmentDetailView.as_view(),
         name="equipment-detail-html"
+    ),
+    # Zone Map
+    path(
+        "concepts/<uuid:pk>/zone-map/",
+        ZoneMapView.as_view(),
+        name="concept-zone-map",
     ),
     # Export
     path(

@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views import View
 
 from .document_generator import ExSchutzDocumentGenerator
-from .models import ExplosionConcept
+from .models import Equipment, ExplosionConcept
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +111,56 @@ class ConceptPreviewView(View):
                 "html_preview": html_preview,
             },
         )
+
+
+class ZoneMapView(View):
+    """Interactive SVG zone map for a concept."""
+
+    def get(self, request: HttpRequest, pk) -> HttpResponse:
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+
+        concept = get_object_or_404(
+            ExplosionConcept.objects.filter(base_filter)
+            .select_related("area"),
+            pk=pk,
+        )
+
+        zones = concept.zones.all().order_by("zone_type")
+        equipment = Equipment.objects.filter(
+            zone__concept=concept,
+            status="active",
+        ).select_related("equipment_type", "zone")
+
+        # Assign default positions for SVG rendering
+        zone_data = _assign_zone_positions(zones)
+
+        return render(
+            request,
+            "explosionsschutz/concepts/zone_map.html",
+            {
+                "concept": concept,
+                "zones": zone_data,
+                "equipment": equipment,
+            },
+        )
+
+
+def _assign_zone_positions(zones):
+    """Assign SVG positions to zones for concentric rendering."""
+    zone_list = list(zones)
+    cx, cy = 400, 300
+    radii = {"0": 60, "20": 60, "1": 120, "21": 120, "2": 180, "22": 180}
+
+    for zone in zone_list:
+        zone.cx = cx
+        zone.cy = cy
+        zone.radius = radii.get(zone.zone_type, 100)
+        zone.text_y = cy - zone.radius + 15
+
+    # Sort so outer zones render first (largest radius first)
+    zone_list.sort(key=lambda z: z.radius, reverse=True)
+    return zone_list
 
 
 def _wrap_html(content: str, title: str = "") -> str:
