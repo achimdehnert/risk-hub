@@ -22,4 +22,5 @@ urlpatterns = [
         "notifications/",
         include("notifications.urls"),
     ),
+    path("audit/", include("audit.urls")),
 ]

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Audit-Log — Schutztat{% endblock %}
+
+{% block content %}
+<div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+        <i data-lucide="scroll-text" class="w-6 h-6 inline mr-2"></i>
+        Audit-Log
+    </h1>
+    <a href="{% url 'audit:export-csv' %}?event_type={{ filters.event_type }}&resource_type={{ filters.resource_type }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}"
+       class="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white text-sm font-medium rounded-lg hover:bg-green-700 transition">
+        <i data-lucide="download" class="w-4 h-4"></i>
+        CSV Export
+    </a>
+</div>
+
+<!-- Filters -->
+<form method="get" class="bg-white rounded-lg shadow p-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Ereignistyp</label>
+            <select name="event_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="">Alle</option>
+                {% for value, label in event_types %}
+                <option value="{{ value }}" {% if filters.event_type == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Ressource</label>
+            <select name="resource_type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                <option value="">Alle</option>
+                {% for rt in resource_types %}
+                <option value="{{ rt }}" {% if filters.resource_type == rt %}selected{% endif %}>{{ rt }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Von</label>
+            <input type="date" name="date_from" value="{{ filters.date_from }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        </div>
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Bis</label>
+            <input type="date" name="date_to" value="{{ filters.date_to }}"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        </div>
+        <div class="flex items-end">
+            <button type="submit"
+                    class="w-full px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition">
+                Filtern
+            </button>
+        </div>
+    </div>
+</form>
+
+<!-- Events Table -->
+{% if events %}
+<div class="bg-white shadow rounded-lg overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Zeitpunkt</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ressource</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">IP</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-100">
+            {% for ev in events %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm text-gray-500 whitespace-nowrap">
+                    {{ ev.created_at|date:"d.m.Y H:i:s" }}
+                </td>
+                <td class="px-4 py-3">
+                    {% if ev.event_type == "create" %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">{{ ev.get_event_type_display }}</span>
+                    {% elif ev.event_type == "delete" %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">{{ ev.get_event_type_display }}</span>
+                    {% elif ev.event_type == "update" %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">{{ ev.get_event_type_display }}</span>
+                    {% elif ev.event_type == "approve" or ev.event_type == "reject" %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">{{ ev.get_event_type_display }}</span>
+                    {% else %}
+                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">{{ ev.get_event_type_display }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-900">
+                    {{ ev.resource_type }}
+                    {% if ev.resource_id %}
+                    <span class="text-xs text-gray-400 font-mono ml-1">{{ ev.resource_id|truncatechars:12 }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">
+                    {{ ev.details }}
+                </td>
+                <td class="px-4 py-3 text-xs text-gray-400 font-mono">
+                    {{ ev.ip_address|default:"-" }}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+<p class="mt-2 text-xs text-gray-400">{{ events|length }} Einträge (max. 200)</p>
+{% else %}
+<div class="text-center py-12 bg-white rounded-lg shadow">
+    <i data-lucide="search-x" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+    <p class="text-gray-500">Keine Audit-Einträge gefunden.</p>
+</div>
+{% endif %}
+{% endblock %}
