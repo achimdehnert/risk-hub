@@ -37,3 +37,9 @@ COPY src /app/src
 WORKDIR /app/src
 
 ENV PYTHONPATH=/app/src
+
+# Collect static files at build time
+RUN DJANGO_SECRET_KEY=build-only \
+    DJANGO_SETTINGS_MODULE=config.settings \
+    DATABASE_URL=sqlite:///dev-null \
+    python manage.py collectstatic --noinput 2>/dev/null || true
