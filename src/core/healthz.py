@@ -1,22 +1,39 @@
 """
-Health check views for Risk-Hub (ADR-021).
+Health check endpoints for Risk-Hub (ADR-022).
 
-Endpoints:
-  /livez/   — Liveness probe (is the process alive?)
-  /healthz/ — Readiness probe (can it serve traffic?)
+These endpoints are exempt from authentication and tenant resolution.
+They MUST be accessible without a subdomain for Docker healthchecks
+and load balancer probes to function correctly.
+
+Registration in config/urls.py:
+    from core.healthz import HEALTH_PATHS, liveness, readiness
+
+    urlpatterns = [
+        path("livez/", liveness, name="health-liveness"),
+        path("healthz/", readiness, name="health-readiness"),
+    ]
 """
 
 import time
 
 from django.db import connection
 from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_GET
+
+# Paths that must bypass tenant middleware (import in middleware)
+HEALTH_PATHS = frozenset({"/livez/", "/healthz/"})
 
 
+@csrf_exempt
+@require_GET
 def liveness(request):
     """Liveness probe: process is running. No dependency checks."""
-    return JsonResponse({"status": "alive"}, status=200)
+    return JsonResponse({"status": "alive"})
 
 
+@csrf_exempt
+@require_GET
 def readiness(request):
     """Readiness probe: all dependencies healthy, ready to serve."""
     checks = {}
