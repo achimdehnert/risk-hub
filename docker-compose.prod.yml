@@ -14,6 +14,16 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    shm_size: 128m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - risk_hub_network
 
@@ -21,11 +31,21 @@ services:
     image: redis:7-alpine
     container_name: risk_hub_redis
     restart: unless-stopped
+    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 30
+    deploy:
+      resources:
+        limits:
+          memory: 192M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
     networks:
       - risk_hub_network
 
@@ -50,6 +70,23 @@ services:
     command: ["web"]
     ports:
       - "127.0.0.1:8090:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/livez/')\""]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
     networks:
       - risk_hub_network
 
@@ -70,6 +107,17 @@ services:
         condition: service_healthy
     entrypoint: ["/entrypoint.sh"]
     command: ["worker"]
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+        reservations:
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - risk_hub_network
 

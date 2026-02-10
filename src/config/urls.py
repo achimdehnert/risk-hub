@@ -6,8 +6,12 @@ from django.urls import include, path
 
 from config.api import api
 from config.views import home, user_profile
+from core.healthz import liveness, readiness
 
 urlpatterns = [
+    # Health checks (ADR-021: /livez/ liveness + /healthz/ readiness)
+    path("livez/", liveness, name="liveness"),
+    path("healthz/", readiness, name="healthz"),
     path("", home),
     path("dashboard/", include("dashboard.urls")),
     path("admin/", admin.site.urls),
