@@ -105,11 +105,11 @@ class Command(BaseCommand):
 
         self.stdout.write(
             f"Importiere Gefahrstoffe für Tenant "
-            f"'{org.name}' ({org.id})..."
+            f"'{org.name}' (tenant_id={org.tenant_id})..."
         )
 
         service = SubstanceImportService(
-            tenant_id=org.id,
+            tenant_id=org.tenant_id,
             user_id=user_id,
         )
         stats = service.import_from_file(
