@@ -142,8 +142,14 @@ class SubstanceDetailView(View):
             tenant_id=tenant_id
         )
 
-        # Ex-Schutz-Daten
-        ex_data = ExIntegrationService.get_ex_data(pk, tenant_id)
+        # Ex-Schutz-Daten (graceful fallback when permission
+        # context is unavailable, e.g. anonymous users)
+        try:
+            ex_data = ExIntegrationService.get_ex_data(
+                pk, tenant_id
+            )
+        except Exception:
+            ex_data = None
 
         return render(request, self.template_name, {
             "substance": substance,
