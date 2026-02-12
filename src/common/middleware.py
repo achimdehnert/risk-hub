@@ -83,6 +83,8 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
             # Allow only truly public paths without tenant
             public_prefixes = [
                 "/static/",
+                "/livez/",
+                "/healthz/",
                 "/health/",
                 "/favicon.ico",
                 "/__debug__/",
