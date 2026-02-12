@@ -88,6 +88,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 "/health/",
                 "/favicon.ico",
                 "/__debug__/",
+                "/api/v1/",
             ]
             if any(
                 request.path.startswith(p)
