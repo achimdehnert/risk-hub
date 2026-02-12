@@ -8,7 +8,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from permissions.authz import require_permission
-from risk.models import Assessment
+from risk.models import Assessment, Hazard
 
 
 @dataclass(frozen=True)
@@ -26,7 +26,10 @@ class ApproveAssessmentCmd:
     assessment_id: UUID
 
 
-def list_assessments(limit: int = 100) -> list[Assessment]:
+def list_assessments(
+    limit: int = 100,
+    offset: int = 0,
+) -> list[Assessment]:
     ctx = get_context()
     if ctx.tenant_id is None:
         raise ValueError("Tenant required")
@@ -35,7 +38,7 @@ def list_assessments(limit: int = 100) -> list[Assessment]:
 
     return list(
         Assessment.objects.filter(tenant_id=ctx.tenant_id)
-        .order_by("-created_at")[:limit]
+        .order_by("-created_at")[offset: offset + limit]
     )
 
 
@@ -139,6 +142,38 @@ def approve_assessment(cmd: ApproveAssessmentCmd) -> Assessment:
     )
 
     return assessment
+
+
+def list_hazards(
+    assessment_id: UUID | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[Hazard]:
+    """List hazards, optionally filtered by assessment."""
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise ValueError("Tenant required")
+
+    require_permission("risk.assessment.read")
+
+    qs = Hazard.objects.filter(tenant_id=ctx.tenant_id).order_by("-created_at")
+    if assessment_id is not None:
+        qs = qs.filter(assessment_id=assessment_id)
+    return list(qs[offset: offset + limit])
+
+
+def get_hazard(hazard_id: UUID) -> Hazard:
+    """Get a single hazard by ID."""
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise ValueError("Tenant required")
+
+    require_permission("risk.assessment.read")
+
+    return Hazard.objects.get(
+        id=hazard_id,
+        tenant_id=ctx.tenant_id,
+    )
 
 
 async def analyze_hazard_with_ai(hazard_description: str) -> str:

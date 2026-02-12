@@ -20,7 +20,10 @@ class CreateActionCmd:
     hazard_id: UUID | None = None
 
 
-def list_actions(limit: int = 100) -> list[ActionItem]:
+def list_actions(
+    limit: int = 100,
+    offset: int = 0,
+) -> list[ActionItem]:
     ctx = get_context()
     if ctx.tenant_id is None:
         raise ValueError("Tenant required")
@@ -29,7 +32,7 @@ def list_actions(limit: int = 100) -> list[ActionItem]:
 
     return list(
         ActionItem.objects.filter(tenant_id=ctx.tenant_id)
-        .order_by("-created_at")[:limit]
+        .order_by("-created_at")[offset: offset + limit]
     )
 
 
