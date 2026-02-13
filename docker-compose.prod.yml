@@ -3,14 +3,11 @@ services:
     image: postgres:16-alpine
     container_name: risk_hub_db
     restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-risk_hub}
-      POSTGRES_USER: ${POSTGRES_USER:-risk_hub}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    env_file: .env.prod
     volumes:
       - risk_hub_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-risk_hub} -d ${POSTGRES_DB:-risk_hub}"]
+      test: ["CMD-SHELL", "pg_isready -U risk_hub -d risk_hub"]
       interval: 5s
       timeout: 3s
       retries: 30
@@ -53,14 +50,7 @@ services:
     image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-risk-hub}/risk-hub-web:${IMAGE_TAG:-latest}
     container_name: risk_hub_web
     restart: unless-stopped
-    environment:
-      DJANGO_ENV: production
-      DJANGO_SETTINGS_MODULE: config.settings
-      DATABASE_URL: postgres://${POSTGRES_USER:-risk_hub}:${POSTGRES_PASSWORD}@risk-hub-db:5432/${POSTGRES_DB:-risk_hub}
-      REDIS_URL: redis://risk-hub-redis:6379/0
-      DJANGO_ALLOWED_HOSTS: ${ALLOWED_HOSTS:-risk-hub.schutztat.de,schutztat.de,localhost}
-      SECRET_KEY: ${SECRET_KEY}
-      DEBUG: "false"
+    env_file: .env.prod
     depends_on:
       risk-hub-db:
         condition: service_healthy
@@ -94,12 +84,7 @@ services:
     image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-risk-hub}/risk-hub-web:${IMAGE_TAG:-latest}
     container_name: risk_hub_worker
     restart: unless-stopped
-    environment:
-      DJANGO_ENV: production
-      DJANGO_SETTINGS_MODULE: config.settings
-      DATABASE_URL: postgres://${POSTGRES_USER:-risk_hub}:${POSTGRES_PASSWORD}@risk-hub-db:5432/${POSTGRES_DB:-risk_hub}
-      REDIS_URL: redis://risk-hub-redis:6379/0
-      SECRET_KEY: ${SECRET_KEY}
+    env_file: .env.prod
     depends_on:
       risk-hub-db:
         condition: service_healthy
