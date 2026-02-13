@@ -22,6 +22,28 @@ def _parse_subdomain(host: str, base_domain: str) -> str | None:
     return None
 
 
+def _sync_platform_context(
+    tenant_id=None, slug=None, request_id=None, user_id=None,
+):
+    """Sync state with platform_context (ADR-028).
+
+    risk-hub keeps its own common.context as primary source
+    (different SQL variable: app.tenant_id vs app.current_tenant).
+    This sync ensures platform_context consumers also see the
+    current request context.
+    """
+    try:
+        from platform_context import context as pc
+
+        if request_id:
+            pc.set_request_id(request_id)
+        if user_id is not None:
+            pc.set_user_id(user_id)
+        pc.set_tenant(tenant_id, slug)
+    except ImportError:
+        pass
+
+
 class RequestContextMiddleware(MiddlewareMixin):
     """Set up request context (request_id, user_id)."""
 
@@ -31,9 +53,12 @@ class RequestContextMiddleware(MiddlewareMixin):
 
         user = getattr(request, "user", None)
         if user and user.is_authenticated:
-            set_user_id(user.id if hasattr(user, "id") else None)
+            uid = user.id if hasattr(user, "id") else None
+            set_user_id(uid)
+            _sync_platform_context(request_id=request_id, user_id=uid)
         else:
             set_user_id(None)
+            _sync_platform_context(request_id=request_id, user_id=None)
 
 
 class SubdomainTenantMiddleware(MiddlewareMixin):
@@ -54,6 +79,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         if host in {d.lower() for d in base_domains}:
             set_tenant(None, None)
             set_db_tenant(None)
+            _sync_platform_context()
             return None
 
         subdomain = None
@@ -65,6 +91,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         if subdomain and subdomain.lower() in reserved_subdomains:
             set_tenant(None, None)
             set_db_tenant(None)
+            _sync_platform_context()
             return None
 
         if not subdomain:
@@ -76,6 +103,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                     set_tenant(tenant_uuid, None)
                     set_db_tenant(tenant_uuid)
                     request.tenant_id = tenant_uuid
+                    _sync_platform_context(tenant_id=tenant_uuid)
                     return None
                 except (ValueError, TypeError):
                     pass
@@ -96,10 +124,12 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
             ):
                 set_tenant(None, None)
                 set_db_tenant(None)
+                _sync_platform_context()
                 return None
             if request.path == "/":
                 set_tenant(None, None)
                 set_db_tenant(None)
+                _sync_platform_context()
                 return None
             if allow_localhost and (
                 request.path.startswith("/admin/")
@@ -107,6 +137,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
             ):
                 set_tenant(None, None)
                 set_db_tenant(None)
+                _sync_platform_context()
                 return None
             return HttpResponseForbidden("Missing tenant subdomain")
 
@@ -119,6 +150,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
             # Tables don't exist yet (during migrations)
             set_tenant(None, subdomain)
             set_db_tenant(None)
+            _sync_platform_context(slug=subdomain)
             return None
 
         if not org:
@@ -130,5 +162,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         request.tenant = org
         request.tenant_id = org.tenant_id
         request.tenant_slug = subdomain
+
+        _sync_platform_context(tenant_id=org.tenant_id, slug=subdomain)
 
         return None

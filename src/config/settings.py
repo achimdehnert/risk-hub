@@ -24,6 +24,8 @@ INSTALLED_APPS = [
     "django_htmx",
     "rest_framework",
     "django_filters",
+    # Platform shared packages
+    "platform_context",
     # Risk-Hub apps
     "common",
     "tenancy",
