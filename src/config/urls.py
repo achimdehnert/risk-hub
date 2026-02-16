@@ -45,4 +45,5 @@ urlpatterns = [
         include("notifications.urls"),
     ),
     path("audit/", include("audit.urls")),
+    path("dsb/", include("dsb.urls")),
 ]

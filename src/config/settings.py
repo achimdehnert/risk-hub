@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "dashboard",
     "approvals",
     "ai_analysis",
+    "dsb",
 ]
 
 MIDDLEWARE = [
