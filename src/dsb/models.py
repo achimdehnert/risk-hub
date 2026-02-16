@@ -3,8 +3,8 @@
 import uuid
 from datetime import timedelta
 
-from django.conf import settings
 from django.db import models
+from django.utils import timezone
 
 
 # ---------------------------------------------------------------------------
@@ -297,7 +297,7 @@ class ProcessingActivity(models.Model):
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="processing_activities",
     )
     number = models.PositiveIntegerField(
@@ -362,11 +362,15 @@ class ProcessingActivity(models.Model):
         db_table = "dsb_processing_activity"
         verbose_name = "Verarbeitungstätigkeit"
         verbose_name_plural = "Verarbeitungstätigkeiten"
-        ordering = ["name"]
+        ordering = ["mandate", "number"]
         constraints = [
             models.UniqueConstraint(
                 fields=["tenant_id", "mandate", "name"],
                 name="uq_dsb_vvt_name_per_mandate",
+            ),
+            models.UniqueConstraint(
+                fields=["tenant_id", "mandate", "number"],
+                name="uq_dsb_vvt_num_per_mandate",
             ),
         ]
         indexes = [
@@ -394,6 +398,7 @@ class ThirdCountryTransfer(models.Model):
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False,
     )
+    tenant_id = models.UUIDField(db_index=True)
     processing_activity = models.ForeignKey(
         ProcessingActivity,
         on_delete=models.CASCADE,
@@ -437,6 +442,7 @@ class RetentionRule(models.Model):
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False,
     )
+    tenant_id = models.UUIDField(db_index=True)
     processing_activity = models.ForeignKey(
         ProcessingActivity,
         on_delete=models.CASCADE,
@@ -495,7 +501,7 @@ class TechnicalMeasure(models.Model):
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="technical_measures",
     )
     category = models.ForeignKey(
@@ -565,7 +571,7 @@ class OrganizationalMeasure(models.Model):
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="organizational_measures",
     )
     category = models.ForeignKey(
@@ -645,7 +651,7 @@ class DataProcessingAgreement(models.Model):
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="dpa_agreements",
     )
     partner_name = models.CharField(
@@ -764,8 +770,12 @@ class PrivacyAudit(models.Model):
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="audits",
+    )
+    title = models.CharField(
+        max_length=300,
+        help_text="Titel / Gegenstand des Audits",
     )
     audit_type = models.CharField(
         max_length=20,
@@ -802,7 +812,7 @@ class PrivacyAudit(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.get_audit_type_display()} @ {self.scheduled_date}"
+        return f"{self.title} ({self.get_audit_type_display()})"
 
 
 class AuditFinding(models.Model):
@@ -879,7 +889,7 @@ class DeletionLog(models.Model):
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="deletion_logs",
     )
     processing_activity = models.ForeignKey(
@@ -903,12 +913,10 @@ class DeletionLog(models.Model):
         max_length=100,
         help_text="Löschmethode (z.B. 'DB DELETE', 'Aktenvernichtung')",
     )
-    confirmed_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
+    confirmed_by_id = models.UUIDField(
         null=True,
         blank=True,
-        related_name="+",
+        help_text="User-ID des Bestätigenden (lose Kopplung)",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -952,7 +960,7 @@ class Breach(models.Model):
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="breaches",
     )
     discovered_at = models.DateTimeField()
@@ -1015,8 +1023,6 @@ class Breach(models.Model):
     @property
     def is_overdue(self) -> bool:
         """Prüft ob 72h-Frist überschritten und noch nicht gemeldet."""
-        from django.utils import timezone
-
         return (
             self.reported_to_authority_at is None
             and timezone.now() > self.deadline_72h

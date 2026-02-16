@@ -41,7 +41,7 @@ class RetentionRuleInline(admin.TabularInline):
 
     model = RetentionRule
     extra = 0
-    fields = ["condition", "period", "legal_reference"]
+    fields = ["standard_period", "condition", "period", "legal_reference"]
 
 
 class AuditFindingInline(admin.TabularInline):
@@ -373,15 +373,16 @@ class PrivacyAuditAdmin(admin.ModelAdmin):
     """Admin für Datenschutz-Audits."""
 
     list_display = [
-        "__str__",
+        "title",
         "mandate",
+        "audit_type",
         "status",
         "scheduled_date",
         "completed_date",
         "tenant_id",
     ]
     list_filter = ["status", "audit_type"]
-    search_fields = ["mandate__name"]
+    search_fields = ["title", "mandate__name"]
     readonly_fields = ["created_at", "updated_at"]
     ordering = ["-scheduled_date"]
     inlines = [AuditFindingInline]
