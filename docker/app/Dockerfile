@@ -20,11 +20,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Copy shared packages first
 COPY packages/bfagent-core /app/packages/bfagent-core
 COPY packages/bfagent-llm /app/packages/bfagent-llm
+COPY packages/platform-context /app/packages/platform-context
 
 # Install shared packages
 RUN pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir /app/packages/bfagent-core \
-    && pip install --no-cache-dir /app/packages/bfagent-llm
+    && pip install --no-cache-dir /app/packages/bfagent-llm \
+    && pip install --no-cache-dir /app/packages/platform-context
 
 # Install main app dependencies
 COPY pyproject.toml /app/pyproject.toml
