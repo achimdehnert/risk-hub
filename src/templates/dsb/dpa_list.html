@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% load dsb_components %}
+{% block title %}AVV — Auftragsverarbeitungsverträge{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="file-signature" class="w-7 h-7 inline text-purple-600 mr-1"></i>
+            AVV (Art. 28)
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+            Auftragsverarbeitungsverträge
+        </p>
+    </div>
+    <a href="{% url 'dsb:dashboard' %}"
+       class="text-sm text-gray-500 hover:text-gray-700">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dashboard
+    </a>
+</div>
+
+{% if expired_count %}
+{% alert_banner "error" "clock" "Abgelaufene AVV" %}
+<p class="text-sm text-red-700 mt-1">{{ expired_count }} AVV abgelaufen — Erneuerung prüfen!</p>
+{% endif %}
+
+{% if rows %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200" data-testid="dpa-table">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vertragspartner</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rolle</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gültig ab</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ablauf</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for dpa in rows %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ dpa.partner_name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.get_role_display }}</td>
+                <td class="px-4 py-3 text-sm">{% status_badge dpa.status %}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.effective_date|date:"d.m.Y"|default:"—" }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.expiry_date|date:"d.m.Y"|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+{% empty_state "file-signature" "Keine AVV" "Es wurden noch keine Auftragsverarbeitungsverträge angelegt." %}
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

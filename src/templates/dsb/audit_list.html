@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% load dsb_components %}
+{% block title %}Audits — Datenschutz-Audits{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="search" class="w-7 h-7 inline text-amber-600 mr-1"></i>
+            Datenschutz-Audits
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+            Geplante und durchgeführte Audits
+        </p>
+    </div>
+    <a href="{% url 'dsb:dashboard' %}"
+       class="text-sm text-gray-500 hover:text-gray-700">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dashboard
+    </a>
+</div>
+
+{% if critical_findings %}
+{% alert_banner "error" "alert-circle" "Kritische Befunde" %}
+<p class="text-sm text-red-700 mt-1">{{ critical_findings }} kritische Audit-Befunde offen</p>
+{% endif %}
+
+{% if rows %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200" data-testid="audit-table">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Titel</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mandat</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Geplant</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Befunde</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for audit in rows %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ audit.title }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ audit.get_audit_type_display }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ audit.mandate.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ audit.scheduled_date|date:"d.m.Y" }}</td>
+                <td class="px-4 py-3 text-sm">{% status_badge audit.status %}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ audit.findings.count }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+{% empty_state "search" "Keine Audits" "Es wurden noch keine Datenschutz-Audits angelegt." %}
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

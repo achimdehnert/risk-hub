@@ -1,4 +1,4 @@
-"""DSB Component inclusion tags (ADR-041 Phase 0)."""
+"""DSB Component inclusion tags (ADR-041 Phase 0+1)."""
 
 from __future__ import annotations
 
@@ -82,4 +82,29 @@ def empty_state(
         message=message,
         action_url=action_url,
         action_label=action_label,
+    )
+
+
+@register.inclusion_tag(
+    "dsb/components/_alert_banner.html",
+)
+def alert_banner(
+    severity: str = "warning",
+    icon: str = "alert-triangle",
+    title: str = "",
+    message: str = "",
+) -> dict:
+    """Render a colored alert banner.
+
+    Usage:
+        {% load dsb_components %}
+        {% alert_banner "error" "alert-triangle" "Achtung" "72h!" %}
+    """
+    from dsb.components.alert_banner import get_context
+
+    return get_context(
+        severity=severity,
+        icon=icon,
+        title=title,
+        message=message,
     )

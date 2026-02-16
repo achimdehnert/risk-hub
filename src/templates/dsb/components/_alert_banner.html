@@ -1,0 +1,27 @@
+<div class="{{ colors.bg }} border {{ colors.border }} rounded-lg p-4"
+     data-testid="{{ testid }}"
+     {% if dismissible %}x-data="{ show: true }" x-show="show"{% endif %}>
+    <div class="flex items-start gap-3">
+        <i data-lucide="{{ icon }}" class="w-5 h-5 {{ colors.icon_color }} flex-shrink-0 mt-0.5"></i>
+        <div class="flex-1">
+            {% if title %}
+            <h3 class="text-sm font-semibold {{ colors.title_color }}">{{ title }}</h3>
+            {% endif %}
+            {% if message %}
+            <p class="text-sm {{ colors.text_color }} {% if title %}mt-1{% endif %}">{{ message }}</p>
+            {% endif %}
+            {% if items %}
+            <ul class="text-sm {{ colors.text_color }} {% if title or message %}mt-2{% endif %} space-y-1">
+                {% for item in items %}
+                <li>{{ item }}</li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
+        {% if dismissible %}
+        <button @click="show = false" class="{{ colors.icon_color }} hover:opacity-70">
+            <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+        {% endif %}
+    </div>
+</div>

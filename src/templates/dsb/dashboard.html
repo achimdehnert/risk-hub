@@ -190,17 +190,26 @@
         <div class="bg-white rounded-lg shadow p-4">
             <h3 class="text-sm font-semibold text-gray-900 mb-3">Schnellzugriff</h3>
             <div class="space-y-2">
-                <a href="/admin/dsb/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
-                    <i data-lucide="settings" class="w-4 h-4"></i> DSB Admin
+                <a href="{% url 'dsb:vvt-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> VVT (Art. 30)
                 </a>
-                <a href="/admin/dsb/processingactivity/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
-                    <i data-lucide="file-text" class="w-4 h-4"></i> VVT verwalten
+                <a href="{% url 'dsb:tom-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="shield-check" class="w-4 h-4"></i> TOM (Art. 32)
                 </a>
-                <a href="/admin/dsb/breach/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
-                    <i data-lucide="alert-triangle" class="w-4 h-4"></i> Datenpannen
+                <a href="{% url 'dsb:dpa-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="file-signature" class="w-4 h-4"></i> AVV (Art. 28)
                 </a>
-                <a href="/admin/dsb/privacyaudit/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                <a href="{% url 'dsb:audit-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
                     <i data-lucide="search" class="w-4 h-4"></i> Audits
+                </a>
+                <a href="{% url 'dsb:deletion-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Löschungen (Art. 17)
+                </a>
+                <a href="{% url 'dsb:breach-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i> Datenpannen (Art. 33)
+                </a>
+                <a href="/admin/dsb/" class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 py-1 mt-2 pt-2 border-t">
+                    <i data-lucide="settings" class="w-4 h-4"></i> DSB Admin
                 </a>
             </div>
         </div>

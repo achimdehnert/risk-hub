@@ -1,0 +1,22 @@
+{% load dsb_components %}
+{% if has_rows %}
+<div class="overflow-x-auto" data-testid="{{ testid }}">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                {% for col in columns %}
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider {{ col.class }}">
+                    {{ col.label }}
+                </th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% block table_body %}
+            {% endblock %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+{% empty_state empty_icon empty_title empty_message %}
+{% endif %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load dsb_components %}
+{% block title %}Löschprotokolle — Art. 17 DSGVO{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="trash-2" class="w-7 h-7 inline text-gray-600 mr-1"></i>
+            Löschprotokolle (Art. 17)
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+            Dokumentierte Datenlöschungen
+        </p>
+    </div>
+    <a href="{% url 'dsb:dashboard' %}"
+       class="text-sm text-gray-500 hover:text-gray-700">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dashboard
+    </a>
+</div>
+
+{% if pending_count %}
+{% alert_banner "warning" "clock" "Ausstehende Löschungen" %}
+<p class="text-sm text-amber-700 mt-1">{{ pending_count }} Löschung{{ pending_count|pluralize:"en" }} noch nicht durchgeführt</p>
+{% endif %}
+
+{% if rows %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200" data-testid="deletion-table">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datenkategorie</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mandat</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Angefordert</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Durchgeführt</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Methode</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datensätze</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for d in rows %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ d.data_category.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ d.mandate.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ d.requested_at|date:"d.m.Y" }}</td>
+                <td class="px-4 py-3 text-sm">
+                    {% if d.executed_at %}
+                    <span class="text-green-600">{{ d.executed_at|date:"d.m.Y" }}</span>
+                    {% else %}
+                    {% status_badge "planned" "Ausstehend" %}
+                    {% endif %}
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ d.method }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ d.record_count|default:"—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+{% empty_state "trash-2" "Keine Löschprotokolle" "Es wurden noch keine Löschungen dokumentiert." %}
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}
