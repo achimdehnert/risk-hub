@@ -185,6 +185,78 @@ class Purpose(models.Model):
         return self.label
 
 
+class TomCategory(models.Model):
+    """Stammdaten-Katalog für TOM (Art. 32 DSGVO).
+
+    Globale Vorlagen, z.B. 'Verschlüsselung', 'Zugriffsbeschränkung',
+    'Schulung'. Tenant-spezifische Instanzen verweisen hierauf.
+    """
+
+    class MeasureType(models.TextChoices):
+        TECHNICAL = "technical", "Technisch"
+        ORGANIZATIONAL = "organizational", "Organisatorisch"
+
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False,
+    )
+    key = models.CharField(max_length=80, unique=True)
+    label = models.CharField(max_length=300)
+    measure_type = models.CharField(
+        max_length=20,
+        choices=MeasureType.choices,
+        help_text="Art der Maßnahme",
+    )
+    description = models.TextField(
+        blank=True,
+        default="",
+        help_text="Beschreibung / Best Practice",
+    )
+
+    class Meta:
+        db_table = "dsb_tom_category"
+        verbose_name = "TOM-Katalog (Stammdaten)"
+        verbose_name_plural = "TOM-Katalog (Stammdaten)"
+        ordering = ["measure_type", "key"]
+
+    def __str__(self) -> str:
+        return f"[{self.get_measure_type_display()}] {self.label}"
+
+
+class StandardRetentionPeriod(models.Model):
+    """Stammdaten: Gesetzliche Aufbewahrungsfristen.
+
+    Globaler Katalog wiederverwendbarer Löschfristen,
+    z.B. '§ 257 HGB — 10 Jahre', '§ 147 AO — 10 Jahre'.
+    """
+
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False,
+    )
+    key = models.CharField(max_length=80, unique=True)
+    label = models.CharField(max_length=300)
+    legal_reference = models.CharField(
+        max_length=200,
+        help_text="Gesetzliche Grundlage (z.B. '§ 257 HGB')",
+    )
+    period = models.CharField(
+        max_length=100,
+        help_text="Frist (z.B. '10 Jahre', 'unverzüglich')",
+    )
+    notes = models.TextField(
+        blank=True,
+        default="",
+    )
+
+    class Meta:
+        db_table = "dsb_standard_retention"
+        verbose_name = "Löschfrist (Stammdaten)"
+        verbose_name_plural = "Löschfristen (Stammdaten)"
+        ordering = ["key"]
+
+    def __str__(self) -> str:
+        return f"{self.label} ({self.period})"
+
+
 # ---------------------------------------------------------------------------
 # VVT — Verarbeitungsverzeichnis (Art. 30 DSGVO)
 # ---------------------------------------------------------------------------
@@ -370,6 +442,14 @@ class RetentionRule(models.Model):
         on_delete=models.CASCADE,
         related_name="retention_rules",
     )
+    standard_period = models.ForeignKey(
+        StandardRetentionPeriod,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="usages",
+        help_text="Referenz auf Löschfristen-Stammdaten",
+    )
     condition = models.CharField(
         max_length=200,
         help_text="Bedingung (z.B. 'bei fehlender Reaktion')",
@@ -417,6 +497,14 @@ class TechnicalMeasure(models.Model):
         Mandate,
         on_delete=models.CASCADE,
         related_name="technical_measures",
+    )
+    category = models.ForeignKey(
+        TomCategory,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="technical_instances",
+        help_text="Referenz auf TOM-Katalog (Stammdaten)",
     )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, default="")
@@ -480,6 +568,14 @@ class OrganizationalMeasure(models.Model):
         on_delete=models.CASCADE,
         related_name="organizational_measures",
     )
+    category = models.ForeignKey(
+        TomCategory,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="organizational_instances",
+        help_text="Referenz auf TOM-Katalog (Stammdaten)",
+    )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, default="")
     status = models.CharField(
@@ -522,6 +618,125 @@ class OrganizationalMeasure(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
+
+# ---------------------------------------------------------------------------
+# AVV — Auftragsverarbeitungsvertrag (Art. 28 DSGVO)
+# ---------------------------------------------------------------------------
+
+
+class DataProcessingAgreement(models.Model):
+    """Auftragsverarbeitungsvertrag (AVV) gemäß Art. 28 DSGVO."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Entwurf"
+        ACTIVE = "active", "Aktiv"
+        EXPIRED = "expired", "Abgelaufen"
+        TERMINATED = "terminated", "Gekündigt"
+
+    class Role(models.TextChoices):
+        CONTROLLER = "controller", "Verantwortlicher"
+        PROCESSOR = "processor", "Auftragsverarbeiter"
+        JOINT_CONTROLLER = "joint", "Gemeinsam Verantwortliche"
+
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False,
+    )
+    tenant_id = models.UUIDField(db_index=True)
+    mandate = models.ForeignKey(
+        Mandate,
+        on_delete=models.CASCADE,
+        related_name="dpa_agreements",
+    )
+    partner_name = models.CharField(
+        max_length=300,
+        help_text="Name des Vertragspartners",
+    )
+    partner_role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+        default=Role.PROCESSOR,
+        help_text="Rolle des Partners im Vertrag",
+    )
+    subject_matter = models.TextField(
+        help_text="Gegenstand der Auftragsverarbeitung",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+    )
+    effective_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Inkrafttreten",
+    )
+    expiry_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Ablaufdatum / Kündigungstermin",
+    )
+    data_categories = models.ManyToManyField(
+        Category,
+        blank=True,
+        help_text="Verarbeitete Datenkategorien",
+    )
+    data_subjects = models.ManyToManyField(
+        SubjectGroup,
+        blank=True,
+        help_text="Betroffene Personengruppen",
+    )
+    processing_activities = models.ManyToManyField(
+        ProcessingActivity,
+        blank=True,
+        related_name="dpa_agreements",
+        help_text="Zugeordnete Verarbeitungstätigkeiten",
+    )
+    technical_measures = models.ManyToManyField(
+        "TechnicalMeasure",
+        blank=True,
+        help_text="Vereinbarte technische Maßnahmen",
+    )
+    organizational_measures = models.ManyToManyField(
+        "OrganizationalMeasure",
+        blank=True,
+        help_text="Vereinbarte organisatorische Maßnahmen",
+    )
+    subprocessors_allowed = models.BooleanField(
+        default=False,
+        help_text="Unterauftragsverarbeitung zulässig",
+    )
+    subprocessors_notes = models.TextField(
+        blank=True,
+        default="",
+        help_text="Hinweise zu Unterauftragsverarbeitern",
+    )
+    document_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="FK zu documents.Document (lose Kopplung)",
+    )
+    notes = models.TextField(blank=True, default="")
+    created_by_id = models.UUIDField(null=True, blank=True)
+    updated_by_id = models.UUIDField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "dsb_dpa"
+        verbose_name = "Auftragsverarbeitungsvertrag"
+        verbose_name_plural = "Auftragsverarbeitungsverträge"
+        ordering = ["partner_name"]
+        indexes = [
+            models.Index(
+                fields=["tenant_id", "status"],
+                name="idx_dsb_dpa_tenant_status",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"AVV: {self.partner_name} ({self.get_status_display()})"
 
 
 # ---------------------------------------------------------------------------

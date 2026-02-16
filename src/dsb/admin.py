@@ -6,6 +6,7 @@ from .models import (
     AuditFinding,
     Breach,
     Category,
+    DataProcessingAgreement,
     DeletionLog,
     Mandate,
     OrganizationalMeasure,
@@ -14,9 +15,11 @@ from .models import (
     Purpose,
     Recipient,
     RetentionRule,
+    StandardRetentionPeriod,
     SubjectGroup,
     TechnicalMeasure,
     ThirdCountryTransfer,
+    TomCategory,
 )
 
 
@@ -111,6 +114,25 @@ class PurposeAdmin(admin.ModelAdmin):
 
     list_display = ["key", "label"]
     search_fields = ["key", "label"]
+    ordering = ["key"]
+
+
+@admin.register(TomCategory)
+class TomCategoryAdmin(admin.ModelAdmin):
+    """Admin für TOM-Katalog (Stammdaten)."""
+
+    list_display = ["key", "label", "measure_type"]
+    list_filter = ["measure_type"]
+    search_fields = ["key", "label"]
+    ordering = ["measure_type", "key"]
+
+
+@admin.register(StandardRetentionPeriod)
+class StandardRetentionPeriodAdmin(admin.ModelAdmin):
+    """Admin für Löschfristen-Stammdaten."""
+
+    list_display = ["key", "label", "legal_reference", "period"]
+    search_fields = ["key", "label", "legal_reference"]
     ordering = ["key"]
 
 
@@ -214,11 +236,12 @@ class TechnicalMeasureAdmin(admin.ModelAdmin):
     list_display = [
         "title",
         "mandate",
+        "category",
         "status",
         "review_date",
         "tenant_id",
     ]
-    list_filter = ["status"]
+    list_filter = ["status", "category"]
     search_fields = ["title", "description"]
     readonly_fields = ["created_at", "updated_at"]
     ordering = ["title"]
@@ -231,14 +254,113 @@ class OrganizationalMeasureAdmin(admin.ModelAdmin):
     list_display = [
         "title",
         "mandate",
+        "category",
         "status",
         "review_date",
         "tenant_id",
     ]
-    list_filter = ["status"]
+    list_filter = ["status", "category"]
     search_fields = ["title", "description"]
     readonly_fields = ["created_at", "updated_at"]
     ordering = ["title"]
+
+
+# ---------------------------------------------------------------------------
+# AVV
+# ---------------------------------------------------------------------------
+
+
+@admin.register(DataProcessingAgreement)
+class DataProcessingAgreementAdmin(admin.ModelAdmin):
+    """Admin für Auftragsverarbeitungsverträge."""
+
+    list_display = [
+        "partner_name",
+        "mandate",
+        "partner_role",
+        "status",
+        "effective_date",
+        "expiry_date",
+        "tenant_id",
+    ]
+    list_filter = ["status", "partner_role"]
+    search_fields = ["partner_name", "subject_matter"]
+    readonly_fields = ["created_at", "updated_at"]
+    ordering = ["partner_name"]
+    filter_horizontal = [
+        "data_categories",
+        "data_subjects",
+        "processing_activities",
+        "technical_measures",
+        "organizational_measures",
+    ]
+    fieldsets = (
+        (
+            "Vertragspartner",
+            {
+                "fields": (
+                    "mandate",
+                    "partner_name",
+                    "partner_role",
+                    "subject_matter",
+                    "status",
+                    "tenant_id",
+                ),
+            },
+        ),
+        (
+            "Laufzeit",
+            {
+                "fields": (
+                    "effective_date",
+                    "expiry_date",
+                ),
+            },
+        ),
+        (
+            "Datenschutz-Details",
+            {
+                "fields": (
+                    "data_categories",
+                    "data_subjects",
+                    "processing_activities",
+                ),
+            },
+        ),
+        (
+            "TOM & Unterauftragsverarbeitung",
+            {
+                "fields": (
+                    "technical_measures",
+                    "organizational_measures",
+                    "subprocessors_allowed",
+                    "subprocessors_notes",
+                ),
+            },
+        ),
+        (
+            "Dokument & Notizen",
+            {
+                "fields": (
+                    "document_id",
+                    "notes",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+        (
+            "Audit",
+            {
+                "fields": (
+                    "created_by_id",
+                    "updated_by_id",
+                    "created_at",
+                    "updated_at",
+                ),
+                "classes": ("collapse",),
+            },
+        ),
+    )
 
 
 # ---------------------------------------------------------------------------
