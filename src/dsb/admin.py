@@ -11,15 +11,34 @@ from .models import (
     OrganizationalMeasure,
     PrivacyAudit,
     ProcessingActivity,
+    Purpose,
     Recipient,
+    RetentionRule,
     SubjectGroup,
     TechnicalMeasure,
+    ThirdCountryTransfer,
 )
 
 
 # ---------------------------------------------------------------------------
 # Inlines
 # ---------------------------------------------------------------------------
+
+
+class ThirdCountryTransferInline(admin.TabularInline):
+    """Inline für Drittlandübermittlungen."""
+
+    model = ThirdCountryTransfer
+    extra = 0
+    fields = ["country", "recipient_entity", "safeguard", "notes"]
+
+
+class RetentionRuleInline(admin.TabularInline):
+    """Inline für Löschfristen."""
+
+    model = RetentionRule
+    extra = 0
+    fields = ["condition", "period", "legal_reference"]
 
 
 class AuditFindingInline(admin.TabularInline):
@@ -86,6 +105,15 @@ class RecipientAdmin(admin.ModelAdmin):
     ordering = ["key"]
 
 
+@admin.register(Purpose)
+class PurposeAdmin(admin.ModelAdmin):
+    """Admin für Verarbeitungszwecke."""
+
+    list_display = ["key", "label"]
+    search_fields = ["key", "label"]
+    ordering = ["key"]
+
+
 # ---------------------------------------------------------------------------
 # VVT
 # ---------------------------------------------------------------------------
@@ -96,7 +124,7 @@ class ProcessingActivityAdmin(admin.ModelAdmin):
     """Admin für Verarbeitungstätigkeiten (VVT)."""
 
     list_display = [
-        "name",
+        "__str__",
         "mandate",
         "legal_basis",
         "risk_level",
@@ -104,13 +132,17 @@ class ProcessingActivityAdmin(admin.ModelAdmin):
         "tenant_id",
     ]
     list_filter = ["legal_basis", "risk_level", "dsfa_required"]
-    search_fields = ["name", "purpose"]
+    search_fields = ["name", "description"]
     readonly_fields = ["created_at", "updated_at"]
-    ordering = ["name"]
+    ordering = ["mandate", "number"]
+    inlines = [ThirdCountryTransferInline, RetentionRuleInline]
     filter_horizontal = [
+        "purposes",
         "data_categories",
         "data_subjects",
         "recipients",
+        "technical_measures",
+        "organizational_measures",
     ]
     fieldsets = (
         (
@@ -118,17 +150,19 @@ class ProcessingActivityAdmin(admin.ModelAdmin):
             {
                 "fields": (
                     "mandate",
+                    "number",
                     "name",
-                    "purpose",
+                    "description",
                     "legal_basis",
                     "tenant_id",
                 ),
             },
         ),
         (
-            "Datenkategorien & Betroffene",
+            "Zwecke & Datenkategorien",
             {
                 "fields": (
+                    "purposes",
                     "data_categories",
                     "data_subjects",
                     "recipients",
@@ -136,14 +170,20 @@ class ProcessingActivityAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Risiko & TOM",
+            "TOM-Zuordnung",
+            {
+                "fields": (
+                    "technical_measures",
+                    "organizational_measures",
+                ),
+            },
+        ),
+        (
+            "Risiko",
             {
                 "fields": (
                     "risk_level",
                     "dsfa_required",
-                    "tom_reference_id",
-                    "third_country_transfer",
-                    "retention_period",
                 ),
             },
         ),

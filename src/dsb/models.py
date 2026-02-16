@@ -166,6 +166,25 @@ class Recipient(models.Model):
         return self.label
 
 
+class Purpose(models.Model):
+    """Lookup: Verarbeitungszweck (Art. 30 Abs. 1 lit. b DSGVO)."""
+
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False,
+    )
+    key = models.CharField(max_length=80, unique=True)
+    label = models.CharField(max_length=300)
+
+    class Meta:
+        db_table = "dsb_purpose"
+        verbose_name = "Verarbeitungszweck"
+        verbose_name_plural = "Verarbeitungszwecke"
+        ordering = ["key"]
+
+    def __str__(self) -> str:
+        return self.label
+
+
 # ---------------------------------------------------------------------------
 # VVT — Verarbeitungsverzeichnis (Art. 30 DSGVO)
 # ---------------------------------------------------------------------------
@@ -209,9 +228,19 @@ class ProcessingActivity(models.Model):
         on_delete=models.CASCADE,
         related_name="processing_activities",
     )
+    number = models.PositiveIntegerField(
+        help_text="Laufende Nummer im Mandat (z.B. 1, 2, 3)",
+    )
     name = models.CharField(max_length=300)
-    purpose = models.TextField(
-        help_text="Zweck der Verarbeitung",
+    purposes = models.ManyToManyField(
+        Purpose,
+        blank=True,
+        help_text="Zwecke der Verarbeitung (Art. 30 Abs. 1 lit. b)",
+    )
+    description = models.TextField(
+        blank=True,
+        default="",
+        help_text="Ergänzende Beschreibung der Verarbeitung",
     )
     legal_basis = models.CharField(
         max_length=30,
@@ -233,21 +262,15 @@ class ProcessingActivity(models.Model):
         blank=True,
         help_text="Empfängerkategorien (Art. 30 Abs. 1 lit. d)",
     )
-    third_country_transfer = models.BooleanField(
-        default=False,
-        help_text="Übermittlung in Drittland (Art. 44ff DSGVO)",
-    )
-    retention_period = models.CharField(
-        max_length=200,
+    technical_measures = models.ManyToManyField(
+        "TechnicalMeasure",
         blank=True,
-        default="",
-        help_text="Aufbewahrungsfrist / Löschfrist",
+        help_text="Zugeordnete technische Maßnahmen",
     )
-    tom_reference_id = models.UUIDField(
-        null=True,
+    organizational_measures = models.ManyToManyField(
+        "OrganizationalMeasure",
         blank=True,
-        db_index=True,
-        help_text="Referenz auf TechnicalMeasure (lose Kopplung)",
+        help_text="Zugeordnete organisatorische Maßnahmen",
     )
     risk_level = models.CharField(
         max_length=20,
@@ -282,7 +305,94 @@ class ProcessingActivity(models.Model):
         ]
 
     def __str__(self) -> str:
-        return self.name
+        return f"{self.number}. {self.name}"
+
+
+class ThirdCountryTransfer(models.Model):
+    """Drittlandübermittlung zu einer Verarbeitungstätigkeit (Art. 44ff)."""
+
+    class Safeguard(models.TextChoices):
+        SCC = "scc", "Standardvertragsklauseln (SCC)"
+        DPF = "dpf", "Data Privacy Framework (DPF)"
+        BCR = "bcr", "Binding Corporate Rules (BCR)"
+        ADEQUACY = "adequacy", "Angemessenheitsbeschluss"
+        CONSENT = "consent", "Einwilligung (Art. 49)"
+        OTHER = "other", "Sonstige"
+
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False,
+    )
+    processing_activity = models.ForeignKey(
+        ProcessingActivity,
+        on_delete=models.CASCADE,
+        related_name="third_country_transfers",
+    )
+    country = models.CharField(
+        max_length=100,
+        help_text="Zielland (z.B. USA, Indien)",
+    )
+    recipient_entity = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Empfänger im Drittland (z.B. LinkedIn)",
+    )
+    safeguard = models.CharField(
+        max_length=20,
+        choices=Safeguard.choices,
+        help_text="Absicherungsmechanismus (Art. 46 DSGVO)",
+    )
+    notes = models.TextField(
+        blank=True,
+        default="",
+        help_text="Ergänzende Hinweise",
+    )
+
+    class Meta:
+        db_table = "dsb_third_country_transfer"
+        verbose_name = "Drittlandübermittlung"
+        verbose_name_plural = "Drittlandübermittlungen"
+        ordering = ["country"]
+
+    def __str__(self) -> str:
+        entity = f" ({self.recipient_entity})" if self.recipient_entity else ""
+        return f"{self.country}{entity}"
+
+
+class RetentionRule(models.Model):
+    """Löschfrist/Aufbewahrungsregel einer Verarbeitungstätigkeit."""
+
+    id = models.UUIDField(
+        primary_key=True, default=uuid.uuid4, editable=False,
+    )
+    processing_activity = models.ForeignKey(
+        ProcessingActivity,
+        on_delete=models.CASCADE,
+        related_name="retention_rules",
+    )
+    condition = models.CharField(
+        max_length=200,
+        help_text="Bedingung (z.B. 'bei fehlender Reaktion')",
+    )
+    period = models.CharField(
+        max_length=100,
+        help_text="Frist (z.B. '6-12 Monate', 'unverzüglich')",
+    )
+    legal_reference = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Gesetzliche Grundlage (z.B. '§ 257 HGB')",
+    )
+
+    class Meta:
+        db_table = "dsb_retention_rule"
+        verbose_name = "Löschfrist"
+        verbose_name_plural = "Löschfristen"
+        ordering = ["condition"]
+
+    def __str__(self) -> str:
+        return f"{self.condition}: {self.period}"
 
 
 # ---------------------------------------------------------------------------
