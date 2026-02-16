@@ -1,0 +1,17 @@
+<div class="text-center py-12" data-testid="empty-state">
+    <div class="mx-auto w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+        <i data-lucide="{{ icon }}" class="w-6 h-6 text-gray-400"></i>
+    </div>
+    <h3 class="text-sm font-medium text-gray-900">{{ title }}</h3>
+    {% if message %}
+    <p class="mt-1 text-sm text-gray-500">{{ message }}</p>
+    {% endif %}
+    {% if action_url %}
+    <div class="mt-4">
+        <a href="{{ action_url }}"
+           class="inline-flex items-center px-3 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">
+            {{ action_label }}
+        </a>
+    </div>
+    {% endif %}
+</div>

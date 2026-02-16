@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+{% load dsb_components %}
+{% block title %}Datenschutz — Schutztat{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+        <i data-lucide="shield" class="w-7 h-7 inline text-blue-600 mr-1"></i>
+        Datenschutz-Dashboard
+    </h1>
+    <p class="text-sm text-gray-500 mt-1">
+        DSB-Modul — Übersicht aller datenschutzrelevanten Kennzahlen
+    </p>
+</div>
+
+{% if kpis.mandates_total %}
+<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+    <div class="flex items-center gap-2">
+        <i data-lucide="building-2" class="w-5 h-5 text-blue-600"></i>
+        <span class="text-sm font-medium text-blue-900">
+            {{ kpis.mandates_active }} von {{ kpis.mandates_total }}
+            Mandat{{ kpis.mandates_total|pluralize:"en" }} aktiv
+        </span>
+    </div>
+</div>
+{% endif %}
+
+{% if kpis.breaches_overdue or kpis.findings_critical or kpis.deletions_pending %}
+<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+     data-testid="dsb-alert-banner">
+    <h3 class="text-sm font-semibold text-red-800 mb-2">
+        <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>
+        Handlungsbedarf
+    </h3>
+    <ul class="text-sm text-red-700 space-y-1">
+        {% if kpis.breaches_overdue %}
+        <li>{{ kpis.breaches_overdue }} Datenpanne{{ kpis.breaches_overdue|pluralize:"n" }} — 72h-Frist überschritten!</li>
+        {% endif %}
+        {% if kpis.findings_critical %}
+        <li>{{ kpis.findings_critical }} kritische Audit-Befunde offen</li>
+        {% endif %}
+        {% if kpis.deletions_pending %}
+        <li>{{ kpis.deletions_pending }} Löschung{{ kpis.deletions_pending|pluralize:"en" }} ausstehend</li>
+        {% endif %}
+    </ul>
+</div>
+{% endif %}
+
+<div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8"
+     data-testid="dsb-kpi-grid">
+    {% stat_card "file-text" "VVT" kpis.vvt_total "blue" kpis.vvt_high_risk "hohes Risiko" %}
+    {% stat_card "shield-check" "TOM techn." kpis.tom_tech_total "green" kpis.tom_tech_planned "geplant" %}
+    {% stat_card "users" "TOM org." kpis.tom_org_total "green" kpis.tom_org_planned "geplant" %}
+    {% stat_card "file-signature" "AVV" kpis.dpa_total "purple" kpis.dpa_expired "abgelaufen" %}
+    {% stat_card "search" "Audits" kpis.audits_total "amber" kpis.findings_open "Befunde offen" %}
+    {% stat_card "trash-2" "Löschungen" kpis.deletions_total "gray" kpis.deletions_pending "ausstehend" %}
+    {% stat_card "alert-triangle" "Pannen" kpis.breaches_total "red" kpis.breaches_open "offen" %}
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="lg:col-span-2 space-y-6">
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i data-lucide="file-text" class="w-5 h-5 inline text-blue-500 mr-1"></i>
+                Verarbeitungsverzeichnis (Art. 30)
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ kpis.vvt_total }}</div>
+                    <div class="text-xs text-gray-500">Tätigkeiten</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold {% if kpis.vvt_high_risk %}text-orange-600{% else %}text-gray-400{% endif %}">{{ kpis.vvt_high_risk }}</div>
+                    <div class="text-xs text-gray-500">hohes Risiko</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold {% if kpis.vvt_dsfa_required %}text-red-600{% else %}text-gray-400{% endif %}">{{ kpis.vvt_dsfa_required }}</div>
+                    <div class="text-xs text-gray-500">DSFA erforderlich</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ kpis.third_country_transfers }}</div>
+                    <div class="text-xs text-gray-500">Drittlandtransfers</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i data-lucide="shield-check" class="w-5 h-5 inline text-green-500 mr-1"></i>
+                TOM (Art. 32)
+            </h2>
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Technisch</h3>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-2xl font-bold text-gray-900">{{ kpis.tom_tech_implemented }}</span>
+                        <span class="text-sm text-gray-500">/ {{ kpis.tom_tech_total }} umgesetzt</span>
+                    </div>
+                    {% if kpis.tom_tech_total %}
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: {% widthratio kpis.tom_tech_implemented kpis.tom_tech_total 100 %}%"></div>
+                    </div>
+                    {% endif %}
+                </div>
+                <div>
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Organisatorisch</h3>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-2xl font-bold text-gray-900">{{ kpis.tom_org_implemented }}</span>
+                        <span class="text-sm text-gray-500">/ {{ kpis.tom_org_total }} umgesetzt</span>
+                    </div>
+                    {% if kpis.tom_org_total %}
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div class="bg-green-500 h-2 rounded-full" style="width: {% widthratio kpis.tom_org_implemented kpis.tom_org_total 100 %}%"></div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i data-lucide="file-signature" class="w-5 h-5 inline text-purple-500 mr-1"></i>
+                AVV (Art. 28)
+            </h2>
+            <div class="grid grid-cols-3 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-gray-900">{{ kpis.dpa_total }}</div>
+                    <div class="text-xs text-gray-500">AVV gesamt</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">{{ kpis.dpa_active }}</div>
+                    <div class="text-xs text-gray-500">aktiv</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold {% if kpis.dpa_expired %}text-red-600{% else %}text-gray-400{% endif %}">{{ kpis.dpa_expired }}</div>
+                    <div class="text-xs text-gray-500">abgelaufen</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="space-y-6">
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">
+                <i data-lucide="search" class="w-4 h-4 inline mr-1"></i>
+                Audits
+            </h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Geplant</span>
+                    <span class="font-medium">{{ kpis.audits_planned }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Abgeschlossen</span>
+                    <span class="font-medium text-green-600">{{ kpis.audits_completed }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Offene Befunde</span>
+                    <span class="font-medium {% if kpis.findings_open %}text-amber-600{% endif %}">{{ kpis.findings_open }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Kritische Befunde</span>
+                    <span class="font-medium {% if kpis.findings_critical %}text-red-600{% endif %}">{{ kpis.findings_critical }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">
+                <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>
+                Datenpannen (Art. 33)
+            </h3>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Gesamt</span>
+                    <span class="font-medium">{{ kpis.breaches_total }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Offen (ungemeldet)</span>
+                    <span class="font-medium {% if kpis.breaches_open %}text-amber-600{% endif %}">{{ kpis.breaches_open }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">72h-Frist überschritten</span>
+                    <span class="font-medium {% if kpis.breaches_overdue %}text-red-600{% endif %}">{{ kpis.breaches_overdue }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Schnellzugriff</h3>
+            <div class="space-y-2">
+                <a href="/admin/dsb/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="settings" class="w-4 h-4"></i> DSB Admin
+                </a>
+                <a href="/admin/dsb/processingactivity/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> VVT verwalten
+                </a>
+                <a href="/admin/dsb/breach/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="alert-triangle" class="w-4 h-4"></i> Datenpannen
+                </a>
+                <a href="/admin/dsb/privacyaudit/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="search" class="w-4 h-4"></i> Audits
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

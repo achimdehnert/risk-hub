@@ -1,13 +1,14 @@
-"""URL configuration für DSB Module."""
+"""URL configuration für DSB Module (ADR-041 Phase 0)."""
 
 from django.urls import path
 
+from dsb import views
+
 app_name = "dsb"
 
-urlpatterns: list[path] = [
-    # Phase 1+2: Views werden schrittweise ergänzt
-    # path("", views.dashboard, name="dashboard"),
-    # path("mandates/", views.mandate_list, name="mandate-list"),
+urlpatterns = [
+    path("", views.dashboard, name="dashboard"),
+    # Phase 1: CRUD views (pending)
     # path("vvt/", views.vvt_list, name="vvt-list"),
     # path("audits/", views.audit_list, name="audit-list"),
     # path("deletions/", views.deletion_list, name="deletion-list"),
