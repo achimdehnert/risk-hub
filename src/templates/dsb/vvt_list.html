@@ -13,10 +13,16 @@
             Alle Verarbeitungstätigkeiten des Mandanten
         </p>
     </div>
-    <a href="{% url 'dsb:dashboard' %}"
-       class="text-sm text-gray-500 hover:text-gray-700">
-        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dashboard
-    </a>
+    <div class="flex gap-2">
+        <a href="{% url 'dsb:dashboard' %}"
+           class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+            <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dashboard
+        </a>
+        <a href="{% url 'dsb:vvt-create' %}"
+           class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+            <i data-lucide="plus" class="w-4 h-4"></i> Neue VVT
+        </a>
+    </div>
 </div>
 
 {% if high_risk_count %}
