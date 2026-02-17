@@ -1,16 +1,9 @@
-"""DSB Module Views (ADR-041 Phase 0+1)."""
+"""DSB Module Views (ADR-038 Phase 1)."""
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from dsb.forms import (
-    DataProcessingAgreementForm,
-    MandateForm,
-    OrganizationalMeasureForm,
-    ProcessingActivityForm,
-    TechnicalMeasureForm,
-)
 from dsb.services import get_dsb_kpis
 
 
@@ -19,9 +12,12 @@ def _tenant_id(request: HttpRequest):
     return getattr(request, "tenant_id", None)
 
 
-# ---------------------------------------------------------------------------
-# Dashboard
-# ---------------------------------------------------------------------------
+def _user_id(request: HttpRequest):
+    """Extract user UUID or None."""
+    u = getattr(request, "user", None)
+    if u and hasattr(u, "pk"):
+        return u.pk
+    return None
 
 
 @login_required
@@ -30,78 +26,9 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     tid = _tenant_id(request)
     if tid is None:
         return render(request, "dsb/dashboard.html", {"kpis": None})
+
     kpis = get_dsb_kpis(tid)
     return render(request, "dsb/dashboard.html", {"kpis": kpis})
-
-
-# ---------------------------------------------------------------------------
-# Mandate CRUD
-# ---------------------------------------------------------------------------
-
-
-@login_required
-def mandate_list(request: HttpRequest) -> HttpResponse:
-    """List all mandates for the tenant."""
-    from dsb.models import Mandate
-
-    tid = _tenant_id(request)
-    qs = Mandate.objects.filter(tenant_id=tid).order_by("name")
-    return render(request, "dsb/mandate_list.html", {"rows": qs})
-
-
-@login_required
-def mandate_create(request: HttpRequest) -> HttpResponse:
-    """Create a new mandate."""
-    tid = _tenant_id(request)
-    if request.method == "POST":
-        form = MandateForm(request.POST)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.save()
-            return redirect("dsb:mandate-list")
-    else:
-        form = MandateForm()
-    return render(request, "dsb/mandate_form.html", {"form": form, "title": "Neues Mandat"})
-
-
-@login_required
-def mandate_edit(request: HttpRequest, pk) -> HttpResponse:
-    """Edit an existing mandate."""
-    from dsb.models import Mandate
-
-    tid = _tenant_id(request)
-    obj = get_object_or_404(Mandate, pk=pk, tenant_id=tid)
-    if request.method == "POST":
-        form = MandateForm(request.POST, instance=obj)
-        if form.is_valid():
-            form.save()
-            return redirect("dsb:mandate-list")
-    else:
-        form = MandateForm(instance=obj)
-    return render(request, "dsb/mandate_form.html", {"form": form, "title": f"Mandat: {obj.name}", "obj": obj})
-
-
-@login_required
-def mandate_delete(request: HttpRequest, pk) -> HttpResponse:
-    """Delete a mandate (POST only)."""
-    from dsb.models import Mandate
-
-    tid = _tenant_id(request)
-    obj = get_object_or_404(Mandate, pk=pk, tenant_id=tid)
-    if request.method == "POST":
-        obj.delete()
-        return redirect("dsb:mandate-list")
-    return render(request, "dsb/confirm_delete.html", {
-        "obj": obj,
-        "title": f"Mandat \u00ab{obj.name}\u00bb l\u00f6schen?",
-        "cancel_url": "dsb:mandate-list",
-    })
-
-
-# ---------------------------------------------------------------------------
-# VVT (Processing Activities)
-# ---------------------------------------------------------------------------
 
 
 @login_required
@@ -113,72 +40,13 @@ def vvt_list(request: HttpRequest) -> HttpResponse:
     qs = ProcessingActivity.objects.filter(
         tenant_id=tid,
     ).select_related("mandate").order_by("mandate", "number")
-    high_risk = qs.filter(risk_level__in=["high", "very_high"]).count()
+    high_risk = qs.filter(
+        risk_level__in=["high", "very_high"],
+    ).count()
     return render(request, "dsb/vvt_list.html", {
         "rows": qs[:200],
         "high_risk_count": high_risk,
     })
-
-
-@login_required
-def vvt_create(request: HttpRequest) -> HttpResponse:
-    """Create a new processing activity."""
-    tid = _tenant_id(request)
-    if request.method == "POST":
-        form = ProcessingActivityForm(request.POST, tenant_id=tid)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.save()
-            form.save_m2m()
-            return redirect("dsb:vvt-list")
-    else:
-        form = ProcessingActivityForm(tenant_id=tid)
-    return render(request, "dsb/vvt_form.html", {"form": form, "title": "Neue Verarbeitungst\u00e4tigkeit"})
-
-
-@login_required
-def vvt_edit(request: HttpRequest, pk) -> HttpResponse:
-    """Edit an existing processing activity."""
-    from dsb.models import ProcessingActivity
-
-    tid = _tenant_id(request)
-    obj = get_object_or_404(ProcessingActivity, pk=pk, tenant_id=tid)
-    if request.method == "POST":
-        form = ProcessingActivityForm(request.POST, instance=obj, tenant_id=tid)
-        if form.is_valid():
-            form.save()
-            return redirect("dsb:vvt-list")
-    else:
-        form = ProcessingActivityForm(instance=obj, tenant_id=tid)
-    return render(request, "dsb/vvt_form.html", {
-        "form": form,
-        "title": f"VVT: {obj.name}",
-        "obj": obj,
-    })
-
-
-@login_required
-def vvt_detail(request: HttpRequest, pk) -> HttpResponse:
-    """Detail view for a processing activity."""
-    from dsb.models import ProcessingActivity
-
-    tid = _tenant_id(request)
-    obj = get_object_or_404(
-        ProcessingActivity.objects.select_related("mandate").prefetch_related(
-            "purposes", "data_categories", "data_subjects", "recipients",
-            "technical_measures", "organizational_measures",
-            "third_country_transfers", "retention_rules",
-        ),
-        pk=pk,
-        tenant_id=tid,
-    )
-    return render(request, "dsb/vvt_detail.html", {"obj": obj})
-
-
-# ---------------------------------------------------------------------------
-# TOM (Technical & Organizational Measures)
-# ---------------------------------------------------------------------------
 
 
 @login_required
@@ -190,10 +58,10 @@ def tom_list(request: HttpRequest) -> HttpResponse:
     tid = _tenant_id(request)
     tech = TechnicalMeasure.objects.filter(
         tenant_id=tid,
-    ).select_related("category").order_by("title")
+    ).select_related("category").order_by("name")
     org = OrganizationalMeasure.objects.filter(
         tenant_id=tid,
-    ).select_related("category").order_by("title")
+    ).select_related("category").order_by("name")
     planned = (
         tech.filter(status=MeasureStatus.PLANNED).count()
         + org.filter(status=MeasureStatus.PLANNED).count()
@@ -203,95 +71,6 @@ def tom_list(request: HttpRequest) -> HttpResponse:
         "org_rows": org[:200],
         "planned_count": planned,
     })
-
-
-@login_required
-def tom_tech_create(request: HttpRequest) -> HttpResponse:
-    """Create a new technical measure."""
-    tid = _tenant_id(request)
-    if request.method == "POST":
-        form = TechnicalMeasureForm(request.POST, tenant_id=tid)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.save()
-            return redirect("dsb:tom-list")
-    else:
-        form = TechnicalMeasureForm(tenant_id=tid)
-    return render(request, "dsb/tom_form.html", {
-        "form": form,
-        "title": "Neue technische Ma\u00dfnahme",
-        "measure_type": "technical",
-    })
-
-
-@login_required
-def tom_tech_edit(request: HttpRequest, pk) -> HttpResponse:
-    """Edit an existing technical measure."""
-    from dsb.models import TechnicalMeasure
-
-    tid = _tenant_id(request)
-    obj = get_object_or_404(TechnicalMeasure, pk=pk, tenant_id=tid)
-    if request.method == "POST":
-        form = TechnicalMeasureForm(request.POST, instance=obj, tenant_id=tid)
-        if form.is_valid():
-            form.save()
-            return redirect("dsb:tom-list")
-    else:
-        form = TechnicalMeasureForm(instance=obj, tenant_id=tid)
-    return render(request, "dsb/tom_form.html", {
-        "form": form,
-        "title": f"TOM: {obj.title}",
-        "obj": obj,
-        "measure_type": "technical",
-    })
-
-
-@login_required
-def tom_org_create(request: HttpRequest) -> HttpResponse:
-    """Create a new organizational measure."""
-    tid = _tenant_id(request)
-    if request.method == "POST":
-        form = OrganizationalMeasureForm(request.POST, tenant_id=tid)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.save()
-            return redirect("dsb:tom-list")
-    else:
-        form = OrganizationalMeasureForm(tenant_id=tid)
-    return render(request, "dsb/tom_form.html", {
-        "form": form,
-        "title": "Neue organisatorische Ma\u00dfnahme",
-        "measure_type": "organizational",
-    })
-
-
-@login_required
-def tom_org_edit(request: HttpRequest, pk) -> HttpResponse:
-    """Edit an existing organizational measure."""
-    from dsb.models import OrganizationalMeasure
-
-    tid = _tenant_id(request)
-    obj = get_object_or_404(OrganizationalMeasure, pk=pk, tenant_id=tid)
-    if request.method == "POST":
-        form = OrganizationalMeasureForm(request.POST, instance=obj, tenant_id=tid)
-        if form.is_valid():
-            form.save()
-            return redirect("dsb:tom-list")
-    else:
-        form = OrganizationalMeasureForm(instance=obj, tenant_id=tid)
-    return render(request, "dsb/tom_form.html", {
-        "form": form,
-        "title": f"TOM: {obj.title}",
-        "obj": obj,
-        "measure_type": "organizational",
-    })
-
-
-# ---------------------------------------------------------------------------
-# AVV (Data Processing Agreements)
-# ---------------------------------------------------------------------------
 
 
 @login_required
@@ -308,48 +87,6 @@ def dpa_list(request: HttpRequest) -> HttpResponse:
         "rows": qs[:200],
         "expired_count": expired,
     })
-
-
-@login_required
-def dpa_create(request: HttpRequest) -> HttpResponse:
-    """Create a new data processing agreement."""
-    tid = _tenant_id(request)
-    if request.method == "POST":
-        form = DataProcessingAgreementForm(request.POST, tenant_id=tid)
-        if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.save()
-            return redirect("dsb:dpa-list")
-    else:
-        form = DataProcessingAgreementForm(tenant_id=tid)
-    return render(request, "dsb/dpa_form.html", {"form": form, "title": "Neuer AVV"})
-
-
-@login_required
-def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
-    """Edit an existing data processing agreement."""
-    from dsb.models import DataProcessingAgreement
-
-    tid = _tenant_id(request)
-    obj = get_object_or_404(DataProcessingAgreement, pk=pk, tenant_id=tid)
-    if request.method == "POST":
-        form = DataProcessingAgreementForm(request.POST, instance=obj, tenant_id=tid)
-        if form.is_valid():
-            form.save()
-            return redirect("dsb:dpa-list")
-    else:
-        form = DataProcessingAgreementForm(instance=obj, tenant_id=tid)
-    return render(request, "dsb/dpa_form.html", {
-        "form": form,
-        "title": f"AVV: {obj.partner_name}",
-        "obj": obj,
-    })
-
-
-# ---------------------------------------------------------------------------
-# Audit List (read-only for now)
-# ---------------------------------------------------------------------------
 
 
 @login_required
@@ -403,4 +140,288 @@ def breach_list(request: HttpRequest) -> HttpResponse:
     return render(request, "dsb/breach_list.html", {
         "rows": qs[:200],
         "overdue_count": overdue,
+    })
+
+
+# -----------------------------------------------------------------------
+# Mandate CRUD
+# -----------------------------------------------------------------------
+
+
+@login_required
+def mandate_list(request: HttpRequest) -> HttpResponse:
+    """Mandate list — betreute Unternehmen."""
+    from dsb.models import Mandate
+
+    tid = _tenant_id(request)
+    qs = Mandate.objects.filter(tenant_id=tid).order_by("name")
+    active = qs.filter(status="active").count()
+    return render(request, "dsb/mandate_list.html", {
+        "rows": qs[:200],
+        "active_count": active,
+    })
+
+
+@login_required
+def mandate_create(request: HttpRequest) -> HttpResponse:
+    """Create a new Mandate."""
+    from dsb.forms import MandateForm
+
+    tid = _tenant_id(request)
+    if request.method == "POST":
+        form = MandateForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.tenant_id = tid
+            obj.created_by_id = _user_id(request)
+            obj.save()
+            return redirect("dsb:mandate-list")
+    else:
+        form = MandateForm()
+    return render(request, "dsb/mandate_form.html", {
+        "form": form,
+        "title": "Neues Mandat anlegen",
+    })
+
+
+@login_required
+def mandate_edit(request: HttpRequest, pk) -> HttpResponse:
+    """Edit an existing Mandate."""
+    from dsb.forms import MandateForm
+    from dsb.models import Mandate
+
+    tid = _tenant_id(request)
+    obj = get_object_or_404(Mandate, pk=pk, tenant_id=tid)
+    if request.method == "POST":
+        form = MandateForm(request.POST, instance=obj)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.updated_by_id = _user_id(request)
+            obj.save()
+            return redirect("dsb:mandate-list")
+    else:
+        form = MandateForm(instance=obj)
+    return render(request, "dsb/mandate_form.html", {
+        "form": form,
+        "title": f"Mandat bearbeiten: {obj.name}",
+        "object": obj,
+    })
+
+
+@login_required
+def mandate_delete(request: HttpRequest, pk) -> HttpResponse:
+    """Delete a Mandate (POST only)."""
+    from dsb.models import Mandate
+
+    tid = _tenant_id(request)
+    obj = get_object_or_404(Mandate, pk=pk, tenant_id=tid)
+    if request.method == "POST":
+        obj.delete()
+        return redirect("dsb:mandate-list")
+    return render(request, "dsb/confirm_delete.html", {
+        "object": obj,
+        "cancel_url": "dsb:mandate-list",
+        "type_label": "Mandat",
+    })
+
+
+# -----------------------------------------------------------------------
+# VVT CRUD
+# -----------------------------------------------------------------------
+
+
+@login_required
+def vvt_detail(request: HttpRequest, pk) -> HttpResponse:
+    """VVT detail — single processing activity."""
+    from dsb.models import ProcessingActivity
+
+    tid = _tenant_id(request)
+    obj = get_object_or_404(
+        ProcessingActivity.objects.select_related("mandate"),
+        pk=pk,
+        tenant_id=tid,
+    )
+    return render(request, "dsb/vvt_detail.html", {"obj": obj})
+
+
+@login_required
+def vvt_create(request: HttpRequest) -> HttpResponse:
+    """Create a new VVT entry."""
+    from dsb.forms import ProcessingActivityForm
+
+    tid = _tenant_id(request)
+    if request.method == "POST":
+        form = ProcessingActivityForm(request.POST, tenant_id=tid)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.tenant_id = tid
+            obj.created_by_id = _user_id(request)
+            obj.save()
+            form.save_m2m()
+            return redirect("dsb:vvt-list")
+    else:
+        form = ProcessingActivityForm(tenant_id=tid)
+    return render(request, "dsb/vvt_form.html", {
+        "form": form,
+        "title": "Neue Verarbeitungstätigkeit",
+    })
+
+
+@login_required
+def vvt_edit(request: HttpRequest, pk) -> HttpResponse:
+    """Edit an existing VVT entry."""
+    from dsb.forms import ProcessingActivityForm
+    from dsb.models import ProcessingActivity
+
+    tid = _tenant_id(request)
+    obj = get_object_or_404(ProcessingActivity, pk=pk, tenant_id=tid)
+    if request.method == "POST":
+        form = ProcessingActivityForm(
+            request.POST, instance=obj, tenant_id=tid,
+        )
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.updated_by_id = _user_id(request)
+            obj.save()
+            form.save_m2m()
+            return redirect("dsb:vvt-list")
+    else:
+        form = ProcessingActivityForm(instance=obj, tenant_id=tid)
+    return render(request, "dsb/vvt_form.html", {
+        "form": form,
+        "title": f"VVT bearbeiten: {obj.name}",
+        "object": obj,
+    })
+
+
+# -----------------------------------------------------------------------
+# TOM CRUD
+# -----------------------------------------------------------------------
+
+
+@login_required
+def tom_create(request: HttpRequest) -> HttpResponse:
+    """Create a new TOM entry (tech or org)."""
+    from dsb.forms import (
+        OrganizationalMeasureForm,
+        TechnicalMeasureForm,
+    )
+
+    tid = _tenant_id(request)
+    measure_type = request.GET.get("type", "tech")
+    FormClass = (
+        TechnicalMeasureForm
+        if measure_type == "tech"
+        else OrganizationalMeasureForm
+    )
+    if request.method == "POST":
+        form = FormClass(request.POST, tenant_id=tid)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.tenant_id = tid
+            obj.created_by_id = _user_id(request)
+            obj.save()
+            return redirect("dsb:tom-list")
+    else:
+        form = FormClass(tenant_id=tid)
+    label = "Technische" if measure_type == "tech" else "Organisatorische"
+    return render(request, "dsb/tom_form.html", {
+        "form": form,
+        "title": f"Neue {label} Maßnahme",
+        "measure_type": measure_type,
+    })
+
+
+@login_required
+def tom_edit(request: HttpRequest, pk) -> HttpResponse:
+    """Edit an existing TOM entry."""
+    from dsb.forms import (
+        OrganizationalMeasureForm,
+        TechnicalMeasureForm,
+    )
+    from dsb.models import OrganizationalMeasure, TechnicalMeasure
+
+    tid = _tenant_id(request)
+    measure_type = request.GET.get("type", "tech")
+    if measure_type == "tech":
+        Model = TechnicalMeasure
+        FormClass = TechnicalMeasureForm
+    else:
+        Model = OrganizationalMeasure
+        FormClass = OrganizationalMeasureForm
+    obj = get_object_or_404(Model, pk=pk, tenant_id=tid)
+    if request.method == "POST":
+        form = FormClass(request.POST, instance=obj, tenant_id=tid)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.updated_by_id = _user_id(request)
+            obj.save()
+            return redirect("dsb:tom-list")
+    else:
+        form = FormClass(instance=obj, tenant_id=tid)
+    label = "Technische" if measure_type == "tech" else "Organisatorische"
+    return render(request, "dsb/tom_form.html", {
+        "form": form,
+        "title": f"{label} Maßnahme bearbeiten: {obj.title}",
+        "object": obj,
+        "measure_type": measure_type,
+    })
+
+
+# -----------------------------------------------------------------------
+# DPA (AVV) CRUD
+# -----------------------------------------------------------------------
+
+
+@login_required
+def dpa_create(request: HttpRequest) -> HttpResponse:
+    """Create a new AVV entry."""
+    from dsb.forms import DataProcessingAgreementForm
+
+    tid = _tenant_id(request)
+    if request.method == "POST":
+        form = DataProcessingAgreementForm(
+            request.POST, tenant_id=tid,
+        )
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.tenant_id = tid
+            obj.created_by_id = _user_id(request)
+            obj.save()
+            return redirect("dsb:dpa-list")
+    else:
+        form = DataProcessingAgreementForm(tenant_id=tid)
+    return render(request, "dsb/dpa_form.html", {
+        "form": form,
+        "title": "Neuer Auftragsverarbeitungsvertrag",
+    })
+
+
+@login_required
+def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
+    """Edit an existing AVV entry."""
+    from dsb.forms import DataProcessingAgreementForm
+    from dsb.models import DataProcessingAgreement
+
+    tid = _tenant_id(request)
+    obj = get_object_or_404(
+        DataProcessingAgreement, pk=pk, tenant_id=tid,
+    )
+    if request.method == "POST":
+        form = DataProcessingAgreementForm(
+            request.POST, instance=obj, tenant_id=tid,
+        )
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.updated_by_id = _user_id(request)
+            obj.save()
+            return redirect("dsb:dpa-list")
+    else:
+        form = DataProcessingAgreementForm(
+            instance=obj, tenant_id=tid,
+        )
+    return render(request, "dsb/dpa_form.html", {
+        "form": form,
+        "title": f"AVV bearbeiten: {obj.partner_name}",
+        "object": obj,
     })
