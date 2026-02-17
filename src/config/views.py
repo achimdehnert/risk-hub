@@ -8,6 +8,10 @@ def home(request: HttpRequest) -> HttpResponse:
     if tenant_id is not None:
         return redirect("dashboard:home")
 
+    host = request.get_host().split(":")[0].lower()
+    if host == "dsb.iil.pet":
+        return render(request, "dsb/landing.html")
+
     return render(request, "landing.html")
 
 

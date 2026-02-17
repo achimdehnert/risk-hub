@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Schutztat DSB — Externer Datenschutzbeauftragter</title>
+    <meta name="description" content="DSGVO-konforme Multi-Tenant Plattform für externe Datenschutzbeauftragte. VVT, TOM, AVV, Audits, Löschprotokolle, Datenpannen."/>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --dsb-gradient: linear-gradient(135deg, #0f172a 0%, #1e3a5f 50%, #2563eb 100%);
+            --card-hover: 0 12px 40px rgba(37, 99, 235, 0.15);
+        }
+        body { font-family: system-ui, -apple-system, sans-serif; }
+        .hero-section {
+            background: var(--dsb-gradient);
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -20%;
+            width: 80%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(37,99,235,0.15) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .card-module {
+            border: 1px solid rgba(37,99,235,0.12);
+            border-radius: 16px;
+            background: #fff;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-module:hover {
+            transform: translateY(-6px);
+            box-shadow: var(--card-hover);
+        }
+        .icon-box {
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+        .article-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        .btn-dsb {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 14px 36px;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: background 0.2s, transform 0.2s;
+        }
+        .btn-dsb:hover {
+            background: #1d4ed8;
+            color: #fff;
+            transform: scale(1.02);
+        }
+        .btn-outline-dsb {
+            color: #fff;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 12px 32px;
+            border-radius: 10px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        .btn-outline-dsb:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.6);
+            color: #fff;
+        }
+        .trust-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .feature-check {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+    <!-- Hero Section -->
+    <section class="hero-section d-flex flex-column">
+        <nav class="navbar navbar-expand-lg navbar-dark py-3" style="background: transparent;">
+            <div class="container">
+                <a class="navbar-brand fw-bold fs-4" href="/">
+                    <i class="bi bi-shield-lock me-2"></i>Schutztat <span class="fw-normal opacity-75">DSB</span>
+                </a>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="trust-badge bg-white bg-opacity-10 text-white">
+                        <i class="bi bi-patch-check-fill text-info"></i> DSGVO-konform
+                    </span>
+                    <a href="#login" class="btn btn-outline-dsb btn-sm">Anmelden</a>
+                </div>
+            </div>
+        </nav>
+
+        <div class="container flex-grow-1 d-flex align-items-center">
+            <div class="row w-100 align-items-center">
+                <div class="col-lg-7 text-white">
+                    <div class="mb-3">
+                        <span class="trust-badge bg-white bg-opacity-10">
+                            <i class="bi bi-building"></i> Für externe Datenschutzbeauftragte
+                        </span>
+                    </div>
+                    <h1 class="display-4 fw-bold mb-4" style="line-height: 1.15;">
+                        Datenschutz-Management<br>
+                        <span class="opacity-75">für alle Mandate</span>
+                    </h1>
+                    <p class="lead mb-4 opacity-75" style="max-width: 540px;">
+                        Die Multi-Tenant Plattform für externe DSB: Verarbeitungsverzeichnis,
+                        TOM, AVV, Audits, Löschprotokolle und Datenpannen-Meldungen —
+                        alles DSGVO-konform an einem Ort.
+                    </p>
+                    <div class="d-flex gap-3 flex-wrap mb-4">
+                        <a href="#module" class="btn btn-dsb btn-lg">
+                            <i class="bi bi-grid-3x3-gap me-2"></i>Module entdecken
+                        </a>
+                        <a href="#login" class="btn btn-outline-dsb btn-lg">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>Zum Mandanten
+                        </a>
+                    </div>
+                    <div class="d-flex gap-4 opacity-50 small">
+                        <span><i class="bi bi-check-circle me-1"></i>Art. 30 VVT</span>
+                        <span><i class="bi bi-check-circle me-1"></i>Art. 32 TOM</span>
+                        <span><i class="bi bi-check-circle me-1"></i>Art. 28 AVV</span>
+                        <span><i class="bi bi-check-circle me-1"></i>Art. 33 Breach</span>
+                    </div>
+                </div>
+                <div class="col-lg-5 d-none d-lg-block text-center">
+                    <div style="position: relative;">
+                        <div class="text-white" style="font-size: 10rem; opacity: 0.08;">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </div>
+                        <div class="position-absolute top-50 start-50 translate-middle text-white text-center"
+                             style="width: 280px;">
+                            <div class="bg-white bg-opacity-10 rounded-4 p-4 backdrop-blur">
+                                <div class="d-flex justify-content-between mb-3">
+                                    <span class="small opacity-75">Dashboard-Vorschau</span>
+                                    <i class="bi bi-three-dots opacity-50"></i>
+                                </div>
+                                <div class="row g-2 text-start">
+                                    <div class="col-6">
+                                        <div class="bg-white bg-opacity-10 rounded-3 p-2">
+                                            <div class="small opacity-50">VVT</div>
+                                            <div class="fs-4 fw-bold">12</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="bg-white bg-opacity-10 rounded-3 p-2">
+                                            <div class="small opacity-50">TOM</div>
+                                            <div class="fs-4 fw-bold">28</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="bg-white bg-opacity-10 rounded-3 p-2">
+                                            <div class="small opacity-50">AVV</div>
+                                            <div class="fs-4 fw-bold">5</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="bg-white bg-opacity-10 rounded-3 p-2">
+                                            <div class="small opacity-50">Audits</div>
+                                            <div class="fs-4 fw-bold">3</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center pb-4">
+            <a href="#module" class="text-white opacity-50"><i class="bi bi-chevron-down fs-3"></i></a>
+        </div>
+    </section>
+
+    <!-- Modules Section -->
+    <section id="module" class="py-5 bg-light">
+        <div class="container py-5">
+            <div class="text-center mb-5">
+                <h2 class="display-5 fw-bold">DSGVO-Module</h2>
+                <p class="text-muted lead">Alle Pflichten des Datenschutzbeauftragten in einer Plattform</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-module h-100 p-4">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary mb-3">
+                            <i class="bi bi-file-earmark-text"></i>
+                        </div>
+                        <span class="article-tag bg-primary bg-opacity-10 text-primary mb-2">ART. 30</span>
+                        <h5 class="fw-bold mt-2">Verarbeitungsverzeichnis</h5>
+                        <p class="text-muted small mb-3">
+                            Vollständiges VVT mit Rechtsgrundlagen, Risikoklassen,
+                            DSFA-Markierung und Drittlandtransfers.
+                        </p>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1"><i class="bi bi-check text-primary me-1"></i>Risiko-Einstufung</li>
+                            <li class="mb-1"><i class="bi bi-check text-primary me-1"></i>DSFA-Pflicht erkennen</li>
+                            <li><i class="bi bi-check text-primary me-1"></i>Drittlandtransfers</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-module h-100 p-4">
+                        <div class="icon-box bg-success bg-opacity-10 text-success mb-3">
+                            <i class="bi bi-shield-check"></i>
+                        </div>
+                        <span class="article-tag bg-success bg-opacity-10 text-success mb-2">ART. 32</span>
+                        <h5 class="fw-bold mt-2">TOM</h5>
+                        <p class="text-muted small mb-3">
+                            Technische und organisatorische Maßnahmen mit
+                            Status-Tracking und Review-Zyklen.
+                        </p>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1"><i class="bi bi-check text-success me-1"></i>Umsetzungs-Tracking</li>
+                            <li class="mb-1"><i class="bi bi-check text-success me-1"></i>Kategorie-Zuordnung</li>
+                            <li><i class="bi bi-check text-success me-1"></i>Review-Termine</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-module h-100 p-4">
+                        <div class="icon-box bg-info bg-opacity-10 text-info mb-3">
+                            <i class="bi bi-file-earmark-lock"></i>
+                        </div>
+                        <span class="article-tag bg-info bg-opacity-10 text-info mb-2">ART. 28</span>
+                        <h5 class="fw-bold mt-2">AVV</h5>
+                        <p class="text-muted small mb-3">
+                            Auftragsverarbeitungsverträge verwalten mit
+                            Laufzeit-Überwachung und Ablauf-Warnungen.
+                        </p>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1"><i class="bi bi-check text-info me-1"></i>Vertragspartner</li>
+                            <li class="mb-1"><i class="bi bi-check text-info me-1"></i>Laufzeit-Monitoring</li>
+                            <li><i class="bi bi-check text-info me-1"></i>Ablauf-Alerts</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-module h-100 p-4">
+                        <div class="icon-box bg-warning bg-opacity-10 text-warning mb-3">
+                            <i class="bi bi-search"></i>
+                        </div>
+                        <span class="article-tag bg-warning bg-opacity-10 text-warning mb-2">AUDIT</span>
+                        <h5 class="fw-bold mt-2">Datenschutz-Audits</h5>
+                        <p class="text-muted small mb-3">
+                            Geplante und durchgeführte Audits mit Befund-Tracking
+                            und Schweregrad-Klassifizierung.
+                        </p>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1"><i class="bi bi-check text-warning me-1"></i>Audit-Planung</li>
+                            <li class="mb-1"><i class="bi bi-check text-warning me-1"></i>Befund-Management</li>
+                            <li><i class="bi bi-check text-warning me-1"></i>Kritische Befunde</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-module h-100 p-4">
+                        <div class="icon-box bg-secondary bg-opacity-10 text-secondary mb-3">
+                            <i class="bi bi-trash3"></i>
+                        </div>
+                        <span class="article-tag bg-secondary bg-opacity-10 text-secondary mb-2">ART. 17</span>
+                        <h5 class="fw-bold mt-2">Löschprotokolle</h5>
+                        <p class="text-muted small mb-3">
+                            Nachweisbare Datenlöschung mit Methode, Zeitstempel
+                            und Bestätigung.
+                        </p>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1"><i class="bi bi-check text-secondary me-1"></i>Löschnachweis</li>
+                            <li class="mb-1"><i class="bi bi-check text-secondary me-1"></i>Automatische Fristen</li>
+                            <li><i class="bi bi-check text-secondary me-1"></i>Revisionssicher</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card-module h-100 p-4">
+                        <div class="icon-box bg-danger bg-opacity-10 text-danger mb-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                        </div>
+                        <span class="article-tag bg-danger bg-opacity-10 text-danger mb-2">ART. 33</span>
+                        <h5 class="fw-bold mt-2">Datenpannen</h5>
+                        <p class="text-muted small mb-3">
+                            Meldepflichtige Datenpannen erfassen mit
+                            72h-Frist-Überwachung und Behörden-Meldung.
+                        </p>
+                        <ul class="list-unstyled small text-muted">
+                            <li class="mb-1"><i class="bi bi-check text-danger me-1"></i>72h-Frist-Tracking</li>
+                            <li class="mb-1"><i class="bi bi-check text-danger me-1"></i>Schweregrad-Analyse</li>
+                            <li><i class="bi bi-check text-danger me-1"></i>Betroffenen-Benachrichtigung</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- For DSBs Section -->
+    <section class="py-5">
+        <div class="container py-5">
+            <div class="row align-items-center g-5">
+                <div class="col-lg-6">
+                    <span class="article-tag bg-primary bg-opacity-10 text-primary mb-3">FÜR EXTERNE DSB</span>
+                    <h2 class="display-6 fw-bold mt-2">Alle Mandate.<br>Ein Dashboard.</h2>
+                    <p class="text-muted mb-4">
+                        Als externer Datenschutzbeauftragter betreuen Sie mehrere Organisationen.
+                        Schutztat DSB gibt Ihnen pro Mandant einen vollständigen DSGVO-Überblick —
+                        mit KPIs, Handlungsbedarf und Compliance-Status.
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="feature-check bg-primary bg-opacity-10 text-primary mt-1">
+                                    <i class="bi bi-check"></i>
+                                </span>
+                                <div>
+                                    <div class="fw-semibold small">Multi-Tenant</div>
+                                    <div class="text-muted small">Isolierte Mandantendaten</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="feature-check bg-success bg-opacity-10 text-success mt-1">
+                                    <i class="bi bi-check"></i>
+                                </span>
+                                <div>
+                                    <div class="fw-semibold small">KPI-Dashboard</div>
+                                    <div class="text-muted small">Compliance auf einen Blick</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="feature-check bg-warning bg-opacity-10 text-warning mt-1">
+                                    <i class="bi bi-check"></i>
+                                </span>
+                                <div>
+                                    <div class="fw-semibold small">Fristen-Alerts</div>
+                                    <div class="text-muted small">72h-Meldepflicht im Blick</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="d-flex align-items-start gap-2">
+                                <span class="feature-check bg-info bg-opacity-10 text-info mt-1">
+                                    <i class="bi bi-check"></i>
+                                </span>
+                                <div>
+                                    <div class="fw-semibold small">REST API</div>
+                                    <div class="text-muted small">Integration möglich</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="row g-3 text-center">
+                        <div class="col-6">
+                            <div class="card-module p-4">
+                                <div class="stat-number">7</div>
+                                <div class="text-muted small fw-medium">DSGVO-Module</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card-module p-4">
+                                <div class="stat-number">6</div>
+                                <div class="text-muted small fw-medium">UI-Komponenten</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card-module p-4">
+                                <div class="stat-number">∞</div>
+                                <div class="text-muted small fw-medium">Mandate</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card-module p-4">
+                                <div class="stat-number">24/7</div>
+                                <div class="text-muted small fw-medium">Verfügbarkeit</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Login Section -->
+    <section id="login" class="py-5 bg-light">
+        <div class="container py-5">
+            <div class="row justify-content-center">
+                <div class="col-lg-5">
+                    <div class="card-module p-5 text-center">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary mb-4 mx-auto">
+                            <i class="bi bi-building"></i>
+                        </div>
+                        <h3 class="fw-bold mb-2">Mandant auswählen</h3>
+                        <p class="text-muted small mb-4">
+                            Jede Organisation hat eine eigene Subdomain.
+                            Geben Sie die Tenant-Kennung ein.
+                        </p>
+                        <div class="input-group input-group-lg mb-3">
+                            <input type="text" class="form-control" id="tenant-input"
+                                   placeholder="mandant-name" aria-label="Tenant">
+                            <span class="input-group-text">.schutztat.de</span>
+                        </div>
+                        <button class="btn btn-dsb w-100 btn-lg" onclick="goToTenant()">
+                            <i class="bi bi-box-arrow-in-right me-2"></i>DSB-Dashboard öffnen
+                        </button>
+                        <hr class="my-4">
+                        <p class="text-muted small mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Demo: <a href="https://demo.schutztat.de/dsb/" class="text-decoration-none fw-medium">demo.schutztat.de/dsb/</a>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-4 bg-dark text-white-50">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span class="fw-bold text-white">
+                        <i class="bi bi-shield-lock me-2"></i>Schutztat DSB
+                    </span>
+                    <span class="ms-3 small">DSGVO-Management für externe Datenschutzbeauftragte</span>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <a href="https://demo.schutztat.de/dsb/" class="text-white-50 text-decoration-none me-3">
+                        <i class="bi bi-speedometer2 me-1"></i>Demo
+                    </a>
+                    <a href="https://demo.schutztat.de/api/v1/docs" class="text-white-50 text-decoration-none">
+                        <i class="bi bi-code-slash me-1"></i>API
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function goToTenant() {
+            const tenant = document.getElementById('tenant-input').value.trim().toLowerCase();
+            if (tenant) {
+                window.location.href = 'https://' + tenant + '.schutztat.de/dsb/';
+            }
+        }
+        document.getElementById('tenant-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') goToTenant();
+        });
+    </script>
+</body>
+</html>
