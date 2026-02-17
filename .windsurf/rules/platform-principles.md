@@ -14,6 +14,12 @@ trigger: always_on
 ## Architecture Rules
 - Service Layer: views.py → services.py → models.py
 - Views handle HTTP only, services contain business logic
+- Component Pattern (ADR-041): reusable UI blocks as Components
+  - `apps/<app>/components/<name>.py` with `get_context()` as single data source
+  - `apps/<app>/templatetags/<app>_components.py` for inclusion tags
+  - `templates/<app>/components/_<name>.html` (underscore prefix)
+  - 3 access paths: inclusion tag, HTMX fragment, template include
+  - Max 3 variants: default, compact, card
 - Zero Breaking Changes: deprecate first, remove after 2 releases
 - Spec vs. Derived: computed values are @property, never DB columns
 
@@ -22,6 +28,8 @@ trigger: always_on
 - URLs: `path("<prefix>/", include("apps.<app>.urls", namespace="<app>"))`
 - Templates: `templates/<app>/<model>_<action>.html`
 - Partials: `templates/<app>/partials/<component>.html`
+- Components: `templates/<app>/components/_<name>.html` (underscore!)
+- Component Tags: `{% load <app>_components %}` → `{% <name> obj %}`
 - Tests: `test_should_<expected_behavior>`
 
 ## Infrastructure
