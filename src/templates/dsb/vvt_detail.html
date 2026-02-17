@@ -1,22 +1,28 @@
 {% extends "base.html" %}
-{% block title %}VVT: {{ obj.name }} — DSB{% endblock %}
+{% load dsb_components %}
+{% block title %}VVT {{ obj.number }}. {{ obj.name }} — DSB{% endblock %}
 
 {% block content %}
 <div class="mb-6 flex items-center justify-between">
     <div>
         <h1 class="text-2xl font-bold text-gray-900">
-            <i data-lucide="file-text" class="w-6 h-6 inline text-blue-600 mr-1"></i>
+            <i data-lucide="file-text" class="w-7 h-7 inline text-blue-600 mr-1"></i>
             {{ obj.number }}. {{ obj.name }}
         </h1>
         <p class="text-sm text-gray-500 mt-1">
-            Mandat: {{ obj.mandate.name }} &middot;
-            <a href="{% url 'dsb:vvt-list' %}" class="text-blue-600 hover:underline">← Zurück</a>
+            Mandat: {{ obj.mandate.name }}
         </p>
     </div>
-    <a href="{% url 'dsb:vvt-edit' obj.pk %}"
-       class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
-        <i data-lucide="pencil" class="w-4 h-4"></i> Bearbeiten
-    </a>
+    <div class="flex gap-2">
+        <a href="{% url 'dsb:vvt-list' %}"
+           class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+            <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Liste
+        </a>
+        <a href="{% url 'dsb:vvt-edit' obj.pk %}"
+           class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+            <i data-lucide="pencil" class="w-4 h-4"></i> Bearbeiten
+        </a>
+    </div>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -26,54 +32,54 @@
             <dl class="grid grid-cols-2 gap-4 text-sm">
                 <div>
                     <dt class="text-gray-500">Rechtsgrundlage</dt>
-                    <dd class="font-medium">{{ obj.get_legal_basis_display }}</dd>
+                    <dd class="font-medium text-gray-900 mt-1">{{ obj.get_legal_basis_display }}</dd>
                 </div>
                 <div>
                     <dt class="text-gray-500">Risikostufe</dt>
-                    <dd class="font-medium">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
-                            {% if obj.risk_level == 'high' or obj.risk_level == 'very_high' %}bg-red-100 text-red-800
-                            {% elif obj.risk_level == 'medium' %}bg-yellow-100 text-yellow-800
-                            {% else %}bg-green-100 text-green-800{% endif %}">
-                            {{ obj.get_risk_level_display }}
-                        </span>
-                    </dd>
+                    <dd class="mt-1">{% status_badge obj.risk_level %}</dd>
                 </div>
                 <div>
                     <dt class="text-gray-500">DSFA erforderlich</dt>
-                    <dd class="font-medium">{% if obj.dsfa_required %}Ja{% else %}Nein{% endif %}</dd>
+                    <dd class="mt-1">
+                        {% if obj.dsfa_required %}
+                        <span class="text-red-600 font-medium">Ja</span>
+                        {% else %}
+                        <span class="text-gray-400">Nein</span>
+                        {% endif %}
+                    </dd>
                 </div>
                 <div>
                     <dt class="text-gray-500">Erstellt</dt>
-                    <dd class="font-medium">{{ obj.created_at|date:"d.m.Y" }}</dd>
+                    <dd class="font-medium text-gray-900 mt-1">{{ obj.created_at|date:"d.m.Y H:i" }}</dd>
                 </div>
             </dl>
-            {% if obj.description %}
-            <div class="mt-4 pt-4 border-t">
-                <dt class="text-sm text-gray-500 mb-1">Beschreibung</dt>
-                <dd class="text-sm">{{ obj.description }}</dd>
-            </div>
-            {% endif %}
         </div>
 
+        {% if obj.description %}
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">Zuordnungen</h2>
-            <div class="grid grid-cols-2 gap-6 text-sm">
+            <h2 class="text-lg font-semibold text-gray-900 mb-2">Beschreibung</h2>
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ obj.description }}</p>
+        </div>
+        {% endif %}
+
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Datenkategorien & Betroffene</h2>
+            <div class="grid grid-cols-2 gap-6">
                 <div>
-                    <h3 class="font-medium text-gray-700 mb-2">Zwecke</h3>
-                    {% for p in obj.purposes.all %}<span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded mr-1 mb-1">{{ p }}</span>{% empty %}<span class="text-gray-400">—</span>{% endfor %}
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Datenkategorien</h3>
+                    {% for cat in obj.data_categories.all %}
+                    <span class="inline-block bg-blue-50 text-blue-700 text-xs px-2 py-1 rounded mr-1 mb-1">{{ cat.label }}</span>
+                    {% empty %}
+                    <p class="text-xs text-gray-400">Keine zugeordnet</p>
+                    {% endfor %}
                 </div>
                 <div>
-                    <h3 class="font-medium text-gray-700 mb-2">Datenkategorien</h3>
-                    {% for c in obj.data_categories.all %}<span class="inline-block bg-purple-50 text-purple-700 text-xs px-2 py-1 rounded mr-1 mb-1">{{ c }}</span>{% empty %}<span class="text-gray-400">—</span>{% endfor %}
-                </div>
-                <div>
-                    <h3 class="font-medium text-gray-700 mb-2">Betroffene</h3>
-                    {% for s in obj.data_subjects.all %}<span class="inline-block bg-green-50 text-green-700 text-xs px-2 py-1 rounded mr-1 mb-1">{{ s }}</span>{% empty %}<span class="text-gray-400">—</span>{% endfor %}
-                </div>
-                <div>
-                    <h3 class="font-medium text-gray-700 mb-2">Empfänger</h3>
-                    {% for r in obj.recipients.all %}<span class="inline-block bg-amber-50 text-amber-700 text-xs px-2 py-1 rounded mr-1 mb-1">{{ r }}</span>{% empty %}<span class="text-gray-400">—</span>{% endfor %}
+                    <h3 class="text-sm font-medium text-gray-700 mb-2">Betroffene Gruppen</h3>
+                    {% for sg in obj.data_subjects.all %}
+                    <span class="inline-block bg-green-50 text-green-700 text-xs px-2 py-1 rounded mr-1 mb-1">{{ sg.label }}</span>
+                    {% empty %}
+                    <p class="text-xs text-gray-400">Keine zugeordnet</p>
+                    {% endfor %}
                 </div>
             </div>
         </div>
@@ -81,31 +87,54 @@
 
     <div class="space-y-6">
         <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3">Drittlandübermittlungen</h3>
-            {% for t in obj.third_country_transfers.all %}
-            <div class="text-sm py-1 border-b last:border-0">
-                <span class="font-medium">{{ t.country }}</span>
-                {% if t.recipient_entity %}<span class="text-gray-500"> ({{ t.recipient_entity }})</span>{% endif %}
-                <br><span class="text-xs text-gray-400">{{ t.get_safeguard_display }}</span>
-            </div>
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Zwecke</h3>
+            {% for p in obj.purposes.all %}
+            <div class="text-sm text-gray-700 py-1">{{ p.label }}</div>
             {% empty %}
-            <p class="text-sm text-gray-400">Keine Drittlandübermittlungen</p>
+            <p class="text-xs text-gray-400">Keine Zwecke zugeordnet</p>
             {% endfor %}
         </div>
 
         <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3">Löschfristen</h3>
-            {% for r in obj.retention_rules.all %}
-            <div class="text-sm py-1 border-b last:border-0">
-                <span class="font-medium">{{ r.condition }}</span>: {{ r.period }}
-                {% if r.legal_reference %}<br><span class="text-xs text-gray-400">{{ r.legal_reference }}</span>{% endif %}
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Empfänger</h3>
+            {% for r in obj.recipients.all %}
+            <div class="text-sm text-gray-700 py-1">{{ r.label }}</div>
+            {% empty %}
+            <p class="text-xs text-gray-400">Keine Empfänger zugeordnet</p>
+            {% endfor %}
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Drittlandtransfers</h3>
+            {% for t in obj.third_country_transfers.all %}
+            <div class="text-sm text-gray-700 py-1 flex justify-between">
+                <span>{{ t.country }}</span>
+                <span class="text-gray-400">{{ t.get_safeguard_display }}</span>
             </div>
             {% empty %}
-            <p class="text-sm text-gray-400">Keine Löschfristen definiert</p>
+            <p class="text-xs text-gray-400">Keine Drittlandübermittlungen</p>
+            {% endfor %}
+        </div>
+
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">TOM-Zuordnung</h3>
+            <h4 class="text-xs text-gray-500 uppercase mb-1">Technisch</h4>
+            {% for m in obj.technical_measures.all %}
+            <div class="text-sm text-gray-700 py-1">{{ m.title }}</div>
+            {% empty %}
+            <p class="text-xs text-gray-400 mb-2">Keine</p>
+            {% endfor %}
+            <h4 class="text-xs text-gray-500 uppercase mt-3 mb-1">Organisatorisch</h4>
+            {% for m in obj.organizational_measures.all %}
+            <div class="text-sm text-gray-700 py-1">{{ m.title }}</div>
+            {% empty %}
+            <p class="text-xs text-gray-400">Keine</p>
             {% endfor %}
         </div>
     </div>
 </div>
 {% endblock %}
 
-{% block extra_scripts %}<script>lucide.createIcons();</script>{% endblock %}
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}
