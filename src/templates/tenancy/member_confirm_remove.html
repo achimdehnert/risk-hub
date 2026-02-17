@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Mitglied entfernen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-12">
+    <div class="bg-white rounded-lg shadow p-6 text-center">
+        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="user-minus" class="w-8 h-8 text-red-600"></i>
+        </div>
+        <h2 class="text-xl font-bold text-gray-900 mb-2">
+            Mitglied entfernen?
+        </h2>
+        <p class="text-sm text-gray-500 mb-2">
+            Möchten Sie <strong>{{ membership.user.get_full_name|default:membership.user.username }}</strong>
+            aus <strong>{{ org.name }}</strong> entfernen?
+        </p>
+        <p class="text-xs text-gray-400 mb-6">
+            Der Benutzer verliert den Zugriff auf alle Daten dieser Organisation.
+        </p>
+        <form method="post" class="flex gap-3 justify-center">
+            {% csrf_token %}
+            <button type="submit"
+                    class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
+                Entfernen
+            </button>
+            <a href="{% url 'tenancy:org-detail' org.pk %}"
+               class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200">
+                Abbrechen
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}
