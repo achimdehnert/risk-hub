@@ -1,4 +1,4 @@
-"""DSB Module Forms (ADR-038)."""
+"""DSB Module Forms (ADR-038 Phase 1)."""
 
 from django import forms
 
@@ -10,9 +10,18 @@ from dsb.models import (
     TechnicalMeasure,
 )
 
+_TW_INPUT = (
+    "block w-full rounded-md border-gray-300 shadow-sm "
+    "focus:border-blue-500 focus:ring-blue-500 sm:text-sm "
+    "px-3 py-2 border"
+)
+_TW_SELECT = _TW_INPUT
+_TW_TEXTAREA = _TW_INPUT + " h-24"
+_TW_CHECKBOX = "rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+
 
 class MandateForm(forms.ModelForm):
-    """Form for creating/editing a Mandate."""
+    """Form für Mandate (betreutes Unternehmen)."""
 
     class Meta:
         model = Mandate
@@ -26,18 +35,22 @@ class MandateForm(forms.ModelForm):
             "status",
         ]
         widgets = {
-            "name": forms.TextInput(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "industry": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "employee_count": forms.NumberInput(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "dsb_appointed_date": forms.DateInput(attrs={"type": "date", "class": "w-full rounded-md border-gray-300"}),
-            "contract_end_date": forms.DateInput(attrs={"type": "date", "class": "w-full rounded-md border-gray-300"}),
-            "supervisory_authority": forms.TextInput(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "status": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
+            "name": forms.TextInput(attrs={"class": _TW_INPUT}),
+            "industry": forms.Select(attrs={"class": _TW_SELECT}),
+            "employee_count": forms.NumberInput(attrs={"class": _TW_INPUT}),
+            "dsb_appointed_date": forms.DateInput(
+                attrs={"class": _TW_INPUT, "type": "date"},
+            ),
+            "contract_end_date": forms.DateInput(
+                attrs={"class": _TW_INPUT, "type": "date"},
+            ),
+            "supervisory_authority": forms.TextInput(attrs={"class": _TW_INPUT}),
+            "status": forms.Select(attrs={"class": _TW_SELECT}),
         }
 
 
 class ProcessingActivityForm(forms.ModelForm):
-    """Form for creating/editing a ProcessingActivity (VVT)."""
+    """Form für VVT-Einträge (Art. 30)."""
 
     class Meta:
         model = ProcessingActivity
@@ -47,25 +60,25 @@ class ProcessingActivityForm(forms.ModelForm):
             "name",
             "description",
             "legal_basis",
-            "risk_level",
-            "dsfa_required",
             "purposes",
             "data_categories",
             "data_subjects",
             "recipients",
+            "risk_level",
+            "dsfa_required",
         ]
         widgets = {
-            "mandate": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "number": forms.NumberInput(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "name": forms.TextInput(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "description": forms.Textarea(attrs={"rows": 3, "class": "w-full rounded-md border-gray-300"}),
-            "legal_basis": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "risk_level": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "dsfa_required": forms.CheckboxInput(attrs={"class": "rounded border-gray-300"}),
+            "mandate": forms.Select(attrs={"class": _TW_SELECT}),
+            "number": forms.NumberInput(attrs={"class": _TW_INPUT}),
+            "name": forms.TextInput(attrs={"class": _TW_INPUT}),
+            "description": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
+            "legal_basis": forms.Select(attrs={"class": _TW_SELECT}),
             "purposes": forms.CheckboxSelectMultiple(),
             "data_categories": forms.CheckboxSelectMultiple(),
             "data_subjects": forms.CheckboxSelectMultiple(),
             "recipients": forms.CheckboxSelectMultiple(),
+            "risk_level": forms.Select(attrs={"class": _TW_SELECT}),
+            "dsfa_required": forms.CheckboxInput(attrs={"class": _TW_CHECKBOX}),
         }
 
     def __init__(self, *args, tenant_id=None, **kwargs):
@@ -77,7 +90,7 @@ class ProcessingActivityForm(forms.ModelForm):
 
 
 class TechnicalMeasureForm(forms.ModelForm):
-    """Form for creating/editing a TechnicalMeasure."""
+    """Form für technische Maßnahmen (Art. 32)."""
 
     class Meta:
         model = TechnicalMeasure
@@ -90,12 +103,14 @@ class TechnicalMeasureForm(forms.ModelForm):
             "review_date",
         ]
         widgets = {
-            "mandate": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "category": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "title": forms.TextInput(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "description": forms.Textarea(attrs={"rows": 3, "class": "w-full rounded-md border-gray-300"}),
-            "status": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "review_date": forms.DateInput(attrs={"type": "date", "class": "w-full rounded-md border-gray-300"}),
+            "mandate": forms.Select(attrs={"class": _TW_SELECT}),
+            "category": forms.Select(attrs={"class": _TW_SELECT}),
+            "title": forms.TextInput(attrs={"class": _TW_INPUT}),
+            "description": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
+            "status": forms.Select(attrs={"class": _TW_SELECT}),
+            "review_date": forms.DateInput(
+                attrs={"class": _TW_INPUT, "type": "date"},
+            ),
         }
 
     def __init__(self, *args, tenant_id=None, **kwargs):
@@ -107,7 +122,7 @@ class TechnicalMeasureForm(forms.ModelForm):
 
 
 class OrganizationalMeasureForm(forms.ModelForm):
-    """Form for creating/editing an OrganizationalMeasure."""
+    """Form für organisatorische Maßnahmen (Art. 32)."""
 
     class Meta:
         model = OrganizationalMeasure
@@ -120,12 +135,14 @@ class OrganizationalMeasureForm(forms.ModelForm):
             "review_date",
         ]
         widgets = {
-            "mandate": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "category": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "title": forms.TextInput(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "description": forms.Textarea(attrs={"rows": 3, "class": "w-full rounded-md border-gray-300"}),
-            "status": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "review_date": forms.DateInput(attrs={"type": "date", "class": "w-full rounded-md border-gray-300"}),
+            "mandate": forms.Select(attrs={"class": _TW_SELECT}),
+            "category": forms.Select(attrs={"class": _TW_SELECT}),
+            "title": forms.TextInput(attrs={"class": _TW_INPUT}),
+            "description": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
+            "status": forms.Select(attrs={"class": _TW_SELECT}),
+            "review_date": forms.DateInput(
+                attrs={"class": _TW_INPUT, "type": "date"},
+            ),
         }
 
     def __init__(self, *args, tenant_id=None, **kwargs):
@@ -137,7 +154,7 @@ class OrganizationalMeasureForm(forms.ModelForm):
 
 
 class DataProcessingAgreementForm(forms.ModelForm):
-    """Form for creating/editing a DataProcessingAgreement (AVV)."""
+    """Form für AVV (Art. 28)."""
 
     class Meta:
         model = DataProcessingAgreement
@@ -150,20 +167,24 @@ class DataProcessingAgreementForm(forms.ModelForm):
             "effective_date",
             "expiry_date",
             "subprocessors_allowed",
-            "subprocessors_notes",
             "notes",
         ]
         widgets = {
-            "mandate": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "partner_name": forms.TextInput(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "partner_role": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "subject_matter": forms.Textarea(attrs={"rows": 3, "class": "w-full rounded-md border-gray-300"}),
-            "status": forms.Select(attrs={"class": "w-full rounded-md border-gray-300"}),
-            "effective_date": forms.DateInput(attrs={"type": "date", "class": "w-full rounded-md border-gray-300"}),
-            "expiry_date": forms.DateInput(attrs={"type": "date", "class": "w-full rounded-md border-gray-300"}),
-            "subprocessors_allowed": forms.CheckboxInput(attrs={"class": "rounded border-gray-300"}),
-            "subprocessors_notes": forms.Textarea(attrs={"rows": 2, "class": "w-full rounded-md border-gray-300"}),
-            "notes": forms.Textarea(attrs={"rows": 2, "class": "w-full rounded-md border-gray-300"}),
+            "mandate": forms.Select(attrs={"class": _TW_SELECT}),
+            "partner_name": forms.TextInput(attrs={"class": _TW_INPUT}),
+            "partner_role": forms.Select(attrs={"class": _TW_SELECT}),
+            "subject_matter": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
+            "status": forms.Select(attrs={"class": _TW_SELECT}),
+            "effective_date": forms.DateInput(
+                attrs={"class": _TW_INPUT, "type": "date"},
+            ),
+            "expiry_date": forms.DateInput(
+                attrs={"class": _TW_INPUT, "type": "date"},
+            ),
+            "subprocessors_allowed": forms.CheckboxInput(
+                attrs={"class": _TW_CHECKBOX},
+            ),
+            "notes": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
         }
 
     def __init__(self, *args, tenant_id=None, **kwargs):
