@@ -190,6 +190,9 @@
         <div class="bg-white rounded-lg shadow p-4">
             <h3 class="text-sm font-semibold text-gray-900 mb-3">Schnellzugriff</h3>
             <div class="space-y-2">
+                <a href="{% url 'dsb:mandate-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="building-2" class="w-4 h-4"></i> Mandate
+                </a>
                 <a href="{% url 'dsb:vvt-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
                     <i data-lucide="file-text" class="w-4 h-4"></i> VVT (Art. 30)
                 </a>
