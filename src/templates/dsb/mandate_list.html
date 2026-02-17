@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Mandate — DSB{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="building-2" class="w-6 h-6 inline text-blue-600 mr-1"></i>
+            Mandate
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">Betreute Unternehmen des DSB</p>
+    </div>
+    <a href="{% url 'dsb:mandate-create' %}"
+       class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">
+        <i data-lucide="plus" class="w-4 h-4"></i> Neues Mandat
+    </a>
+</div>
+
+{% if rows %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branche</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">DSB seit</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for row in rows %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ row.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ row.get_industry_display|default:"—" }}</td>
+                <td class="px-4 py-3 text-sm">
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+                        {% if row.status == 'active' %}bg-green-100 text-green-800
+                        {% elif row.status == 'paused' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ row.get_status_display }}
+                    </span>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ row.dsb_appointed_date|date:"d.m.Y" }}</td>
+                <td class="px-4 py-3 text-sm text-right space-x-2">
+                    <a href="{% url 'dsb:mandate-edit' row.pk %}" class="text-blue-600 hover:text-blue-800">Bearbeiten</a>
+                    <a href="{% url 'dsb:mandate-delete' row.pk %}" class="text-red-600 hover:text-red-800">Löschen</a>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-12 text-gray-500">
+    <i data-lucide="building-2" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+    <p>Noch keine Mandate angelegt.</p>
+    <a href="{% url 'dsb:mandate-create' %}" class="text-blue-600 hover:underline text-sm mt-2 inline-block">Erstes Mandat anlegen</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}<script>lucide.createIcons();</script>{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — DSB{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto mt-12">
+    <div class="bg-white rounded-lg shadow p-6">
+        <div class="flex items-center gap-3 mb-4">
+            <div class="flex-shrink-0 w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i>
+            </div>
+            <h1 class="text-lg font-bold text-gray-900">{{ title }}</h1>
+        </div>
+        <p class="text-sm text-gray-600 mb-6">
+            Dieser Vorgang kann nicht rückgängig gemacht werden. Alle zugeordneten Daten werden ebenfalls gelöscht.
+        </p>
+        <form method="post">
+            {% csrf_token %}
+            <div class="flex gap-3">
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700">
+                    Endgültig löschen
+                </button>
+                <a href="{% url cancel_url %}" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200">
+                    Abbrechen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}<script>lucide.createIcons();</script>{% endblock %}
