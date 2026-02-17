@@ -11,7 +11,7 @@ from core.healthz import liveness, readiness
 urlpatterns = [
     # Health checks (ADR-021: /livez/ liveness + /healthz/ readiness)
     path("livez/", liveness, name="liveness"),
-    path("healthz/", readiness, name="healthz"),
+    path("healthz/", readiness, name="readiness"),
     path("", home),
     path("dashboard/", include("dashboard.urls")),
     path("admin/", admin.site.urls),
@@ -46,4 +46,5 @@ urlpatterns = [
     ),
     path("audit/", include("audit.urls")),
     path("dsb/", include("dsb.urls")),
+    path("tenants/", include("tenancy.urls")),
 ]

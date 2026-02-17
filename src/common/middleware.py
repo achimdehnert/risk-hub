@@ -2,7 +2,12 @@
 
 import uuid
 
-from common.context import set_db_tenant, set_request_id, set_tenant, set_user_id
+from common.context import (
+    set_db_tenant,
+    set_request_id,
+    set_tenant,
+    set_user_id,
+)
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
 from django.utils.deprecation import MiddlewareMixin
@@ -48,31 +53,48 @@ class RequestContextMiddleware(MiddlewareMixin):
     """Set up request context (request_id, user_id)."""
 
     def process_request(self, request: HttpRequest) -> None:
-        request_id = request.headers.get("X-Request-Id") or str(uuid.uuid4())
+        request_id = (
+            request.headers.get("X-Request-Id")
+            or str(uuid.uuid4())
+        )
         set_request_id(request_id)
 
         user = getattr(request, "user", None)
         if user and user.is_authenticated:
             uid = user.id if hasattr(user, "id") else None
             set_user_id(uid)
-            _sync_platform_context(request_id=request_id, user_id=uid)
+            _sync_platform_context(
+                request_id=request_id, user_id=uid,
+            )
         else:
             set_user_id(None)
-            _sync_platform_context(request_id=request_id, user_id=None)
+            _sync_platform_context(
+                request_id=request_id, user_id=None,
+            )
 
 
 class SubdomainTenantMiddleware(MiddlewareMixin):
     """Subdomain-based tenant resolution."""
 
-    def process_request(self, request: HttpRequest) -> HttpResponse | None:
-        base_domains = list(getattr(settings, "TENANT_BASE_DOMAINS", []))
+    def process_request(
+        self, request: HttpRequest,
+    ) -> HttpResponse | None:
+        base_domains = list(
+            getattr(settings, "TENANT_BASE_DOMAINS", []),
+        )
         if not base_domains:
             base_domains = [
-                getattr(settings, "TENANT_BASE_DOMAIN", "localhost"),
+                getattr(
+                    settings, "TENANT_BASE_DOMAIN", "localhost",
+                ),
             ]
-        allow_localhost = getattr(settings, "TENANT_ALLOW_LOCALHOST", False)
+        allow_localhost = getattr(
+            settings, "TENANT_ALLOW_LOCALHOST", False,
+        )
         reserved_subdomains = set(
-            getattr(settings, "TENANT_RESERVED_SUBDOMAINS", ["www"])
+            getattr(
+                settings, "TENANT_RESERVED_SUBDOMAINS", ["www"],
+            )
         )
 
         host = request.get_host().split(":")[0].lower()
@@ -84,7 +106,9 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
 
         subdomain = None
         for base_domain in base_domains:
-            subdomain = _parse_subdomain(request.get_host(), base_domain)
+            subdomain = _parse_subdomain(
+                request.get_host(), base_domain,
+            )
             if subdomain:
                 break
 
@@ -95,7 +119,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
             return None
 
         if not subdomain:
-            # Check for X-Tenant-ID header (for tests and API clients)
+            # Check for X-Tenant-ID header (API clients)
             header_tenant = request.headers.get("X-Tenant-Id")
             if header_tenant:
                 try:
@@ -103,12 +127,14 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                     set_tenant(tenant_uuid, None)
                     set_db_tenant(tenant_uuid)
                     request.tenant_id = tenant_uuid
-                    _sync_platform_context(tenant_id=tenant_uuid)
+                    _sync_platform_context(
+                        tenant_id=tenant_uuid,
+                    )
                     return None
                 except (ValueError, TypeError):
                     pass
 
-            # Allow only truly public paths without tenant
+            # Allow truly public paths without tenant
             public_prefixes = [
                 "/static/",
                 "/livez/",
@@ -134,27 +160,33 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
             if allow_localhost and (
                 request.path.startswith("/admin/")
                 or request.path.startswith("/api/schema")
+                or request.path.startswith("/tenants/")
+                or request.path.startswith("/accounts/")
             ):
                 set_tenant(None, None)
                 set_db_tenant(None)
                 _sync_platform_context()
                 return None
-            return HttpResponseForbidden("Missing tenant subdomain")
+            return HttpResponseForbidden(
+                "Missing tenant subdomain",
+            )
 
-        # Look up tenant (with error handling for missing tables during
-        # migrations)
+        # Look up tenant
         try:
             from tenancy.models import Organization
-            org = Organization.objects.filter(slug=subdomain).first()
+            org = Organization.objects.filter(
+                slug=subdomain,
+            ).first()
         except Exception:
-            # Tables don't exist yet (during migrations)
             set_tenant(None, subdomain)
             set_db_tenant(None)
             _sync_platform_context(slug=subdomain)
             return None
 
         if not org:
-            return HttpResponseForbidden(f"Unknown tenant: {subdomain}")
+            return HttpResponseForbidden(
+                f"Unknown tenant: {subdomain}",
+            )
 
         set_tenant(org.tenant_id, subdomain)
         set_db_tenant(org.tenant_id)
@@ -163,6 +195,8 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         request.tenant_id = org.tenant_id
         request.tenant_slug = subdomain
 
-        _sync_platform_context(tenant_id=org.tenant_id, slug=subdomain)
+        _sync_platform_context(
+            tenant_id=org.tenant_id, slug=subdomain,
+        )
 
         return None
