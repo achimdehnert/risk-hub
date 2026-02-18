@@ -35,7 +35,7 @@
 Self-contained inline pipeline (`.github/workflows/docker-build.yml`).
 No dependency on private `platform` reusable workflows.
 
-```
+```text
 push to main → Build Docker image → Push to GHCR → Deploy via SSH → Verify health
 ```
 
@@ -103,10 +103,51 @@ ssh root@88.198.191.108 'cd /opt/risk-hub && docker compose -f docker-compose.pr
 ssh root@88.198.191.108 'docker exec risk_hub_db pg_dump -U risk_hub risk_hub | gzip > /opt/risk-hub/backups/$(date +%Y%m%d).sql.gz'
 ```
 
+## Seed Data
+
+Initial mandate data must exist per tenant for CSV import to work.
+
+```bash
+# Create seed mandates (run on server)
+docker exec risk_hub_web python manage.py shell -c "
+from dsb.models import Mandate
+from datetime import date
+
+tenants = {
+    'demo': '61222b22-480b-4f9f-a8b1-ec40572b4729',
+    'marold': '6c0d30d7-07f0-40a3-938d-7825d26024e9',
+}
+
+for org_name, tid in tenants.items():
+    m, created = Mandate.objects.get_or_create(
+        tenant_id=tid,
+        name=f'{org_name.title()} GmbH',
+        defaults={
+            'status': 'active',
+            'dsb_appointed_date': date(2025, 1, 1),
+            'industry': 'other',
+        },
+    )
+    print(f'  Created: {m.name}' if created else f'  Exists: {m.name}')
+"
+
+# Seed TOM categories
+docker exec risk_hub_web python manage.py seed_tom_categories
+```
+
+### Organizations (Production)
+
+| Slug | Tenant ID |
+| --- | --- |
+| `demo` | `61222b22-480b-4f9f-a8b1-ec40572b4729` |
+| `dsb` | `5136057e-ca60-4a28-9ab7-43faf2c58a34` |
+| `marold` | `6c0d30d7-07f0-40a3-938d-7825d26024e9` |
+
 ## Hardening TODO
 
 - [ ] Add `logging` (json-file with rotation) to all services
 - [ ] Add `deploy.resources.limits.memory` to all services
+- [ ] Fix `risk_hub_worker` healthcheck (currently unhealthy despite clean logs)
 - [x] Implement `/livez/` endpoint
 - [x] Bind port to `127.0.0.1:8090:8000`
 - [x] CI/CD pipeline with auto-deploy on push to main
