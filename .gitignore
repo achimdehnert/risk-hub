@@ -38,7 +38,12 @@ media/
 # Environment
 .env
 .env.local
+.env.prod
 .env.*.local
+
+# Secrets (ADR-045) — NEVER commit plaintext
+secrets.env
+!secrets.enc.env
 
 # Docker
 .docker/
