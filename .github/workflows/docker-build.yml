@@ -2,7 +2,7 @@
 # ║  RISK-HUB CI/CD — Using Platform Reusable Workflows                      ║
 # ║  Migrated from: docker-build.yml (build-only)                            ║
 # ║  ADR: ADR-021 Unified Deployment Pattern                                 ║
-# ║  ADR-042: Build+Deploy only on workflow_dispatch (not on push)           ║
+# ║  Build+Deploy on push to main + workflow_dispatch                        ║
 # ╚═══════════════════════════════════════════════════════════════════════════╝
 
 name: CI/CD Pipeline
@@ -42,12 +42,12 @@ jobs:
 
   # ═══════════════════════════════════════════════════════════════════════════
   # STAGE 2: Build Docker Image
-  # ADR-042: Only on workflow_dispatch (CLI or safety-net), not on push
+  # Build on push to main + workflow_dispatch
   # ═══════════════════════════════════════════════════════════════════════════
   build:
     name: "Build"
     needs: [ci]
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     uses: achimdehnert/platform/.github/workflows/_build-docker.yml@v1
     with:
       dockerfile: "docker/app/Dockerfile"
@@ -60,7 +60,7 @@ jobs:
   deploy:
     name: "Deploy"
     needs: [build]
-    if: github.event_name == 'workflow_dispatch'
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     uses: achimdehnert/platform/.github/workflows/_deploy-hetzner.yml@v1
     with:
       app_name: risk-hub
