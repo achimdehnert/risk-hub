@@ -22,7 +22,7 @@ def _user_id(request: HttpRequest):
 
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
-    """DSB Dashboard \u2014 DSGVO compliance overview."""
+    """DSB Dashboard — DSGVO compliance overview."""
     tid = _tenant_id(request)
     if tid is None:
         return render(request, "dsb/dashboard.html", {"kpis": None})
@@ -33,7 +33,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def vvt_list(request: HttpRequest) -> HttpResponse:
-    """VVT list \u2014 Art. 30 processing activities."""
+    """VVT list — Art. 30 processing activities."""
     from dsb.models import ProcessingActivity
 
     tid = _tenant_id(request)
@@ -51,7 +51,7 @@ def vvt_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def tom_list(request: HttpRequest) -> HttpResponse:
-    """TOM list \u2014 Art. 32 technical & organizational measures."""
+    """TOM list — Art. 32 technical & organizational measures."""
     from dsb.models import OrganizationalMeasure, TechnicalMeasure
     from dsb.models.choices import MeasureStatus
 
@@ -75,7 +75,7 @@ def tom_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def dpa_list(request: HttpRequest) -> HttpResponse:
-    """AVV list \u2014 Art. 28 data processing agreements."""
+    """AVV list — Art. 28 data processing agreements."""
     from dsb.models import DataProcessingAgreement
 
     tid = _tenant_id(request)
@@ -91,7 +91,7 @@ def dpa_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def audit_list(request: HttpRequest) -> HttpResponse:
-    """Audit list \u2014 privacy audits."""
+    """Audit list — privacy audits."""
     from dsb.models import PrivacyAudit
     from dsb.models.audit import AuditFinding
     from dsb.models.choices import SeverityLevel
@@ -113,7 +113,7 @@ def audit_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def deletion_list(request: HttpRequest) -> HttpResponse:
-    """Deletion log list \u2014 Art. 17."""
+    """Deletion log list — Art. 17."""
     from dsb.models import DeletionLog
 
     tid = _tenant_id(request)
@@ -129,7 +129,7 @@ def deletion_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def breach_list(request: HttpRequest) -> HttpResponse:
-    """Breach list \u2014 Art. 33 data breaches."""
+    """Breach list — Art. 33 data breaches."""
     from dsb.models import Breach
 
     tid = _tenant_id(request)
@@ -150,7 +150,7 @@ def breach_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def mandate_list(request: HttpRequest) -> HttpResponse:
-    """Mandate list \u2014 betreute Unternehmen."""
+    """Mandate list — betreute Unternehmen."""
     from dsb.models import Mandate
 
     tid = _tenant_id(request)
@@ -232,7 +232,7 @@ def mandate_delete(request: HttpRequest, pk) -> HttpResponse:
 
 @login_required
 def vvt_detail(request: HttpRequest, pk) -> HttpResponse:
-    """VVT detail \u2014 single processing activity."""
+    """VVT detail — single processing activity."""
     from dsb.models import ProcessingActivity
 
     tid = _tenant_id(request)
@@ -263,7 +263,7 @@ def vvt_create(request: HttpRequest) -> HttpResponse:
         form = ProcessingActivityForm(tenant_id=tid)
     return render(request, "dsb/vvt_form.html", {
         "form": form,
-        "title": "Neue Verarbeitungst\u00e4tigkeit",
+        "title": "Neue Verarbeitungstätigkeit",
     })
 
 
@@ -330,7 +330,7 @@ def tom_create(request: HttpRequest) -> HttpResponse:
     )
     return render(request, "dsb/tom_form.html", {
         "form": form,
-        "title": f"Neue {label} Ma\u00dfnahme",
+        "title": f"Neue {label} Maßnahme",
         "measure_type": measure_type,
     })
 
@@ -370,7 +370,7 @@ def tom_edit(request: HttpRequest, pk) -> HttpResponse:
     )
     return render(request, "dsb/tom_form.html", {
         "form": form,
-        "title": f"{label} Ma\u00dfnahme bearbeiten: {obj.title}",
+        "title": f"{label} Maßnahme bearbeiten: {obj.title}",
         "object": obj,
         "measure_type": measure_type,
     })
@@ -449,10 +449,14 @@ def csv_import(request: HttpRequest) -> HttpResponse:
         import_tom,
         import_vvt,
     )
+    from dsb.models import Mandate
 
     tid = _tenant_id(request)
     uid = _user_id(request)
     result = None
+    mandate_count = Mandate.objects.filter(
+        tenant_id=tid,
+    ).count() if tid else 0
 
     if request.method == "POST":
         form = CsvImportForm(
@@ -482,4 +486,6 @@ def csv_import(request: HttpRequest) -> HttpResponse:
     return render(request, "dsb/import_upload.html", {
         "form": form,
         "result": result,
+        "no_mandates": mandate_count == 0,
+        "tenant_id": tid,
     })
