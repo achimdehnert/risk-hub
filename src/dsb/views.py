@@ -22,7 +22,7 @@ def _user_id(request: HttpRequest):
 
 @login_required
 def dashboard(request: HttpRequest) -> HttpResponse:
-    """DSB Dashboard — DSGVO compliance overview."""
+    """DSB Dashboard \u2014 DSGVO compliance overview."""
     tid = _tenant_id(request)
     if tid is None:
         return render(request, "dsb/dashboard.html", {"kpis": None})
@@ -33,7 +33,7 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def vvt_list(request: HttpRequest) -> HttpResponse:
-    """VVT list — Art. 30 processing activities."""
+    """VVT list \u2014 Art. 30 processing activities."""
     from dsb.models import ProcessingActivity
 
     tid = _tenant_id(request)
@@ -51,7 +51,7 @@ def vvt_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def tom_list(request: HttpRequest) -> HttpResponse:
-    """TOM list — Art. 32 technical & organizational measures."""
+    """TOM list \u2014 Art. 32 technical & organizational measures."""
     from dsb.models import OrganizationalMeasure, TechnicalMeasure
     from dsb.models.choices import MeasureStatus
 
@@ -75,7 +75,7 @@ def tom_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def dpa_list(request: HttpRequest) -> HttpResponse:
-    """AVV list — Art. 28 data processing agreements."""
+    """AVV list \u2014 Art. 28 data processing agreements."""
     from dsb.models import DataProcessingAgreement
 
     tid = _tenant_id(request)
@@ -91,7 +91,7 @@ def dpa_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def audit_list(request: HttpRequest) -> HttpResponse:
-    """Audit list — privacy audits."""
+    """Audit list \u2014 privacy audits."""
     from dsb.models import PrivacyAudit
     from dsb.models.audit import AuditFinding
     from dsb.models.choices import SeverityLevel
@@ -113,7 +113,7 @@ def audit_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def deletion_list(request: HttpRequest) -> HttpResponse:
-    """Deletion log list — Art. 17."""
+    """Deletion log list \u2014 Art. 17."""
     from dsb.models import DeletionLog
 
     tid = _tenant_id(request)
@@ -129,7 +129,7 @@ def deletion_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def breach_list(request: HttpRequest) -> HttpResponse:
-    """Breach list — Art. 33 data breaches."""
+    """Breach list \u2014 Art. 33 data breaches."""
     from dsb.models import Breach
 
     tid = _tenant_id(request)
@@ -150,7 +150,7 @@ def breach_list(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def mandate_list(request: HttpRequest) -> HttpResponse:
-    """Mandate list — betreute Unternehmen."""
+    """Mandate list \u2014 betreute Unternehmen."""
     from dsb.models import Mandate
 
     tid = _tenant_id(request)
@@ -232,7 +232,7 @@ def mandate_delete(request: HttpRequest, pk) -> HttpResponse:
 
 @login_required
 def vvt_detail(request: HttpRequest, pk) -> HttpResponse:
-    """VVT detail — single processing activity."""
+    """VVT detail \u2014 single processing activity."""
     from dsb.models import ProcessingActivity
 
     tid = _tenant_id(request)
@@ -263,7 +263,7 @@ def vvt_create(request: HttpRequest) -> HttpResponse:
         form = ProcessingActivityForm(tenant_id=tid)
     return render(request, "dsb/vvt_form.html", {
         "form": form,
-        "title": "Neue Verarbeitungstätigkeit",
+        "title": "Neue Verarbeitungst\u00e4tigkeit",
     })
 
 
@@ -324,10 +324,13 @@ def tom_create(request: HttpRequest) -> HttpResponse:
             return redirect("dsb:tom-list")
     else:
         form = FormClass(tenant_id=tid)
-    label = "Technische" if measure_type == "tech" else "Organisatorische"
+    label = (
+        "Technische" if measure_type == "tech"
+        else "Organisatorische"
+    )
     return render(request, "dsb/tom_form.html", {
         "form": form,
-        "title": f"Neue {label} Maßnahme",
+        "title": f"Neue {label} Ma\u00dfnahme",
         "measure_type": measure_type,
     })
 
@@ -351,7 +354,9 @@ def tom_edit(request: HttpRequest, pk) -> HttpResponse:
         FormClass = OrganizationalMeasureForm
     obj = get_object_or_404(Model, pk=pk, tenant_id=tid)
     if request.method == "POST":
-        form = FormClass(request.POST, instance=obj, tenant_id=tid)
+        form = FormClass(
+            request.POST, instance=obj, tenant_id=tid,
+        )
         if form.is_valid():
             obj = form.save(commit=False)
             obj.updated_by_id = _user_id(request)
@@ -359,10 +364,13 @@ def tom_edit(request: HttpRequest, pk) -> HttpResponse:
             return redirect("dsb:tom-list")
     else:
         form = FormClass(instance=obj, tenant_id=tid)
-    label = "Technische" if measure_type == "tech" else "Organisatorische"
+    label = (
+        "Technische" if measure_type == "tech"
+        else "Organisatorische"
+    )
     return render(request, "dsb/tom_form.html", {
         "form": form,
-        "title": f"{label} Maßnahme bearbeiten: {obj.title}",
+        "title": f"{label} Ma\u00dfnahme bearbeiten: {obj.title}",
         "object": obj,
         "measure_type": measure_type,
     })
@@ -424,4 +432,54 @@ def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
         "form": form,
         "title": f"AVV bearbeiten: {obj.partner_name}",
         "object": obj,
+    })
+
+
+# -----------------------------------------------------------------------
+# CSV Import (VVT / TOM / AVV)
+# -----------------------------------------------------------------------
+
+
+@login_required
+def csv_import(request: HttpRequest) -> HttpResponse:
+    """Upload and import VVT / TOM / AVV CSV files."""
+    from dsb.forms import CsvImportForm
+    from dsb.import_csv import (
+        import_csv,
+        import_tom,
+        import_vvt,
+    )
+
+    tid = _tenant_id(request)
+    uid = _user_id(request)
+    result = None
+
+    if request.method == "POST":
+        form = CsvImportForm(
+            request.POST, request.FILES, tenant_id=tid,
+        )
+        if form.is_valid():
+            csv_file = form.cleaned_data["csv_file"]
+            csv_type = form.cleaned_data["csv_type"]
+            mandate = form.cleaned_data["mandate"]
+            content = csv_file.read().decode("utf-8-sig")
+
+            if csv_type == "vvt":
+                result = import_vvt(
+                    content, mandate, tid, uid,
+                )
+            elif csv_type == "tom":
+                result = import_tom(
+                    content, mandate, tid, uid,
+                )
+            else:
+                result = import_csv(
+                    content, mandate, tid, uid,
+                )
+    else:
+        form = CsvImportForm(tenant_id=tid)
+
+    return render(request, "dsb/import_upload.html", {
+        "form": form,
+        "result": result,
     })
