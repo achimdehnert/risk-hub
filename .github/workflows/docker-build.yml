@@ -82,6 +82,8 @@ jobs:
             sleep 10
             echo "=== Running migrations ==="
             docker exec risk_hub_web python manage.py migrate --noinput
+            echo "=== Seeding TOM categories ==="
+            docker exec risk_hub_web python manage.py seed_tom_categories
             echo "=== Health check ==="
             docker exec risk_hub_web python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')"
             echo "=== Deploy complete ==="
