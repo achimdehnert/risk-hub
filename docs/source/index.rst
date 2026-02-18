@@ -12,6 +12,13 @@ The Platform repository provides shared services and packages for the entire eco
 
 .. toctree::
    :maxdepth: 2
+   :caption: Modules
+
+   dsb/index
+   explosionsschutz/index
+
+.. toctree::
+   :maxdepth: 2
    :caption: Packages
 
    packages/creative-services/index
@@ -26,12 +33,6 @@ The Platform repository provides shared services and packages for the entire eco
 
    integration/bfagent
    integration/travel-beat
-
-.. toctree::
-   :maxdepth: 2
-   :caption: Modules
-
-   explosionsschutz/index
 
 .. toctree::
    :maxdepth: 2
