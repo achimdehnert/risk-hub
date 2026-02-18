@@ -1,29 +1,23 @@
 ---
 trigger: glob
 globs:
-  - "src/*/urls.py"
-  - "src/*/html_urls.py"
-  - "src/config/urls.py"
+  - "**/urls.py"
+  - "config/urls.py"
 ---
 
-# URL Routing Conventions (risk-hub — verified)
+# URL Routing Conventions (risk-hub)
 
 ## Root URL Config
-- File: `src/config/urls.py` (`ROOT_URLCONF = "config.urls"`)
-- Health checks: `/livez/` (liveness), `/healthz/` (readiness)
+
+- File: `config/urls.py` (`ROOT_URLCONF = "config.urls"`)
+- Health checks: `/livez/` (liveness)
 - Admin: `/admin/`
-- Auth: `/accounts/login/`, `/accounts/logout/` (django.contrib.auth)
-
-## Dual URL Pattern
-Some apps have both HTML and API URLs:
-- HTML: `path("ex/", include("explosionsschutz.html_urls"))`
-- API: `path("api/ex/", include("explosionsschutz.urls"))`
-- Django Ninja: `path("api/v1/", api.urls)`
-
-## App URL Registration
-- BARE module names (no apps. prefix): `include("risk.urls")`
-- reverse() with names: `reverse("risk:risk_list")`
+- Auth: `/accounts/` (django.contrib.auth)
+- API: `/api/v1/` (Django Ninja)
 
 ## URL Naming Convention
+
+- HTML views: `/module/` (namespace: `module`)
+- API endpoints: `/api/v1/module/` (Django Ninja router)
 - List: `<model>_list` | Detail: `<model>_detail`
 - Create: `<model>_create` | Edit: `<model>_edit` | Delete: `<model>_delete`

@@ -2,32 +2,29 @@
 description: Review and address PR comments using GitHub MCP
 ---
 
-Inputs: PR number.
+# PR Review Workflow
 
-1. Fetch PR details using GitHub MCP:
-   Use mcp7_get_pull_request to get PR title, body, base/head branches.
-   Print summary of the PR.
+## Steps
 
-2. Fetch changed files:
-   Use mcp7_get_pull_request_files to list all changed files.
-   Print file list with additions/deletions count.
+1. List open PRs:
 
-3. Fetch review comments:
-   Use mcp7_get_pull_request_comments to get all review comments.
-   If no comments, report "No review comments found" and STOP.
+```
+mcp7_list_pull_requests owner=achimdehnert repo=risk-hub state=open
+```
 
-4. For each review comment:
-   a. Read the referenced file at the commented line.
-   b. Understand the reviewer's request.
-   c. Implement the requested change using the edit tool.
-   d. After fixing, print: "Fixed: <file>:<line> — <summary>"
+2. Get PR details and files changed:
 
-5. After all comments addressed:
-   // turbo
-   cd src && python -m pytest --tb=short -q
-   If tests fail, report which tests broke and suggest fixes.
+```
+mcp7_get_pull_request owner=achimdehnert repo=risk-hub pull_number=<N>
+mcp7_get_pull_request_files owner=achimdehnert repo=risk-hub pull_number=<N>
+```
 
-6. Stage and summarize all changes:
-   // turbo
-   git diff --stat
-   Print a commit message suggestion following: `fix: address PR #<number> review comments`
+3. Review comments:
+
+```
+mcp7_get_pull_request_comments owner=achimdehnert repo=risk-hub pull_number=<N>
+```
+
+4. Address each comment by making code changes
+
+5. Push fixes and respond to comments

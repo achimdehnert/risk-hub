@@ -1,31 +1,35 @@
 ---
 trigger: glob
 globs:
-  - "src/*/models.py"
-  - "src/*/views.py"
-  - "src/*/services.py"
-  - "src/*/forms.py"
+  - "**/models.py"
+  - "**/views.py"
+  - "**/services.py"
+  - "**/forms.py"
 ---
 
 # Django Conventions (risk-hub)
 
 ## Models
+
 - Inherit from `django.db.models.Model` (no custom base classes)
 - DEFAULT_AUTO_FIELD is BigAutoField — IDs are integers, not UUIDs
 - Foreign keys: `on_delete=models.PROTECT` by default
-- CRITICAL: Every user-data model MUST have `tenant_id = UUIDField(db_index=True)`
-- All queries MUST filter by `tenant_id`
+- Every user-data model MUST have `tenant_id = UUIDField(db_index=True)`
 
-## Views — HTMX Pattern (django_htmx installed)
-- Check HTMX: `if request.htmx:`
+## Views — HTMX Pattern
+
+- Check HTMX: `if request.headers.get("HX-Request"):`
 - Return partial: `return render(request, "<app>/partials/<component>.html", ctx)`
-- Access headers: `request.htmx.target`, `request.htmx.trigger`
+- Full page: `return render(request, "<app>/<model>_<action>.html", ctx)`
 
 ## Service Layer
+
 - views.py handles HTTP request/response only
 - services.py contains business logic
 - models.py defines data, not business logic
 
-## App Registration
-- Apps use BARE names (no "apps." prefix): e.g., "risk", "documents"
-- Source in src/ directory
+## API (Django Ninja)
+
+- Framework: Django Ninja (NOT DRF) at `/api/v1/`
+- Auth: `ApiKeyAuth` (Bearer token via `identity.ApiKey` model)
+- Routers: risk_router (`/risk`), actions_router (`/actions`), documents_router (`/documents`)

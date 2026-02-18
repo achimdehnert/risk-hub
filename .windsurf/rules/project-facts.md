@@ -4,41 +4,39 @@ trigger: always_on
 
 # Project Facts: risk-hub (Schutztat)
 
-## IMPORTANT: App Structure Difference
-- Apps have NO "apps." prefix — use bare module names
-- Source code lives in `src/` subdirectory
-- Settings: SINGLE file `src/config/settings.py` (NOT split base/dev/prod)
+## Apps (src/ directory, NOT apps/)
 
-## Apps (from src/config/settings.py INSTALLED_APPS)
-common, tenancy, identity, permissions, audit, outbox, risk, actions,
-documents, reporting, explosionsschutz, substances, notifications,
-dashboard, approvals, ai_analysis, dsb
+config, common, tenancy, substances, risk, explosionsschutz,
+documents, approvals, notifications, permissions, audit
 
 ## Auth
-- Django built-in auth (NO allauth)
-- AUTH_USER_MODEL = "identity.User"
-- Login: `/accounts/login/` (django.contrib.auth views)
+
+- Django built-in auth
+- Custom User model in `tenancy`
+- Login: `/accounts/login/`
 
 ## HTMX
-- django_htmx IS installed and active
-- HtmxMiddleware in MIDDLEWARE
-- Use `request.htmx` (NOT raw header check)
 
-## URL Namespace Map (from src/config/urls.py)
-- "" → home | "dashboard/" → dashboard
-- "risk/" → risk | "documents/" → documents | "actions/" → actions
-- "ex/" → explosionsschutz (HTML) | "api/ex/" → explosionsschutz (API)
-- "substances/" → substances (HTML) | "api/substances/" → substances (API)
-- "notifications/" → notifications | "audit/" → audit | "dsb/" → dsb
-- "api/v1/" → Django Ninja API
+- HTMX 1.9 via CDN (no django_htmx package)
+- Check: `request.headers.get("HX-Request")`
+- DO NOT use `request.htmx`
+
+## API
+
+- Django Ninja at `/api/v1/` (NOT DRF)
+- Auth: Bearer token via `ApiKeyAuth`
 
 ## Multi-Tenancy
-- SubdomainTenantMiddleware: `common.middleware.SubdomainTenantMiddleware`
-- RequestContextMiddleware: `common.middleware.RequestContextMiddleware`
-- Every model MUST have `tenant_id = UUIDField(db_index=True)`
+
+- Subdomain-based tenant resolution
+- All queries MUST filter by `tenant_id`
+- `Organization.id` != `Organization.tenant_id`
 
 ## Docker
+
 - Dockerfile: `docker/app/Dockerfile`
-- Container: risk_hub_web
+- Container: risk_hub_web (gunicorn:8000)
 - DB: risk_hub_db (postgres:16) | Redis: risk_hub_redis (redis:7)
-- Production: https://demo.schutztat.de
+- Worker: risk_hub_worker (celery)
+- Port: 8090 (mapped to host)
+- Production: https://schutztat.de (demo.schutztat.de)
