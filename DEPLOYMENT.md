@@ -19,7 +19,7 @@
 | **Container (redis)** | `risk_hub_redis` |
 | **Database** | Own stack (postgres:16-alpine) |
 | **Network** | `risk_hub_network` (isolated) |
-| **Health endpoint** | `/healthz/` (TODO: implement) |
+| **Health endpoint** | `/livez/` |
 
 ## Services
 
@@ -32,13 +32,29 @@
 
 ## CI/CD
 
-Uses platform reusable workflows (`.github/workflows/docker-build.yml`):
+Self-contained inline pipeline (`.github/workflows/docker-build.yml`).
+No dependency on private `platform` reusable workflows.
 
 ```
-push to main → CI (lint+test) → Build Docker → Deploy to Hetzner
+push to main → Build Docker image → Push to GHCR → Deploy via SSH → Verify health
 ```
 
-## Deploy Commands
+### Pipeline Steps (Deploy Job)
+
+1. Pull new image on server
+2. Recreate containers (`risk-hub-web`, `risk-hub-worker`)
+3. Run migrations (`manage.py migrate`)
+4. Seed TOM categories (`manage.py seed_tom_categories`)
+5. Health check (internal `127.0.0.1:8000/livez/`)
+6. External health check (`https://demo.schutztat.de/livez/`)
+
+### Required GitHub Secrets
+
+| Secret | Description |
+| --- | --- |
+| `DEPLOY_HOST` | Server IP (`88.198.191.108`) |
+| `DEPLOY_USER` | SSH user (`root`) |
+| `DEPLOY_SSH_KEY` | Private SSH key (OpenSSH format) |
 
 ### Via CI (automatic)
 
@@ -57,7 +73,9 @@ ssh root@88.198.191.108 '
   docker compose -f docker-compose.prod.yml pull risk-hub-web &&
   docker compose -f docker-compose.prod.yml up -d --force-recreate risk-hub-web risk-hub-worker &&
   sleep 5 &&
-  curl -sf http://127.0.0.1:8090/healthz/ &&
+  docker exec risk_hub_web python manage.py migrate &&
+  docker exec risk_hub_web python manage.py seed_tom_categories &&
+  curl -sf http://127.0.0.1:8090/livez/ &&
   docker logs risk_hub_web --tail 10
 '
 ```
@@ -71,6 +89,9 @@ ssh root@88.198.191.108 'docker logs risk_hub_worker --tail 50'
 
 # Migrations
 ssh root@88.198.191.108 'docker exec risk_hub_web python manage.py migrate'
+
+# Seed TOM categories
+ssh root@88.198.191.108 'docker exec risk_hub_web python manage.py seed_tom_categories'
 
 # Shell
 ssh root@88.198.191.108 'docker exec -it risk_hub_web python manage.py shell'
@@ -86,5 +107,6 @@ ssh root@88.198.191.108 'docker exec risk_hub_db pg_dump -U risk_hub risk_hub | 
 
 - [ ] Add `logging` (json-file with rotation) to all services
 - [ ] Add `deploy.resources.limits.memory` to all services
-- [ ] Implement `/livez/` + `/healthz/` endpoints using `platform/deployment/templates/django/healthz.py`
-- [ ] Bind port to `127.0.0.1:8090:8000` (currently correct)
+- [x] Implement `/livez/` endpoint
+- [x] Bind port to `127.0.0.1:8090:8000`
+- [x] CI/CD pipeline with auto-deploy on push to main
