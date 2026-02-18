@@ -1,11 +1,13 @@
 # Risk-Hub Project Rules
 
 ## Project Overview
+
 Risk-Hub (Schutztat) is a multi-tenant Django SaaS platform for occupational
 safety, hazardous substance management, explosion protection, and risk
 assessment. Deployed on Hetzner Cloud via Docker Compose.
 
 ## Tech Stack
+
 - **Backend**: Django 5.x, Gunicorn, Celery + Redis
 - **Frontend**: Tailwind CSS (CDN), HTMX 1.9, Lucide Icons
 - **Database**: PostgreSQL 16 (row-level tenant isolation via `tenant_id`)
@@ -15,6 +17,7 @@ assessment. Deployed on Hetzner Cloud via Docker Compose.
 ## Architecture Rules
 
 ### Multi-Tenancy
+
 - Every model with user data MUST have a `tenant_id = UUIDField(db_index=True)`
 - CRITICAL: `Organization.id` != `Organization.tenant_id` — always use
   `org.tenant_id` for data isolation, never `org.id`
@@ -22,6 +25,7 @@ assessment. Deployed on Hetzner Cloud via Docker Compose.
 - All queries MUST filter by `tenant_id`
 
 ### Django Apps (src/)
+
 - `config/` — Settings, root URLs
 - `common/` — Shared middleware, tenant utilities
 - `tenancy/` — Organization, User models
@@ -35,6 +39,7 @@ assessment. Deployed on Hetzner Cloud via Docker Compose.
 - `audit/` — Audit trail
 
 ### Template Rules
+
 - ALL templates MUST extend `base.html` (Tailwind + nav + Lucide)
 - Never use standalone HTML with inline `<style>` tags
 - Use Tailwind utility classes, not custom CSS
@@ -43,20 +48,24 @@ assessment. Deployed on Hetzner Cloud via Docker Compose.
 - Orange is the brand accent color (bg-orange-500/600)
 
 ### Service Layer Pattern
-```
+
+```text
 views.py → services.py → models.py
 ```
+
 - Views handle HTTP, call services
 - Services contain business logic, use Pydantic commands
 - Models are data + simple properties only
 
 ### URL Conventions
+
 - HTML views: `/module/` (namespace: `module`)
 - API endpoints: `/api/module/` (namespace: `module-api`)
 
 ## Deployment
 
 ### Server
+
 - Host: `88.198.191.108`
 - Project path: `/opt/risk-hub`
 - Compose file: `docker-compose.prod.yml`
@@ -65,18 +74,30 @@ views.py → services.py → models.py
   `risk_hub_redis`
 
 ### Deploy Workflow
+
 1. `git push origin main`
 2. `docker build -f docker/app/Dockerfile -t ghcr.io/achimdehnert/risk-hub/risk-hub-web:latest .`
 3. `docker push ghcr.io/achimdehnert/risk-hub/risk-hub-web:latest`
 4. SSH: `docker compose -f docker-compose.prod.yml pull risk-hub-web`
 5. SSH: `docker compose -f docker-compose.prod.yml up -d --force-recreate risk-hub-web risk-hub-worker`
 
+### Deploy Safety (deployment_mcp, Feb 2026)
+
+- **DeployLock**: Atomic `mkdir` lock at `{project_dir}/.deploy.lock/`
+  - Prevents concurrent deploys to same app
+  - Auto-breaks stale locks after 30 min
+- **Per-Tool Timeouts**: Deploy 900s, Compose 600s, Default 120s
+- **Shell Injection**: All SSH paths use `shlex.quote()`
+- Never bypass DeployLock when deploying via MCP tools
+
 ### Environment Variables
+
 - `DATABASE_URL` — Full postgres connection string in `.env.prod`
 - Do NOT use `${VAR}` interpolation in `docker-compose.prod.yml` environment
   section — rely solely on `env_file: .env.prod`
 
 ## Code Style
+
 - Python: PEP 8, type hints, double quotes, Google docstrings
 - Line length: 100 chars max
 - Imports: sorted with isort
@@ -84,6 +105,7 @@ views.py → services.py → models.py
 - Templates: 4-space indent, Tailwind classes
 
 ## Testing
+
 - Framework: pytest
 - Run: `cd src && pytest`
 - Management commands tested via Docker exec on server
