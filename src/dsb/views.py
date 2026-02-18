@@ -425,3 +425,53 @@ def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
         "title": f"AVV bearbeiten: {obj.partner_name}",
         "object": obj,
     })
+
+
+# -----------------------------------------------------------------------
+# CSV Import (VVT / TOM / AVV)
+# -----------------------------------------------------------------------
+
+
+@login_required
+def csv_import(request: HttpRequest) -> HttpResponse:
+    """Upload and import VVT / TOM / AVV CSV files."""
+    from dsb.forms import CsvImportForm
+    from dsb.import_csv import (
+        import_csv,
+        import_tom,
+        import_vvt,
+    )
+
+    tid = _tenant_id(request)
+    uid = _user_id(request)
+    result = None
+
+    if request.method == "POST":
+        form = CsvImportForm(
+            request.POST, request.FILES, tenant_id=tid,
+        )
+        if form.is_valid():
+            csv_file = form.cleaned_data["csv_file"]
+            csv_type = form.cleaned_data["csv_type"]
+            mandate = form.cleaned_data["mandate"]
+            content = csv_file.read().decode("utf-8-sig")
+
+            if csv_type == "vvt":
+                result = import_vvt(
+                    content, mandate, tid, uid,
+                )
+            elif csv_type == "tom":
+                result = import_tom(
+                    content, mandate, tid, uid,
+                )
+            else:
+                result = import_csv(
+                    content, mandate, tid, uid,
+                )
+    else:
+        form = CsvImportForm(tenant_id=tid)
+
+    return render(request, "dsb/import_upload.html", {
+        "form": form,
+        "result": result,
+    })

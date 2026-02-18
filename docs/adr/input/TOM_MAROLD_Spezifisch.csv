@@ -1,0 +1,48 @@
+Nr;TOM-Kategorie;Massnahme;Konkrete Umsetzung MAROLD;Betroffene Systeme;Rechtsgrundlage;Pruefintervall;Verantwortlich;Status
+01;Zutrittskontrolle;Verschlossene Bueroraeueme;Buero Alpenstrasse 57 wird bei Abwesenheit verschlossen, Schluesselvergabe dokumentiert;Buerogebaeude;Art. 32 Abs. 1 lit. b;Laufend;Geschaeftsfuehrung MAROLD;[ ] Umgesetzt
+02;Zutrittskontrolle;Besucherregelungen;Besucher werden am Eingang Frauensteige empfangen und begleitet;Buerogebaeude;Art. 32 Abs. 1 lit. b;Laufend;Empfang/GF;[ ] Umgesetzt
+03;Zutrittskontrolle;Clean-Desk-Policy;Vertrauliche Bewerbungsunterlagen werden bei Verlassen des Platzes verschlossen;Arbeitsplaetze;Art. 32 Abs. 1 lit. b;Laufend;Alle MA MAROLD;[ ] Umgesetzt
+04;Zutrittskontrolle;Aktenvernichtung;Schredder (DIN 66399 P-4) im Buero fuer Papierunterlagen mit Bewerberdaten;Schredder;Art. 32 Abs. 1 lit. b;Laufend;Alle MA MAROLD;[ ] Umgesetzt
+05;Zugangskontrolle;Individuelle Benutzerkonten M365;Jeder MA hat eigenes Microsoft 365 Konto, keine geteilten Accounts;Microsoft 365 Admin;Art. 32 Abs. 1 lit. b;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+06;Zugangskontrolle;Individuelle Hunter-Accounts;Jeder Recruiter hat persoenliches Hunter CRM Login;Hunter CRM;Art. 32 Abs. 1 lit. b;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+07;Zugangskontrolle;Starke Passwoerter M365;M365 Passwortrichtlinie: min. 12 Zeichen, Komplexitaet erzwungen;Microsoft 365 Admin;Art. 32 Abs. 1 lit. b;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+08;Zugangskontrolle;2FA Microsoft 365;MFA aktiviert fuer alle M365 Konten (Authenticator App oder SMS);Microsoft 365;Art. 32 Abs. 1 lit. b;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+09;Zugangskontrolle;2FA Hunter CRM;2FA fuer Hunter CRM aktiviert (sofern verfuegbar, sonst kompensiert durch VPN);Hunter CRM;Art. 32 Abs. 1 lit. b;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+10;Zugangskontrolle;Automatische Bildschirmsperre;Windows-Gruppenrichtlinie: Sperre nach 5 Min. Inaktivitaet;Alle Arbeitsplaetze;Art. 32 Abs. 1 lit. b;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+11;Zugangskontrolle;Account-Deaktivierung;Am letzten Arbeitstag: M365 + Hunter + Sipgate Accounts deaktivieren, nach 30 Tagen loeschen;Microsoft 365, Hunter, Sipgate;Art. 32 Abs. 1 lit. b;Bei Bedarf;IT-Verantwortlicher/GF;[ ] Umgesetzt
+12;Zugriffskontrolle;Berechtigungskonzept Hunter;Recruiter sehen nur eigene Projekte/Kandidaten, GF hat Vollzugriff;Hunter CRM;Art. 32 Abs. 1 lit. b;Quartalsweise;IT-Verantwortlicher;[ ] Umgesetzt
+13;Zugriffskontrolle;Berechtigungskonzept M365;Teams-Kanaele nach Projekten, SharePoint-Berechtigungen eingeschraenkt;Microsoft 365, Teams;Art. 32 Abs. 1 lit. b;Quartalsweise;IT-Verantwortlicher;[ ] Umgesetzt
+14;Zugriffskontrolle;File Station Zugriffsbeschraenkung;Kundenzugriff auf File Station nur auf freigegebene Ordner, zeitlich begrenzt;File Station;Art. 32 Abs. 1 lit. b;Pro Projekt;Recruiter;[ ] Umgesetzt
+15;Zugriffskontrolle;Need-to-know Recruiting;Nur projektbeteiligte Recruiter sehen Kandidatendaten des jeweiligen Mandats;Hunter CRM;Art. 32 Abs. 1 lit. b;Laufend;Recruiter/GF;[ ] Umgesetzt
+16;Zugriffskontrolle;Protokollierung Hunter;Alle Zugriffe und Aenderungen in Hunter CRM werden mit Benutzer/Datum protokolliert;Hunter CRM;Art. 32 Abs. 1 lit. b;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+17;Zugriffskontrolle;Quartals-Review Berechtigungen;Alle 3 Monate: Pruefung M365 und Hunter Berechtigungen auf Aktualitaet;Microsoft 365, Hunter;Art. 32 Abs. 1 lit. b;Quartalsweise;IT-Verantwortlicher/DSB;[ ] Umgesetzt
+18;Zugriffskontrolle;DATEV-Zugriffsschutz;DATEV-Zugriff nur fuer GF und Steuerberater, keine Recruiter;DATEV, Windata;Art. 32 Abs. 1 lit. b;Laufend;GF;[ ] Umgesetzt
+19;Weitergabekontrolle;TLS Outlook;Alle E-Mails ueber M365 Outlook werden per TLS verschluesselt;Microsoft 365 Outlook;Art. 32 Abs. 1 lit. a;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+20;Weitergabekontrolle;File Station Verschluesselung;Dateiaustausch mit Kunden ausschliesslich ueber verschluesselte File Station;File Station;Art. 32 Abs. 1 lit. a;Pro Projekt;Recruiter;[ ] Umgesetzt
+21;Weitergabekontrolle;Kein unverschluesselter Versand;Bewerbungsunterlagen nie per unverschluesselter E-Mail, nur ueber File Station;Outlook, File Station;Art. 32 Abs. 1 lit. a;Laufend;Alle Recruiter;[ ] Umgesetzt
+22;Weitergabekontrolle;Sipgate Verschluesselung;Sipgate VoIP-Verschluesselung aktiv (SRTP/TLS);Sipgate;Art. 32 Abs. 1 lit. a;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+23;Eingabekontrolle;Hunter Aenderungslog;Alle Profilaenderungen in Hunter werden mit Benutzer und Zeitstempel gespeichert;Hunter CRM;Art. 32 Abs. 1 lit. b;Laufend;Automatisch;[ ] Umgesetzt
+24;Eingabekontrolle;M365 Versionierung;SharePoint/OneDrive Versionierung aktiviert fuer alle Dokumente;Microsoft 365;Art. 32 Abs. 1 lit. b;Laufend;Automatisch;[ ] Umgesetzt
+25;Auftragskontrolle;AVV Microsoft;Auftragsverarbeitungsvertrag mit Microsoft (Online Services DPA);Microsoft 365;Art. 28 DSGVO;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Pruefen
+26;Auftragskontrolle;AVV Hunter;AVV mit Hunter CRM Anbieter abschliessen;Hunter CRM;Art. 28 DSGVO;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Pruefen
+27;Auftragskontrolle;AVV Sipgate;AVV mit Sipgate abschliessen;Sipgate;Art. 28 DSGVO;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Pruefen
+28;Auftragskontrolle;AVV File Station;AVV mit File Station Anbieter abschliessen;File Station;Art. 28 DSGVO;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Pruefen
+29;Auftragskontrolle;AVV Canva;AVV mit Canva abschliessen (Data Processing Addendum);Canva;Art. 28 DSGVO;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Pruefen
+30;Auftragskontrolle;AVV Compleady;AVV mit Compleady abschliessen, Drittlandstatus klaeren;Compleady;Art. 28 DSGVO;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Pruefen
+31;Auftragskontrolle;AVV OpenAI (ChatGPT);AVV/DPA mit OpenAI abschliessen (Business Terms);ChatGPT;Art. 28 DSGVO;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Pruefen
+32;Auftragskontrolle;AVV DATEV;AVV mit DATEV bzw. Steuerberater abschliessen;DATEV;Art. 28 DSGVO;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Pruefen
+33;Auftragskontrolle;AVV WordPress Hosting;AVV mit WordPress Hosting-Provider abschliessen;WordPress;Art. 28 DSGVO;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Pruefen
+34;Verfuegbarkeitskontrolle;M365 Backup;Microsoft 365 automatisches Backup (Exchange, SharePoint, OneDrive);Microsoft 365;Art. 32 Abs. 1 lit. c;Taeglich;Cloud/IT;[ ] Umgesetzt
+35;Verfuegbarkeitskontrolle;Hunter CRM Backup;Hunter CRM automatische Datensicherung durch Anbieter;Hunter CRM;Art. 32 Abs. 1 lit. c;Taeglich;Hunter-Anbieter;[ ] Pruefen
+36;Verfuegbarkeitskontrolle;Virenschutz;Microsoft Defender auf allen Windows-Arbeitsplaetzen;Alle Arbeitsplaetze;Art. 32 Abs. 1 lit. c;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+37;Verfuegbarkeitskontrolle;Windows Updates;Automatische Windows-Updates aktiviert, monatliche Pruefung;Alle Arbeitsplaetze;Art. 32 Abs. 1 lit. c;Monatlich;IT-Verantwortlicher;[ ] Umgesetzt
+38;Verfuegbarkeitskontrolle;Notfallplan;Dokumentierter IT-Notfallplan fuer Ausfall M365, Hunter, Sipgate;Alle Systeme;Art. 32 Abs. 1 lit. c;Jaehrlich;IT-Verantwortlicher/GF;[ ] Erstellen
+39;Trennungsgebot;Projekttrennung Hunter;Recruiting-Projekte in Hunter sind mandantengetrennt;Hunter CRM;Art. 32 Abs. 1 lit. b;Laufend;Recruiter;[ ] Umgesetzt
+40;Trennungsgebot;Teams-Kanaltrennung;Separate Teams-Kanaele pro Recruiting-Projekt;Microsoft Teams;Art. 32 Abs. 1 lit. b;Pro Projekt;Recruiter;[ ] Umgesetzt
+41;Organisatorisch;Datenschutzschulungen;Jaehrliche Schulung aller MAROLD-Mitarbeiter durch DSB Prof. Dr. Dehnert;Alle;Art. 39 Abs. 1 lit. b;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Planen
+42;Organisatorisch;Vertraulichkeitsverpflichtung;Schriftliche Verpflichtung aller MA auf Vertraulichkeit bei Eintritt;Alle;Art. 32 Abs. 4;Bei Eintritt;GF;[ ] Umgesetzt
+43;Organisatorisch;KI-Richtlinie MAROLD;Richtlinie fuer ChatGPT-Nutzung: keine pbD, nur anonymisiert;ChatGPT;Art. 32;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] In Kraft setzen
+44;Organisatorisch;Social-Media-Richtlinie;Regelungen fuer LinkedIn/Xing Nutzung im Recruiting;LinkedIn, Xing;Art. 32;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] In Kraft setzen
+45;Organisatorisch;Loeschkonzept MAROLD;Dokumentierte Loeschfristen je Datenkategorie, Routinen in Hunter;Hunter CRM, M365;Art. 17;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Einrichten
+46;Organisatorisch;Incident-Response MAROLD;Meldekette: MA -> GF -> DSB Prof. Dr. Dehnert -> Aufsichtsbehoerde (72h);Alle;Art. 33/34;Jaehrlich;DSB Prof. Dr. Dehnert/GF;[ ] Dokumentieren
+47;Organisatorisch;Betroffenenrechte-Prozess;Eingang: marold@marold.de, Weiterleitung an DSB, Bearbeitung innerhalb 1 Monat;Outlook, Hunter;Art. 12-22;Jaehrlich;DSB Prof. Dr. Dehnert;[ ] Dokumentieren

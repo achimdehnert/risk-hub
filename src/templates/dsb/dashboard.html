@@ -211,7 +211,10 @@
                 <a href="{% url 'dsb:breach-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
                     <i data-lucide="alert-triangle" class="w-4 h-4"></i> Datenpannen (Art. 33)
                 </a>
-                <a href="/admin/dsb/" class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 py-1 mt-2 pt-2 border-t">
+                <a href="{% url 'dsb:csv-import' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1 mt-2 pt-2 border-t">
+                    <i data-lucide="upload" class="w-4 h-4"></i> CSV Import
+                </a>
+                <a href="/admin/dsb/" class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 py-1">
                     <i data-lucide="settings" class="w-4 h-4"></i> DSB Admin
                 </a>
             </div>

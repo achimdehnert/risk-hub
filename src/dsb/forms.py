@@ -193,3 +193,45 @@ class DataProcessingAgreementForm(forms.ModelForm):
             self.fields["mandate"].queryset = Mandate.objects.filter(
                 tenant_id=tenant_id, status="active",
             )
+
+
+class CsvImportForm(forms.Form):
+    """Upload-Form für VVT / TOM / AVV CSV-Dateien."""
+
+    CSV_TYPE_CHOICES = [
+        ("auto", "Automatisch erkennen"),
+        ("vvt", "VVT (Verarbeitungstätigkeiten)"),
+        ("tom", "TOM (Technische & Org. Maßnahmen)"),
+    ]
+
+    csv_file = forms.FileField(
+        label="CSV-Datei",
+        help_text=(
+            "Semikolon-getrennte CSV (.csv), "
+            "generell oder mandantenspezifisch"
+        ),
+        widget=forms.ClearableFileInput(
+            attrs={"class": _TW_INPUT, "accept": ".csv"},
+        ),
+    )
+    csv_type = forms.ChoiceField(
+        label="Datentyp",
+        choices=CSV_TYPE_CHOICES,
+        initial="auto",
+        widget=forms.Select(attrs={"class": _TW_SELECT}),
+    )
+    mandate = forms.ModelChoiceField(
+        label="Mandat",
+        queryset=Mandate.objects.none(),
+        widget=forms.Select(attrs={"class": _TW_SELECT}),
+        help_text="Zuordnung zum betreuten Unternehmen",
+    )
+
+    def __init__(self, *args, tenant_id=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if tenant_id:
+            self.fields["mandate"].queryset = (
+                Mandate.objects.filter(
+                    tenant_id=tenant_id,
+                ).order_by("name")
+            )

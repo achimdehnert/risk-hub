@@ -95,6 +95,7 @@ class TomCategory(models.Model):
     class MeasureType(models.TextChoices):
         TECHNICAL = "technical", "Technisch"
         ORGANIZATIONAL = "organizational", "Organisatorisch"
+        AVV = "avv", "Auftragsverarbeitung (AVV)"
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False,

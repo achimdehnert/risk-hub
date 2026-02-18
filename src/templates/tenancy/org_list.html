@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Mandanten — Schutztat{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="building-2" class="w-7 h-7 inline text-orange-600 mr-1"></i>
+            Mandantenverwaltung
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+            {{ rows|length }} Organisation{{ rows|length|pluralize:"en" }} registriert
+        </p>
+    </div>
+    <a href="{% url 'tenancy:org-create' %}"
+       class="inline-flex items-center gap-1 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">
+        <i data-lucide="plus" class="w-4 h-4"></i> Neuer Mandant
+    </a>
+</div>
+
+{% if rows %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Slug</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mitglieder</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Erstellt</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for org in rows %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm font-medium text-gray-900">
+                        <a href="{% url 'tenancy:org-detail' org.pk %}" class="hover:text-orange-600">
+                            {{ org.name }}
+                        </a>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">
+                        <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{{ org.slug }}</code>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        {% if org.status == "active" %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Aktiv</span>
+                        {% elif org.status == "trial" %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Trial</span>
+                        {% elif org.status == "suspended" %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Gesperrt</span>
+                        {% else %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Gelöscht</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ org.plan_code }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ org.member_count }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ org.created_at|date:"d.m.Y" }}</td>
+                    <td class="px-4 py-3 text-sm text-right space-x-2">
+                        <a href="{% url 'tenancy:org-detail' org.pk %}"
+                           class="text-orange-600 hover:text-orange-800" title="Details">
+                            <i data-lucide="eye" class="w-4 h-4 inline"></i>
+                        </a>
+                        <a href="{% url 'tenancy:org-edit' org.pk %}"
+                           class="text-blue-600 hover:text-blue-800" title="Bearbeiten">
+                            <i data-lucide="pencil" class="w-4 h-4 inline"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-12 bg-white rounded-lg shadow">
+    <i data-lucide="building-2" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+    <p class="text-gray-500 text-sm">Keine Mandanten vorhanden.</p>
+    <a href="{% url 'tenancy:org-create' %}"
+       class="mt-4 inline-flex items-center gap-1 px-4 py-2 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700">
+        <i data-lucide="plus" class="w-4 h-4"></i> Mandant anlegen
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

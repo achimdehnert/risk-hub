@@ -1,0 +1,54 @@
+Nr;TOM-Kategorie;Massnahme;Beschreibung;Rechtsgrundlage;Pruefintervall;Verantwortlich;Status
+01;Zutrittskontrolle;Verschlossene Bueroraeueme;Buero- und Serverraeume werden bei Abwesenheit verschlossen, Schluesselmanagement dokumentiert;Art. 32 Abs. 1 lit. b DSGVO;Laufend;Geschaeftsfuehrung;[ ] Umgesetzt
+02;Zutrittskontrolle;Besucherregelungen;Besucher werden angemeldet, begleitet und im Besucherbuch erfasst;Art. 32 Abs. 1 lit. b DSGVO;Laufend;Empfang/GF;[ ] Umgesetzt
+03;Zutrittskontrolle;Clean-Desk-Policy;Arbeitsplaetze werden bei Verlassen aufgeraeumt, vertrauliche Unterlagen verschlossen;Art. 32 Abs. 1 lit. b DSGVO;Laufend;Alle Mitarbeiter;[ ] Umgesetzt
+04;Zutrittskontrolle;Aktenvernichtung;Vertrauliche Papierunterlagen werden per Schredder (DIN 66399, Stufe P-4) vernichtet;Art. 32 Abs. 1 lit. b DSGVO;Laufend;Alle Mitarbeiter;[ ] Umgesetzt
+05;Zugangskontrolle;Individuelle Benutzerkonten;Jeder Mitarbeiter erhaelt ein persoenliches Benutzerkonto, keine geteilten Accounts;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+06;Zugangskontrolle;Starke Passwoerter;Mindestlaenge 12 Zeichen, Komplexitaetsanforderungen (Gross-/Kleinbuchstaben, Zahlen, Sonderzeichen);Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+07;Zugangskontrolle;Zwei-Faktor-Authentifizierung (2FA);2FA fuer alle Cloud-Dienste und Remote-Zugaenge aktiviert;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+08;Zugangskontrolle;Automatische Bildschirmsperre;Automatische Sperre nach maximal 5 Minuten Inaktivitaet;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+09;Zugangskontrolle;Zentrale Benutzerverwaltung;Alle Benutzerkonten werden zentral verwaltet (z.B. ueber Cloud-Admin-Center);Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+10;Zugangskontrolle;Deaktivierung bei Ausscheiden;Benutzerkonten werden am letzten Arbeitstag deaktiviert und nach Frist geloescht;Art. 32 Abs. 1 lit. b DSGVO;Bei Bedarf;IT-Verantwortlicher;[ ] Umgesetzt
+11;Zugangskontrolle;Passwortaenderung;Regelmaessige Passwortaenderung empfohlen (mind. alle 90 Tage) oder bei Kompromittierung;Art. 32 Abs. 1 lit. b DSGVO;Quartalsweise;IT-Verantwortlicher;[ ] Umgesetzt
+12;Zugangskontrolle;Mobile Device Management;Geschaeftliche Mobilgeraete werden zentral verwaltet und koennen remote geloescht werden;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+13;Zugriffskontrolle;Rollen- und Berechtigungskonzept;Definierte Rollen mit abgestuften Zugriffsrechten je nach Aufgabenbereich;Art. 32 Abs. 1 lit. b DSGVO;Quartalsweise;IT-Verantwortlicher/GF;[ ] Umgesetzt
+14;Zugriffskontrolle;Need-to-know-Prinzip;Zugriff nur auf Daten, die fuer die jeweilige Aufgabe erforderlich sind;Art. 32 Abs. 1 lit. b DSGVO;Laufend;Alle Mitarbeiter;[ ] Umgesetzt
+15;Zugriffskontrolle;Protokollierung von Zugriffen;Zugriffe auf personenbezogene Daten werden protokolliert (Logfiles);Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+16;Zugriffskontrolle;Regelmaessige Berechtigungsreviews;Quartalsweise Pruefung aller Berechtigungen auf Aktualitaet und Notwendigkeit;Art. 32 Abs. 1 lit. b DSGVO;Quartalsweise;IT-Verantwortlicher/DSB;[ ] Umgesetzt
+17;Zugriffskontrolle;Trennung Admin-/Benutzerrechte;Administratorrechte sind von normalen Benutzerrechten getrennt und beschraenkt;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+18;Zugriffskontrolle;Physische Zugriffsschutz Datentraeger;USB-Sticks, externe Festplatten werden verschluesselt und gesichert aufbewahrt;Art. 32 Abs. 1 lit. b DSGVO;Laufend;Alle Mitarbeiter;[ ] Umgesetzt
+19;Weitergabekontrolle;TLS-Verschluesselung;Alle Datenuebertragungen (E-Mail, Web, API) erfolgen TLS-verschluesselt;Art. 32 Abs. 1 lit. a DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+20;Weitergabekontrolle;Verschluesselter Dateiaustausch;Sensible Dokumente werden nur ueber verschluesselte Kanaele geteilt;Art. 32 Abs. 1 lit. a DSGVO;Laufend;Alle Mitarbeiter;[ ] Umgesetzt
+21;Weitergabekontrolle;VPN fuer Remote-Zugriff;Zugriff auf interne Systeme von aussen nur ueber VPN;Art. 32 Abs. 1 lit. a DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+22;Weitergabekontrolle;E-Mail-Verschluesselung;Sensible Inhalte werden per TLS/STARTTLS uebermittelt, ggf. Passwortschutz;Art. 32 Abs. 1 lit. a DSGVO;Laufend;Alle Mitarbeiter;[ ] Umgesetzt
+23;Weitergabekontrolle;Verbot unverschluesselter Uebermittlung;Sensible personenbezogene Daten duerfen nicht per unverschluesselter E-Mail versendet werden;Art. 32 Abs. 1 lit. a DSGVO;Laufend;Alle Mitarbeiter;[ ] Umgesetzt
+24;Weitergabekontrolle;Transportverschluesselung mobile Geraete;Geschaeftliche Daten auf Mobilgeraeten sind verschluesselt;Art. 32 Abs. 1 lit. a DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+25;Eingabekontrolle;Aenderungsprotokollierung CRM;Alle Aenderungen an Datensaetzen im CRM werden mit Benutzer, Datum und Aenderung protokolliert;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+26;Eingabekontrolle;Versionierung Dokumente;Dokumente werden versioniert gespeichert, aeltere Versionen sind abrufbar;Art. 32 Abs. 1 lit. b DSGVO;Laufend;Alle Mitarbeiter;[ ] Umgesetzt
+27;Eingabekontrolle;Individuelle Nachvollziehbarkeit;Durch persoenliche Benutzerkonten ist nachvollziehbar, wer Daten erfasst oder geaendert hat;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+28;Eingabekontrolle;Aenderungshistorie Kandidatenprofile;Aenderungen an Kandidatenprofilen werden mit Zeitstempel und Benutzer gespeichert;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+29;Auftragskontrolle;AVV-Vertraege;Mit allen Auftragsverarbeitern werden Vertraege gemaess Art. 28 DSGVO abgeschlossen;Art. 28 DSGVO;Jaehrlich;DSB/GF;[ ] Umgesetzt
+30;Auftragskontrolle;Pruefung Subunternehmer;Subunternehmerverzeichnisse der Auftragsverarbeiter werden regelmaessig geprueft;Art. 28 DSGVO;Jaehrlich;DSB;[ ] Umgesetzt
+31;Auftragskontrolle;Weisungsdokumentation;Weisungsbefugnis gegenueber Auftragsverarbeitern ist dokumentiert;Art. 28 DSGVO;Jaehrlich;GF/DSB;[ ] Umgesetzt
+32;Auftragskontrolle;TOM-Pruefung Auftragsverarbeiter;Technische und organisatorische Massnahmen der Auftragsverarbeiter werden geprueft;Art. 28 DSGVO;Jaehrlich;DSB;[ ] Umgesetzt
+33;Verfuegbarkeitskontrolle;Regelmaessige Datensicherung;Automatisierte Backups durch Cloud-Anbieter, regelmaessige Pruefung;Art. 32 Abs. 1 lit. c DSGVO;Taeglich/Woechentlich;IT-Verantwortlicher;[ ] Umgesetzt
+34;Verfuegbarkeitskontrolle;Georedundante Speicherung;Daten werden in mindestens zwei geografisch getrennten Rechenzentren gespeichert;Art. 32 Abs. 1 lit. c DSGVO;Laufend;Cloud-Anbieter;[ ] Umgesetzt
+35;Verfuegbarkeitskontrolle;Notfallplan / Business Continuity;Dokumentierter Notfallplan fuer IT-Ausfaelle und Datenverluste;Art. 32 Abs. 1 lit. c DSGVO;Jaehrlich;IT-Verantwortlicher/GF;[ ] Umgesetzt
+36;Verfuegbarkeitskontrolle;Wiederherstellungstests;Regelmaessige Tests der Backup-Wiederherstellung;Art. 32 Abs. 1 lit. c DSGVO;Halbjaehrlich;IT-Verantwortlicher;[ ] Umgesetzt
+37;Verfuegbarkeitskontrolle;USV (Unterbrechungsfreie Stromversorgung);USV-Geraete fuer lokale Arbeitsplaetze und Netzwerkinfrastruktur;Art. 32 Abs. 1 lit. c DSGVO;Jaehrlich;IT-Verantwortlicher;[ ] Umgesetzt
+38;Verfuegbarkeitskontrolle;Virenschutz und Firewall;Aktuelle Virenschutzloesung und Firewall auf allen Endgeraeten;Art. 32 Abs. 1 lit. c DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+39;Verfuegbarkeitskontrolle;Patch-Management;Betriebssysteme und Software werden zeitnah mit Sicherheitsupdates versorgt;Art. 32 Abs. 1 lit. c DSGVO;Monatlich;IT-Verantwortlicher;[ ] Umgesetzt
+40;Trennungsgebot;Mandantentrennung CRM;Verschiedene Kunden/Projekte sind im CRM logisch getrennt;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+41;Trennungsgebot;Getrennte Projektdatenhaltung;Daten verschiedener Recruiting-Projekte werden getrennt verwaltet;Art. 32 Abs. 1 lit. b DSGVO;Laufend;Recruiter;[ ] Umgesetzt
+42;Trennungsgebot;Trennung Test-/Produktivdaten;Test- und Produktivsysteme sind getrennt, keine Echtdaten in Testsystemen;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+43;Trennungsgebot;Trennung Bewerber-/Kundendaten;Bewerber- und Kundendatenbanken sind logisch getrennt;Art. 32 Abs. 1 lit. b DSGVO;Laufend;IT-Verantwortlicher;[ ] Umgesetzt
+44;Organisatorische Massnahmen;Datenschutzschulungen;Jaehrliche Schulung aller Mitarbeiter zu Datenschutzgrundlagen und -prozessen;Art. 39 Abs. 1 lit. b DSGVO;Jaehrlich;DSB;[ ] Umgesetzt
+45;Organisatorische Massnahmen;Verpflichtung auf Vertraulichkeit;Alle Mitarbeiter werden schriftlich auf Vertraulichkeit und Datengeheimnis verpflichtet;Art. 32 Abs. 4 DSGVO;Bei Eintritt;GF/DSB;[ ] Umgesetzt
+46;Organisatorische Massnahmen;Datenschutzbeauftragter benannt;Externer oder interner DSB ist benannt und der Aufsichtsbehoerde gemeldet;Art. 37-39 DSGVO;Laufend;GF;[ ] Umgesetzt
+47;Organisatorische Massnahmen;Datenschutz-Richtlinien;Schriftliche Datenschutz-Richtlinien (Handbuch) sind dokumentiert und zugaenglich;Art. 24 Abs. 2 DSGVO;Jaehrlich;DSB/GF;[ ] Umgesetzt
+48;Organisatorische Massnahmen;KI-Richtlinie;Richtlinie fuer den datenschutzkonformen Einsatz von KI-Systemen;Art. 32 DSGVO;Jaehrlich;DSB;[ ] Umgesetzt
+49;Organisatorische Massnahmen;Social-Media-Richtlinie;Regelungen fuer datenschutzkonforme Nutzung sozialer Netzwerke;Art. 32 DSGVO;Jaehrlich;DSB;[ ] Umgesetzt
+50;Organisatorische Massnahmen;Loeschkonzept;Dokumentiertes Loeschkonzept mit definierten Fristen je Datenkategorie;Art. 17 DSGVO;Jaehrlich;DSB;[ ] Umgesetzt
+51;Organisatorische Massnahmen;Incident-Response-Prozess;Dokumentierter Prozess fuer Datenschutzvorfaelle inkl. 72h-Meldefrist;Art. 33/34 DSGVO;Jaehrlich;DSB/GF;[ ] Umgesetzt
+52;Organisatorische Massnahmen;Betroffenenrechte-Prozess;Dokumentierter Prozess fuer die Bearbeitung von Betroffenenanfragen innerhalb 1 Monat;Art. 12-22 DSGVO;Jaehrlich;DSB;[ ] Umgesetzt
+53;Organisatorische Massnahmen;Regelmaessige Audits;Interne Datenschutz-Audits zur Pruefung der Einhaltung;Art. 32 DSGVO;Jaehrlich;DSB;[ ] Umgesetzt

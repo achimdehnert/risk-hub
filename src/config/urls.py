@@ -46,4 +46,5 @@ urlpatterns = [
     ),
     path("audit/", include("audit.urls")),
     path("dsb/", include("dsb.urls")),
+    path("tenants/", include("tenancy.urls")),
 ]

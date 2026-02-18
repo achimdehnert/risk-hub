@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% load dsb_components %}
+{% block title %}CSV Import — Datenschutz{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">
+        <i data-lucide="upload" class="w-7 h-7 inline text-blue-600 mr-1"></i>
+        Daten-Import (CSV)
+    </h1>
+    <p class="mt-1 text-sm text-gray-500">
+        VVT, TOM und AVV-Daten aus CSV-Dateien importieren
+    </p>
+</div>
+
+{% if result %}
+<div class="mb-6 rounded-lg border p-4
+    {% if result.errors %}border-yellow-300 bg-yellow-50
+    {% else %}border-green-300 bg-green-50{% endif %}">
+    <h2 class="text-lg font-semibold mb-2
+        {% if result.errors %}text-yellow-800{% else %}text-green-800{% endif %}">
+        Import abgeschlossen ({{ result.csv_type|upper }})
+    </h2>
+    <dl class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm">
+        <div>
+            <dt class="text-gray-500">Zeilen gesamt</dt>
+            <dd class="font-medium">{{ result.rows_total }}</dd>
+        </div>
+        {% if result.vvt_created %}
+        <div>
+            <dt class="text-gray-500">VVT erstellt</dt>
+            <dd class="font-medium text-green-700">{{ result.vvt_created }}</dd>
+        </div>
+        {% endif %}
+        {% if result.tom_tech_created %}
+        <div>
+            <dt class="text-gray-500">Techn. Maßnahmen</dt>
+            <dd class="font-medium text-green-700">{{ result.tom_tech_created }}</dd>
+        </div>
+        {% endif %}
+        {% if result.tom_org_created %}
+        <div>
+            <dt class="text-gray-500">Org. Maßnahmen</dt>
+            <dd class="font-medium text-green-700">{{ result.tom_org_created }}</dd>
+        </div>
+        {% endif %}
+        {% if result.avv_created %}
+        <div>
+            <dt class="text-gray-500">AVV erstellt</dt>
+            <dd class="font-medium text-green-700">{{ result.avv_created }}</dd>
+        </div>
+        {% endif %}
+        {% if result.skipped %}
+        <div>
+            <dt class="text-gray-500">Übersprungen</dt>
+            <dd class="font-medium text-gray-500">{{ result.skipped }}</dd>
+        </div>
+        {% endif %}
+    </dl>
+    {% if result.errors %}
+    <div class="mt-3">
+        <h3 class="text-sm font-semibold text-yellow-800">Fehler:</h3>
+        <ul class="mt-1 text-sm text-yellow-700 list-disc pl-5">
+            {% for err in result.errors %}
+            <li>{{ err }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+{% endif %}
+
+<div class="bg-white shadow rounded-lg p-6">
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="space-y-5">
+            {% for field in form %}
+            <div>
+                <label for="{{ field.id_for_label }}"
+                       class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ field.label }}
+                </label>
+                {{ field }}
+                {% if field.help_text %}
+                <p class="mt-1 text-xs text-gray-500">{{ field.help_text }}</p>
+                {% endif %}
+                {% for error in field.errors %}
+                <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="mt-6 flex items-center gap-3">
+            <button type="submit"
+                    class="inline-flex items-center px-4 py-2 border border-transparent
+                           text-sm font-medium rounded-md shadow-sm text-white
+                           bg-blue-600 hover:bg-blue-700 focus:outline-none
+                           focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                Importieren
+            </button>
+            <a href="{% url 'dsb:dashboard' %}"
+               class="text-sm text-gray-600 hover:text-gray-800">
+                Abbrechen
+            </a>
+        </div>
+    </form>
+</div>
+
+<div class="mt-6 bg-gray-50 rounded-lg border p-4">
+    <h3 class="text-sm font-semibold text-gray-700 mb-2">Hinweise zum CSV-Format</h3>
+    <ul class="text-sm text-gray-600 space-y-1">
+        <li><strong>Trennzeichen:</strong> Semikolon (;)</li>
+        <li><strong>Kodierung:</strong> UTF-8</li>
+        <li><strong>VVT-Header:</strong> Nr;Verarbeitungstaetigkeit;Gruppe;Zweck;...</li>
+        <li><strong>TOM-Header:</strong> Nr;TOM-Kategorie;Massnahme;Beschreibung;...</li>
+        <li><strong>Typ &bdquo;Auto&ldquo;:</strong> Erkennt VVT/TOM anhand der Spaltenüberschriften</li>
+        <li><strong>TOM-Kategorien:</strong> Klassifikation (Technisch / Organisatorisch / AVV) wird aus den Stammdaten gelesen</li>
+    </ul>
+</div>
+{% endblock %}

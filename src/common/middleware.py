@@ -134,6 +134,8 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
             if allow_localhost and (
                 request.path.startswith("/admin/")
                 or request.path.startswith("/api/schema")
+                or request.path.startswith("/tenants/")
+                or request.path.startswith("/accounts/")
             ):
                 set_tenant(None, None)
                 set_db_tenant(None)

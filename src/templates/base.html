@@ -37,6 +37,11 @@
                         <a href="/dsb/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Datenschutz
                         </a>
+                        {% if user.is_staff %}
+                        <a href="/tenants/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                            Mandanten
+                        </a>
+                        {% endif %}
                         {% endblock %}
                     </div>
                 </div>

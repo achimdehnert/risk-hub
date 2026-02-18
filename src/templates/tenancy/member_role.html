@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Schutztat{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="shield" class="w-7 h-7 inline text-blue-600 mr-1"></i>
+            {{ title }}
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+            Organisation: {{ org.name }}
+        </p>
+    </div>
+    <a href="{% url 'tenancy:org-detail' org.pk %}"
+       class="text-sm text-gray-500 hover:text-gray-700">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Zurück
+    </a>
+</div>
+
+<div class="bg-white rounded-lg shadow p-6 max-w-lg">
+    <div class="mb-4 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
+        <div class="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center">
+            <i data-lucide="user" class="w-5 h-5 text-gray-500"></i>
+        </div>
+        <div>
+            <div class="text-sm font-medium text-gray-900">{{ membership.user.get_full_name|default:membership.user.username }}</div>
+            <div class="text-xs text-gray-500">{{ membership.user.email }}</div>
+        </div>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+        <div class="mb-4">
+            <label for="{{ field.id_for_label }}"
+                   class="block text-sm font-medium text-gray-700 mb-1">
+                {{ field.label }}
+            </label>
+            {{ field }}
+            {% for error in field.errors %}
+            <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+            {% endfor %}
+        </div>
+        {% endfor %}
+        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 text-xs text-blue-700">
+            <strong>Rollen-Mapping:</strong>
+            Owner/Admin → voller Zugriff &middot;
+            Member → Lesen/Bearbeiten &middot;
+            Viewer → nur Lesen &middot;
+            External → nur Lesen
+        </div>
+        <div class="flex gap-3 pt-4 border-t">
+            <button type="submit"
+                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                Rolle ändern
+            </button>
+            <a href="{% url 'tenancy:org-detail' org.pk %}"
+               class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200">
+                Abbrechen
+            </a>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

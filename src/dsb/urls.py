@@ -35,6 +35,8 @@ urlpatterns = [
     path("avv/", views.dpa_list, name="dpa-list"),
     path("avv/new/", views.dpa_create, name="dpa-create"),
     path("avv/<uuid:pk>/edit/", views.dpa_edit, name="dpa-edit"),
+    # CSV Import
+    path("import/", views.csv_import, name="csv-import"),
     # Audits + Deletion + Breach (list-only for now)
     path("audits/", views.audit_list, name="audit-list"),
     path("deletions/", views.deletion_list, name="deletion-list"),
