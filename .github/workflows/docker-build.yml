@@ -62,7 +62,7 @@ jobs:
   deploy:
     name: "Deploy"
     needs: [build]
-    runs-on: self-hosted
+    runs-on: [self-hosted, hetzner, dev]
     steps:
       - name: Deploy
         run: |
