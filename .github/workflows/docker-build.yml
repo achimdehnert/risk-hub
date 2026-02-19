@@ -58,35 +58,29 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  # === STAGE 2: Deploy to Hetzner ===
+  # === STAGE 2: Deploy to Hetzner (self-hosted runner on server) ===
   deploy:
     name: "Deploy"
     needs: [build]
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     steps:
-      - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          command_timeout: 10m
-          script: |
-            set -euo pipefail
-            cd /opt/risk-hub
-            echo "=== Pulling new image ==="
-            docker compose -f docker-compose.prod.yml pull risk-hub-web
-            echo "=== Recreating containers ==="
-            docker compose -f docker-compose.prod.yml up -d --force-recreate risk-hub-web risk-hub-worker
-            echo "=== Waiting for startup ==="
-            sleep 10
-            echo "=== Running migrations ==="
-            docker exec risk_hub_web python manage.py migrate --noinput
-            echo "=== Seeding TOM categories ==="
-            docker exec risk_hub_web python manage.py seed_tom_categories
-            echo "=== Health check ==="
-            docker exec risk_hub_web python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')"
-            echo "=== Deploy complete ==="
+      - name: Deploy
+        run: |
+          set -euo pipefail
+          cd /opt/risk-hub
+          echo "=== Pulling new image ==="
+          docker compose -f docker-compose.prod.yml pull risk-hub-web
+          echo "=== Recreating containers ==="
+          docker compose -f docker-compose.prod.yml up -d --force-recreate risk-hub-web risk-hub-worker
+          echo "=== Waiting for startup ==="
+          sleep 15
+          echo "=== Running migrations ==="
+          docker exec risk_hub_web python manage.py migrate --noinput
+          echo "=== Seeding TOM categories ==="
+          docker exec risk_hub_web python manage.py seed_tom_categories
+          echo "=== Health check ==="
+          docker exec risk_hub_web python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')"
+          echo "=== Deploy complete ==="
 
   # === STAGE 3: Verify ===
   verify:
