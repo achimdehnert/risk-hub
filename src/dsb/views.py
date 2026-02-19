@@ -43,9 +43,33 @@ def _user_id(request: HttpRequest):
 @require_module("dsb")
 def dashboard(request: HttpRequest) -> HttpResponse:
     """DSB Dashboard — DSGVO compliance overview."""
+    from dsb.models import Breach
+    from dsb.models.deletion import DeletionRequest
+
     tid = _tenant_id(request)
     kpis = get_dsb_kpis(tid) if tid else None
-    return render(request, "dsb/dashboard.html", {"kpis": kpis})
+
+    open_breaches = []
+    open_deletions = []
+    if tid:
+        open_breaches = (
+            Breach.objects.filter(tenant_id=tid)
+            .exclude(workflow_status__in=["closed", "authority_closed"])
+            .select_related("mandate")
+            .order_by("discovered_at")[:10]
+        )
+        open_deletions = (
+            DeletionRequest.objects.filter(tenant_id=tid)
+            .exclude(status__in=["completed", "rejected"])
+            .select_related("mandate")
+            .order_by("created_at")[:10]
+        )
+
+    return render(request, "dsb/dashboard.html", {
+        "kpis": kpis,
+        "open_breaches": open_breaches,
+        "open_deletions": open_deletions,
+    })
 
 
 @login_required

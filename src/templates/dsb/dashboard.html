@@ -46,6 +46,60 @@
 </div>
 {% endif %}
 
+{% if open_breaches or open_deletions %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+    {% if open_breaches %}
+    <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500"></i>
+            Offene Datenpannen
+            <span class="ml-auto text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{{ open_breaches|length }}</span>
+        </h3>
+        <ul class="space-y-2">
+            {% for b in open_breaches %}
+            <li class="flex items-center justify-between text-sm">
+                <a href="{% url 'dsb:breach-detail' b.pk %}" class="text-blue-600 hover:underline truncate flex-1">
+                    {{ b.title|default:"Datenpanne" }}
+                </a>
+                <span class="ml-2 flex-shrink-0 text-xs px-1.5 py-0.5 rounded
+                    {% if b.is_overdue %}bg-red-100 text-red-700
+                    {% else %}bg-amber-100 text-amber-700{% endif %}">
+                    {{ b.get_workflow_status_display }}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'dsb:breach-list' %}" class="text-xs text-gray-400 hover:text-blue-600 mt-3 block">Alle anzeigen →</a>
+    </div>
+    {% endif %}
+
+    {% if open_deletions %}
+    <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <i data-lucide="trash-2" class="w-4 h-4 text-orange-500"></i>
+            Offene Löschanträge
+            <span class="ml-auto text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{{ open_deletions|length }}</span>
+        </h3>
+        <ul class="space-y-2">
+            {% for d in open_deletions %}
+            <li class="flex items-center justify-between text-sm">
+                <a href="{% url 'dsb:deletion-request-detail' d.pk %}" class="text-blue-600 hover:underline truncate flex-1">
+                    {{ d.subject_name|default:d.request_type }}
+                </a>
+                <span class="ml-2 flex-shrink-0 text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">
+                    {{ d.get_status_display }}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'dsb:deletion-request-list' %}" class="text-xs text-gray-400 hover:text-blue-600 mt-3 block">Alle anzeigen →</a>
+    </div>
+    {% endif %}
+
+</div>
+{% endif %}
+
 <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4 mb-8"
      data-testid="dsb-kpi-grid">
     {% stat_card "file-text" "VVT" kpis.vvt_total "blue" kpis.vvt_high_risk "hohes Risiko" %}
