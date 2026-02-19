@@ -87,7 +87,7 @@ services:
     entrypoint: ["/entrypoint.sh"]
     command: ["web"]
     ports:
-      - "127.0.0.1:8090:8000"
+      - "8090:8000"
     volumes:
       - risk_hub_media:/app/media
     healthcheck:
