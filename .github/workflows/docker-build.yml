@@ -68,21 +68,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy
-        env:
-          DEPLOY_DIR: /opt/risk-hub
         run: |
           set -euo pipefail
 
-          # Ensure deploy dir exists and has latest compose files
-          mkdir -p "$DEPLOY_DIR"
-          cp docker-compose.prod.yml "$DEPLOY_DIR/docker-compose.prod.yml"
+          # .env.prod lives outside git, copy from persistent location
+          cp /opt/risk-hub/.env.prod .env.prod
 
-          # Copy .env.prod if not already present
-          if [ ! -f "$DEPLOY_DIR/.env.prod" ]; then
-            echo "WARNING: $DEPLOY_DIR/.env.prod not found — deploy may fail"
-          fi
-
-          cd "$DEPLOY_DIR"
           echo "=== Pulling new image ==="
           docker compose -f docker-compose.prod.yml pull risk-hub-web
           echo "=== Recreating containers ==="
