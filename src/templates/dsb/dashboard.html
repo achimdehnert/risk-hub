@@ -85,7 +85,7 @@
             {% for d in open_deletions %}
             <li class="flex items-center justify-between text-sm">
                 <a href="{% url 'dsb:deletion-request-detail' d.pk %}" class="text-blue-600 hover:underline truncate flex-1">
-                    {{ d.subject_name|default:d.request_type }}
+                    {{ d.subject_name|default:"Löschantrag" }}
                 </a>
                 <span class="ml-2 flex-shrink-0 text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">
                     {{ d.get_status_display }}
