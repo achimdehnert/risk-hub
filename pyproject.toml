@@ -29,6 +29,7 @@ dependencies = [
     "python-docx>=1.1",
     "celery[redis]>=5.4",
     "platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/platform-context",
+    "django-tenancy @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-tenancy",
 ]
 
 [project.optional-dependencies]

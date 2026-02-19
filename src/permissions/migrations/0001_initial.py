@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('tenancy', '0001_initial'),
+        ('django_tenancy', '0002_module_subscription_module_membership'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -108,7 +108,7 @@ class Migration(migrations.Migration):
                 ('granted_at', models.DateTimeField(auto_now_add=True)),
                 ('expires_at', models.DateTimeField(blank=True, null=True)),
                 ('granted_by', models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='+', to=settings.AUTH_USER_MODEL)),
-                ('membership', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='permission_overrides', to='tenancy.membership')),
+                ('membership', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='permission_overrides', to='django_tenancy.membership')),
                 ('permission', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='permissions.permission')),
             ],
             options={

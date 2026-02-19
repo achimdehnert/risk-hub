@@ -157,12 +157,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 set_db_tenant(None)
                 _sync_platform_context()
                 return None
-            if allow_localhost and (
-                request.path.startswith("/admin/")
-                or request.path.startswith("/api/schema")
-                or request.path.startswith("/tenants/")
-                or request.path.startswith("/accounts/")
-            ):
+            if allow_localhost:
                 set_tenant(None, None)
                 set_db_tenant(None)
                 _sync_platform_context()

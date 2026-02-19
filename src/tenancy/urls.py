@@ -29,4 +29,36 @@ urlpatterns = [
         views.member_remove,
         name="member-remove",
     ),
+    # Module Subscription management
+    path(
+        "<uuid:org_pk>/modules/<str:module>/toggle/",
+        views.module_subscription_toggle,
+        name="module-subscription-toggle",
+    ),
+    path(
+        "<uuid:org_pk>/modules/<str:module>/add/",
+        views.module_subscription_add,
+        name="module-subscription-add",
+    ),
+    path(
+        "<uuid:org_pk>/modules/<str:module>/edit/",
+        views.module_subscription_edit,
+        name="module-subscription-edit",
+    ),
+    # Module Membership management
+    path(
+        "<uuid:org_pk>/modules/<str:module>/members/",
+        views.module_membership_manage,
+        name="module-membership-manage",
+    ),
+    path(
+        "<uuid:org_pk>/modules/<str:module>/members/<uuid:membership_pk>/role/",
+        views.module_membership_role,
+        name="module-membership-role",
+    ),
+    path(
+        "<uuid:org_pk>/modules/<str:module>/members/<uuid:membership_pk>/revoke/",
+        views.module_membership_revoke,
+        name="module-membership-revoke",
+    ),
 ]

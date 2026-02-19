@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><style>
+body { font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; }
+.header { background: #1e40af; color: white; padding: 24px; border-radius: 8px 8px 0 0; }
+.body { background: #f9fafb; padding: 24px; border: 1px solid #e5e7eb; }
+.footer { background: #f3f4f6; padding: 16px; font-size: 12px; color: #6b7280; border-radius: 0 0 8px 8px; }
+.badge { display: inline-block; background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: bold; }
+.info-box { background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 16px 0; }
+.info-row { display: flex; margin-bottom: 8px; }
+.info-label { color: #6b7280; font-size: 13px; width: 180px; flex-shrink: 0; }
+.info-value { font-size: 13px; font-weight: 500; }
+</style></head>
+<body>
+<div class="header">
+    <h2 style="margin:0">Eingang Ihres Löschantrags</h2>
+    <p style="margin:8px 0 0;opacity:0.85;font-size:14px">Gemäß Art. 17 DSGVO — Recht auf Löschung</p>
+</div>
+<div class="body">
+    <p>Sehr geehrte/r {{ subject_name }},</p>
+    <p>wir bestätigen den Eingang Ihres Löschantrags. Ihr Antrag wird gemäß Art. 17 DSGVO bearbeitet.</p>
+
+    <div class="info-box">
+        <div class="info-row">
+            <span class="info-label">Antragsnummer</span>
+            <span class="info-value">{{ request_id }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Antragsdatum</span>
+            <span class="info-value">{{ request_date }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Bearbeitungsfrist</span>
+            <span class="info-value">{{ deadline_date }} (1 Monat gem. Art. 12 Abs. 3 DSGVO)</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Betroffene Daten</span>
+            <span class="info-value">{{ data_categories }}</span>
+        </div>
+    </div>
+
+    <p><strong>Nächste Schritte:</strong> Wir werden Sie in Kürze kontaktieren, um Ihre Identität zu verifizieren. Bitte halten Sie sich bereit, einen Identitätsnachweis zu erbringen.</p>
+
+    <p>Bei Fragen wenden Sie sich bitte an: <a href="mailto:{{ dsb_email }}">{{ dsb_email }}</a></p>
+
+    <p>Mit freundlichen Grüßen,<br><strong>{{ dsb_name }}</strong><br>Datenschutzbeauftragter/in<br>{{ mandate_name }}</p>
+</div>
+<div class="footer">
+    <p>Diese E-Mail wurde automatisch generiert. Referenz: {{ request_id }}</p>
+    <p>{{ mandate_name }} | Datenschutz gemäß DSGVO</p>
+</div>
+</body>
+</html>

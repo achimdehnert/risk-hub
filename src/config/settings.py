@@ -5,13 +5,15 @@ from pathlib import Path
 
 import dj_database_url
 
+from config.secrets import read_secret
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-change-in-production")
-DEBUG = os.getenv("DJANGO_DEBUG", "0") == "1"
-ALLOWED_HOSTS = os.getenv(
+SECRET_KEY = read_secret("DJANGO_SECRET_KEY", default="dev-only-change-in-production")
+DEBUG = read_secret("DJANGO_DEBUG", default="0") == "1"
+ALLOWED_HOSTS = read_secret(
     "DJANGO_ALLOWED_HOSTS",
-    ".localhost,localhost,127.0.0.1",
+    default=".localhost,localhost,127.0.0.1",
 ).split(",")
 
 INSTALLED_APPS = [
@@ -26,6 +28,7 @@ INSTALLED_APPS = [
     "django_filters",
     # Platform shared packages
     "platform_context",
+    "django_tenancy",
     # Risk-Hub apps
     "common",
     "tenancy",
@@ -57,6 +60,7 @@ MIDDLEWARE = [
     # Context + Tenancy
     "common.middleware.RequestContextMiddleware",
     "common.middleware.SubdomainTenantMiddleware",
+    "django_tenancy.module_access.ModuleAccessMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -82,7 +86,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 
 DATABASES = {
-    "default": dj_database_url.config(default=os.getenv("DATABASE_URL"))
+    "default": dj_database_url.config(default=read_secret("DATABASE_URL"))
 }
 
 AUTH_USER_MODEL = "identity.User"
@@ -92,6 +96,11 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_STORAGE = (
     "whitenoise.storage.CompressedManifestStaticFilesStorage"
 )
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+FILE_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024  # 20 MB
+DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
@@ -112,14 +121,24 @@ TENANT_RESERVED_SUBDOMAINS = [
     for s in os.getenv("TENANT_RESERVED_SUBDOMAINS", "www").split(",")
     if s.strip()
 ]
-TENANT_MODEL = "tenancy.Organization"
+TENANT_MODEL = "django_tenancy.Organization"
 TENANT_SLUG_FIELD = "slug"
 TENANT_ID_FIELD = "tenant_id"
+
+# Module-level access control (ADR-035)
+MODULE_URL_MAP = {
+    "/risk/": "risk",
+    "/dsb/": "dsb",
+    "/ex/": "ex",
+    "/api/ex/": "ex",
+    "/substances/": "ex",
+    "/api/substances/": "ex",
+}
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = [
     o
-    for o in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+    for o in read_secret("CSRF_TRUSTED_ORIGINS", default="").split(",")
     if o
 ]
 
@@ -130,13 +149,13 @@ LOGIN_REDIRECT_URL = "/dashboard/"
 LOGOUT_REDIRECT_URL = "/"
 
 # Documents / S3
-S3_ENDPOINT = os.getenv("S3_ENDPOINT", "")
-S3_REGION = os.getenv("S3_REGION", "us-east-1")
-S3_ACCESS_KEY = os.getenv("S3_ACCESS_KEY", "")
-S3_SECRET_KEY = os.getenv("S3_SECRET_KEY", "")
-S3_BUCKET = os.getenv("S3_BUCKET", "documents")
-S3_USE_SSL = os.getenv("S3_USE_SSL", "0") == "1"
-S3_PUBLIC_BASE_URL = os.getenv("S3_PUBLIC_BASE_URL", "")
+S3_ENDPOINT = read_secret("S3_ENDPOINT", default="")
+S3_REGION = read_secret("S3_REGION", default="us-east-1")
+S3_ACCESS_KEY = read_secret("S3_ACCESS_KEY", default="")
+S3_SECRET_KEY = read_secret("S3_SECRET_KEY", default="")
+S3_BUCKET = read_secret("S3_BUCKET", default="documents")
+S3_USE_SSL = read_secret("S3_USE_SSL", default="0") == "1"
+S3_PUBLIC_BASE_URL = read_secret("S3_PUBLIC_BASE_URL", default="")
 
 # LLM Gateway
 LLM_GATEWAY_URL = os.getenv("LLM_GATEWAY_URL", "http://localhost:8100")
@@ -174,7 +193,7 @@ EMAIL_BACKEND = os.getenv(
 EMAIL_HOST = os.getenv("EMAIL_HOST", "")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST_PASSWORD = read_secret("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
 DEFAULT_FROM_EMAIL = os.getenv(
     "DEFAULT_FROM_EMAIL", "noreply@schutztat.de"

@@ -1,186 +1,154 @@
 {% extends "base.html" %}
+{% load tenancy_components %}
 {% block title %}{{ org.name }} — Mandant{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex items-center justify-between">
+<!-- Header -->
+<div class="mb-6 flex items-start justify-between">
     <div>
-        <h1 class="text-2xl font-bold text-gray-900">
-            <i data-lucide="building-2" class="w-7 h-7 inline text-orange-600 mr-1"></i>
-            {{ org.name }}
-        </h1>
-        <p class="text-sm text-gray-500 mt-1">
-            <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{{ org.slug }}</code>
-            &middot;
-            {% if org.status == "active" %}
-            <span class="text-green-600 font-medium">Aktiv</span>
-            {% elif org.status == "trial" %}
-            <span class="text-blue-600 font-medium">Trial</span>
-            {% elif org.status == "suspended" %}
-            <span class="text-amber-600 font-medium">Gesperrt</span>
-            {% else %}
-            <span class="text-red-600 font-medium">Gelöscht</span>
-            {% endif %}
-            &middot; Plan: {{ org.plan_code }}
-            &middot; Tenant-ID: <code class="text-xs">{{ org.tenant_id }}</code>
+        <div class="flex items-center gap-3 mb-1">
+            <a href="{% url 'tenancy:org-list' %}" class="text-gray-400 hover:text-gray-600" title="Zurück zur Liste">
+                <i data-lucide="arrow-left" class="w-4 h-4"></i>
+            </a>
+            <h1 class="text-2xl font-bold text-gray-900">
+                <i data-lucide="building-2" class="w-6 h-6 inline text-orange-600 mr-1"></i>
+                {{ org.name }}
+            </h1>
+            {% org_status_badge org %}
+        </div>
+        <p class="text-sm text-gray-500 ml-7">
+            <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{{ org.slug }}.schutztat.de</code>
+            &middot; Plan: <strong>{{ org.plan_code }}</strong>
+            &middot; <span class="font-mono text-xs text-gray-400">{{ org.tenant_id }}</span>
         </p>
     </div>
-    <div class="flex gap-2">
-        <a href="{% url 'tenancy:org-list' %}"
-           class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
-            <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Liste
-        </a>
+    <div class="flex gap-2 flex-shrink-0">
         <a href="{% url 'tenancy:org-edit' org.pk %}"
-           class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+           class="inline-flex items-center gap-1 px-3 py-2 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
             <i data-lucide="pencil" class="w-4 h-4"></i> Bearbeiten
         </a>
         <a href="{% url 'tenancy:org-delete' org.pk %}"
-           class="inline-flex items-center gap-1 px-4 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 border border-red-200">
+           class="inline-flex items-center gap-1 px-3 py-2 bg-red-50 text-red-600 text-sm font-medium rounded-lg hover:bg-red-100 border border-red-200">
             <i data-lucide="trash-2" class="w-4 h-4"></i> Löschen
         </a>
     </div>
 </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <div class="lg:col-span-2 space-y-6">
+<div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
-        <!-- Members -->
-        <div class="bg-white rounded-lg shadow">
-            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
-                <h2 class="text-lg font-semibold text-gray-900">
-                    <i data-lucide="users" class="w-5 h-5 inline text-blue-500 mr-1"></i>
-                    Benutzer ({{ memberships|length }})
-                </h2>
-                <a href="{% url 'tenancy:member-invite' org.pk %}"
-                   class="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700">
-                    <i data-lucide="user-plus" class="w-3.5 h-3.5"></i> Einladen
-                </a>
-            </div>
-            {% if memberships %}
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Benutzer</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">E-Mail</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rolle</th>
-                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Beigetreten</th>
-                            <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        {% for m in memberships %}
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-7 h-7 bg-gray-200 rounded-full flex items-center justify-center">
-                                        <i data-lucide="user" class="w-3.5 h-3.5 text-gray-500"></i>
-                                    </div>
-                                    <div>
-                                        <div class="font-medium text-gray-900">{{ m.user.get_full_name|default:m.user.username }}</div>
-                                        <div class="text-xs text-gray-400">{{ m.user.username }}</div>
-                                    </div>
-                                </div>
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-500">{{ m.user.email }}</td>
-                            <td class="px-4 py-3 text-sm">
-                                {% if m.role == "owner" %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Owner</span>
-                                {% elif m.role == "admin" %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>
-                                {% elif m.role == "member" %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Member</span>
-                                {% elif m.role == "viewer" %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">Viewer</span>
-                                {% else %}
-                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">External</span>
-                                {% endif %}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-gray-500">
-                                {{ m.accepted_at|date:"d.m.Y"|default:m.created_at|date:"d.m.Y" }}
-                            </td>
-                            <td class="px-4 py-3 text-sm text-right space-x-1">
-                                <a href="{% url 'tenancy:member-role' org.pk m.pk %}"
-                                   class="text-blue-600 hover:text-blue-800" title="Rolle ändern">
-                                    <i data-lucide="shield" class="w-4 h-4 inline"></i>
-                                </a>
-                                <a href="{% url 'tenancy:member-remove' org.pk m.pk %}"
-                                   class="text-red-500 hover:text-red-700" title="Entfernen">
-                                    <i data-lucide="user-minus" class="w-4 h-4 inline"></i>
-                                </a>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            {% else %}
-            <div class="p-6 text-center">
-                <i data-lucide="users" class="w-8 h-8 mx-auto text-gray-300 mb-2"></i>
-                <p class="text-sm text-gray-500">Keine Mitglieder zugeordnet.</p>
-                <a href="{% url 'tenancy:member-invite' org.pk %}"
-                   class="mt-2 inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800">
-                    <i data-lucide="user-plus" class="w-4 h-4"></i> Ersten Benutzer einladen
-                </a>
-            </div>
-            {% endif %}
-        </div>
+    <!-- Main (3/4) -->
+    <div class="lg:col-span-3">
+        <div class="bg-white rounded-lg shadow overflow-hidden">
 
-        <!-- Sites -->
-        <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">
-                <i data-lucide="map-pin" class="w-5 h-5 inline text-green-500 mr-1"></i>
-                Standorte ({{ sites|length }})
-            </h2>
-            {% if sites %}
-            <div class="space-y-3">
-                {% for site in sites %}
-                <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                    <div>
-                        <div class="text-sm font-medium text-gray-900">{{ site.name }}</div>
-                        {% if site.address %}
-                        <div class="text-xs text-gray-500">{{ site.address }}</div>
-                        {% endif %}
-                    </div>
-                    <div class="text-xs text-gray-400">{{ site.created_at|date:"d.m.Y" }}</div>
-                </div>
-                {% endfor %}
+            <!-- Tab Nav -->
+            <div class="border-b border-gray-200 bg-white">
+                <nav class="flex -mb-px px-2" id="org-tabs">
+                    <button onclick="showTab('tab-members')" data-tab="tab-members"
+                            class="tab-btn active-tab px-5 py-3 text-sm font-medium border-b-2 border-orange-500 text-orange-600">
+                        <i data-lucide="users" class="w-4 h-4 inline mr-1"></i>
+                        Benutzer
+                        <span class="ml-1.5 bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{{ memberships|length }}</span>
+                    </button>
+                    <button onclick="showTab('tab-modules')" data-tab="tab-modules"
+                            class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i data-lucide="puzzle" class="w-4 h-4 inline mr-1"></i>
+                        Module
+                        <span class="ml-1.5 bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{{ subscriptions|length }}</span>
+                    </button>
+                    <button onclick="showTab('tab-sites')" data-tab="tab-sites"
+                            class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                        <i data-lucide="map-pin" class="w-4 h-4 inline mr-1"></i>
+                        Standorte
+                        <span class="ml-1.5 bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{{ sites|length }}</span>
+                    </button>
+                </nav>
             </div>
-            {% else %}
-            <p class="text-sm text-gray-400">Keine Standorte angelegt.</p>
-            {% endif %}
+
+            <!-- Tab: Members -->
+            <div id="tab-members" class="tab-panel">
+                {% include "tenancy/partials/_tab_members.html" %}
+            </div>
+
+            <!-- Tab: Modules -->
+            <div id="tab-modules" class="tab-panel hidden">
+                {% include "tenancy/partials/_tab_modules.html" %}
+            </div>
+
+            <!-- Tab: Sites -->
+            <div id="tab-sites" class="tab-panel hidden">
+                {% include "tenancy/partials/_tab_sites.html" %}
+            </div>
+
         </div>
     </div>
 
-    <!-- Sidebar -->
-    <div class="space-y-6">
+    <!-- Sidebar (1/4) -->
+    <div class="space-y-4">
+
+        <!-- Details -->
         <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3">Details</h3>
+            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
+                <i data-lucide="info" class="w-4 h-4 text-gray-400"></i> Details
+            </h3>
             <dl class="space-y-3 text-sm">
                 <div>
-                    <dt class="text-gray-500">Erstellt</dt>
-                    <dd class="font-medium text-gray-900">{{ org.created_at|date:"d.m.Y H:i" }}</dd>
+                    <dt class="text-xs text-gray-400 uppercase tracking-wide">Status</dt>
+                    <dd class="mt-0.5">{% org_status_badge org %}</dd>
                 </div>
                 <div>
-                    <dt class="text-gray-500">Aktualisiert</dt>
-                    <dd class="font-medium text-gray-900">{{ org.updated_at|date:"d.m.Y H:i" }}</dd>
+                    <dt class="text-xs text-gray-400 uppercase tracking-wide">Plan</dt>
+                    <dd class="font-medium text-gray-900">{{ org.plan_code }}</dd>
                 </div>
                 <div>
-                    <dt class="text-gray-500">Tenant-ID</dt>
-                    <dd class="font-mono text-xs text-gray-600 break-all">{{ org.tenant_id }}</dd>
+                    <dt class="text-xs text-gray-400 uppercase tracking-wide">Erstellt</dt>
+                    <dd class="text-gray-700">{{ org.created_at|date:"d.m.Y H:i" }}</dd>
                 </div>
                 <div>
-                    <dt class="text-gray-500">Subdomain</dt>
-                    <dd class="font-medium text-gray-900">{{ org.slug }}.schutztat.de</dd>
+                    <dt class="text-xs text-gray-400 uppercase tracking-wide">Aktualisiert</dt>
+                    <dd class="text-gray-700">{{ org.updated_at|date:"d.m.Y H:i" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-gray-400 uppercase tracking-wide">Tenant-ID</dt>
+                    <dd class="font-mono text-xs text-gray-500 break-all mt-0.5">{{ org.tenant_id }}</dd>
                 </div>
             </dl>
         </div>
 
+        <!-- Module Summary -->
         <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3">
-                <i data-lucide="key" class="w-4 h-4 inline mr-1"></i>
-                Verfügbare Rollen
+            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
+                <i data-lucide="puzzle" class="w-4 h-4 text-gray-400"></i> Module
             </h3>
+            {% if subscriptions %}
             <div class="space-y-2">
+                {% for sub in subscriptions %}
+                <div class="flex items-center justify-between text-sm">
+                    <a href="{% url 'tenancy:module-membership-manage' org.pk sub.module %}"
+                       class="text-gray-700 hover:text-orange-600 flex items-center gap-1.5">
+                        <i data-lucide="{% module_icon sub.module %}" class="w-3.5 h-3.5 text-gray-400"></i>
+                        {% module_label sub.module %}
+                    </a>
+                    {% if sub.status == "active" %}
+                    <span class="text-xs text-green-600 font-medium">Aktiv</span>
+                    {% elif sub.status == "trial" %}
+                    <span class="text-xs text-blue-600 font-medium">Trial</span>
+                    {% else %}
+                    <span class="text-xs text-amber-600 font-medium">Gesperrt</span>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <p class="text-xs text-gray-400">Keine Module aktiviert.</p>
+            {% endif %}
+        </div>
+
+        <!-- Roles -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-1.5">
+                <i data-lucide="key" class="w-4 h-4 text-gray-400"></i> Rollen
+            </h3>
+            <div class="space-y-1.5">
                 {% for role in roles %}
                 <div class="flex items-center justify-between text-sm">
                     <span class="text-gray-700">{{ role.name }}</span>
@@ -191,24 +159,25 @@
                     {% endif %}
                 </div>
                 {% empty %}
-                <p class="text-xs text-gray-400">Keine Rollen definiert. Bitte <code>load_permissions</code> ausführen.</p>
+                <p class="text-xs text-gray-400">Keine Rollen. Bitte <code>load_permissions</code> ausführen.</p>
                 {% endfor %}
             </div>
         </div>
 
+        <!-- Quick Actions -->
         <div class="bg-white rounded-lg shadow p-4">
             <h3 class="text-sm font-semibold text-gray-900 mb-3">Schnellzugriff</h3>
-            <div class="space-y-2">
+            <div class="space-y-1">
                 <a href="{% url 'tenancy:member-invite' org.pk %}"
-                   class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                   class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1.5 px-2 rounded hover:bg-blue-50">
                     <i data-lucide="user-plus" class="w-4 h-4"></i> Benutzer einladen
                 </a>
                 <a href="{% url 'tenancy:org-edit' org.pk %}"
-                   class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                   class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1.5 px-2 rounded hover:bg-blue-50">
                     <i data-lucide="pencil" class="w-4 h-4"></i> Mandant bearbeiten
                 </a>
-                <a href="/admin/tenancy/organization/{{ org.pk }}/change/"
-                   class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 py-1 mt-2 pt-2 border-t">
+                <a href="/admin/django_tenancy/organization/{{ org.pk }}/change/"
+                   class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 py-1.5 px-2 rounded hover:bg-gray-50 mt-1 pt-2 border-t border-gray-100">
                     <i data-lucide="settings" class="w-4 h-4"></i> Admin-Bereich
                 </a>
             </div>
@@ -218,5 +187,18 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>lucide.createIcons();</script>
+<script>
+function showTab(tabId) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('border-orange-500', 'text-orange-600');
+        b.classList.add('border-transparent', 'text-gray-500');
+    });
+    document.getElementById(tabId).classList.remove('hidden');
+    const btn = document.querySelector('[data-tab="' + tabId + '"]');
+    btn.classList.remove('border-transparent', 'text-gray-500');
+    btn.classList.add('border-orange-500', 'text-orange-600');
+}
+lucide.createIcons();
+</script>
 {% endblock %}

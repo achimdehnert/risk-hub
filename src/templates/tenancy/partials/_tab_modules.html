@@ -1,0 +1,39 @@
+{% load tenancy_components %}
+<div class="px-6 py-3 border-b border-gray-100 bg-gray-50">
+    <span class="text-xs text-gray-500 font-medium uppercase tracking-wide">Modul-Abonnements</span>
+</div>
+<div class="p-6">
+    {% if subscriptions %}
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+        {% for sub in subscriptions %}
+        {% module_subscription_card sub org %}
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-6">
+        <i data-lucide="puzzle" class="w-10 h-10 mx-auto text-gray-300 mb-3"></i>
+        <p class="text-sm text-gray-400">Noch keine Module aktiviert.</p>
+    </div>
+    {% endif %}
+
+    {% if missing_modules %}
+    <div class="{% if subscriptions %}border-t border-gray-100 pt-5{% endif %}">
+        <p class="text-xs text-gray-500 font-medium uppercase tracking-wide mb-3">
+            <i data-lucide="plus-circle" class="w-3.5 h-3.5 inline mr-1"></i>
+            Verfügbare Module hinzufügen
+        </p>
+        <div class="flex flex-wrap gap-2">
+            {% for mod in missing_modules %}
+            <form method="post" action="{% url 'tenancy:module-subscription-add' org.pk mod %}">
+                {% csrf_token %}
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-gray-50 text-gray-700 text-xs font-medium rounded-lg border border-gray-300 shadow-sm">
+                    <i data-lucide="plus" class="w-3 h-3"></i>
+                    {% module_label mod %}
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>

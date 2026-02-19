@@ -20,6 +20,17 @@ _TW_TEXTAREA = _TW_INPUT + " h-24"
 _TW_CHECKBOX = "rounded border-gray-300 text-blue-600 focus:ring-blue-500"
 
 
+def _apply_mandate_autoselect(form, tenant_id):
+    """Filter mandate queryset and auto-select if only one exists."""
+    if not tenant_id:
+        return
+    qs = Mandate.objects.filter(tenant_id=tenant_id, status="active")
+    form.fields["mandate"].queryset = qs
+    if qs.count() == 1 and not form.initial.get("mandate") and not form.data.get("mandate"):
+        form.fields["mandate"].initial = qs.first().pk
+        form.fields["mandate"].required = True
+
+
 class MandateForm(forms.ModelForm):
     """Form f\u00fcr Mandate (betreutes Unternehmen)."""
 
@@ -95,10 +106,7 @@ class ProcessingActivityForm(forms.ModelForm):
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = Mandate.objects.filter(
-                tenant_id=tenant_id, status="active",
-            )
+        _apply_mandate_autoselect(self, tenant_id)
 
 
 class TechnicalMeasureForm(forms.ModelForm):
@@ -129,10 +137,7 @@ class TechnicalMeasureForm(forms.ModelForm):
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = Mandate.objects.filter(
-                tenant_id=tenant_id, status="active",
-            )
+        _apply_mandate_autoselect(self, tenant_id)
 
 
 class OrganizationalMeasureForm(forms.ModelForm):
@@ -163,10 +168,7 @@ class OrganizationalMeasureForm(forms.ModelForm):
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = Mandate.objects.filter(
-                tenant_id=tenant_id, status="active",
-            )
+        _apply_mandate_autoselect(self, tenant_id)
 
 
 class DataProcessingAgreementForm(forms.ModelForm):
@@ -213,10 +215,7 @@ class DataProcessingAgreementForm(forms.ModelForm):
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = Mandate.objects.filter(
-                tenant_id=tenant_id, status="active",
-            )
+        _apply_mandate_autoselect(self, tenant_id)
 
 
 class CsvImportForm(forms.Form):
@@ -253,9 +252,9 @@ class CsvImportForm(forms.Form):
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = (
-                Mandate.objects.filter(
-                    tenant_id=tenant_id,
-                ).order_by("name")
-            )
+        if not tenant_id:
+            return
+        qs = Mandate.objects.filter(tenant_id=tenant_id).order_by("name")
+        self.fields["mandate"].queryset = qs
+        if qs.count() == 1 and not self.data.get("mandate"):
+            self.fields["mandate"].initial = qs.first().pk

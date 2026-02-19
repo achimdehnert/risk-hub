@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><style>
+body { font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; }
+.header { background: #7c3aed; color: white; padding: 24px; border-radius: 8px 8px 0 0; }
+.body { background: #f9fafb; padding: 24px; border: 1px solid #e5e7eb; }
+.footer { background: #f3f4f6; padding: 16px; font-size: 12px; color: #6b7280; border-radius: 0 0 8px 8px; }
+.info-box { background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 16px 0; }
+.info-row { display: flex; margin-bottom: 8px; }
+.info-label { color: #6b7280; font-size: 13px; width: 180px; flex-shrink: 0; }
+.info-value { font-size: 13px; font-weight: 500; }
+.success { background: #ede9fe; border: 1px solid #c4b5fd; border-radius: 6px; padding: 12px 16px; margin: 16px 0; }
+</style></head>
+<body>
+<div class="header">
+    <h2 style="margin:0">✓ Aufsichtsbehörde wurde benachrichtigt</h2>
+    <p style="margin:8px 0 0;opacity:0.85;font-size:14px">Art. 33 DSGVO — Schritt 3 von 5</p>
+</div>
+<div class="body">
+    <p>Sehr geehrte/r {{ reported_by_name }},</p>
+
+    <div class="success">
+        <strong>✓ Die Datenpanne wurde fristgerecht an die Aufsichtsbehörde gemeldet.</strong>
+    </div>
+
+    <div class="info-box">
+        <div class="info-row">
+            <span class="info-label">Referenznummer</span>
+            <span class="info-value">{{ breach_ref }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Gemeldet am</span>
+            <span class="info-value">{{ authority_notified_at }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Aufsichtsbehörde</span>
+            <span class="info-value">{{ authority_name }}</span>
+        </div>
+        {% if authority_reference %}
+        <div class="info-row">
+            <span class="info-label">Aktenzeichen</span>
+            <span class="info-value">{{ authority_reference }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <p><strong>Nächster Schritt:</strong> Bitte arbeiten Sie an der Behebung der Datenpanne. Sobald die Panne behoben ist, melden Sie dies bitte an den DSB zurück.</p>
+
+    {% if authority_notes %}
+    <p><strong>Hinweise:</strong><br>{{ authority_notes }}</p>
+    {% endif %}
+
+    <p>Mit freundlichen Grüßen,<br><strong>{{ dsb_name }}</strong><br>Datenschutzbeauftragter/in</p>
+</div>
+<div class="footer"><p>Referenz: {{ breach_ref }} | {{ mandate_name }}</p></div>
+</body></html>

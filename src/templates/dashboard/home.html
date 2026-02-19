@@ -22,6 +22,7 @@
     <div class="lg:col-span-2 space-y-6">
 
         <!-- Ex-Schutz Status -->
+        {% if "ex" in active_modules %}
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 <i data-lucide="zap" class="w-5 h-5 inline text-orange-500 mr-1"></i>
@@ -60,8 +61,10 @@
             </div>
             {% endif %}
         </div>
+        {% endif %}
 
         <!-- Gefahrstoffe Status -->
+        {% if "ex" in active_modules or "substances" in active_modules %}
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 <i data-lucide="flask-conical" class="w-5 h-5 inline text-purple-500 mr-1"></i>
@@ -86,8 +89,10 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
         <!-- Risikobewertung -->
+        {% if "risk" in active_modules %}
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 <i data-lucide="shield-alert" class="w-5 h-5 inline text-red-500 mr-1"></i>
@@ -112,6 +117,8 @@
                 </div>
             </div>
         </div>
+        {% endif %}
+
     </div>
 
     <!-- Right: Activity Feed + Quick Links -->
@@ -169,15 +176,29 @@
         <div class="bg-white rounded-lg shadow p-4">
             <h3 class="text-sm font-semibold text-gray-900 mb-3">Schnellzugriff</h3>
             <div class="space-y-2">
+                {% if "risk" in active_modules %}
+                <a href="/risk/assessments/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="shield-alert" class="w-4 h-4"></i> Risikobewertung
+                </a>
+                {% endif %}
+                {% if "ex" in active_modules %}
                 <a href="/ex/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="zap" class="w-4 h-4"></i> Explosionsschutz
                 </a>
                 <a href="/substances/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="flask-conical" class="w-4 h-4"></i> Gefahrstoffe
                 </a>
-                <a href="/risk/assessments/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
-                    <i data-lucide="shield-alert" class="w-4 h-4"></i> Risikobewertung
+                {% endif %}
+                {% if "dsb" in active_modules %}
+                <a href="/dsb/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="shield-lock" class="w-4 h-4"></i> Datenschutz
                 </a>
+                {% endif %}
+                {% if "documents" in active_modules %}
+                <a href="/documents/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> Dokumente
+                </a>
+                {% endif %}
                 <a href="/notifications/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="bell" class="w-4 h-4"></i> Benachrichtigungen
                     {% if kpis.notifications_unread %}

@@ -48,6 +48,7 @@ def fixture_user(db, fixture_tenant):
     )
     Membership.objects.create(
         tenant_id=fixture_tenant.tenant_id,
+        organization=fixture_tenant,
         user=user,
         role=Membership.Role.MEMBER,
     )
@@ -64,6 +65,7 @@ def fixture_admin_user(db, fixture_tenant):
     )
     Membership.objects.create(
         tenant_id=fixture_tenant.tenant_id,
+        organization=fixture_tenant,
         user=user,
         role=Membership.Role.ADMIN,
     )
@@ -80,6 +82,7 @@ def fixture_user_b(db, fixture_tenant_b):
     )
     Membership.objects.create(
         tenant_id=fixture_tenant_b.tenant_id,
+        organization=fixture_tenant_b,
         user=user,
         role=Membership.Role.MEMBER,
     )

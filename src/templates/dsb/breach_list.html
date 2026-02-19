@@ -7,21 +7,31 @@
     <div>
         <h1 class="text-2xl font-bold text-gray-900">
             <i data-lucide="alert-triangle" class="w-7 h-7 inline text-red-600 mr-1"></i>
-            Datenpannen (Art. 33)
+            Datenpannen (Art. 33 DSGVO)
         </h1>
         <p class="text-sm text-gray-500 mt-1">
-            Meldepflichtige Datenpannen und deren Status
+            {% if open_count %}{{ open_count }} offen{% else %}Alle Verfahren abgeschlossen{% endif %}
+            {% if overdue_count %} · <span class="text-red-600 font-medium">{{ overdue_count }} überfällig</span>{% endif %}
         </p>
     </div>
-    <a href="{% url 'dsb:dashboard' %}"
-       class="text-sm text-gray-500 hover:text-gray-700">
-        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dashboard
-    </a>
+    <div class="flex gap-2">
+        <a href="{% url 'dsb:dashboard' %}"
+           class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+            <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dashboard
+        </a>
+        <a href="{% url 'dsb:breach-create' %}"
+           class="inline-flex items-center gap-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
+            <i data-lucide="plus" class="w-4 h-4"></i> Datenpanne erfassen
+        </a>
+    </div>
 </div>
 
 {% if overdue_count %}
-{% alert_banner "error" "alert-triangle" "72h-Meldefrist überschritten!" %}
-<p class="text-sm text-red-700 mt-1">{{ overdue_count }} Datenpanne{{ overdue_count|pluralize:"n" }} noch nicht an Aufsichtsbehörde gemeldet</p>
+<div class="bg-red-50 border border-red-300 rounded-lg p-4 mb-4">
+    <i data-lucide="alert-triangle" class="w-4 h-4 inline text-red-600 mr-1"></i>
+    <strong class="text-red-800">72h-Meldefrist überschritten!</strong>
+    <span class="text-red-700 text-sm"> {{ overdue_count }} Datenpanne{{ overdue_count|pluralize:"n" }} noch nicht an Aufsichtsbehörde gemeldet.</span>
+</div>
 {% endif %}
 
 {% if rows %}
@@ -29,36 +39,45 @@
     <table class="min-w-full divide-y divide-gray-200" data-testid="breach-table">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entdeckt</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Panne</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mandat</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Entdeckt</th>
                 <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Schwere</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Betroffene</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gemeldet</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Benachrichtigt</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Workflow-Status</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">72h-Frist</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
             {% for b in rows %}
-            <tr class="hover:bg-gray-50 {% if b.is_overdue %}bg-red-50{% endif %}">
-                <td class="px-4 py-3 text-sm text-gray-900">{{ b.discovered_at|date:"d.m.Y H:i" }}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ b.mandate.name }}</td>
-                <td class="px-4 py-3 text-sm">{% status_badge b.severity %}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ b.affected_count|default:"—" }}</td>
-                <td class="px-4 py-3 text-sm">
-                    {% if b.reported_to_authority_at %}
-                    <span class="text-green-600">{{ b.reported_to_authority_at|date:"d.m.Y" }}</span>
-                    {% elif b.is_overdue %}
-                    <span class="text-red-600 font-medium">Überfällig!</span>
-                    {% else %}
-                    <span class="text-amber-600">Ausstehend</span>
+            <tr class="hover:bg-gray-50 cursor-pointer {% if b.is_overdue %}bg-red-50{% endif %}"
+                onclick="window.location='{% url 'dsb:breach-detail' b.pk %}'">
+                <td class="px-4 py-3">
+                    <div class="text-sm font-medium text-blue-600">
+                        <a href="{% url 'dsb:breach-detail' b.pk %}">{{ b.title|default:"Datenpanne" }}</a>
+                    </div>
+                    {% if b.reported_by_name %}
+                    <div class="text-xs text-gray-400">{{ b.reported_by_name }}</div>
                     {% endif %}
                 </td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ b.mandate.name }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ b.discovered_at|date:"d.m.Y H:i" }}</td>
+                <td class="px-4 py-3 text-sm">{% status_badge b.severity %}</td>
+                <td class="px-4 py-3 text-sm">{% status_badge b.workflow_status %}</td>
                 <td class="px-4 py-3 text-sm">
-                    {% if b.notified_subjects %}
-                    <span class="text-green-600">Ja</span>
+                    {% if b.is_overdue %}
+                    <span class="text-red-600 font-medium">Überfällig!</span>
+                    {% elif b.reported_to_authority_at %}
+                    <span class="text-green-600 text-xs">Gemeldet {{ b.reported_to_authority_at|date:"d.m.Y" }}</span>
                     {% else %}
-                    <span class="text-gray-400">Nein</span>
+                    <span class="text-amber-600 text-xs">{{ b.deadline_72h|date:"d.m.Y H:i" }}</span>
                     {% endif %}
+                </td>
+                <td class="px-4 py-3 text-right" onclick="event.stopPropagation()">
+                    <a href="{% url 'dsb:breach-detail' b.pk %}"
+                       class="text-blue-600 hover:text-blue-800">
+                        <i data-lucide="arrow-right" class="w-4 h-4 inline"></i>
+                    </a>
                 </td>
             </tr>
             {% endfor %}
@@ -66,7 +85,15 @@
     </table>
 </div>
 {% else %}
-{% empty_state "alert-triangle" "Keine Datenpannen" "Es wurden noch keine Datenpannen erfasst." %}
+<div class="text-center py-16 bg-white rounded-lg shadow">
+    <i data-lucide="alert-triangle" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+    <h3 class="text-lg font-medium text-gray-900 mb-1">Keine Datenpannen</h3>
+    <p class="text-sm text-gray-500 mb-4">Es wurden noch keine Datenpannen erfasst.</p>
+    <a href="{% url 'dsb:breach-create' %}"
+       class="inline-flex items-center gap-1 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
+        <i data-lucide="plus" class="w-4 h-4"></i> Datenpanne erfassen
+    </a>
+</div>
 {% endif %}
 {% endblock %}
 

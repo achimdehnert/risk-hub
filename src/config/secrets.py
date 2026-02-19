@@ -1,7 +1,10 @@
 """Secrets reader for production deployments (ADR-045).
 
-Reads secrets from /run/secrets/ files (SOPS-decrypted by CI/CD),
-falls back to environment variables for backward compatibility.
+Priority chain (automatic, no manual prefix needed):
+  1. /run/secrets/<key_lower>   — CI/CD-decrypted SOPS secrets (production)
+  2. os.environ[KEY]            — environment variables / docker-compose env_file
+  3. .env file (project root)   — local development (loaded automatically)
+  4. default                    — fallback value
 
 Usage in src/config/settings.py:
     from config.secrets import read_secret
@@ -12,7 +15,15 @@ Usage in src/config/settings.py:
 import os
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 SECRETS_DIR = Path(os.environ.get("SECRETS_DIR", "/run/secrets"))
+
+# Auto-load .env from project root (two levels up from src/config/)
+# Does NOT override already-set environment variables (override=False)
+_ENV_FILE = Path(__file__).resolve().parent.parent.parent / ".env"
+if _ENV_FILE.is_file():
+    load_dotenv(_ENV_FILE, override=False)
 
 
 def read_secret(

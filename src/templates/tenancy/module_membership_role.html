@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% load tenancy_components %}
+{% block title %}Modul-Rolle ändern — {{ mm.user.username }}{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center gap-3">
+    <a href="{% url 'tenancy:module-membership-manage' org.pk module %}" class="text-gray-400 hover:text-gray-600">
+        <i data-lucide="arrow-left" class="w-4 h-4"></i>
+    </a>
+    <div>
+        <h1 class="text-xl font-bold text-gray-900">
+            <i data-lucide="shield" class="w-5 h-5 inline text-blue-600 mr-1"></i>
+            Modul-Rolle ändern
+        </h1>
+        <p class="text-sm text-gray-500">
+            {{ mm.user.get_full_name|default:mm.user.username }}
+            &middot; {% module_label module %}
+            &middot; {{ org.name }}
+        </p>
+    </div>
+</div>
+
+<div class="max-w-sm">
+    <div class="bg-white rounded-lg shadow p-6">
+        <!-- Current state -->
+        <div class="mb-5 p-3 bg-gray-50 rounded-lg flex items-center gap-3">
+            <div class="w-9 h-9 bg-gray-200 rounded-full flex items-center justify-center flex-shrink-0">
+                <i data-lucide="user" class="w-4 h-4 text-gray-500"></i>
+            </div>
+            <div>
+                <div class="text-sm font-medium text-gray-900">{{ mm.user.get_full_name|default:mm.user.username }}</div>
+                <div class="text-xs text-gray-500">{{ mm.user.email }}</div>
+            </div>
+            <div class="ml-auto">
+                {% if mm.role == "admin" %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Admin</span>
+                {% elif mm.role == "manager" %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">Manager</span>
+                {% elif mm.role == "member" %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Member</span>
+                {% else %}
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700">Viewer</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="space-y-4">
+                {% for field in form %}
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ error }}</p>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            <div class="mt-6 flex items-center gap-3 pt-4 border-t border-gray-100">
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                    <i data-lucide="save" class="w-4 h-4"></i> Rolle speichern
+                </button>
+                <a href="{% url 'tenancy:module-membership-manage' org.pk module %}"
+                   class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+                    Abbrechen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

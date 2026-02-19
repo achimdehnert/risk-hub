@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% load dsb_components %}
+{% block title %}{{ title }} — DSB{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="alert-triangle" class="w-7 h-7 inline text-red-600 mr-1"></i>
+            {{ title }}
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">72-Stunden-Meldepflicht an Aufsichtsbehörde (Art. 33 DSGVO)</p>
+    </div>
+    <a href="{% url 'dsb:breach-list' %}"
+       class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Zurück
+    </a>
+</div>
+
+<div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+    <i data-lucide="clock" class="w-4 h-4 inline text-red-600 mr-1"></i>
+    <strong class="text-red-800">72-Stunden-Frist:</strong>
+    <span class="text-red-700 text-sm"> Die Meldung an die Aufsichtsbehörde muss innerhalb von 72 Stunden nach Bekanntwerden erfolgen (Art. 33 Abs. 1 DSGVO).</span>
+</div>
+
+<div class="max-w-2xl">
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+
+            <div>
+                <label for="{{ form.mandate.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Mandat <span class="text-red-500">*</span>
+                </label>
+                {{ form.mandate }}
+            </div>
+
+            <div class="border-t pt-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3">Panne</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Kurzbeschreibung <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.title }}
+                    </div>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="{{ form.discovered_at.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                Entdeckt am <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.discovered_at }}
+                        </div>
+                        <div>
+                            <label for="{{ form.severity.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                                Schweregrad <span class="text-red-500">*</span>
+                            </label>
+                            {{ form.severity }}
+                        </div>
+                    </div>
+                    <div>
+                        <label for="{{ form.affected_count.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Betroffene Personen (ca.)
+                        </label>
+                        {{ form.affected_count }}
+                    </div>
+                    <div>
+                        <label for="{{ form.root_cause.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Ursache (soweit bekannt)
+                        </label>
+                        {{ form.root_cause }}
+                    </div>
+                    <div>
+                        <label for="{{ form.measures_taken.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Sofortmaßnahmen
+                        </label>
+                        {{ form.measures_taken }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t pt-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3">Meldender</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="{{ form.reported_by_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Name / Firma
+                        </label>
+                        {{ form.reported_by_name }}
+                    </div>
+                    <div>
+                        <label for="{{ form.reported_by_email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            E-Mail (für Benachrichtigungen)
+                        </label>
+                        {{ form.reported_by_email }}
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t pt-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3">Aufsichtsbehörde</h3>
+                <div>
+                    <label for="{{ form.authority_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Zuständige Behörde
+                    </label>
+                    {{ form.authority_name }}
+                    <p class="text-xs text-gray-400 mt-1">z.B. LfDI Baden-Württemberg, BayLDA, etc.</p>
+                </div>
+            </div>
+
+            {% if form.errors %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <p class="text-sm text-red-700">{{ field }}: {{ error }}</p>
+                {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                        class="px-6 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
+                    <i data-lucide="save" class="w-4 h-4 inline mr-1"></i>
+                    Datenpanne erfassen
+                </button>
+                <a href="{% url 'dsb:breach-list' %}"
+                   class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+                    Abbrechen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

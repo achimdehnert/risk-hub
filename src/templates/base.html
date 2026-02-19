@@ -22,21 +22,31 @@
                     </a>
                     <div class="hidden md:flex ml-10 space-x-4">
                         {% block nav_items %}
+                        {% if "ex" in active_modules %}
                         <a href="/ex/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Explosionsschutz
                         </a>
+                        {% endif %}
+                        {% if "ex" in active_modules or "substances" in active_modules %}
                         <a href="/substances/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Gefahrstoffe
                         </a>
+                        {% endif %}
+                        {% if "risk" in active_modules %}
                         <a href="/risk/assessments/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Risikobewertung
                         </a>
+                        {% endif %}
+                        {% if "documents" in active_modules %}
                         <a href="/documents/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Dokumente
                         </a>
+                        {% endif %}
+                        {% if "dsb" in active_modules %}
                         <a href="/dsb/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Datenschutz
                         </a>
+                        {% endif %}
                         {% if user.is_staff %}
                         <a href="/tenants/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Mandanten

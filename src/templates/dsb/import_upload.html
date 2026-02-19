@@ -86,15 +86,6 @@
         <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
         Mandat anlegen
     </a>
-    {% if tenant_id %}
-    <p class="mt-3 text-xs text-amber-600">
-        Tenant-ID: {{ tenant_id }}
-    </p>
-    {% else %}
-    <p class="mt-3 text-xs text-red-600 font-medium">
-        Kein Tenant erkannt — bitte über Subdomain zugreifen.
-    </p>
-    {% endif %}
 </div>
 {% endif %}
 

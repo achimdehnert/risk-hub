@@ -1,0 +1,31 @@
+{% load tenancy_components %}
+<div class="px-6 py-3 border-b border-gray-100 bg-gray-50">
+    <span class="text-xs text-gray-500 font-medium uppercase tracking-wide">Standorte</span>
+</div>
+<div class="p-6">
+    {% if sites %}
+    <div class="space-y-3">
+        {% for site in sites %}
+        <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-100">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <i data-lucide="map-pin" class="w-4 h-4 text-green-600"></i>
+                </div>
+                <div>
+                    <div class="text-sm font-medium text-gray-900">{{ site.name }}</div>
+                    {% if site.address %}
+                    <div class="text-xs text-gray-500">{{ site.address }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="text-xs text-gray-400">{{ site.created_at|date:"d.m.Y" }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-6">
+        <i data-lucide="map-pin" class="w-10 h-10 mx-auto text-gray-300 mb-3"></i>
+        <p class="text-sm text-gray-400">Keine Standorte angelegt.</p>
+    </div>
+    {% endif %}
+</div>

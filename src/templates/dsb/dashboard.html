@@ -187,12 +187,45 @@
             </div>
         </div>
 
+        <!-- Erfassungsmasken -->
         <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3">Schnellzugriff</h3>
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Neu erfassen</h3>
             <div class="space-y-2">
-                <a href="{% url 'dsb:mandate-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
-                    <i data-lucide="building-2" class="w-4 h-4"></i> Mandate
+                <a href="{% url 'dsb:vvt-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> VVT-Eintrag (Art. 30)
                 </a>
+                <a href="{% url 'dsb:tom-create' %}?type=tech"
+                   class="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Technische Maßnahme
+                </a>
+                <a href="{% url 'dsb:tom-create' %}?type=org"
+                   class="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Org. Maßnahme
+                </a>
+                <a href="{% url 'dsb:dpa-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> AVV (Art. 28)
+                </a>
+                <a href="{% url 'dsb:breach-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-700 text-sm font-medium rounded-lg hover:bg-orange-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Datenpanne (Art. 33)
+                </a>
+                <a href="{% url 'dsb:deletion-request-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 text-sm font-medium rounded-lg hover:bg-red-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Löschantrag (Art. 17)
+                </a>
+                <a href="{% url 'dsb:mandate-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Mandat anlegen
+                </a>
+            </div>
+        </div>
+
+        <!-- Listen -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Übersichten</h3>
+            <div class="space-y-1">
                 <a href="{% url 'dsb:vvt-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
                     <i data-lucide="file-text" class="w-4 h-4"></i> VVT (Art. 30)
                 </a>
@@ -202,20 +235,20 @@
                 <a href="{% url 'dsb:dpa-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
                     <i data-lucide="file-signature" class="w-4 h-4"></i> AVV (Art. 28)
                 </a>
-                <a href="{% url 'dsb:audit-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
-                    <i data-lucide="search" class="w-4 h-4"></i> Audits
-                </a>
-                <a href="{% url 'dsb:deletion-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i> Löschungen (Art. 17)
+                <a href="{% url 'dsb:deletion-request-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Löschanträge (Art. 17)
                 </a>
                 <a href="{% url 'dsb:breach-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
                     <i data-lucide="alert-triangle" class="w-4 h-4"></i> Datenpannen (Art. 33)
                 </a>
-                <a href="{% url 'dsb:csv-import' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1 mt-2 pt-2 border-t">
-                    <i data-lucide="upload" class="w-4 h-4"></i> CSV Import
+                <a href="{% url 'dsb:audit-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="search" class="w-4 h-4"></i> Audits
                 </a>
-                <a href="/admin/dsb/" class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 py-1">
-                    <i data-lucide="settings" class="w-4 h-4"></i> DSB Admin
+                <a href="{% url 'dsb:mandate-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="building-2" class="w-4 h-4"></i> Mandate
+                </a>
+                <a href="{% url 'dsb:csv-import' %}" class="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 py-1 mt-1 pt-1 border-t">
+                    <i data-lucide="upload" class="w-4 h-4"></i> CSV Import
                 </a>
             </div>
         </div>

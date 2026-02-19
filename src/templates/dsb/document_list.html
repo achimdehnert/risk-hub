@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% load dsb_components %}
+{% block title %}Dokumentenarchiv — DSB{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="folder-open" class="w-7 h-7 inline text-blue-600 mr-1"></i>
+            Dokumentenarchiv
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">Archivierte Dokumente — PDF, DOCX, XLSX</p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'dsb:dashboard' %}"
+           class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+            <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dashboard
+        </a>
+        <a href="{% url 'dsb:document-upload' %}"
+           class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+            <i data-lucide="upload" class="w-4 h-4"></i> Dokument hochladen
+        </a>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="bg-white rounded-lg shadow p-4 mb-4">
+    <form method="get" class="flex gap-3 items-end flex-wrap">
+        <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">Dokumenttyp</label>
+            <select name="ref_type"
+                    class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-1.5 border"
+                    onchange="this.form.submit()">
+                <option value="">Alle Typen</option>
+                {% for val, label in ref_type_choices %}
+                <option value="{{ val }}" {% if val == ref_type %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit"
+                class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+            Filtern
+        </button>
+        {% if ref_type %}
+        <a href="{% url 'dsb:document-list' %}" class="text-sm text-gray-500 hover:text-gray-700 py-1.5">
+            × Filter zurücksetzen
+        </a>
+        {% endif %}
+    </form>
+</div>
+
+{% if docs %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Dokument</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Typ</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mandat</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datum</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Größe</th>
+                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hochgeladen</th>
+                <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for doc in docs %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-4 py-3">
+                    <div class="flex items-center gap-2">
+                        <i data-lucide="{{ doc.icon }}" class="w-5 h-5 text-red-500 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">{{ doc.title }}</p>
+                            {% if doc.description %}
+                            <p class="text-xs text-gray-400">{{ doc.description|truncatechars:60 }}</p>
+                            {% endif %}
+                            <p class="text-xs text-gray-400">{{ doc.original_filename }}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ doc.get_ref_type_display }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ doc.mandate.name|default:"—" }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ doc.document_date|date:"d.m.Y"|default:"—" }}</td>
+                <td class="px-4 py-3 text-sm text-gray-500">{{ doc.file_size_display }}</td>
+                <td class="px-4 py-3 text-sm text-gray-400">{{ doc.created_at|date:"d.m.Y" }}</td>
+                <td class="px-4 py-3 text-right">
+                    <div class="flex items-center justify-end gap-2">
+                        <a href="{% url 'dsb:document-download' doc.pk %}"
+                           class="text-blue-600 hover:text-blue-800 text-sm"
+                           title="Herunterladen">
+                            <i data-lucide="download" class="w-4 h-4 inline"></i>
+                        </a>
+                        <form method="post" action="{% url 'dsb:document-delete' doc.pk %}"
+                              onsubmit="return confirm('Dokument „{{ doc.title }}" wirklich löschen?')">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="{% url 'dsb:document-list' %}">
+                            <button type="submit" class="text-red-500 hover:text-red-700" title="Löschen">
+                                <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+                            </button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="text-center py-16 bg-white rounded-lg shadow">
+    <i data-lucide="folder-open" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+    <h3 class="text-lg font-medium text-gray-900 mb-1">Keine Dokumente</h3>
+    <p class="text-sm text-gray-500 mb-4">Noch keine Dokumente archiviert.</p>
+    <a href="{% url 'dsb:document-upload' %}"
+       class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+        <i data-lucide="upload" class="w-4 h-4"></i> Erstes Dokument hochladen
+    </a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

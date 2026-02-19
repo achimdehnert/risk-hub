@@ -1,15 +1,34 @@
-"""DSB Module Views (ADR-038 Phase 1)."""
+"""DSB Module Views (ADR-041 Phase 0+1)."""
 
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
+from django_tenancy.module_access import require_module
 from dsb.services import get_dsb_kpis
 
 
 def _tenant_id(request: HttpRequest):
-    """Extract tenant_id or None."""
-    return getattr(request, "tenant_id", None)
+    """Extract tenant_id — falls back to user membership for dev (no subdomain)."""
+    tid = getattr(request, "tenant_id", None)
+    if tid is not None:
+        return tid
+    user = getattr(request, "user", None)
+    if user and getattr(user, "is_authenticated", False):
+        try:
+            from django_tenancy.models import Membership
+            m = (
+                Membership.objects
+                .filter(user=user)
+                .select_related("organization")
+                .order_by("created_at")
+                .first()
+            )
+            if m and m.organization.is_active:
+                return m.organization.tenant_id
+        except Exception:
+            pass
+    return None
 
 
 def _user_id(request: HttpRequest):
@@ -21,17 +40,16 @@ def _user_id(request: HttpRequest):
 
 
 @login_required
+@require_module("dsb")
 def dashboard(request: HttpRequest) -> HttpResponse:
     """DSB Dashboard — DSGVO compliance overview."""
     tid = _tenant_id(request)
-    if tid is None:
-        return render(request, "dsb/dashboard.html", {"kpis": None})
-
-    kpis = get_dsb_kpis(tid)
+    kpis = get_dsb_kpis(tid) if tid else None
     return render(request, "dsb/dashboard.html", {"kpis": kpis})
 
 
 @login_required
+@require_module("dsb")
 def vvt_list(request: HttpRequest) -> HttpResponse:
     """VVT list — Art. 30 processing activities."""
     from dsb.models import ProcessingActivity
@@ -50,6 +68,7 @@ def vvt_list(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+@require_module("dsb")
 def tom_list(request: HttpRequest) -> HttpResponse:
     """TOM list — Art. 32 technical & organizational measures."""
     from dsb.models import OrganizationalMeasure, TechnicalMeasure
@@ -58,10 +77,10 @@ def tom_list(request: HttpRequest) -> HttpResponse:
     tid = _tenant_id(request)
     tech = TechnicalMeasure.objects.filter(
         tenant_id=tid,
-    ).select_related("category").order_by("name")
+    ).select_related("category").order_by("title")
     org = OrganizationalMeasure.objects.filter(
         tenant_id=tid,
-    ).select_related("category").order_by("name")
+    ).select_related("category").order_by("title")
     planned = (
         tech.filter(status=MeasureStatus.PLANNED).count()
         + org.filter(status=MeasureStatus.PLANNED).count()
@@ -74,6 +93,7 @@ def tom_list(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+@require_module("dsb")
 def dpa_list(request: HttpRequest) -> HttpResponse:
     """AVV list — Art. 28 data processing agreements."""
     from dsb.models import DataProcessingAgreement
@@ -90,6 +110,7 @@ def dpa_list(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+@require_module("dsb")
 def audit_list(request: HttpRequest) -> HttpResponse:
     """Audit list — privacy audits."""
     from dsb.models import PrivacyAudit
@@ -112,6 +133,7 @@ def audit_list(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+@require_module("dsb")
 def deletion_list(request: HttpRequest) -> HttpResponse:
     """Deletion log list — Art. 17."""
     from dsb.models import DeletionLog
@@ -128,6 +150,7 @@ def deletion_list(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+@require_module("dsb")
 def breach_list(request: HttpRequest) -> HttpResponse:
     """Breach list — Art. 33 data breaches."""
     from dsb.models import Breach
@@ -231,6 +254,7 @@ def mandate_delete(request: HttpRequest, pk) -> HttpResponse:
 
 
 @login_required
+@require_module("dsb")
 def vvt_detail(request: HttpRequest, pk) -> HttpResponse:
     """VVT detail — single processing activity."""
     from dsb.models import ProcessingActivity
@@ -441,6 +465,58 @@ def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
 
 
 @login_required
+@require_module("dsb")
+def avv_import(request: HttpRequest) -> HttpResponse:
+    """Dedizierter AVV-Import aus CSV-Datei."""
+    from django.http import HttpResponse as DjangoResponse
+    from dsb.import_csv import import_avv, AVV_CSV_TEMPLATE
+    from dsb.models import Mandate
+
+    tid = _tenant_id(request)
+    uid = _user_id(request)
+
+    if request.GET.get("template") == "1":
+        resp = DjangoResponse(AVV_CSV_TEMPLATE, content_type="text/csv; charset=utf-8")
+        resp["Content-Disposition"] = 'attachment; filename="avv_vorlage.csv"'
+        return resp
+
+    result = None
+    mandates = Mandate.objects.filter(tenant_id=tid, status="active") if tid else Mandate.objects.none()
+
+    if request.method == "POST":
+        mandate_id = request.POST.get("mandate")
+        csv_file = request.FILES.get("csv_file")
+        if mandate_id and csv_file:
+            try:
+                mandate = Mandate.objects.get(pk=mandate_id, tenant_id=tid)
+                content = csv_file.read().decode("utf-8-sig")
+                result = import_avv(content, mandate, tid, uid)
+                if result.avv_created:
+                    from django.contrib import messages
+                    messages.success(
+                        request,
+                        f"{result.avv_created} AVV importiert, {result.skipped} übersprungen.",
+                    )
+            except Mandate.DoesNotExist:
+                from django.contrib import messages
+                messages.error(request, "Mandat nicht gefunden.")
+            except Exception as exc:
+                from django.contrib import messages
+                messages.error(request, f"Import-Fehler: {exc}")
+
+    selected_mandate = None
+    if tid and mandates.count() == 1:
+        selected_mandate = mandates.first()
+
+    return render(request, "dsb/avv_import.html", {
+        "mandates": mandates,
+        "selected_mandate": selected_mandate,
+        "result": result,
+    })
+
+
+@login_required
+@require_module("dsb")
 def csv_import(request: HttpRequest) -> HttpResponse:
     """Upload and import VVT / TOM / AVV CSV files."""
     from dsb.forms import CsvImportForm
