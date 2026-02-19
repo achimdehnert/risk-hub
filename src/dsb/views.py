@@ -406,6 +406,25 @@ def tom_edit(request: HttpRequest, pk) -> HttpResponse:
 
 
 @login_required
+def dpa_detail(request: HttpRequest, pk) -> HttpResponse:
+    """Detail view for an AVV entry including linked documents."""
+    from dsb.models import DataProcessingAgreement
+    from dsb.models.document import DsbDocument
+
+    tid = _tenant_id(request)
+    obj = get_object_or_404(
+        DataProcessingAgreement.objects.select_related("mandate")
+        .prefetch_related("data_categories", "data_subjects", "processing_activities"),
+        pk=pk, tenant_id=tid,
+    )
+    docs = DsbDocument.objects.filter(tenant_id=tid, ref_type="dpa", ref_id=obj.pk)
+    return render(request, "dsb/dpa_detail.html", {
+        "obj": obj,
+        "docs": docs,
+    })
+
+
+@login_required
 def dpa_create(request: HttpRequest) -> HttpResponse:
     """Create a new AVV entry."""
     from dsb.forms import DataProcessingAgreementForm

@@ -34,6 +34,7 @@ urlpatterns = [
     # AVV (Art. 28)
     path("avv/", views.dpa_list, name="dpa-list"),
     path("avv/new/", views.dpa_create, name="dpa-create"),
+    path("avv/<uuid:pk>/", views.dpa_detail, name="dpa-detail"),
     path("avv/<uuid:pk>/edit/", views.dpa_edit, name="dpa-edit"),
     path("avv/import/", views.avv_import, name="avv-import"),
     # CSV Import
