@@ -1,8 +1,14 @@
-# tests/conftest.py — ADR-057 §2.5
+# src/tests/conftest.py — ADR-058 §Confirmation
 import uuid
 import pytest
 
+# Shared platform fixtures (platform-context[testing])
+from platform_context.testing.fixtures import (  # noqa: F401
+    admin_client,
+    htmx_client,
+)
 
+# Repo-specific fixtures (risk-hub uses UserFactory + tenant_id)
 @pytest.fixture
 def tenant_id():
     """A fixed tenant UUID for multi-tenant tests."""
@@ -24,7 +30,7 @@ def admin_user(db):
 
 
 @pytest.fixture
-def authenticated_client(client, user):
+def auth_client(client, user):
     """Pre-authenticated Django test client."""
     client.force_login(user)
     return client
