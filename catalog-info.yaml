@@ -1,0 +1,25 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: risk-hub
+  description: Risk assessment and compliance management platform
+  tags: [django, risk, compliance, legal]
+  annotations:
+    github.com/project-slug: achimdehnert/risk-hub
+    deployment/server: "88.198.191.108"
+    deployment/path: "/opt/risk-hub"
+    deployment/port: "8090"
+    deployment/health-url: "https://demo.schutztat.de/healthz/"
+    deployment/image: "ghcr.io/achimdehnert/risk-hub:latest"
+    deployment/compose-service: "risk-hub-web"
+    deployment/db-container: "risk_hub_db"
+    deployment/db-name: "risk_hub"
+spec:
+  type: service
+  lifecycle: production
+  owner: achimdehnert
+  system: risk-management
+  domain: compliance
+  providesApis: []
+  dependsOn:
+    - resource:postgresql
