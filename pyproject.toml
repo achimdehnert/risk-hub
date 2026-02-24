@@ -53,6 +53,7 @@ build-backend = "hatchling.build"
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py"]
 asyncio_mode = "auto"
+testpaths = ["src", "tests"]
 
 [tool.ruff]
 line-length = 100
