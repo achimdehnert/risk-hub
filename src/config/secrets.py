@@ -37,10 +37,13 @@ def read_secret(
     Raises ValueError in production if required=True and no value found.
     """
     secret_file = SECRETS_DIR / key.lower()
-    if secret_file.is_file():
-        value = secret_file.read_text().strip()
-        if value:
-            return value
+    try:
+        if secret_file.is_file():
+            value = secret_file.read_text().strip()
+            if value:
+                return value
+    except (PermissionError, OSError):
+        pass
 
     value = os.environ.get(key, "")
     if value:
