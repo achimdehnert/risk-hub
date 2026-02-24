@@ -3,7 +3,7 @@
 {% block title %}VVT — Verarbeitungsverzeichnis{% endblock %}
 
 {% block content %}
-<div class="mb-6 flex items-center justify-between">
+<div class="mb-6 flex items-center justify-between" data-testid="vvt-list-header">
     <div>
         <h1 class="text-2xl font-bold text-gray-900">
             <i data-lucide="file-text" class="w-7 h-7 inline text-blue-600 mr-1"></i>
@@ -23,7 +23,8 @@
             <i data-lucide="upload" class="w-4 h-4"></i> CSV Import
         </a>
         <a href="{% url 'dsb:vvt-create' %}"
-           class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+           class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700"
+           data-testid="vvt-list-create-btn">
             <i data-lucide="plus" class="w-4 h-4"></i> Neue VVT
         </a>
     </div>

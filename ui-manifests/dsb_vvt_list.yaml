@@ -1,0 +1,29 @@
+manifest_version: "1.0"
+page:
+  route: /dsb/vvt/
+  title: "Verarbeitungsverzeichnis"
+  django_view: "dsb.views.vvt_list"
+  django_url_name: "dsb:vvt-list"
+  template: "dsb/vvt_list.html"
+
+components:
+  - id: vvt-list-header
+    type: section
+    description: "Header mit Titel und CTA-Buttons"
+    required_elements:
+      - element_id: vvt-list-header
+        type: section
+        description: "Header-Wrapper"
+      - element_id: vvt-list-create-btn
+        type: button
+        htmx: false
+        description: "Button: Neue VVT erstellen"
+
+  - id: vvt-table
+    type: table
+    description: "VVT-Tabelle mit allen Verarbeitungstätigkeiten"
+    conditional: "Nur wenn VVTs vorhanden"
+    required_elements:
+      - element_id: vvt-table
+        type: table
+        description: "HTML-Tabelle der VVTs"
