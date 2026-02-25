@@ -53,12 +53,14 @@ class ImportResult:
 
 
 def detect_csv_type(headers: list[str]) -> str:
-    """Detect CSV type from header row. Returns 'vvt' or 'tom'."""
+    """Detect CSV type from header row. Returns 'vvt', 'tom', or 'avv'."""
     h_lower = [h.strip().lower() for h in headers]
     if "verarbeitungstaetigkeit" in h_lower:
         return "vvt"
     if "tom-kategorie" in h_lower or "massnahme" in h_lower:
         return "tom"
+    if "partner" in h_lower or "auftragsverarbeiter" in h_lower or "avv-partner" in h_lower:
+        return "avv"
     raise ValueError(
         f"Unbekanntes CSV-Format. Header: {', '.join(headers[:5])}"
     )
@@ -115,7 +117,7 @@ def _build_vvt_desc(row: dict[str, str]) -> str:
         ("Gruppe", "Gruppe"), ("Zweck", "Zweck"),
         ("Betroffene Personen", "Betroffene Personen"),
         ("Datenkategorien", "Datenkategorien"),
-        ("Empfaenger", "Empfänger"),
+        ("Empfaenger", "Empf\u00e4nger"),
         ("TOM-Verweis", "TOM-Verweis"),
         ("Eingesetzte Systeme MAROLD", "Eingesetzte Systeme"),
         ("Drittland-Absicherung", "Drittland-Absicherung"),
@@ -137,7 +139,7 @@ def _build_tom_desc(row: dict[str, str]) -> str:
     for csv_key, label in [
         ("Betroffene Systeme", "Systeme"),
         ("Rechtsgrundlage", "Rechtsgrundlage"),
-        ("Pruefintervall", "Prüfintervall"),
+        ("Pruefintervall", "Pr\u00fcfintervall"),
         ("Verantwortlich", "Verantwortlich"),
     ]:
         val = row.get(csv_key, "").strip()
@@ -295,15 +297,140 @@ def import_tom(
     return result
 
 
-def import_csv(
+_AVV_STATUS_MAP = {
+    "aktiv": "active",
+    "active": "active",
+    "entwurf": "draft",
+    "draft": "draft",
+    "abgelaufen": "expired",
+    "expired": "expired",
+    "gekuendigt": "terminated",
+    "terminated": "terminated",
+}
+
+_AVV_ROLE_MAP = {
+    "auftragsverarbeiter": "processor",
+    "processor": "processor",
+    "av": "processor",
+    "verantwortlicher": "controller",
+    "controller": "controller",
+    "gemeinsam": "joint_controller",
+    "joint": "joint_controller",
+}
+
+
+@transaction.atomic
+def import_avv(
     content: str,
     mandate: Mandate,
     tenant_id: UUID,
     user_id: UUID | None = None,
 ) -> ImportResult:
+    """Import AVV CSV into DataProcessingAgreement records.
+
+    Expected columns (semicolon-delimited):
+    Partner;Rolle;Gegenstand;Status;Gueltig_ab;Gueltig_bis;Unterauftragsverarbeiter;Notizen
+    """
+    from datetime import date
+    result = ImportResult(csv_type="avv")
+    _, rows = _parse_csv(content)
+    result.rows_total = len(rows)
+
+    for row in rows:
+        try:
+            partner = (
+                row.get("Partner", "").strip()
+                or row.get("Auftragsverarbeiter", "").strip()
+                or row.get("AVV-Partner", "").strip()
+            )
+            if not partner:
+                result.skipped += 1
+                continue
+
+            role_raw = (
+                row.get("Rolle", "").strip()
+                or row.get("Partner-Rolle", "").strip()
+            ).lower()
+            role = _AVV_ROLE_MAP.get(role_raw, "processor")
+
+            status_raw = row.get("Status", "").strip().lower()
+            status = _AVV_STATUS_MAP.get(status_raw, "draft")
+
+            subject = (
+                row.get("Gegenstand", "").strip()
+                or row.get("Leistung", "").strip()
+                or row.get("Beschreibung", "").strip()
+            )
+
+            def _parse_date(val: str):
+                val = val.strip()
+                if not val or val == "-" or val == "—":
+                    return None
+                for fmt in ("%d.%m.%Y", "%Y-%m-%d", "%d/%m/%Y"):
+                    try:
+                        from datetime import datetime
+                        return datetime.strptime(val, fmt).date()
+                    except ValueError:
+                        continue
+                return None
+
+            effective_date = _parse_date(
+                row.get("Gueltig_ab", "") or row.get("Gültig_ab", "") or row.get("Abschlussdatum", "")
+            )
+            expiry_date = _parse_date(
+                row.get("Gueltig_bis", "") or row.get("Gültig_bis", "") or row.get("Ablaufdatum", "")
+            )
+
+            subprocessors = row.get("Unterauftragsverarbeiter", "").strip()
+            subprocessors_allowed = bool(subprocessors and subprocessors.lower() not in ("nein", "no", "0", "false"))
+
+            notes = row.get("Notizen", "").strip() or row.get("Bemerkungen", "").strip()
+
+            _, created = DataProcessingAgreement.objects.update_or_create(
+                tenant_id=tenant_id,
+                mandate=mandate,
+                partner_name=partner[:300],
+                defaults={
+                    "partner_role": role,
+                    "subject_matter": subject,
+                    "status": status,
+                    "effective_date": effective_date,
+                    "expiry_date": expiry_date,
+                    "subprocessors_allowed": subprocessors_allowed,
+                    "notes": notes,
+                    "created_by_id": user_id,
+                    "updated_by_id": user_id,
+                },
+            )
+            if created:
+                result.avv_created += 1
+
+        except Exception as exc:
+            result.errors.append(f"AVV '{partner[:30] if partner else '?'}': {exc}")
+            logger.warning("AVV import error: %s", exc)
+
+    return result
+
+
+AVV_CSV_TEMPLATE = (
+    "Partner;Rolle;Gegenstand;Status;Gueltig_ab;Gueltig_bis;Unterauftragsverarbeiter;Notizen\n"
+    "Beispiel GmbH;Auftragsverarbeiter;Cloud-Hosting;aktiv;01.01.2024;31.12.2025;Nein;Muster-Notiz\n"
+    "Muster AG;Processor;E-Mail-Versand;draft;;;Ja;Unterauftragsverarbeiter: SendGrid\n"
+)
+
+
+def import_csv(
+    content: str,
+    mandate: Mandate,
+    tenant_id: UUID,
+    user_id: UUID | None = None,
+    force_type: str = "auto",
+) -> ImportResult:
     """Auto-detect CSV type and import."""
     headers, _ = _parse_csv(content)
-    csv_type = detect_csv_type(headers)
+    csv_type = force_type if force_type != "auto" else detect_csv_type(headers)
     if csv_type == "vvt":
         return import_vvt(content, mandate, tenant_id, user_id)
+    if csv_type == "avv":
+        return import_avv(content, mandate, tenant_id, user_id)
     return import_tom(content, mandate, tenant_id, user_id)

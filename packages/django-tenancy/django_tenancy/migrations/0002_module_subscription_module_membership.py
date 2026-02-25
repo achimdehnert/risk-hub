@@ -32,9 +32,7 @@ class Migration(migrations.Migration):
                     "module",
                     models.CharField(
                         db_index=True,
-                        help_text=(
-                            "Module code, e.g. 'risk', 'dsb', 'worlds'."
-                        ),
+                        help_text="Module code, e.g. 'risk', 'dsb', 'worlds'.",
                         max_length=50,
                     ),
                 ),
@@ -123,9 +121,7 @@ class Migration(migrations.Migration):
                     "module",
                     models.CharField(
                         db_index=True,
-                        help_text=(
-                            "Module code, e.g. 'risk', 'dsb', 'worlds'."
-                        ),
+                        help_text="Module code, e.g. 'risk', 'dsb', 'worlds'.",
                         max_length=50,
                     ),
                 ),

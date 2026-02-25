@@ -2,6 +2,7 @@
 
 from uuid import UUID
 
+from django.contrib.auth.decorators import login_required
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -10,6 +11,7 @@ from django.http import (
 from django.shortcuts import get_object_or_404, redirect, render
 
 from common.tenant import require_tenant as _require_tenant
+from django_tenancy.module_access import require_module
 from risk.models import Assessment
 from risk.services import (
     ApproveAssessmentCmd,
@@ -19,6 +21,8 @@ from risk.services import (
 )
 
 
+@login_required
+@require_module("risk")
 def assessment_list(
     request: HttpRequest,
 ) -> HttpResponse:
@@ -53,6 +57,8 @@ def assessment_list(
     )
 
 
+@login_required
+@require_module("risk")
 def assessment_detail(
     request: HttpRequest,
     assessment_id: UUID,
@@ -74,6 +80,8 @@ def assessment_detail(
     )
 
 
+@login_required
+@require_module("risk", min_role="manager")
 def assessment_approve(
     request: HttpRequest,
     assessment_id: UUID,

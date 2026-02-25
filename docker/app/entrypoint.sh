@@ -20,6 +20,8 @@ if [ "$1" = "web" ]; then
         --bind 0.0.0.0:8000 \
         --workers "${GUNICORN_WORKERS:-2}" \
         --timeout 120 \
+        --max-requests 500 \
+        --max-requests-jitter 50 \
         --access-logfile -
 fi
 

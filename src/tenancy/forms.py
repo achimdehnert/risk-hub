@@ -3,6 +3,7 @@
 from django import forms
 from django.utils.text import slugify
 
+from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 from identity.models import User
 from tenancy.models import Membership, Organization
 
@@ -119,4 +120,75 @@ class MembershipRoleForm(forms.Form):
         choices=Membership.Role.choices,
         widget=forms.Select(attrs={"class": _TW_SELECT}),
         label="Rolle",
+    )
+
+
+class ModuleSubscriptionForm(forms.ModelForm):
+    """Form zum Bearbeiten einer Modul-Subscription."""
+
+    class Meta:
+        model = ModuleSubscription
+        fields = ["status", "plan_code", "trial_ends_at", "activated_at", "expires_at"]
+        widgets = {
+            "status": forms.Select(attrs={"class": _TW_SELECT}),
+            "plan_code": forms.TextInput(attrs={"class": _TW_INPUT}),
+            "trial_ends_at": forms.DateTimeInput(
+                attrs={"class": _TW_INPUT, "type": "datetime-local"}, format="%Y-%m-%dT%H:%M",
+            ),
+            "activated_at": forms.DateTimeInput(
+                attrs={"class": _TW_INPUT, "type": "datetime-local"}, format="%Y-%m-%dT%H:%M",
+            ),
+            "expires_at": forms.DateTimeInput(
+                attrs={"class": _TW_INPUT, "type": "datetime-local"}, format="%Y-%m-%dT%H:%M",
+            ),
+        }
+        labels = {
+            "status": "Status",
+            "plan_code": "Plan",
+            "trial_ends_at": "Trial-Ende",
+            "activated_at": "Aktiviert am",
+            "expires_at": "Läuft ab am",
+        }
+
+
+class ModuleMembershipGrantForm(forms.Form):
+    """Form zum Zuweisen eines Benutzers zu einem Modul."""
+
+    user = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        widget=forms.Select(attrs={"class": _TW_SELECT}),
+        label="Benutzer",
+    )
+    role = forms.ChoiceField(
+        choices=ModuleMembership.Role.choices,
+        initial=ModuleMembership.Role.MEMBER,
+        widget=forms.Select(attrs={"class": _TW_SELECT}),
+        label="Modul-Rolle",
+    )
+    expires_at = forms.DateTimeField(
+        required=False,
+        widget=forms.DateTimeInput(
+            attrs={"class": _TW_INPUT, "type": "datetime-local"}, format="%Y-%m-%dT%H:%M",
+        ),
+        label="Ablaufdatum (optional)",
+    )
+
+    def __init__(self, *args, org=None, module=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if org is not None:
+            already_granted = ModuleMembership.objects.filter(
+                tenant_id=org.tenant_id, module=module,
+            ).values_list("user_id", flat=True)
+            self.fields["user"].queryset = User.objects.filter(
+                tenant_id=org.tenant_id,
+            ).exclude(pk__in=already_granted).order_by("username")
+
+
+class ModuleMembershipRoleForm(forms.Form):
+    """Form zum Ändern der Modul-Rolle eines Benutzers."""
+
+    role = forms.ChoiceField(
+        choices=ModuleMembership.Role.choices,
+        widget=forms.Select(attrs={"class": _TW_SELECT}),
+        label="Modul-Rolle",
     )

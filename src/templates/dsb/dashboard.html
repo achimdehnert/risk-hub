@@ -3,8 +3,8 @@
 {% block title %}Datenschutz — Schutztat{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-    <h1 class="text-2xl font-bold text-gray-900">
+<div class="mb-6" data-testid="dsb-dashboard-header">
+    <h1 class="text-2xl font-bold text-gray-900" data-testid="dsb-dashboard-title">
         <i data-lucide="shield" class="w-7 h-7 inline text-blue-600 mr-1"></i>
         Datenschutz-Dashboard
     </h1>
@@ -43,6 +43,60 @@
         <li>{{ kpis.deletions_pending }} Löschung{{ kpis.deletions_pending|pluralize:"en" }} ausstehend</li>
         {% endif %}
     </ul>
+</div>
+{% endif %}
+
+{% if open_breaches or open_deletions %}
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+
+    {% if open_breaches %}
+    <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-4 h-4 text-red-500"></i>
+            Offene Datenpannen
+            <span class="ml-auto text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">{{ open_breaches|length }}</span>
+        </h3>
+        <ul class="space-y-2">
+            {% for b in open_breaches %}
+            <li class="flex items-center justify-between text-sm">
+                <a href="{% url 'dsb:breach-detail' b.pk %}" class="text-blue-600 hover:underline truncate flex-1">
+                    {{ b.title|default:"Datenpanne" }}
+                </a>
+                <span class="ml-2 flex-shrink-0 text-xs px-1.5 py-0.5 rounded
+                    {% if b.is_overdue %}bg-red-100 text-red-700
+                    {% else %}bg-amber-100 text-amber-700{% endif %}">
+                    {{ b.get_workflow_status_display }}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'dsb:breach-list' %}" class="text-xs text-gray-400 hover:text-blue-600 mt-3 block">Alle anzeigen →</a>
+    </div>
+    {% endif %}
+
+    {% if open_deletions %}
+    <div class="bg-white rounded-lg shadow p-4">
+        <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+            <i data-lucide="trash-2" class="w-4 h-4 text-orange-500"></i>
+            Offene Löschanträge
+            <span class="ml-auto text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full">{{ open_deletions|length }}</span>
+        </h3>
+        <ul class="space-y-2">
+            {% for d in open_deletions %}
+            <li class="flex items-center justify-between text-sm">
+                <a href="{% url 'dsb:deletion-request-detail' d.pk %}" class="text-blue-600 hover:underline truncate flex-1">
+                    {{ d.subject_name|default:"Löschantrag" }}
+                </a>
+                <span class="ml-2 flex-shrink-0 text-xs px-1.5 py-0.5 rounded bg-orange-100 text-orange-700">
+                    {{ d.get_status_display }}
+                </span>
+            </li>
+            {% endfor %}
+        </ul>
+        <a href="{% url 'dsb:deletion-request-list' %}" class="text-xs text-gray-400 hover:text-blue-600 mt-3 block">Alle anzeigen →</a>
+    </div>
+    {% endif %}
+
 </div>
 {% endif %}
 
@@ -187,12 +241,45 @@
             </div>
         </div>
 
+        <!-- Erfassungsmasken -->
         <div class="bg-white rounded-lg shadow p-4">
-            <h3 class="text-sm font-semibold text-gray-900 mb-3">Schnellzugriff</h3>
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Neu erfassen</h3>
             <div class="space-y-2">
-                <a href="{% url 'dsb:mandate-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
-                    <i data-lucide="building-2" class="w-4 h-4"></i> Mandate
+                <a href="{% url 'dsb:vvt-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 text-sm font-medium rounded-lg hover:bg-blue-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> VVT-Eintrag (Art. 30)
                 </a>
+                <a href="{% url 'dsb:tom-create' %}?type=tech"
+                   class="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Technische Maßnahme
+                </a>
+                <a href="{% url 'dsb:tom-create' %}?type=org"
+                   class="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 text-sm font-medium rounded-lg hover:bg-green-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Org. Maßnahme
+                </a>
+                <a href="{% url 'dsb:dpa-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-purple-50 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> AVV (Art. 28)
+                </a>
+                <a href="{% url 'dsb:breach-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-orange-50 text-orange-700 text-sm font-medium rounded-lg hover:bg-orange-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Datenpanne (Art. 33)
+                </a>
+                <a href="{% url 'dsb:deletion-request-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-red-50 text-red-700 text-sm font-medium rounded-lg hover:bg-red-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Löschantrag (Art. 17)
+                </a>
+                <a href="{% url 'dsb:mandate-create' %}"
+                   class="flex items-center gap-2 px-3 py-2 bg-gray-50 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-100">
+                    <i data-lucide="plus" class="w-4 h-4"></i> Mandat anlegen
+                </a>
+            </div>
+        </div>
+
+        <!-- Listen -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Übersichten</h3>
+            <div class="space-y-1">
                 <a href="{% url 'dsb:vvt-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
                     <i data-lucide="file-text" class="w-4 h-4"></i> VVT (Art. 30)
                 </a>
@@ -202,20 +289,20 @@
                 <a href="{% url 'dsb:dpa-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
                     <i data-lucide="file-signature" class="w-4 h-4"></i> AVV (Art. 28)
                 </a>
-                <a href="{% url 'dsb:audit-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
-                    <i data-lucide="search" class="w-4 h-4"></i> Audits
-                </a>
-                <a href="{% url 'dsb:deletion-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i> Löschungen (Art. 17)
+                <a href="{% url 'dsb:deletion-request-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i> Löschanträge (Art. 17)
                 </a>
                 <a href="{% url 'dsb:breach-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
                     <i data-lucide="alert-triangle" class="w-4 h-4"></i> Datenpannen (Art. 33)
                 </a>
-                <a href="{% url 'dsb:csv-import' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1 mt-2 pt-2 border-t">
-                    <i data-lucide="upload" class="w-4 h-4"></i> CSV Import
+                <a href="{% url 'dsb:audit-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="search" class="w-4 h-4"></i> Audits
                 </a>
-                <a href="/admin/dsb/" class="flex items-center gap-2 text-sm text-gray-400 hover:text-gray-600 py-1">
-                    <i data-lucide="settings" class="w-4 h-4"></i> DSB Admin
+                <a href="{% url 'dsb:mandate-list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-blue-600 py-1">
+                    <i data-lucide="building-2" class="w-4 h-4"></i> Mandate
+                </a>
+                <a href="{% url 'dsb:csv-import' %}" class="flex items-center gap-2 text-sm text-gray-500 hover:text-blue-600 py-1 mt-1 pt-1 border-t">
+                    <i data-lucide="upload" class="w-4 h-4"></i> CSV Import
                 </a>
             </div>
         </div>

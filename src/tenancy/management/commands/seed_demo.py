@@ -5,6 +5,7 @@ from tenancy.models import Organization, Site
 from identity.models import User
 from risk.models import Assessment, Hazard
 from permissions.models import Permission, Role, Scope, Assignment
+from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 import uuid
 
 
@@ -84,7 +85,20 @@ class Command(BaseCommand):
             Permission.objects.filter(code__endswith=".read")
         )
         self.stdout.write(f"  Roles: {Role.objects.filter(tenant_id=tenant_id).count()}")
-        
+
+        # Create module subscriptions
+        for module in ["risk", "dsb", "ex"]:
+            ModuleSubscription.objects.get_or_create(
+                tenant_id=tenant_id,
+                module=module,
+                defaults={
+                    "organization": org,
+                    "status": ModuleSubscription.Status.ACTIVE,
+                    "plan_code": "free",
+                },
+            )
+        self.stdout.write(f"  Module subscriptions: {ModuleSubscription.objects.filter(tenant_id=tenant_id).count()}")
+
         # Create scope and assignment
         tenant_scope, _ = Scope.objects.get_or_create(
             tenant_id=tenant_id,
@@ -97,7 +111,17 @@ class Command(BaseCommand):
             role=admin_role,
             scope=tenant_scope,
         )
-        
+
+        # Create module memberships for demo user (admin on all modules)
+        for module in ["risk", "dsb", "ex"]:
+            ModuleMembership.objects.get_or_create(
+                tenant_id=tenant_id,
+                user=user,
+                module=module,
+                defaults={"role": ModuleMembership.Role.ADMIN},
+            )
+        self.stdout.write(f"  Module memberships: {ModuleMembership.objects.filter(tenant_id=tenant_id).count()}")
+
         # Create sample assessments
         assessment1, _ = Assessment.objects.get_or_create(
             tenant_id=tenant_id,

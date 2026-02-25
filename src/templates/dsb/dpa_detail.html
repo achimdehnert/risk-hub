@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block title %}AVV {{ obj.partner_name }} — DSB{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="file-text" class="w-7 h-7 inline text-blue-600 mr-1"></i>
+            {{ obj.partner_name }}
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+            {{ obj.mandate.name }} · {{ obj.get_partner_role_display }} · {{ obj.get_status_display }}
+        </p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'dsb:dpa-edit' obj.pk %}"
+           class="inline-flex items-center gap-1 text-sm bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg">
+            <i data-lucide="pencil" class="w-4 h-4"></i> Bearbeiten
+        </a>
+        <a href="{% url 'dsb:dpa-list' %}"
+           class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+            <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Liste
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="mb-4 p-3 rounded-lg {% if msg.tags == 'success' %}bg-green-50 border border-green-200 text-green-800{% else %}bg-red-50 border border-red-200 text-red-800{% endif %}">
+    {{ msg }}
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Main content -->
+    <div class="lg:col-span-2 space-y-6">
+
+        <!-- Stammdaten -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Vertragsdaten</h2>
+            <dl class="grid grid-cols-2 gap-4">
+                <div>
+                    <dt class="text-xs text-gray-500">Vertragspartner</dt>
+                    <dd class="text-sm font-medium text-gray-900">{{ obj.partner_name }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-gray-500">Rolle des Partners</dt>
+                    <dd class="text-sm font-medium text-gray-900">{{ obj.get_partner_role_display }}</dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-gray-500">Status</dt>
+                    <dd>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if obj.status == 'active' %}bg-green-100 text-green-800
+                            {% elif obj.status == 'draft' %}bg-yellow-100 text-yellow-800
+                            {% elif obj.status == 'expired' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ obj.get_status_display }}
+                        </span>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-xs text-gray-500">Mandat</dt>
+                    <dd class="text-sm text-gray-900">{{ obj.mandate.name }}</dd>
+                </div>
+                {% if obj.effective_date %}
+                <div>
+                    <dt class="text-xs text-gray-500">Inkrafttreten</dt>
+                    <dd class="text-sm text-gray-900">{{ obj.effective_date|date:"d.m.Y" }}</dd>
+                </div>
+                {% endif %}
+                {% if obj.expiry_date %}
+                <div>
+                    <dt class="text-xs text-gray-500">Ablaufdatum</dt>
+                    <dd class="text-sm text-gray-900">{{ obj.expiry_date|date:"d.m.Y" }}</dd>
+                </div>
+                {% endif %}
+            </dl>
+        </div>
+
+        <!-- Gegenstand -->
+        {% if obj.subject_matter %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Gegenstand der Auftragsverarbeitung</h2>
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ obj.subject_matter }}</p>
+        </div>
+        {% endif %}
+
+        <!-- Datenkategorien & Betroffene -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Datenkategorien & Betroffene</h2>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <dt class="text-xs text-gray-500 mb-2">Datenkategorien</dt>
+                    {% if obj.data_categories.all %}
+                    <div class="flex flex-wrap gap-1">
+                        {% for cat in obj.data_categories.all %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-blue-100 text-blue-800">{{ cat.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-xs text-gray-400">Keine angegeben</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <dt class="text-xs text-gray-500 mb-2">Betroffene Personengruppen</dt>
+                    {% if obj.data_subjects.all %}
+                    <div class="flex flex-wrap gap-1">
+                        {% for sg in obj.data_subjects.all %}
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs bg-purple-100 text-purple-800">{{ sg.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-xs text-gray-400">Keine angegeben</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Unterauftragsverarbeitung -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Unterauftragsverarbeitung</h2>
+            <p class="text-sm {% if obj.subprocessors_allowed %}text-yellow-700{% else %}text-green-700{% endif %}">
+                <i data-lucide="{% if obj.subprocessors_allowed %}alert-circle{% else %}check-circle{% endif %}" class="w-4 h-4 inline mr-1"></i>
+                {% if obj.subprocessors_allowed %}Unterauftragsverarbeitung zulässig{% else %}Keine Unterauftragsverarbeitung{% endif %}
+            </p>
+            {% if obj.subprocessors_notes %}
+            <p class="text-sm text-gray-600 mt-2 whitespace-pre-line">{{ obj.subprocessors_notes }}</p>
+            {% endif %}
+        </div>
+
+        {% if obj.notes %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Notizen</h2>
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ obj.notes }}</p>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+
+        <!-- Verknüpfte Verarbeitungstätigkeiten -->
+        <div class="bg-white rounded-lg shadow p-5">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">VVT-Einträge</h3>
+            {% if obj.processing_activities.all %}
+            <ul class="space-y-1">
+                {% for pa in obj.processing_activities.all %}
+                <li class="text-sm text-gray-700">
+                    <a href="{% url 'dsb:vvt-detail' pa.pk %}" class="text-blue-600 hover:underline">{{ pa.name }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-xs text-gray-400">Keine VVT-Einträge verknüpft</p>
+            {% endif %}
+        </div>
+
+        <!-- Dokumente -->
+        <div class="bg-white rounded-lg shadow p-5">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Dokumente</h3>
+                <a href="{% url 'dsb:document-upload' %}?ref_type=dpa&ref_id={{ obj.pk }}"
+                   class="inline-flex items-center gap-1 text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">
+                    <i data-lucide="upload" class="w-3 h-3"></i> Hochladen
+                </a>
+            </div>
+            {% if docs %}
+            <ul class="space-y-2">
+                {% for doc in docs %}
+                <li class="flex items-center justify-between text-sm">
+                    <a href="{% url 'dsb:document-download' doc.pk %}"
+                       class="text-blue-600 hover:underline truncate flex items-center gap-1">
+                        <i data-lucide="file" class="w-3 h-3 flex-shrink-0"></i>
+                        {{ doc.original_filename|default:doc.title }}
+                    </a>
+                    <a href="{% url 'dsb:document-delete' doc.pk %}"
+                       class="text-red-400 hover:text-red-600 ml-2 flex-shrink-0"
+                       onclick="return confirm('Dokument löschen?')">
+                        <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-xs text-gray-400">Noch keine Dokumente hochgeladen</p>
+            {% endif %}
+        </div>
+
+        <!-- Metadaten -->
+        <div class="bg-white rounded-lg shadow p-5">
+            <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Metadaten</h3>
+            <dl class="space-y-2 text-xs text-gray-500">
+                <div class="flex justify-between">
+                    <dt>Erstellt</dt>
+                    <dd>{{ obj.created_at|date:"d.m.Y" }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt>Geändert</dt>
+                    <dd>{{ obj.updated_at|date:"d.m.Y" }}</dd>
+                </div>
+            </dl>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

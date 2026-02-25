@@ -20,8 +20,19 @@ _TW_TEXTAREA = _TW_INPUT + " h-24"
 _TW_CHECKBOX = "rounded border-gray-300 text-blue-600 focus:ring-blue-500"
 
 
+def _apply_mandate_autoselect(form, tenant_id):
+    """Filter mandate queryset and auto-select if only one exists."""
+    if not tenant_id:
+        return
+    qs = Mandate.objects.filter(tenant_id=tenant_id, status="active")
+    form.fields["mandate"].queryset = qs
+    if qs.count() == 1 and not form.initial.get("mandate") and not form.data.get("mandate"):
+        form.fields["mandate"].initial = qs.first().pk
+        form.fields["mandate"].required = True
+
+
 class MandateForm(forms.ModelForm):
-    """Form für Mandate (betreutes Unternehmen)."""
+    """Form f\u00fcr Mandate (betreutes Unternehmen)."""
 
     class Meta:
         model = Mandate
@@ -37,20 +48,24 @@ class MandateForm(forms.ModelForm):
         widgets = {
             "name": forms.TextInput(attrs={"class": _TW_INPUT}),
             "industry": forms.Select(attrs={"class": _TW_SELECT}),
-            "employee_count": forms.NumberInput(attrs={"class": _TW_INPUT}),
+            "employee_count": forms.NumberInput(
+                attrs={"class": _TW_INPUT},
+            ),
             "dsb_appointed_date": forms.DateInput(
                 attrs={"class": _TW_INPUT, "type": "date"},
             ),
             "contract_end_date": forms.DateInput(
                 attrs={"class": _TW_INPUT, "type": "date"},
             ),
-            "supervisory_authority": forms.TextInput(attrs={"class": _TW_INPUT}),
+            "supervisory_authority": forms.TextInput(
+                attrs={"class": _TW_INPUT},
+            ),
             "status": forms.Select(attrs={"class": _TW_SELECT}),
         }
 
 
 class ProcessingActivityForm(forms.ModelForm):
-    """Form für VVT-Einträge (Art. 30)."""
+    """Form f\u00fcr VVT-Eintr\u00e4ge (Art. 30)."""
 
     class Meta:
         model = ProcessingActivity
@@ -71,26 +86,31 @@ class ProcessingActivityForm(forms.ModelForm):
             "mandate": forms.Select(attrs={"class": _TW_SELECT}),
             "number": forms.NumberInput(attrs={"class": _TW_INPUT}),
             "name": forms.TextInput(attrs={"class": _TW_INPUT}),
-            "description": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
-            "legal_basis": forms.Select(attrs={"class": _TW_SELECT}),
+            "description": forms.Textarea(
+                attrs={"class": _TW_TEXTAREA},
+            ),
+            "legal_basis": forms.Select(
+                attrs={"class": _TW_SELECT},
+            ),
             "purposes": forms.CheckboxSelectMultiple(),
             "data_categories": forms.CheckboxSelectMultiple(),
             "data_subjects": forms.CheckboxSelectMultiple(),
             "recipients": forms.CheckboxSelectMultiple(),
-            "risk_level": forms.Select(attrs={"class": _TW_SELECT}),
-            "dsfa_required": forms.CheckboxInput(attrs={"class": _TW_CHECKBOX}),
+            "risk_level": forms.Select(
+                attrs={"class": _TW_SELECT},
+            ),
+            "dsfa_required": forms.CheckboxInput(
+                attrs={"class": _TW_CHECKBOX},
+            ),
         }
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = Mandate.objects.filter(
-                tenant_id=tenant_id, status="active",
-            )
+        _apply_mandate_autoselect(self, tenant_id)
 
 
 class TechnicalMeasureForm(forms.ModelForm):
-    """Form für technische Maßnahmen (Art. 32)."""
+    """Form f\u00fcr technische Ma\u00dfnahmen (Art. 32)."""
 
     class Meta:
         model = TechnicalMeasure
@@ -106,7 +126,9 @@ class TechnicalMeasureForm(forms.ModelForm):
             "mandate": forms.Select(attrs={"class": _TW_SELECT}),
             "category": forms.Select(attrs={"class": _TW_SELECT}),
             "title": forms.TextInput(attrs={"class": _TW_INPUT}),
-            "description": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
+            "description": forms.Textarea(
+                attrs={"class": _TW_TEXTAREA},
+            ),
             "status": forms.Select(attrs={"class": _TW_SELECT}),
             "review_date": forms.DateInput(
                 attrs={"class": _TW_INPUT, "type": "date"},
@@ -115,14 +137,11 @@ class TechnicalMeasureForm(forms.ModelForm):
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = Mandate.objects.filter(
-                tenant_id=tenant_id, status="active",
-            )
+        _apply_mandate_autoselect(self, tenant_id)
 
 
 class OrganizationalMeasureForm(forms.ModelForm):
-    """Form für organisatorische Maßnahmen (Art. 32)."""
+    """Form f\u00fcr organisatorische Ma\u00dfnahmen (Art. 32)."""
 
     class Meta:
         model = OrganizationalMeasure
@@ -138,7 +157,9 @@ class OrganizationalMeasureForm(forms.ModelForm):
             "mandate": forms.Select(attrs={"class": _TW_SELECT}),
             "category": forms.Select(attrs={"class": _TW_SELECT}),
             "title": forms.TextInput(attrs={"class": _TW_INPUT}),
-            "description": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
+            "description": forms.Textarea(
+                attrs={"class": _TW_TEXTAREA},
+            ),
             "status": forms.Select(attrs={"class": _TW_SELECT}),
             "review_date": forms.DateInput(
                 attrs={"class": _TW_INPUT, "type": "date"},
@@ -147,14 +168,11 @@ class OrganizationalMeasureForm(forms.ModelForm):
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = Mandate.objects.filter(
-                tenant_id=tenant_id, status="active",
-            )
+        _apply_mandate_autoselect(self, tenant_id)
 
 
 class DataProcessingAgreementForm(forms.ModelForm):
-    """Form für AVV (Art. 28)."""
+    """Form f\u00fcr AVV (Art. 28)."""
 
     class Meta:
         model = DataProcessingAgreement
@@ -171,9 +189,15 @@ class DataProcessingAgreementForm(forms.ModelForm):
         ]
         widgets = {
             "mandate": forms.Select(attrs={"class": _TW_SELECT}),
-            "partner_name": forms.TextInput(attrs={"class": _TW_INPUT}),
-            "partner_role": forms.Select(attrs={"class": _TW_SELECT}),
-            "subject_matter": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
+            "partner_name": forms.TextInput(
+                attrs={"class": _TW_INPUT},
+            ),
+            "partner_role": forms.Select(
+                attrs={"class": _TW_SELECT},
+            ),
+            "subject_matter": forms.Textarea(
+                attrs={"class": _TW_TEXTAREA},
+            ),
             "status": forms.Select(attrs={"class": _TW_SELECT}),
             "effective_date": forms.DateInput(
                 attrs={"class": _TW_INPUT, "type": "date"},
@@ -184,24 +208,23 @@ class DataProcessingAgreementForm(forms.ModelForm):
             "subprocessors_allowed": forms.CheckboxInput(
                 attrs={"class": _TW_CHECKBOX},
             ),
-            "notes": forms.Textarea(attrs={"class": _TW_TEXTAREA}),
+            "notes": forms.Textarea(
+                attrs={"class": _TW_TEXTAREA},
+            ),
         }
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = Mandate.objects.filter(
-                tenant_id=tenant_id, status="active",
-            )
+        _apply_mandate_autoselect(self, tenant_id)
 
 
 class CsvImportForm(forms.Form):
-    """Upload-Form für VVT / TOM / AVV CSV-Dateien."""
+    """Upload-Form f\u00fcr VVT / TOM / AVV CSV-Dateien."""
 
     CSV_TYPE_CHOICES = [
         ("auto", "Automatisch erkennen"),
-        ("vvt", "VVT (Verarbeitungstätigkeiten)"),
-        ("tom", "TOM (Technische & Org. Maßnahmen)"),
+        ("vvt", "VVT (Verarbeitungst\u00e4tigkeiten)"),
+        ("tom", "TOM (Technische & Org. Ma\u00dfnahmen)"),
     ]
 
     csv_file = forms.FileField(
@@ -229,9 +252,9 @@ class CsvImportForm(forms.Form):
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
-        if tenant_id:
-            self.fields["mandate"].queryset = (
-                Mandate.objects.filter(
-                    tenant_id=tenant_id,
-                ).order_by("name")
-            )
+        if not tenant_id:
+            return
+        qs = Mandate.objects.filter(tenant_id=tenant_id).order_by("name")
+        self.fields["mandate"].queryset = qs
+        if qs.count() == 1 and not self.data.get("mandate"):
+            self.fields["mandate"].initial = qs.first().pk

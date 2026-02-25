@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% load dsb_components %}
+{% block title %}Löschantrag {{ obj.subject_name }} — DSB{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="trash-2" class="w-7 h-7 inline text-red-600 mr-1"></i>
+            Löschantrag: {{ obj.subject_name }}
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">
+            {{ obj.mandate.name }} · Antrag vom {{ obj.request_date|date:"d.m.Y" }}
+        </p>
+    </div>
+    <div class="flex gap-2">
+        <a href="{% url 'dsb:deletion-request-list' %}"
+           class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+            <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Liste
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="mb-4 p-3 rounded-lg {% if msg.tags == 'success' %}bg-green-50 border border-green-200 text-green-800{% else %}bg-red-50 border border-red-200 text-red-800{% endif %}">
+    {{ msg }}
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Workflow Progress Bar -->
+<div class="bg-white rounded-lg shadow p-6 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Workflow-Status</h2>
+    <div class="flex items-center">
+        {% with steps="pending,auth_sent,auth_received,deletion_ordered,deletion_confirmed,notified,closed" %}
+        {% for step_val, step_label in status_choices.choices %}
+        {% if step_val != "rejected" %}
+        <div class="flex items-center {% if not forloop.last %}flex-1{% endif %}">
+            <div class="flex flex-col items-center">
+                <div class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold
+                    {% if obj.status == step_val %}bg-blue-600 text-white ring-2 ring-blue-300
+                    {% elif obj.status == 'closed' or obj.status == 'notified' and step_val != 'closed' %}bg-green-500 text-white
+                    {% else %}bg-gray-200 text-gray-500{% endif %}">
+                    {{ forloop.counter }}
+                </div>
+                <span class="text-xs text-gray-500 mt-1 text-center w-16 leading-tight">{{ step_label }}</span>
+            </div>
+            {% if not forloop.last %}
+            <div class="flex-1 h-0.5 mx-1 mb-4
+                {% if obj.status == 'closed' %}bg-green-400
+                {% else %}bg-gray-200{% endif %}">
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endfor %}
+        {% endwith %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Left: Details -->
+    <div class="lg:col-span-2 space-y-6">
+
+        <!-- Stammdaten -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Betroffene Person</h2>
+            <dl class="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                    <dt class="text-gray-500">Name</dt>
+                    <dd class="font-medium text-gray-900 mt-1">{{ obj.subject_name }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">E-Mail</dt>
+                    <dd class="font-medium text-gray-900 mt-1">
+                        <a href="mailto:{{ obj.subject_email }}" class="text-blue-600">{{ obj.subject_email }}</a>
+                    </dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Referenz</dt>
+                    <dd class="font-medium text-gray-900 mt-1">{{ obj.subject_reference|default:"—" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Mandat</dt>
+                    <dd class="font-medium text-gray-900 mt-1">{{ obj.mandate.name }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Antragsdatum</dt>
+                    <dd class="font-medium text-gray-900 mt-1">{{ obj.request_date|date:"d.m.Y" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-gray-500">Status</dt>
+                    <dd class="mt-1">{% status_badge obj.status %}</dd>
+                </div>
+            </dl>
+        </div>
+
+        <!-- Antragsbeschreibung -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-3">Antrag</h2>
+            {% if obj.data_categories %}
+            <div class="mb-3">
+                <p class="text-xs text-gray-500 uppercase font-medium mb-1">Datenkategorien</p>
+                {% for cat in obj.data_categories.split:"," %}
+                <span class="inline-block bg-red-50 text-red-700 text-xs px-2 py-0.5 rounded mr-1 mb-1">{{ cat|trim }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+            <p class="text-sm text-gray-700 whitespace-pre-line">{{ obj.request_description }}</p>
+        </div>
+
+        <!-- Zeitlinie -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Zeitlinie</h2>
+            <div class="space-y-3">
+                <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 flex-shrink-0"></div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Antrag eingegangen</p>
+                        <p class="text-xs text-gray-400">{{ obj.request_date|date:"d.m.Y" }}</p>
+                    </div>
+                </div>
+                {% if obj.auth_sent_at %}
+                <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 rounded-full bg-yellow-500 mt-1.5 flex-shrink-0"></div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Authentifizierung angefordert</p>
+                        <p class="text-xs text-gray-400">{{ obj.auth_sent_at|date:"d.m.Y H:i" }}</p>
+                        {% if obj.auth_notes %}<p class="text-xs text-gray-500 mt-0.5">{{ obj.auth_notes }}</p>{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if obj.auth_received_at %}
+                <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 rounded-full bg-green-500 mt-1.5 flex-shrink-0"></div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Authentifizierung erhalten</p>
+                        <p class="text-xs text-gray-400">{{ obj.auth_received_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                {% if obj.deletion_ordered_at %}
+                <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 rounded-full bg-purple-500 mt-1.5 flex-shrink-0"></div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Löschung beauftragt</p>
+                        <p class="text-xs text-gray-400">{{ obj.deletion_ordered_at|date:"d.m.Y H:i" }}</p>
+                        {% if obj.deletion_notes %}<p class="text-xs text-gray-500 mt-0.5">{{ obj.deletion_notes }}</p>{% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if obj.deletion_confirmed_at %}
+                <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 rounded-full bg-green-600 mt-1.5 flex-shrink-0"></div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Löschung bestätigt</p>
+                        <p class="text-xs text-gray-400">{{ obj.deletion_confirmed_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                {% if obj.notified_at %}
+                <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 rounded-full bg-blue-600 mt-1.5 flex-shrink-0"></div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Betroffener benachrichtigt</p>
+                        <p class="text-xs text-gray-400">{{ obj.notified_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                {% if obj.closed_at %}
+                <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 rounded-full bg-gray-400 mt-1.5 flex-shrink-0"></div>
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">Abgeschlossen</p>
+                        <p class="text-xs text-gray-400">{{ obj.closed_at|date:"d.m.Y H:i" }}</p>
+                    </div>
+                </div>
+                {% endif %}
+                {% if obj.rejection_reason %}
+                <div class="flex items-start gap-3">
+                    <div class="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0"></div>
+                    <div>
+                        <p class="text-sm font-medium text-red-700">Abgelehnt</p>
+                        <p class="text-xs text-gray-500 mt-0.5">{{ obj.rejection_reason }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Right: Workflow Actions -->
+    <div class="space-y-4">
+
+        <!-- Frist -->
+        {% if obj.is_open %}
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-2">Frist (Art. 12 Abs. 3)</h3>
+            {% with days=obj.deadline_days %}
+            {% if days is not None %}
+            <div class="text-2xl font-bold {% if days < 0 %}text-red-600{% elif days <= 7 %}text-orange-500{% else %}text-gray-900{% endif %}">
+                {% if days < 0 %}{{ days|abs }} Tage{% else %}{{ days }} Tage{% endif %}
+            </div>
+            <p class="text-xs text-gray-400 mt-1">
+                {% if days < 0 %}überfällig{% else %}verbleibend{% endif %}
+            </p>
+            {% endif %}
+            {% endwith %}
+        </div>
+        {% endif %}
+
+        <!-- Nächste Schritte -->
+        {% if next_steps and obj.is_open %}
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">Nächster Schritt</h3>
+            {% for step in next_steps %}
+            <form method="post" action="{% url 'dsb:deletion-request-advance' obj.pk %}" class="mb-3">
+                {% csrf_token %}
+                <input type="hidden" name="new_status" value="{{ step.value }}">
+                <div class="mb-2">
+                    <label class="block text-xs text-gray-500 mb-1">Notiz (optional)</label>
+                    <textarea name="notes" rows="2"
+                              class="block w-full text-xs rounded border-gray-300 px-2 py-1 border focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Interne Notiz..."></textarea>
+                </div>
+                <div class="flex items-center gap-2 mb-2">
+                    <input type="checkbox" name="send_mail" value="1" id="send_mail_{{ step.value }}" checked
+                           class="rounded border-gray-300 text-blue-600">
+                    <label for="send_mail_{{ step.value }}" class="text-xs text-gray-600">E-Mail an Betroffenen senden</label>
+                </div>
+                <button type="submit"
+                        class="w-full px-3 py-2 text-sm font-medium rounded-lg
+                        {% if step.value == 'rejected' %}bg-red-100 text-red-700 hover:bg-red-200
+                        {% else %}bg-blue-600 text-white hover:bg-blue-700{% endif %}">
+                    <i data-lucide="{% if step.value == 'rejected' %}x-circle{% else %}arrow-right{% endif %}" class="w-4 h-4 inline mr-1"></i>
+                    {{ step.label }}
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- E-Mail Vorschau Links -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <h3 class="text-sm font-semibold text-gray-900 mb-3">E-Mail Templates</h3>
+            <div class="space-y-1 text-xs text-gray-500">
+                <p>1. Eingangsbestätigung</p>
+                <p>2. Authentifizierungsanforderung</p>
+                <p>3. Authentifizierung erhalten</p>
+                <p>4. Löschung beauftragt</p>
+                <p>5. Löschung bestätigt</p>
+                <p>6. Abschlussbestätigung</p>
+            </div>
+        </div>
+
+        <!-- Dokumente -->
+        <div class="bg-white rounded-lg shadow p-4">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="text-sm font-semibold text-gray-900">Dokumente</h3>
+                <a href="{% url 'dsb:document-upload' %}?ref_type=deletion&ref_id={{ obj.pk }}&mandate={{ obj.mandate.pk }}"
+                   class="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1">
+                    <i data-lucide="upload" class="w-3 h-3"></i> Hochladen
+                </a>
+            </div>
+            {% if docs %}
+            <ul class="space-y-2">
+                {% for doc in docs %}
+                <li class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <i data-lucide="{{ doc.icon }}" class="w-4 h-4 text-blue-500 flex-shrink-0"></i>
+                        <span class="text-xs text-gray-700 truncate">{{ doc.title }}</span>
+                    </div>
+                    <a href="{% url 'dsb:document-download' doc.pk %}"
+                       class="text-xs text-blue-600 hover:text-blue-800 flex-shrink-0">
+                        <i data-lucide="download" class="w-3 h-3 inline"></i>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-xs text-gray-400">Noch keine Dokumente.</p>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

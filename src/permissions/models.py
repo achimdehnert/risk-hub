@@ -191,7 +191,7 @@ class PermissionOverride(models.Model):
         primary_key=True, default=uuid.uuid4, editable=False,
     )
     membership = models.ForeignKey(
-        "tenancy.Membership",
+        "django_tenancy.Membership",
         on_delete=models.CASCADE,
         related_name="permission_overrides",
     )

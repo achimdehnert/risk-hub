@@ -29,7 +29,7 @@ class Category(models.Model):
 
 
 class SubjectGroup(models.Model):
-    """Lookup: Betroffenengruppe (z.B. Beschäftigte, Kunden, Patienten)."""
+    """Lookup: Betroffenengruppe (z.B. Besch\u00e4ftigte, Kunden, Patienten)."""
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False,
@@ -48,7 +48,7 @@ class SubjectGroup(models.Model):
 
 
 class Recipient(models.Model):
-    """Lookup: Empfängerkategorie (Art. 30 Abs. 1 lit. d DSGVO)."""
+    """Lookup: Empf\u00e4ngerkategorie (Art. 30 Abs. 1 lit. d DSGVO)."""
 
     id = models.UUIDField(
         primary_key=True, default=uuid.uuid4, editable=False,
@@ -58,8 +58,8 @@ class Recipient(models.Model):
 
     class Meta:
         db_table = "dsb_recipient"
-        verbose_name = "Empfängerkategorie"
-        verbose_name_plural = "Empfängerkategorien"
+        verbose_name = "Empf\u00e4ngerkategorie"
+        verbose_name_plural = "Empf\u00e4ngerkategorien"
         ordering = ["key"]
 
     def __str__(self) -> str:
@@ -86,9 +86,9 @@ class Purpose(models.Model):
 
 
 class TomCategory(models.Model):
-    """Stammdaten-Katalog für TOM (Art. 32 DSGVO).
+    """Stammdaten-Katalog f\u00fcr TOM (Art. 32 DSGVO).
 
-    Globale Vorlagen, z.B. 'Verschlüsselung', 'Zugriffsbeschränkung',
+    Globale Vorlagen, z.B. 'Verschl\u00fcsselung', 'Zugriffsbeschr\u00e4nkung',
     'Schulung'. Tenant-spezifische Instanzen verweisen hierauf.
     """
 
@@ -105,7 +105,7 @@ class TomCategory(models.Model):
     measure_type = models.CharField(
         max_length=20,
         choices=MeasureType.choices,
-        help_text="Art der Maßnahme",
+        help_text="Art der Ma\u00dfnahme",
     )
     description = models.TextField(
         blank=True,
@@ -126,8 +126,8 @@ class TomCategory(models.Model):
 class StandardRetentionPeriod(models.Model):
     """Stammdaten: Gesetzliche Aufbewahrungsfristen.
 
-    Globaler Katalog wiederverwendbarer Löschfristen,
-    z.B. '§ 257 HGB — 10 Jahre', '§ 147 AO — 10 Jahre'.
+    Globaler Katalog wiederverwendbarer L\u00f6schfristen,
+    z.B. '\u00a7 257 HGB \u2014 10 Jahre', '\u00a7 147 AO \u2014 10 Jahre'.
     """
 
     id = models.UUIDField(
@@ -137,11 +137,11 @@ class StandardRetentionPeriod(models.Model):
     label = models.CharField(max_length=300)
     legal_reference = models.CharField(
         max_length=200,
-        help_text="Gesetzliche Grundlage (z.B. '§ 257 HGB')",
+        help_text="Gesetzliche Grundlage (z.B. '\u00a7 257 HGB')",
     )
     period = models.CharField(
         max_length=100,
-        help_text="Frist (z.B. '10 Jahre', 'unverzüglich')",
+        help_text="Frist (z.B. '10 Jahre', 'unverz\u00fcglich')",
     )
     notes = models.TextField(
         blank=True,
@@ -150,8 +150,8 @@ class StandardRetentionPeriod(models.Model):
 
     class Meta:
         db_table = "dsb_standard_retention"
-        verbose_name = "Löschfrist (Stammdaten)"
-        verbose_name_plural = "Löschfristen (Stammdaten)"
+        verbose_name = "L\u00f6schfrist (Stammdaten)"
+        verbose_name_plural = "L\u00f6schfristen (Stammdaten)"
         ordering = ["key"]
 
     def __str__(self) -> str:

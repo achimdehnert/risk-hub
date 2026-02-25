@@ -93,6 +93,7 @@ class TestMembership:
         with pytest.raises(IntegrityError):
             Membership.objects.create(
                 tenant_id=fixture_tenant.tenant_id,
+                organization=fixture_tenant,
                 user=fixture_user,
                 role=Membership.Role.VIEWER,
             )
@@ -102,6 +103,7 @@ class TestMembership:
     ):
         m = Membership.objects.create(
             tenant_id=fixture_tenant_b.tenant_id,
+            organization=fixture_tenant_b,
             user=fixture_user,
             role=Membership.Role.EXTERNAL,
         )

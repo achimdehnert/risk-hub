@@ -46,6 +46,34 @@ services:
     networks:
       - risk_hub_network
 
+  risk-hub-minio:
+    image: minio/minio:latest
+    container_name: risk_hub_minio
+    restart: unless-stopped
+    env_file: .env.prod
+    command: server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:9000:9000"
+      - "127.0.0.1:9001:9001"
+    volumes:
+      - risk_hub_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - risk_hub_network
+
   risk-hub-web:
     image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-risk-hub}/risk-hub-web:${IMAGE_TAG:-latest}
     container_name: risk_hub_web
@@ -59,7 +87,9 @@ services:
     entrypoint: ["/entrypoint.sh"]
     command: ["web"]
     ports:
-      - "127.0.0.1:8090:8000"
+      - "8090:8000"
+    volumes:
+      - risk_hub_media:/app/media
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')\""]
       interval: 15s
@@ -69,7 +99,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 768M
         reservations:
           memory: 256M
     logging:
@@ -92,6 +122,8 @@ services:
         condition: service_healthy
     entrypoint: ["/entrypoint.sh"]
     command: ["worker"]
+    volumes:
+      - risk_hub_media:/app/media
     deploy:
       resources:
         limits:
@@ -108,6 +140,8 @@ services:
 
 volumes:
   risk_hub_pgdata:
+  risk_hub_minio_data:
+  risk_hub_media:
 
 networks:
   risk_hub_network:

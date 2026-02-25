@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><style>
+body { font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; }
+.header { background: #059669; color: white; padding: 24px; border-radius: 8px 8px 0 0; }
+.body { background: #f9fafb; padding: 24px; border: 1px solid #e5e7eb; }
+.footer { background: #f3f4f6; padding: 16px; font-size: 12px; color: #6b7280; border-radius: 0 0 8px 8px; }
+.info-box { background: white; border: 1px solid #e5e7eb; border-radius: 6px; padding: 16px; margin: 16px 0; }
+.info-row { display: flex; margin-bottom: 8px; }
+.info-label { color: #6b7280; font-size: 13px; width: 180px; flex-shrink: 0; }
+.info-value { font-size: 13px; font-weight: 500; }
+.success { background: #d1fae5; border: 1px solid #6ee7b7; border-radius: 6px; padding: 16px; margin: 16px 0; font-weight: bold; }
+</style></head>
+<body>
+<div class="header">
+    <h2 style="margin:0">✓ Löschung bestätigt</h2>
+    <p style="margin:8px 0 0;opacity:0.85;font-size:14px">Ihr Löschantrag — Schritt 5 von 6</p>
+</div>
+<div class="body">
+    <p>Sehr geehrte/r {{ subject_name }},</p>
+
+    <div class="success">
+        ✓ {{ mandate_name }} hat die Löschung Ihrer Daten bestätigt.
+    </div>
+
+    <div class="info-box">
+        <div class="info-row">
+            <span class="info-label">Antragsnummer</span>
+            <span class="info-value">{{ request_id }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Löschung bestätigt am</span>
+            <span class="info-value">{{ confirmed_date }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Gelöschte Daten</span>
+            <span class="info-value">{{ data_categories }}</span>
+        </div>
+        {% if deletion_notes %}
+        <div class="info-row">
+            <span class="info-label">Hinweise</span>
+            <span class="info-value">{{ deletion_notes }}</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <p>Sie erhalten abschließend eine offizielle Bestätigung über den Abschluss des Verfahrens.</p>
+
+    <p>Mit freundlichen Grüßen,<br><strong>{{ dsb_name }}</strong><br>Datenschutzbeauftragter/in<br>{{ mandate_name }}</p>
+</div>
+<div class="footer">
+    <p>Referenz: {{ request_id }} | {{ mandate_name }}</p>
+</div>
+</body>
+</html>

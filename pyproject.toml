@@ -29,6 +29,7 @@ dependencies = [
     "python-docx>=1.1",
     "celery[redis]>=5.4",
     "platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/platform-context",
+    "django-tenancy @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-tenancy",
 ]
 
 [project.optional-dependencies]
@@ -38,6 +39,8 @@ dev = [
     "pytest-asyncio>=0.23",
     "factory-boy>=3.3",
     "ruff>=0.4",
+    "playwright>=1.44",
+    "pytest-playwright>=0.5",
 ]
 prod = [
     "gunicorn>=22.0",
@@ -51,7 +54,15 @@ build-backend = "hatchling.build"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py"]
-asyncio_mode = "auto"
+pythonpath = ["src"]
+testpaths = ["src", "tests"]
+markers = [
+    "e2e: Playwright end-to-end tests (require --playwright flag)",
+]
+env = [
+    "DATABASE_URL=sqlite:///test_e2e.db",
+    "DJANGO_ALLOW_ASYNC_UNSAFE=true",
+]
 
 [tool.ruff]
 line-length = 100

@@ -4,7 +4,7 @@ Based on risk-hub's production-proven implementation (ADR-003).
 Apps install ``django_tenancy`` in INSTALLED_APPS and get these
 tables via ``manage.py migrate django_tenancy``.
 
-CRITICAL (Global Rules 3.3):
+CRITICAL (Global Rules §3.3):
     Organization.id != Organization.tenant_id
     Always use org.tenant_id for data isolation, never org.id.
 """
@@ -24,7 +24,7 @@ class Organization(models.Model):
         id: Internal primary key (UUID). Do NOT use for tenant filtering.
         tenant_id: Public tenant identifier. Use THIS for data isolation.
         slug: Subdomain slug (e.g. ``acme`` for ``acme.example.com``).
-        status: Lifecycle state (trial -> active -> suspended -> deleted).
+        status: Lifecycle state (trial → active → suspended → deleted).
         plan_code: Billing plan identifier.
     """
 

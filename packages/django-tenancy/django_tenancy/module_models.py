@@ -186,7 +186,4 @@ class ModuleMembership(models.Model):
         ]
 
     def __str__(self) -> str:
-        return (
-            f"{self.user} -> {self.module} ({self.role})"
-            f" @ {self.tenant_id}"
-        )
+        return f"{self.user} → {self.module} ({self.role}) @ {self.tenant_id}"

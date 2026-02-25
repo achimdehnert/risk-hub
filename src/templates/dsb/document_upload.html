@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% load dsb_components %}
+{% block title %}Dokument hochladen — DSB{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="upload" class="w-7 h-7 inline text-blue-600 mr-1"></i>
+            Dokument hochladen
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">PDF, DOCX, XLSX — max. 20 MB</p>
+    </div>
+    <a href="{% url 'dsb:document-list' %}"
+       class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dokumentenarchiv
+    </a>
+</div>
+
+{% if messages %}
+{% for msg in messages %}
+<div class="mb-4 p-3 rounded-lg {% if msg.tags == 'success' %}bg-green-50 border border-green-200 text-green-800{% else %}bg-red-50 border border-red-200 text-red-800{% endif %}">
+    {{ msg }}
+</div>
+{% endfor %}
+{% endif %}
+
+<div class="max-w-2xl">
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="post" enctype="multipart/form-data" class="space-y-5">
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ request.GET.next }}">
+
+            <!-- Datei -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Datei <span class="text-red-500">*</span>
+                </label>
+                <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-blue-400 transition-colors cursor-pointer"
+                     id="drop-zone">
+                    <div class="space-y-1 text-center">
+                        <i data-lucide="file-up" class="w-10 h-10 text-gray-400 mx-auto" id="upload-icon"></i>
+                        <div class="flex text-sm text-gray-600 justify-center">
+                            <label for="id_file"
+                                   class="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
+                                <span>Datei auswählen</span>
+                                <input id="id_file" name="file" type="file"
+                                       accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg"
+                                       class="sr-only" required>
+                            </label>
+                            <p class="pl-1">oder hierher ziehen</p>
+                        </div>
+                        <p class="text-xs text-gray-500">PDF, DOCX, XLSX, Bilder — max. 20 MB</p>
+                    </div>
+                </div>
+                <div id="file-info" class="mt-2 hidden">
+                    <div class="flex items-center gap-2 p-2 bg-blue-50 rounded-lg">
+                        <i data-lucide="file-check" class="w-5 h-5 text-blue-600 flex-shrink-0"></i>
+                        <div>
+                            <p class="text-sm font-medium text-blue-900" id="file-name-display"></p>
+                            <p class="text-xs text-blue-600" id="file-size-display"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bezeichnung -->
+            <div>
+                <label for="id_title" class="block text-sm font-medium text-gray-700 mb-1">
+                    Bezeichnung <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="title" id="id_title" required
+                       class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+                       placeholder="z.B. AVV mit Beispiel GmbH — unterzeichnet">
+            </div>
+
+            <!-- Dokumenttyp -->
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="id_ref_type" class="block text-sm font-medium text-gray-700 mb-1">
+                        Dokumenttyp
+                    </label>
+                    <select name="ref_type" id="id_ref_type"
+                            class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border">
+                        {% for val, label in ref_type_choices %}
+                        <option value="{{ val }}" {% if val == ref_type %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label for="id_document_date" class="block text-sm font-medium text-gray-700 mb-1">
+                        Dokumentdatum
+                    </label>
+                    <input type="date" name="document_date" id="id_document_date"
+                           class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border">
+                </div>
+            </div>
+
+            <!-- Mandat -->
+            <div>
+                <label for="id_mandate" class="block text-sm font-medium text-gray-700 mb-1">
+                    Mandat
+                </label>
+                <select name="mandate" id="id_mandate"
+                        class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border">
+                    <option value="">— kein Mandat —</option>
+                    {% for m in mandates %}
+                    <option value="{{ m.pk }}" {% if selected_mandate and selected_mandate.pk == m.pk %}selected{% endif %}>
+                        {{ m.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            {% if ref_id %}
+            <input type="hidden" name="ref_id" value="{{ ref_id }}">
+            {% endif %}
+
+            <!-- Beschreibung -->
+            <div>
+                <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">
+                    Beschreibung / Notiz
+                </label>
+                <textarea name="description" id="id_description" rows="3"
+                          class="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+                          placeholder="Optionale Beschreibung..."></textarea>
+            </div>
+
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                        class="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+                    <i data-lucide="upload" class="w-4 h-4 inline mr-1"></i>
+                    Hochladen
+                </button>
+                <a href="{% url 'dsb:document-list' %}"
+                   class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+                    Abbrechen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+lucide.createIcons();
+
+const input = document.getElementById('id_file');
+const fileInfo = document.getElementById('file-info');
+const fileNameDisplay = document.getElementById('file-name-display');
+const fileSizeDisplay = document.getElementById('file-size-display');
+const titleInput = document.getElementById('id_title');
+
+input.addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    fileInfo.classList.remove('hidden');
+    fileNameDisplay.textContent = file.name;
+    const kb = file.size / 1024;
+    fileSizeDisplay.textContent = kb < 1024 ? kb.toFixed(1) + ' KB' : (kb/1024).toFixed(1) + ' MB';
+    if (!titleInput.value) {
+        titleInput.value = file.name.replace(/\.[^/.]+$/, '');
+    }
+    lucide.createIcons();
+});
+
+// Drag & Drop
+const dropZone = document.getElementById('drop-zone');
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('border-blue-400', 'bg-blue-50'); });
+dropZone.addEventListener('dragleave', () => { dropZone.classList.remove('border-blue-400', 'bg-blue-50'); });
+dropZone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropZone.classList.remove('border-blue-400', 'bg-blue-50');
+    const dt = e.dataTransfer;
+    if (dt.files.length) {
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

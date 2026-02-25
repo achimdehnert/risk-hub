@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load tenancy_components %}
 {% block title %}Mandanten — Schutztat{% endblock %}
 
 {% block content %}
@@ -18,6 +19,40 @@
     </a>
 </div>
 
+<!-- KPI Cards -->
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
+    <div class="bg-white rounded-lg shadow p-4 flex flex-col">
+        <span class="text-xs text-gray-400 uppercase tracking-wide mb-1">Gesamt</span>
+        <span class="text-2xl font-bold text-gray-900">{{ stats.total }}</span>
+        <span class="text-xs text-gray-500 mt-0.5">Mandanten</span>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 flex flex-col border-l-4 border-green-400">
+        <span class="text-xs text-gray-400 uppercase tracking-wide mb-1">Aktiv</span>
+        <span class="text-2xl font-bold text-green-700">{{ stats.active }}</span>
+        <span class="text-xs text-gray-500 mt-0.5">Mandanten</span>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 flex flex-col border-l-4 border-blue-400">
+        <span class="text-xs text-gray-400 uppercase tracking-wide mb-1">Trial</span>
+        <span class="text-2xl font-bold text-blue-700">{{ stats.trial }}</span>
+        <span class="text-xs text-gray-500 mt-0.5">Mandanten</span>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 flex flex-col border-l-4 border-amber-400">
+        <span class="text-xs text-gray-400 uppercase tracking-wide mb-1">Gesperrt</span>
+        <span class="text-2xl font-bold {% if stats.suspended > 0 %}text-amber-700{% else %}text-gray-300{% endif %}">{{ stats.suspended }}</span>
+        <span class="text-xs text-gray-500 mt-0.5">Mandanten</span>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 flex flex-col border-l-4 border-orange-400">
+        <span class="text-xs text-gray-400 uppercase tracking-wide mb-1">Module aktiv</span>
+        <span class="text-2xl font-bold text-orange-700">{{ stats.active_modules }}</span>
+        <span class="text-xs text-gray-500 mt-0.5">Abonnements</span>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 flex flex-col border-l-4 border-purple-400">
+        <span class="text-xs text-gray-400 uppercase tracking-wide mb-1">Module Trial</span>
+        <span class="text-2xl font-bold {% if stats.trial_modules > 0 %}text-purple-700{% else %}text-gray-300{% endif %}">{{ stats.trial_modules }}</span>
+        <span class="text-xs text-gray-500 mt-0.5">Abonnements</span>
+    </div>
+</div>
+
 {% if rows %}
 <div class="bg-white rounded-lg shadow overflow-hidden">
     <div class="overflow-x-auto">
@@ -29,6 +64,7 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Plan</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mitglieder</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Module</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Erstellt</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
                 </tr>
@@ -44,19 +80,19 @@
                     <td class="px-4 py-3 text-sm text-gray-500">
                         <code class="bg-gray-100 px-1.5 py-0.5 rounded text-xs">{{ org.slug }}</code>
                     </td>
-                    <td class="px-4 py-3 text-sm">
-                        {% if org.status == "active" %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Aktiv</span>
-                        {% elif org.status == "trial" %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">Trial</span>
-                        {% elif org.status == "suspended" %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Gesperrt</span>
-                        {% else %}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Gelöscht</span>
-                        {% endif %}
-                    </td>
+                    <td class="px-4 py-3 text-sm">{% org_status_badge org %}</td>
                     <td class="px-4 py-3 text-sm text-gray-500">{{ org.plan_code }}</td>
                     <td class="px-4 py-3 text-sm text-gray-500">{{ org.member_count }}</td>
+                    <td class="px-4 py-3 text-sm">
+                        {% if org.module_count > 0 %}
+                        <span class="inline-flex items-center gap-1 text-gray-700">
+                            <i data-lucide="puzzle" class="w-3.5 h-3.5 text-gray-400"></i>
+                            {{ org.module_count }}
+                        </span>
+                        {% else %}
+                        <span class="text-gray-300 text-xs">—</span>
+                        {% endif %}
+                    </td>
                     <td class="px-4 py-3 text-sm text-gray-500">{{ org.created_at|date:"d.m.Y" }}</td>
                     <td class="px-4 py-3 text-sm text-right space-x-2">
                         <a href="{% url 'tenancy:org-detail' org.pk %}"

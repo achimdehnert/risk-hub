@@ -1,15 +1,18 @@
+{% load static %}
 <!doctype html>
 <html lang="de">
 <head>
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>{% block title %}Schutztat{% endblock %}</title>
+    <!-- Platform Design Tokens (ADR-049) -->
+    <link rel="stylesheet" href="{% static 'platform/css/pui-tokens.css' %}">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-gray-50 min-h-screen" data-app="risk-hub">
     <nav class="bg-white border-b border-gray-200">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
@@ -22,21 +25,31 @@
                     </a>
                     <div class="hidden md:flex ml-10 space-x-4">
                         {% block nav_items %}
+                        {% if "ex" in active_modules %}
                         <a href="/ex/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Explosionsschutz
                         </a>
+                        {% endif %}
+                        {% if "ex" in active_modules or "substances" in active_modules %}
                         <a href="/substances/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Gefahrstoffe
                         </a>
+                        {% endif %}
+                        {% if "risk" in active_modules %}
                         <a href="/risk/assessments/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Risikobewertung
                         </a>
+                        {% endif %}
+                        {% if "documents" in active_modules %}
                         <a href="/documents/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Dokumente
                         </a>
+                        {% endif %}
+                        {% if "dsb" in active_modules %}
                         <a href="/dsb/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Datenschutz
                         </a>
+                        {% endif %}
                         {% if user.is_staff %}
                         <a href="/tenants/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                             Mandanten

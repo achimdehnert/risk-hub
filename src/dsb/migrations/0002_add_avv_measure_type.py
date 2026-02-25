@@ -19,7 +19,7 @@ class Migration(migrations.Migration):
                     ("organizational", "Organisatorisch"),
                     ("avv", "Auftragsverarbeitung (AVV)"),
                 ],
-                help_text="Art der Maßnahme",
+                help_text="Art der Ma\u00dfnahme",
                 max_length=20,
             ),
         ),

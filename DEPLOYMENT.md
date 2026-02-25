@@ -19,7 +19,7 @@
 | **Container (redis)** | `risk_hub_redis` |
 | **Database** | Own stack (postgres:16-alpine) |
 | **Network** | `risk_hub_network` (isolated) |
-| **Health endpoint** | `/healthz/` (TODO: implement) |
+| **Health endpoint** | `/livez/` |
 
 ## Services
 
@@ -32,13 +32,29 @@
 
 ## CI/CD
 
-Uses platform reusable workflows (`.github/workflows/docker-build.yml`):
+Self-contained inline pipeline (`.github/workflows/docker-build.yml`).
+No dependency on private `platform` reusable workflows.
 
-```
-push to main → CI (lint+test) → Build Docker → Deploy to Hetzner
+```text
+push to main → Build Docker image → Push to GHCR → Deploy via SSH → Verify health
 ```
 
-## Deploy Commands
+### Pipeline Steps (Deploy Job)
+
+1. Pull new image on server
+2. Recreate containers (`risk-hub-web`, `risk-hub-worker`)
+3. Run migrations (`manage.py migrate`)
+4. Seed TOM categories (`manage.py seed_tom_categories`)
+5. Health check (internal `127.0.0.1:8000/livez/`)
+6. External health check (`https://demo.schutztat.de/livez/`)
+
+### Required GitHub Secrets
+
+| Secret | Description |
+| --- | --- |
+| `DEPLOY_HOST` | Server IP (`88.198.191.108`) |
+| `DEPLOY_USER` | SSH user (`root`) |
+| `DEPLOY_SSH_KEY` | Private SSH key (OpenSSH format) |
 
 ### Via CI (automatic)
 
@@ -57,7 +73,9 @@ ssh root@88.198.191.108 '
   docker compose -f docker-compose.prod.yml pull risk-hub-web &&
   docker compose -f docker-compose.prod.yml up -d --force-recreate risk-hub-web risk-hub-worker &&
   sleep 5 &&
-  curl -sf http://127.0.0.1:8090/healthz/ &&
+  docker exec risk_hub_web python manage.py migrate &&
+  docker exec risk_hub_web python manage.py seed_tom_categories &&
+  curl -sf http://127.0.0.1:8090/livez/ &&
   docker logs risk_hub_web --tail 10
 '
 ```
@@ -72,6 +90,9 @@ ssh root@88.198.191.108 'docker logs risk_hub_worker --tail 50'
 # Migrations
 ssh root@88.198.191.108 'docker exec risk_hub_web python manage.py migrate'
 
+# Seed TOM categories
+ssh root@88.198.191.108 'docker exec risk_hub_web python manage.py seed_tom_categories'
+
 # Shell
 ssh root@88.198.191.108 'docker exec -it risk_hub_web python manage.py shell'
 
@@ -82,9 +103,51 @@ ssh root@88.198.191.108 'cd /opt/risk-hub && docker compose -f docker-compose.pr
 ssh root@88.198.191.108 'docker exec risk_hub_db pg_dump -U risk_hub risk_hub | gzip > /opt/risk-hub/backups/$(date +%Y%m%d).sql.gz'
 ```
 
+## Seed Data
+
+Initial mandate data must exist per tenant for CSV import to work.
+
+```bash
+# Create seed mandates (run on server)
+docker exec risk_hub_web python manage.py shell -c "
+from dsb.models import Mandate
+from datetime import date
+
+tenants = {
+    'demo': '61222b22-480b-4f9f-a8b1-ec40572b4729',
+    'marold': '6c0d30d7-07f0-40a3-938d-7825d26024e9',
+}
+
+for org_name, tid in tenants.items():
+    m, created = Mandate.objects.get_or_create(
+        tenant_id=tid,
+        name=f'{org_name.title()} GmbH',
+        defaults={
+            'status': 'active',
+            'dsb_appointed_date': date(2025, 1, 1),
+            'industry': 'other',
+        },
+    )
+    print(f'  Created: {m.name}' if created else f'  Exists: {m.name}')
+"
+
+# Seed TOM categories
+docker exec risk_hub_web python manage.py seed_tom_categories
+```
+
+### Organizations (Production)
+
+| Slug | Tenant ID |
+| --- | --- |
+| `demo` | `61222b22-480b-4f9f-a8b1-ec40572b4729` |
+| `dsb` | `5136057e-ca60-4a28-9ab7-43faf2c58a34` |
+| `marold` | `6c0d30d7-07f0-40a3-938d-7825d26024e9` |
+
 ## Hardening TODO
 
 - [ ] Add `logging` (json-file with rotation) to all services
 - [ ] Add `deploy.resources.limits.memory` to all services
-- [ ] Implement `/livez/` + `/healthz/` endpoints using `platform/deployment/templates/django/healthz.py`
-- [ ] Bind port to `127.0.0.1:8090:8000` (currently correct)
+- [ ] Fix `risk_hub_worker` healthcheck (currently unhealthy despite clean logs)
+- [x] Implement `/livez/` endpoint
+- [x] Bind port to `127.0.0.1:8090:8000`
+- [x] CI/CD pipeline with auto-deploy on push to main

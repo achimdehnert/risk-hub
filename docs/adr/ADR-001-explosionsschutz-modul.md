@@ -1,474 +1,1711 @@
 # ADR-001: Explosionsschutz-Modul für Risk-Hub
 
-**Status:** Proposed  
-**Datum:** 2026-01-31  
-**Autor:** Cascade (AI-Assisted)  
-**Entscheidungsträger:** Achim Dehnert
+| Metadaten | |
+| --------- | --- |
+| **Status** | ✅ APPROVED |
+| **Version** | 5.0 |
+| **Datum** | 2026-01-31 |
+| **Autor** | Achim Dehnert (AI-unterstützt) |
+| **Reviewer** | Technical Review |
+| **Entscheidungsdatum** | 2026-01-31 |
 
 ---
 
-## Kontext
+## 📋 Executive Summary
 
-Risk-Hub soll um ein vollständiges **Explosionsschutz-Modul** erweitert werden, das folgende regulatorische Anforderungen erfüllt:
+Dieses ADR beschreibt die Architektur für ein **Explosionsschutz-Modul** innerhalb der Risk-Hub-Plattform. Das Modul ermöglicht die digitale Erstellung, Verwaltung und Dokumentation von Explosionsschutzkonzepten gemäß ATEX-Richtlinien, BetrSichV und TRGS 720-725.
 
-### Regulatorischer Rahmen
+### Kernentscheidungen
 
-| Regelwerk | Beschreibung | Relevanz |
-|-----------|--------------|----------|
-| **ATEX 114** (2014/34/EU) | Geräte für explosionsgefährdete Bereiche | Geräteauswahl |
-| **ATEX 153** (1999/92/EG) | Schutz der Arbeitnehmer | Betreiberpflichten |
-| **BetrSichV** §§5-16 | Betriebssicherheitsverordnung | Prüfpflichten |
-| **GefStoffV** §6(9) | Gefahrstoffverordnung | Ex-Dokument-Pflicht |
-| **TRGS 720-725** | Technische Regeln Gefahrstoffe | Zoneneinteilung |
-| **TRBS 1111** | Technische Regeln Betriebssicherheit | Gefährdungsbeurteilung |
-| **IEC 60079** | Internationale Normenreihe | Geräteauswahl |
-
-### Zoneneinteilung nach ATEX
-
-**Gase/Dämpfe/Nebel:**
-- **Zone 0**: Explosionsfähige Atmosphäre ständig/häufig vorhanden
-- **Zone 1**: Gelegentlich im Normalbetrieb
-- **Zone 2**: Selten und nur kurzzeitig
-
-**Stäube/Fasern:**
-- **Zone 20**: Ständig/häufig als Wolke vorhanden
-- **Zone 21**: Gelegentlich im Normalbetrieb
-- **Zone 22**: Selten und nur kurzzeitig
+| # | Entscheidung | Begründung |
+| --- | ------------ | ---------- |
+| 1 | Integration in bestehendes `Assessment`-Model | Vermeidet Datensilos, nutzt vorhandene Workflows |
+| 2 | Nutzung von `Organization → Site → Area` Hierarchie | Konsistenz mit Risk-Hub Core |
+| 3 | HTMX für interaktive UI-Komponenten | Bewährter Stack, keine SPA-Komplexität |
+| 4 | WeasyPrint für PDF-Generierung | Open Source, CSS-basiert, Docker-kompatibel |
+| 5 | Separates `Equipment`-Model mit ATEX-Kennzeichnung | Prüfpflichten nach BetrSichV §§14-16 |
+| 6 | **Integration mit `substances`-Modul (SDS)** | Stoffdaten als Basis für Ex-Bewertung |
+| 7 | **Normalisierte ATEX-Kennzeichnung** | Strukturierte Felder statt Freitext |
+| 8 | **SafetyFunction für MSR-Bewertung** | Entkopplung von einfachen Maßnahmen |
+| 9 | **Hybrid Tenant-Isolation für Stammdaten** | Globale Basis + tenant-spezifische Erweiterungen |
+| 10 | **Vollständiger Audit-Trail via Service Layer** | Compliance-konforme Nachverfolgbarkeit |
 
 ---
 
-## Bewertung der ChatGPT-Vorschläge
+## 1. Review-Feedback Integration (v4 → v5)
 
-### ✅ Stärken der Vorschläge
+### 1.1 Umgesetzte Optimierungen aus v4
 
-1. **Modulare Architektur** - Sinnvolle Trennung in Gefährdungsbeurteilung, Ex-Konzept, Maßnahmen
-2. **Django + HTMX** - Passt perfekt zum bestehenden Risk-Hub Stack
-3. **Zoneneinteilung mit JSON** - Flexibel für visuelle Darstellung
-4. **Dreistufiges Maßnahmenkonzept** (Primär/Sekundär/Konstruktiv) - Entspricht TRGS 722
-5. **PDF-Export** - Rechtlich erforderlich für Nachweisführung
-6. **Fortschrittsanzeige** - Gute UX für komplexe Formulare
+| Bereich | Review-Kritik | Umsetzung v4 |
+| ------- | ------------- | ------------ |
+| **SoC** | Redundante Substance-Daten | Nur FK zu `substances.Substance`, `@property` für SDS-Daten |
+| **Equipment** | Nicht normalisiert | `EquipmentType` als Stammdatenkatalog |
+| **ATEX** | `atex_marking` Freitext | Strukturierte Felder: `atex_category`, `temperature_class`, `protection_type` |
+| **Measures** | `measure_type` gemischt | `SafetyFunction` als separate Entität für MSR |
+| **Zones** | `trgs_reference` Freitext | `ReferenceStandard` Tabelle |
+| **Naming** | `is_atex_certified` redundant | Entfernt (ableitbar aus Kategorie) |
+| **Dynamik** | `has_explosion_hazard` DB-Feld | `@property` mit dynamischer Prüfung |
 
-### ⚠️ Schwächen & Verbesserungsbedarf
+### 1.2 Neue Optimierungen in v5
 
-| Vorschlag | Problem | Empfehlung |
-|-----------|---------|------------|
-| `Company → Location → Area` | Redundant zu bestehendem `Organization → Site` | **Bestehende Models nutzen** |
-| `ExplosionProtectionConcept` als eigenständig | Sollte an `Assessment` gekoppelt sein | **FK zu Assessment** |
-| Keine Prüffristen-Logik | §15/§16 BetrSichV erfordert Prüfzyklen | **Inspection-Model erweitern** |
-| Keine ATEX-Geräte-Verwaltung | Geräte mit Ex-Kennzeichnung fehlen | **Equipment-Model hinzufügen** |
-| Keine Audit-Trail | Änderungen müssen nachvollziehbar sein | **Django-auditlog nutzen** |
-| Keine Versionierung | Ex-Dokumente brauchen Versionshistorie | **Document-Model nutzen** |
-
-### ❌ Fehlende Aspekte
-
-1. **PLr-Bewertung nach SISTEMA** - Performance Level für MSR-Einrichtungen
-2. **Zündquellenanalyse** - Systematische Erfassung aller 13 Zündquellen nach EN 1127-1
-3. **Stoffdatenbank** - UEG, OEG, Zündtemperatur, Explosionsgruppe
-4. **Prüfprotokolle** - Strukturierte Erfassung von ZÜS/ZpBP-Prüfungen
-5. **Fremdfirmen-Management** - Arbeitsfreigaben für Ex-Bereiche
+| Bereich | Review-Kritik v4 | Umsetzung v5 |
+| ------- | ---------------- | ------------ |
+| **Tenant-Isolation** | Stammdaten ohne `tenant_id` | Hybrid-Modell: `tenant_id=NULL` für globale Daten |
+| **Audit-Trail** | Nicht explizit dokumentiert | Service Layer mit `emit_audit_event()` für alle Mutationen |
+| **Zone-Validierung** | Logik fehlte | `Equipment.clean()` mit ATEX-Kategorie-Check |
+| **Extent-Schema** | JSON ohne Schema | Pydantic `ZoneExtent` Model |
+| **Zündquellen** | Nicht im Model | `IgnitionSource` Enum + `ZoneIgnitionSourceAssessment` |
 
 ---
 
-## Entscheidung
+## 2. Tenant-Isolation für Stammdaten (NEU in v5)
 
-### Architektur-Entscheidung
+### 2.1 Hybrid-Modell: Global + Tenant-spezifisch
+
+Die Stammdaten-Tabellen (`ReferenceStandard`, `MeasureCatalog`, `EquipmentType`, `SafetyFunction`) folgen einem **Hybrid-Modell**:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        RISK-HUB CORE                            │
-├─────────────────────────────────────────────────────────────────┤
-│  Organization ──► Site ──► Area ──► Equipment                   │
-│       │              │        │          │                      │
-│       └──────────────┴────────┴──────────┘                      │
-│                      │                                          │
-│              Assessment (category=explosionsschutz)             │
-│                      │                                          │
-│       ┌──────────────┼──────────────┐                          │
-│       ▼              ▼              ▼                          │
-│   Hazard    ExplosionConcept    Measure                        │
-│       │              │              │                          │
-│       │      ┌───────┴───────┐      │                          │
-│       │      ▼               ▼      │                          │
-│       │   ZoneDefinition  ProtectionMeasure                    │
-│       │                              │                          │
-│       └──────────────────────────────┘                          │
-│                      │                                          │
-│              Inspection ◄── InspectionSchedule                  │
-│                      │                                          │
-│              Document ◄── DocumentVersion                       │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    TENANT-ISOLATION STRATEGIE                                │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                    GLOBALE STAMMDATEN                                │   │
+│  │                    (tenant_id = NULL, is_system = True)              │   │
+│  │                                                                      │   │
+│  │  • TRGS 720, TRGS 721, TRGS 722, ...                                │   │
+│  │  • Standard-Maßnahmenkatalog (Erdung, Lüftung, ...)                 │   │
+│  │  • Bekannte ATEX-Gerätetypen (Bosch, Siemens, ...)                  │   │
+│  │                                                                      │   │
+│  │  ⚠️ Nicht editierbar durch Tenants                                  │   │
+│  │  ⚠️ Gepflegt durch System-Admin / Seed-Daten                        │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                              │                                              │
+│                              │ erbt / erweitert                             │
+│                              ▼                                              │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                 TENANT-SPEZIFISCHE STAMMDATEN                        │   │
+│  │                 (tenant_id = UUID, is_system = False)                │   │
+│  │                                                                      │   │
+│  │  Tenant A:                                                           │   │
+│  │  • Eigene Maßnahmenvorlagen (z.B. "Interne Richtlinie XY")          │   │
+│  │  • Eigene Gerätetypen (Spezialanlagen)                              │   │
+│  │                                                                      │   │
+│  │  Tenant B:                                                           │   │
+│  │  • Andere eigene Vorlagen                                            │   │
+│  │  • Andere Gerätetypen                                                │   │
+│  │                                                                      │   │
+│  │  ✅ Editierbar durch Tenant-Admin                                    │   │
+│  │  ✅ Nur für eigenen Tenant sichtbar                                  │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Neue Models
+### 2.2 Datenmodell für Hybrid-Isolation
 
-#### 1. Area (Bereich/Anlage)
 ```python
-class Area(models.Model):
-    """Betriebsbereich oder Anlage innerhalb eines Standorts."""
+# explosionsschutz/models.py
+
+from django.db import models
+from django.core.exceptions import ValidationError
+import uuid
+
+
+class TenantScopedMasterDataManager(models.Manager):
+    """
+    Custom Manager für Stammdaten mit Hybrid-Tenant-Isolation.
     
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    tenant_id = models.UUIDField(db_index=True)
-    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="areas")
+    Liefert:
+    - Globale Daten (tenant_id=NULL) UND
+    - Tenant-spezifische Daten für den aktuellen Tenant
+    """
     
-    name = models.CharField(max_length=200)
-    code = models.CharField(max_length=50, blank=True)  # z.B. "E2-50.01"
-    description = models.TextField(blank=True)
+    def for_tenant(self, tenant_id: uuid.UUID):
+        """
+        Gibt alle für einen Tenant sichtbaren Einträge zurück:
+        - Globale Einträge (tenant_id IS NULL)
+        - Eigene Einträge (tenant_id = tenant_id)
+        """
+        return self.filter(
+            models.Q(tenant_id__isnull=True) | 
+            models.Q(tenant_id=tenant_id)
+        )
     
-    # Ex-Relevanz
-    has_explosion_hazard = models.BooleanField(default=False)
-    substances = models.JSONField(default=list)  # ["H2", "CH4", ...]
+    def global_only(self):
+        """Nur globale System-Einträge"""
+        return self.filter(tenant_id__isnull=True, is_system=True)
+    
+    def tenant_only(self, tenant_id: uuid.UUID):
+        """Nur tenant-spezifische Einträge"""
+        return self.filter(tenant_id=tenant_id)
+
+
+class TenantScopedMasterData(models.Model):
+    """
+    Abstrakte Basisklasse für Stammdaten mit Hybrid-Tenant-Isolation.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
+    # NULL = global/system, UUID = tenant-spezifisch
+    tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
+    
+    # System-Daten können nicht von Tenants editiert werden
+    is_system = models.BooleanField(
+        default=False,
+        help_text="System-Daten sind global und nicht editierbar"
+    )
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-```
-
-#### 2. ExplosionConcept (Explosionsschutzkonzept)
-```python
-class ExplosionConcept(models.Model):
-    """Explosionsschutzkonzept nach TRGS 720ff."""
     
-    STATUS_CHOICES = [
-        ("draft", "Entwurf"),
-        ("review", "In Prüfung"),
-        ("approved", "Freigegeben"),
-        ("archived", "Archiviert"),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    tenant_id = models.UUIDField(db_index=True)
+    objects = TenantScopedMasterDataManager()
     
-    # Verknüpfungen
-    assessment = models.OneToOneField(
-        Assessment, 
-        on_delete=models.CASCADE,
-        related_name="explosion_concept",
-        limit_choices_to={"category": "explosionsschutz"}
+    class Meta:
+        abstract = True
+    
+    def clean(self):
+        """Validierung: System-Daten müssen global sein"""
+        if self.is_system and self.tenant_id is not None:
+            raise ValidationError(
+                "System-Daten (is_system=True) müssen global sein (tenant_id=NULL)"
+            )
+    
+    def save(self, *args, **kwargs):
+        self.clean()
+        super().save(*args, **kwargs)
+
+
+class ReferenceStandard(TenantScopedMasterData):
+    """
+    Normative Referenzen (TRGS, IEC, EN, etc.)
+    
+    Beispiele:
+    - TRGS 720: Gefährliche explosionsfähige Atmosphäre - Allgemeines
+    - TRGS 721: Gefährliche explosionsfähige Atmosphäre - Beurteilung
+    - IEC 60079-10-1: Klassifizierung von Bereichen
+    """
+    
+    class Category(models.TextChoices):
+        TRGS = "TRGS", "Technische Regeln für Gefahrstoffe"
+        IEC = "IEC", "IEC Normen"
+        EN = "EN", "Europäische Normen"
+        DIN = "DIN", "DIN Normen"
+        VDSI = "VDSI", "VDSI Richtlinien"
+        INTERNAL = "INTERNAL", "Interne Richtlinien"
+    
+    code = models.CharField(
+        max_length=50,
+        help_text="z.B. 'TRGS 720', 'IEC 60079-10-1'"
     )
-    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name="explosion_concepts")
+    title = models.CharField(max_length=500)
+    category = models.CharField(
+        max_length=20,
+        choices=Category.choices,
+        default=Category.TRGS
+    )
+    url = models.URLField(blank=True, help_text="Link zur offiziellen Quelle")
+    valid_from = models.DateField(null=True, blank=True)
+    valid_until = models.DateField(null=True, blank=True)
     
-    # Stoffdaten
-    substance_name = models.CharField(max_length=100)  # z.B. "Wasserstoff"
-    substance_formula = models.CharField(max_length=20, blank=True)  # z.B. "H2"
-    explosion_group = models.CharField(max_length=10, blank=True)  # IIA, IIB, IIC
-    temperature_class = models.CharField(max_length=10, blank=True)  # T1-T6
-    lower_explosion_limit = models.DecimalField(max_digits=5, decimal_places=2, null=True)  # Vol-%
-    upper_explosion_limit = models.DecimalField(max_digits=5, decimal_places=2, null=True)
-    ignition_temperature = models.IntegerField(null=True)  # °C
+    class Meta:
+        db_table = "explosionsschutz_reference_standard"
+        constraints = [
+            # Eindeutigkeit: Code pro Tenant (oder global)
+            models.UniqueConstraint(
+                fields=["tenant_id", "code"],
+                name="uq_reference_standard_tenant_code"
+            ),
+            # Für globale Einträge: Code global eindeutig
+            models.UniqueConstraint(
+                fields=["code"],
+                condition=models.Q(tenant_id__isnull=True),
+                name="uq_reference_standard_global_code"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["tenant_id", "category"]),
+        ]
     
-    # Substitutionsprüfung
-    substitution_possible = models.BooleanField(default=False)
-    substitution_reason = models.TextField(blank=True)
-    
-    # Status
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default="draft")
-    is_validated = models.BooleanField(default=False)
-    validated_by_id = models.UUIDField(null=True, blank=True)
-    validated_at = models.DateTimeField(null=True, blank=True)
-    
-    # Review-Zyklus (§6(9) GefStoffV: mind. alle 3 Jahre)
-    next_review_date = models.DateField(null=True, blank=True)
-    
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-```
+    def __str__(self):
+        return f"{self.code}: {self.title}"
 
-#### 3. ZoneDefinition (Zoneneinteilung)
-```python
-class ZoneDefinition(models.Model):
-    """Zoneneinteilung nach ATEX."""
-    
-    ZONE_CHOICES = [
-        ("zone_0", "Zone 0 (Gas/Dampf - ständig)"),
-        ("zone_1", "Zone 1 (Gas/Dampf - gelegentlich)"),
-        ("zone_2", "Zone 2 (Gas/Dampf - selten)"),
-        ("zone_20", "Zone 20 (Staub - ständig)"),
-        ("zone_21", "Zone 21 (Staub - gelegentlich)"),
-        ("zone_22", "Zone 22 (Staub - selten)"),
-        ("non_ex", "Nicht explosionsgefährdet"),
-    ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    tenant_id = models.UUIDField(db_index=True)
-    concept = models.ForeignKey(ExplosionConcept, on_delete=models.CASCADE, related_name="zones")
+class MeasureCatalog(TenantScopedMasterData):
+    """
+    Katalog wiederverwendbarer Schutzmaßnahmen-Vorlagen.
     
-    zone = models.CharField(max_length=20, choices=ZONE_CHOICES)
-    description = models.TextField()  # Begründung der Einstufung
+    Beispiele:
+    - "Erdung aller leitfähigen Teile" (global)
+    - "Technische Lüftung nach DIN EN 60079-10-1" (global)
+    - "Interne Prozedur ABC-123" (tenant-spezifisch)
+    """
     
-    # Ausdehnung
-    extent_description = models.TextField(blank=True)  # Textuelle Beschreibung
-    extent_geometry = models.JSONField(null=True, blank=True)  # GeoJSON oder SVG-Koordinaten
+    class DefaultType(models.TextChoices):
+        PRIMARY = "primary", "Primäre Maßnahme (Vermeidung)"
+        SECONDARY = "secondary", "Sekundäre Maßnahme (Zündquellenvermeidung)"
+        TERTIARY = "tertiary", "Tertiäre Maßnahme (Auswirkungsbegrenzung)"
+        ORGANIZATIONAL = "organizational", "Organisatorische Maßnahme"
     
-    # Referenz
-    trgs_reference = models.CharField(max_length=50, blank=True)  # z.B. "TRGS 722 Kap. 3.2"
-    
-    order = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-```
-
-#### 4. ProtectionMeasure (Schutzmaßnahme)
-```python
-class ProtectionMeasure(models.Model):
-    """Explosionsschutzmaßnahme nach TRGS 722."""
-    
-    MEASURE_TYPE_CHOICES = [
-        ("primary", "Primär (Vermeidung)"),
-        ("secondary", "Sekundär (Zündquellenvermeidung)"),
-        ("constructive", "Konstruktiv (Auswirkungsbegrenzung)"),
-        ("organizational", "Organisatorisch"),
-    ]
-    
-    VERIFICATION_STATUS = [
-        ("pending", "Ausstehend"),
-        ("verified", "Verifiziert"),
-        ("failed", "Nicht bestanden"),
-    ]
-
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    tenant_id = models.UUIDField(db_index=True)
-    concept = models.ForeignKey(ExplosionConcept, on_delete=models.CASCADE, related_name="measures")
-    
-    measure_type = models.CharField(max_length=20, choices=MEASURE_TYPE_CHOICES)
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    
-    # Technische Details
-    gas_type = models.CharField(max_length=50, blank=True)  # z.B. "N2" für Inertisierung
-    flow_rate = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    duration_minutes = models.IntegerField(null=True, blank=True)
-    
-    # MSR-Einrichtung
-    is_msr = models.BooleanField(default=False)
-    performance_level = models.CharField(max_length=5, blank=True)  # PLa-PLe
-    sil_level = models.IntegerField(null=True, blank=True)  # SIL 1-3
-    
-    # Verifikation
-    verification_status = models.CharField(max_length=20, choices=VERIFICATION_STATUS, default="pending")
-    verification_document = models.ForeignKey(
-        "documents.Document", 
-        on_delete=models.SET_NULL, 
-        null=True, blank=True
+    code = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text="Optionaler Kurzcode, z.B. 'M-ERD-001'"
+    )
+    title = models.CharField(max_length=300)
+    default_type = models.CharField(
+        max_length=20,
+        choices=DefaultType.choices,
+        default=DefaultType.SECONDARY
+    )
+    description_template = models.TextField(
+        blank=True,
+        help_text="Vorlage für Beschreibung, kann Platzhalter enthalten"
+    )
+    reference_standards = models.ManyToManyField(
+        ReferenceStandard,
+        blank=True,
+        related_name="measure_catalog_entries"
     )
     
-    order = models.IntegerField(default=0)
-    created_at = models.DateTimeField(auto_now_add=True)
-```
+    class Meta:
+        db_table = "explosionsschutz_measure_catalog"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant_id", "title"],
+                name="uq_measure_catalog_tenant_title"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["tenant_id", "default_type"]),
+        ]
+    
+    def __str__(self):
+        prefix = f"[{self.code}] " if self.code else ""
+        return f"{prefix}{self.title}"
 
-#### 5. Equipment (Betriebsmittel mit ATEX-Kennzeichnung)
-```python
-class Equipment(models.Model):
-    """Betriebsmittel/Gerät mit optionaler ATEX-Kennzeichnung."""
-    
-    EQUIPMENT_CATEGORY = [
-        ("1G", "Kategorie 1G (Zone 0/1/2)"),
-        ("2G", "Kategorie 2G (Zone 1/2)"),
-        ("3G", "Kategorie 3G (Zone 2)"),
-        ("1D", "Kategorie 1D (Zone 20/21/22)"),
-        ("2D", "Kategorie 2D (Zone 21/22)"),
-        ("3D", "Kategorie 3D (Zone 22)"),
-        ("non_ex", "Nicht-Ex"),
-    ]
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
-    tenant_id = models.UUIDField(db_index=True)
-    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name="equipment")
+class EquipmentType(TenantScopedMasterData):
+    """
+    Stammdaten für Betriebsmittel-Typen mit strukturierter ATEX-Kennzeichnung.
     
-    name = models.CharField(max_length=200)
-    manufacturer = models.CharField(max_length=200, blank=True)
-    model = models.CharField(max_length=100, blank=True)
-    serial_number = models.CharField(max_length=100, blank=True)
+    ATEX-Kennzeichnung Struktur:
+    ╔══════════════════════════════════════════════════════════════════╗
+    ║  II 2G Ex d IIB T4 Gb                                            ║
+    ║  ├─ Gruppe (I=Bergbau, II=Industrie)                             ║
+    ║  │  ├─ Kategorie (1/2/3 + G=Gas oder D=Staub)                    ║
+    ║  │  │     ├─ Schutzart (Ex d, Ex e, Ex i, ...)                   ║
+    ║  │  │     │       ├─ Explosionsgruppe (IIA/IIB/IIC)              ║
+    ║  │  │     │       │      ├─ Temperaturklasse (T1-T6)             ║
+    ║  │  │     │       │      │    └─ EPL (Ga/Gb/Gc oder Da/Db/Dc)    ║
+    ╚══════════════════════════════════════════════════════════════════╝
+    """
     
-    # ATEX-Kennzeichnung
-    is_atex_certified = models.BooleanField(default=False)
-    atex_marking = models.CharField(max_length=100, blank=True)  # z.B. "II 2G Ex d IIC T6"
-    equipment_category = models.CharField(max_length=10, choices=EQUIPMENT_CATEGORY, default="non_ex")
-    explosion_group = models.CharField(max_length=10, blank=True)
-    temperature_class = models.CharField(max_length=10, blank=True)
-    protection_type = models.CharField(max_length=50, blank=True)  # Ex d, Ex e, Ex i, etc.
+    class AtexGroup(models.TextChoices):
+        GROUP_I = "I", "Gruppe I (Bergbau)"
+        GROUP_II = "II", "Gruppe II (Industrie)"
     
-    # Prüffristen
-    inspection_interval_months = models.IntegerField(default=12)
-    last_inspection_date = models.DateField(null=True, blank=True)
-    next_inspection_date = models.DateField(null=True, blank=True)
+    class AtexCategory(models.TextChoices):
+        CAT_1G = "1G", "Kategorie 1G (Zone 0)"
+        CAT_2G = "2G", "Kategorie 2G (Zone 0, 1)"
+        CAT_3G = "3G", "Kategorie 3G (Zone 0, 1, 2)"
+        CAT_1D = "1D", "Kategorie 1D (Zone 20)"
+        CAT_2D = "2D", "Kategorie 2D (Zone 20, 21)"
+        CAT_3D = "3D", "Kategorie 3D (Zone 20, 21, 22)"
+    
+    class ProtectionType(models.TextChoices):
+        EX_D = "Ex d", "Druckfeste Kapselung"
+        EX_E = "Ex e", "Erhöhte Sicherheit"
+        EX_I = "Ex i", "Eigensicherheit"
+        EX_P = "Ex p", "Überdruckkapselung"
+        EX_M = "Ex m", "Vergusskapselung"
+        EX_O = "Ex o", "Ölkapselung"
+        EX_Q = "Ex q", "Sandkapselung"
+        EX_N = "Ex n", "Nicht-funkend"
+        EX_T = "Ex t", "Schutz durch Gehäuse (Staub)"
+    
+    class ExplosionGroup(models.TextChoices):
+        IIA = "IIA", "IIA (Propan)"
+        IIB = "IIB", "IIB (Ethylen)"
+        IIC = "IIC", "IIC (Wasserstoff, Acetylen)"
+        IIIA = "IIIA", "IIIA (brennbare Flusen)"
+        IIIB = "IIIB", "IIIB (nicht leitfähiger Staub)"
+        IIIC = "IIIC", "IIIC (leitfähiger Staub)"
+    
+    class TemperatureClass(models.TextChoices):
+        T1 = "T1", "T1 (≤450°C)"
+        T2 = "T2", "T2 (≤300°C)"
+        T3 = "T3", "T3 (≤200°C)"
+        T4 = "T4", "T4 (≤135°C)"
+        T5 = "T5", "T5 (≤100°C)"
+        T6 = "T6", "T6 (≤85°C)"
+    
+    class EPL(models.TextChoices):
+        """Equipment Protection Level"""
+        GA = "Ga", "Ga (sehr hohes Schutzniveau)"
+        GB = "Gb", "Gb (hohes Schutzniveau)"
+        GC = "Gc", "Gc (erhöhtes Schutzniveau)"
+        DA = "Da", "Da (sehr hohes Schutzniveau - Staub)"
+        DB = "Db", "Db (hohes Schutzniveau - Staub)"
+        DC = "Dc", "Dc (erhöhtes Schutzniveau - Staub)"
+    
+    # Hersteller & Modell
+    manufacturer = models.CharField(max_length=200)
+    model = models.CharField(max_length=200)
+    
+    # Strukturierte ATEX-Kennzeichnung
+    atex_group = models.CharField(
+        max_length=5,
+        choices=AtexGroup.choices,
+        default=AtexGroup.GROUP_II
+    )
+    atex_category = models.CharField(
+        max_length=5,
+        choices=AtexCategory.choices
+    )
+    protection_type = models.CharField(
+        max_length=10,
+        choices=ProtectionType.choices
+    )
+    explosion_group = models.CharField(
+        max_length=10,
+        choices=ExplosionGroup.choices,
+        blank=True
+    )
+    temperature_class = models.CharField(
+        max_length=5,
+        choices=TemperatureClass.choices
+    )
+    epl = models.CharField(
+        max_length=5,
+        choices=EPL.choices,
+        blank=True,
+        help_text="Equipment Protection Level"
+    )
+    
+    # Zusätzliche technische Daten
+    ip_rating = models.CharField(
+        max_length=10,
+        blank=True,
+        help_text="z.B. IP65, IP66"
+    )
+    ambient_temp_min = models.IntegerField(
+        null=True, blank=True,
+        help_text="Min. Umgebungstemperatur in °C"
+    )
+    ambient_temp_max = models.IntegerField(
+        null=True, blank=True,
+        help_text="Max. Umgebungstemperatur in °C"
+    )
     
     # Dokumentation
-    certificate_document = models.ForeignKey(
-        "documents.Document",
-        on_delete=models.SET_NULL,
-        null=True, blank=True,
-        related_name="certified_equipment"
+    datasheet_url = models.URLField(blank=True)
+    certificate_number = models.CharField(max_length=100, blank=True)
+    notified_body = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="z.B. 'PTB', 'DEKRA', 'TÜV'"
     )
     
-    is_active = models.BooleanField(default=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    class Meta:
+        db_table = "explosionsschutz_equipment_type"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant_id", "manufacturer", "model"],
+                name="uq_equipment_type_tenant_mfr_model"
+            ),
+        ]
+        indexes = [
+            models.Index(fields=["tenant_id", "atex_category"]),
+            models.Index(fields=["tenant_id", "manufacturer"]),
+        ]
+    
+    @property
+    def full_atex_marking(self) -> str:
+        """Vollständige ATEX-Kennzeichnung aus Einzelfeldern"""
+        parts = [
+            self.atex_group,
+            self.atex_category,
+            self.protection_type,
+        ]
+        if self.explosion_group:
+            parts.append(self.explosion_group)
+        parts.append(self.temperature_class)
+        if self.epl:
+            parts.append(self.epl)
+        return " ".join(parts)
+    
+    @property
+    def allowed_zones(self) -> list[str]:
+        """Liste der Zonen, in denen dieses Gerät eingesetzt werden darf"""
+        CATEGORY_ZONES = {
+            "1G": ["0", "1", "2"],
+            "2G": ["1", "2"],
+            "3G": ["2"],
+            "1D": ["20", "21", "22"],
+            "2D": ["21", "22"],
+            "3D": ["22"],
+        }
+        return CATEGORY_ZONES.get(self.atex_category, [])
+    
+    def __str__(self):
+        return f"{self.manufacturer} {self.model} ({self.full_atex_marking})"
+
+
+class SafetyFunction(TenantScopedMasterData):
+    """
+    MSR-Sicherheitsfunktion nach IEC 62061 / ISO 13849.
+    
+    Wird verwendet für komplexe Schutzmaßnahmen mit:
+    - Performance Level (PLr) nach ISO 13849
+    - Safety Integrity Level (SIL) nach IEC 62061
+    - Überwachungsanforderungen
+    """
+    
+    class PerformanceLevel(models.TextChoices):
+        PL_A = "a", "PL a"
+        PL_B = "b", "PL b"
+        PL_C = "c", "PL c"
+        PL_D = "d", "PL d"
+        PL_E = "e", "PL e"
+    
+    class SILLevel(models.TextChoices):
+        SIL_1 = "1", "SIL 1"
+        SIL_2 = "2", "SIL 2"
+        SIL_3 = "3", "SIL 3"
+    
+    class MonitoringMethod(models.TextChoices):
+        CONTINUOUS = "continuous", "Kontinuierlich"
+        PERIODIC = "periodic", "Periodisch"
+        DEMAND = "demand", "Bei Anforderung"
+    
+    name = models.CharField(
+        max_length=100,
+        help_text="Eindeutiger Name, z.B. 'GW-001' für Gaswarnanlage 001"
+    )
+    description = models.TextField(blank=True)
+    
+    performance_level = models.CharField(
+        max_length=5,
+        choices=PerformanceLevel.choices,
+        blank=True,
+        help_text="Required Performance Level nach ISO 13849"
+    )
+    sil_level = models.CharField(
+        max_length=5,
+        choices=SILLevel.choices,
+        blank=True,
+        help_text="Safety Integrity Level nach IEC 62061"
+    )
+    monitoring_method = models.CharField(
+        max_length=20,
+        choices=MonitoringMethod.choices,
+        default=MonitoringMethod.CONTINUOUS
+    )
+    
+    # Technische Details
+    response_time_ms = models.IntegerField(
+        null=True, blank=True,
+        help_text="Ansprechzeit in Millisekunden"
+    )
+    proof_test_interval_months = models.IntegerField(
+        null=True, blank=True,
+        help_text="Proof-Test-Intervall in Monaten"
+    )
+    
+    reference_standards = models.ManyToManyField(
+        ReferenceStandard,
+        blank=True,
+        related_name="safety_functions"
+    )
+    
+    class Meta:
+        db_table = "explosionsschutz_safety_function"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant_id", "name"],
+                name="uq_safety_function_tenant_name"
+            ),
+        ]
+    
+    def __str__(self):
+        levels = []
+        if self.performance_level:
+            levels.append(f"PL {self.performance_level}")
+        if self.sil_level:
+            levels.append(f"SIL {self.sil_level}")
+        level_str = " / ".join(levels) if levels else "n/a"
+        return f"{self.name} ({level_str})"
 ```
 
-#### 6. Inspection (Prüfung)
-```python
-class Inspection(models.Model):
-    """Wiederkehrende Prüfung nach BetrSichV §§14-16."""
-    
-    INSPECTION_TYPE = [
-        ("visual", "Sichtprüfung"),
-        ("detailed", "Eingehende Prüfung"),
-        ("zusp", "Prüfung durch ZÜS"),
-        ("internal", "Interne Prüfung"),
-    ]
-    
-    RESULT_CHOICES = [
-        ("passed", "Bestanden"),
-        ("passed_with_remarks", "Bestanden mit Auflagen"),
-        ("failed", "Nicht bestanden"),
-        ("postponed", "Verschoben"),
-    ]
+### 2.3 Query-Beispiele
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4)
+```python
+# In einem Service oder View:
+from common.request_context import get_context
+from explosionsschutz.models import ReferenceStandard, MeasureCatalog, EquipmentType
+
+ctx = get_context()
+
+# Alle für den Tenant sichtbaren Normen
+standards = ReferenceStandard.objects.for_tenant(ctx.tenant_id)
+
+# Nur globale TRGS-Normen
+trgs_standards = ReferenceStandard.objects.global_only().filter(
+    category=ReferenceStandard.Category.TRGS
+)
+
+# Nur eigene Maßnahmenvorlagen des Tenants
+own_measures = MeasureCatalog.objects.tenant_only(ctx.tenant_id)
+
+# Gerätetypen filtern nach ATEX-Kategorie für Zone 1
+zone_1_equipment = EquipmentType.objects.for_tenant(ctx.tenant_id).filter(
+    atex_category__in=["1G", "2G"]
+)
+```
+
+### 2.4 RLS-Erweiterung für Hybrid-Isolation
+
+```sql
+-- scripts/enable_rls_explosionsschutz.sql
+
+-- RLS für Stammdaten mit Hybrid-Isolation
+ALTER TABLE explosionsschutz_reference_standard ENABLE ROW LEVEL SECURITY;
+ALTER TABLE explosionsschutz_measure_catalog ENABLE ROW LEVEL SECURITY;
+ALTER TABLE explosionsschutz_equipment_type ENABLE ROW LEVEL SECURITY;
+ALTER TABLE explosionsschutz_safety_function ENABLE ROW LEVEL SECURITY;
+
+-- Policy: Globale ODER eigene Daten sichtbar
+CREATE POLICY tenant_hybrid_isolation_reference_standard 
+ON explosionsschutz_reference_standard
+USING (
+    tenant_id IS NULL  -- Globale Daten
+    OR tenant_id = current_setting('app.current_tenant')::uuid  -- Eigene Daten
+);
+
+CREATE POLICY tenant_hybrid_isolation_measure_catalog 
+ON explosionsschutz_measure_catalog
+USING (
+    tenant_id IS NULL 
+    OR tenant_id = current_setting('app.current_tenant')::uuid
+);
+
+CREATE POLICY tenant_hybrid_isolation_equipment_type 
+ON explosionsschutz_equipment_type
+USING (
+    tenant_id IS NULL 
+    OR tenant_id = current_setting('app.current_tenant')::uuid
+);
+
+CREATE POLICY tenant_hybrid_isolation_safety_function 
+ON explosionsschutz_safety_function
+USING (
+    tenant_id IS NULL 
+    OR tenant_id = current_setting('app.current_tenant')::uuid
+);
+
+-- Schreibschutz für System-Daten (nur Lesen erlaubt)
+-- INSERT: Nur wenn is_system=false ODER tenant_id gesetzt
+CREATE POLICY tenant_write_protection_reference_standard 
+ON explosionsschutz_reference_standard
+FOR INSERT
+WITH CHECK (
+    NOT is_system OR tenant_id IS NULL  -- System-Daten nur via Migration/Seed
+);
+
+-- UPDATE/DELETE: Nicht für System-Daten
+CREATE POLICY tenant_update_protection_reference_standard 
+ON explosionsschutz_reference_standard
+FOR UPDATE
+USING (NOT is_system);
+
+CREATE POLICY tenant_delete_protection_reference_standard 
+ON explosionsschutz_reference_standard
+FOR DELETE
+USING (NOT is_system);
+
+-- Analog für andere Stammdaten-Tabellen...
+```
+
+---
+
+## 3. Audit-Trail via Service Layer (NEU in v5)
+
+### 3.1 Architektur-Prinzip
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         AUDIT-TRAIL ARCHITEKTUR                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  ┌─────────────┐     ┌─────────────────────────────────────────────────┐   │
+│  │    View     │────▶│              SERVICE LAYER                       │   │
+│  │  (HTMX)     │     │                                                  │   │
+│  └─────────────┘     │  @transaction.atomic                             │   │
+│                      │  def create_explosion_concept(...):              │   │
+│                      │      1. Validierung                               │   │
+│                      │      2. Domain-Logik                              │   │
+│                      │      3. DB-Write (ORM)                            │   │
+│                      │      4. emit_audit_event(...)  ◀── PFLICHT       │   │
+│                      │      5. OutboxMessage.create(...) ◀── PFLICHT    │   │
+│                      │      return result                                │   │
+│                      └─────────────────────────────────────────────────┘   │
+│                                        │                                    │
+│                                        │ innerhalb Transaktion              │
+│                                        ▼                                    │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                         POSTGRES                                     │   │
+│  │                                                                      │   │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐     │   │
+│  │  │ explosions-     │  │ audit_          │  │ outbox_         │     │   │
+│  │  │ schutz_*        │  │ audit_event     │  │ outbox_message  │     │   │
+│  │  └─────────────────┘  └─────────────────┘  └─────────────────┘     │   │
+│  │                                                                      │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                        │                                    │
+│                                        │ async (Worker)                     │
+│                                        ▼                                    │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                       OUTBOX WORKER                                  │   │
+│  │                                                                      │   │
+│  │  • Benachrichtigungen                                                │   │
+│  │  • Webhooks                                                          │   │
+│  │  • Event-Stream                                                      │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
+│                                                                             │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 3.2 Service Layer Implementation
+
+```python
+# explosionsschutz/services.py
+
+from dataclasses import dataclass
+from typing import Optional
+from uuid import UUID
+from django.db import transaction
+from django.core.exceptions import ValidationError, PermissionDenied
+
+from common.request_context import get_context
+from audit.services import emit_audit_event
+from outbox.models import OutboxMessage
+from explosionsschutz.models import (
+    ExplosionConcept,
+    ZoneDefinition,
+    ProtectionMeasure,
+    Equipment,
+    Inspection,
+    VerificationDocument,
+)
+
+
+# ============================================================================
+# Command DTOs (Data Transfer Objects)
+# ============================================================================
+
+@dataclass(frozen=True)
+class CreateExplosionConceptCmd:
+    """Command für Erstellung eines neuen Ex-Konzepts"""
+    area_id: UUID
+    substance_id: UUID
+    title: str
+    assessment_id: Optional[UUID] = None
+
+
+@dataclass(frozen=True)
+class UpdateExplosionConceptCmd:
+    """Command für Aktualisierung eines Ex-Konzepts"""
+    concept_id: UUID
+    title: Optional[str] = None
+    substance_id: Optional[UUID] = None
+
+
+@dataclass(frozen=True)
+class ValidateExplosionConceptCmd:
+    """Command für Validierung/Freigabe eines Ex-Konzepts"""
+    concept_id: UUID
+    notes: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class CreateZoneDefinitionCmd:
+    """Command für Erstellung einer Zonendefinition"""
+    concept_id: UUID
+    zone_type: str
+    name: str
+    extent: dict
+    reference_standard_id: Optional[UUID] = None
+    justification: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class CreateProtectionMeasureCmd:
+    """Command für Erstellung einer Schutzmaßnahme"""
+    concept_id: UUID
+    category: str
+    title: str
+    description: Optional[str] = None
+    catalog_reference_id: Optional[UUID] = None
+    safety_function_id: Optional[UUID] = None
+
+
+@dataclass(frozen=True)
+class CreateEquipmentCmd:
+    """Command für Registrierung eines Betriebsmittels"""
+    zone_id: UUID
+    equipment_type_id: UUID
+    serial_number: str
+    installation_location: Optional[str] = None
+    commissioned_at: Optional[str] = None
+
+
+@dataclass(frozen=True)
+class CreateInspectionCmd:
+    """Command für Erfassung einer Prüfung"""
+    equipment_id: UUID
+    inspection_type: str
+    inspector_name: str
+    result: str
+    findings: Optional[str] = None
+    next_inspection_date: Optional[str] = None
+
+
+# ============================================================================
+# Audit Event Categories
+# ============================================================================
+
+class AuditCategory:
+    """Konstanten für Audit-Event-Kategorien"""
+    CONCEPT = "explosionsschutz.concept"
+    ZONE = "explosionsschutz.zone"
+    MEASURE = "explosionsschutz.measure"
+    EQUIPMENT = "explosionsschutz.equipment"
+    INSPECTION = "explosionsschutz.inspection"
+    DOCUMENT = "explosionsschutz.document"
+
+
+# ============================================================================
+# Service Functions
+# ============================================================================
+
+@transaction.atomic
+def create_explosion_concept(cmd: CreateExplosionConceptCmd) -> ExplosionConcept:
+    """
+    Erstellt ein neues Explosionsschutzkonzept.
+    
+    Audit: explosionsschutz.concept.created
+    Outbox: explosionsschutz.concept.created
+    """
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise PermissionDenied("Tenant erforderlich")
+    
+    # Validierung: Area muss zum Tenant gehören
+    from tenancy.models import Area
+    area = Area.objects.get(id=cmd.area_id)
+    if area.site.tenant_id != ctx.tenant_id:
+        raise PermissionDenied("Area gehört nicht zum Tenant")
+    
+    # Validierung: Substance muss existieren
+    from substances.models import Substance
+    substance = Substance.objects.get(id=cmd.substance_id)
+    
+    # Ermittle nächste Version für diesen Bereich
+    existing_versions = ExplosionConcept.objects.filter(
+        tenant_id=ctx.tenant_id,
+        area_id=cmd.area_id
+    ).count()
+    next_version = existing_versions + 1
+    
+    # Erstelle Konzept
+    concept = ExplosionConcept.objects.create(
+        tenant_id=ctx.tenant_id,
+        area=area,
+        substance=substance,
+        title=cmd.title.strip(),
+        version=next_version,
+        status="draft",
+        assessment_id=cmd.assessment_id,
+    )
+    
+    # Audit Event
+    emit_audit_event(
+        tenant_id=ctx.tenant_id,
+        category=AuditCategory.CONCEPT,
+        action="created",
+        entity_type="explosionsschutz.ExplosionConcept",
+        entity_id=concept.id,
+        payload={
+            "title": concept.title,
+            "version": concept.version,
+            "area_id": str(concept.area_id),
+            "substance_id": str(concept.substance_id),
+            "substance_name": substance.name,
+            "assessment_id": str(concept.assessment_id) if concept.assessment_id else None,
+        },
+    )
+    
+    # Outbox Message für async Verarbeitung
+    OutboxMessage.objects.create(
+        tenant_id=ctx.tenant_id,
+        topic="explosionsschutz.concept.created",
+        payload={
+            "concept_id": str(concept.id),
+            "area_id": str(concept.area_id),
+            "version": concept.version,
+        },
+    )
+    
+    return concept
+
+
+@transaction.atomic
+def update_explosion_concept(cmd: UpdateExplosionConceptCmd) -> ExplosionConcept:
+    """
+    Aktualisiert ein bestehendes Ex-Konzept.
+    
+    Audit: explosionsschutz.concept.updated
+    """
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise PermissionDenied("Tenant erforderlich")
+    
+    concept = ExplosionConcept.objects.select_for_update().get(
+        id=cmd.concept_id,
+        tenant_id=ctx.tenant_id
+    )
+    
+    if concept.status != "draft":
+        raise ValidationError("Nur Entwürfe können bearbeitet werden")
+    
+    # Sammle Änderungen für Audit
+    changes = {}
+    
+    if cmd.title is not None and cmd.title != concept.title:
+        changes["title"] = {"old": concept.title, "new": cmd.title}
+        concept.title = cmd.title.strip()
+    
+    if cmd.substance_id is not None and cmd.substance_id != concept.substance_id:
+        from substances.models import Substance
+        new_substance = Substance.objects.get(id=cmd.substance_id)
+        old_substance_name = concept.substance.name
+        changes["substance"] = {
+            "old": {"id": str(concept.substance_id), "name": old_substance_name},
+            "new": {"id": str(cmd.substance_id), "name": new_substance.name},
+        }
+        concept.substance = new_substance
+    
+    if changes:
+        concept.save()
+        
+        emit_audit_event(
+            tenant_id=ctx.tenant_id,
+            category=AuditCategory.CONCEPT,
+            action="updated",
+            entity_type="explosionsschutz.ExplosionConcept",
+            entity_id=concept.id,
+            payload={"changes": changes},
+        )
+    
+    return concept
+
+
+@transaction.atomic
+def validate_explosion_concept(cmd: ValidateExplosionConceptCmd) -> ExplosionConcept:
+    """
+    Validiert/gibt ein Ex-Konzept frei.
+    
+    Prüft:
+    - Mindestens eine Zone definiert
+    - Alle Zonen haben Maßnahmen
+    - Equipment in Zonen hat gültige ATEX-Kategorie
+    
+    Audit: explosionsschutz.concept.validated
+    Outbox: explosionsschutz.concept.validated
+    """
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise PermissionDenied("Tenant erforderlich")
+    
+    concept = ExplosionConcept.objects.select_for_update().get(
+        id=cmd.concept_id,
+        tenant_id=ctx.tenant_id
+    )
+    
+    if concept.status != "draft":
+        raise ValidationError("Nur Entwürfe können validiert werden")
+    
+    # Validierung: Mindestens eine Zone
+    zones = concept.zones.all()
+    if not zones.exists():
+        raise ValidationError("Mindestens eine Zone muss definiert sein")
+    
+    # Validierung: Equipment-Zonenzuordnung
+    validation_errors = []
+    for zone in zones:
+        for equipment in zone.equipment.all():
+            if zone.zone_type not in equipment.equipment_type.allowed_zones:
+                validation_errors.append(
+                    f"Equipment '{equipment.serial_number}' "
+                    f"(Kategorie {equipment.equipment_type.atex_category}) "
+                    f"nicht zulässig in Zone {zone.zone_type}"
+                )
+    
+    if validation_errors:
+        raise ValidationError(validation_errors)
+    
+    # Status ändern
+    from django.utils import timezone
+    concept.status = "validated"
+    concept.is_validated = True
+    concept.validated_by_id = ctx.user_id
+    concept.validated_at = timezone.now()
+    concept.save()
+    
+    # Audit Event
+    emit_audit_event(
+        tenant_id=ctx.tenant_id,
+        category=AuditCategory.CONCEPT,
+        action="validated",
+        entity_type="explosionsschutz.ExplosionConcept",
+        entity_id=concept.id,
+        payload={
+            "version": concept.version,
+            "validated_by": str(ctx.user_id),
+            "notes": cmd.notes,
+            "zone_count": zones.count(),
+        },
+    )
+    
+    # Outbox für Benachrichtigungen
+    OutboxMessage.objects.create(
+        tenant_id=ctx.tenant_id,
+        topic="explosionsschutz.concept.validated",
+        payload={
+            "concept_id": str(concept.id),
+            "validated_by": str(ctx.user_id),
+        },
+    )
+    
+    return concept
+
+
+@transaction.atomic
+def create_zone_definition(cmd: CreateZoneDefinitionCmd) -> ZoneDefinition:
+    """
+    Erstellt eine Zonendefinition für ein Ex-Konzept.
+    
+    Audit: explosionsschutz.zone.created
+    """
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise PermissionDenied("Tenant erforderlich")
+    
+    concept = ExplosionConcept.objects.get(
+        id=cmd.concept_id,
+        tenant_id=ctx.tenant_id
+    )
+    
+    if concept.status != "draft":
+        raise ValidationError("Zonen können nur in Entwürfen hinzugefügt werden")
+    
+    # Validierung: Zonentyp
+    valid_zones = {"0", "1", "2", "20", "21", "22"}
+    if cmd.zone_type not in valid_zones:
+        raise ValidationError(f"Ungültiger Zonentyp: {cmd.zone_type}")
+    
+    zone = ZoneDefinition.objects.create(
+        tenant_id=ctx.tenant_id,
+        concept=concept,
+        zone_type=cmd.zone_type,
+        name=cmd.name.strip(),
+        extent=cmd.extent,
+        reference_standard_id=cmd.reference_standard_id,
+        justification=cmd.justification,
+    )
+    
+    emit_audit_event(
+        tenant_id=ctx.tenant_id,
+        category=AuditCategory.ZONE,
+        action="created",
+        entity_type="explosionsschutz.ZoneDefinition",
+        entity_id=zone.id,
+        payload={
+            "concept_id": str(concept.id),
+            "zone_type": zone.zone_type,
+            "name": zone.name,
+            "extent": zone.extent,
+        },
+    )
+    
+    return zone
+
+
+@transaction.atomic
+def create_protection_measure(cmd: CreateProtectionMeasureCmd) -> ProtectionMeasure:
+    """
+    Erstellt eine Schutzmaßnahme für ein Ex-Konzept.
+    
+    Audit: explosionsschutz.measure.created
+    """
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise PermissionDenied("Tenant erforderlich")
+    
+    concept = ExplosionConcept.objects.get(
+        id=cmd.concept_id,
+        tenant_id=ctx.tenant_id
+    )
+    
+    if concept.status != "draft":
+        raise ValidationError("Maßnahmen können nur in Entwürfen hinzugefügt werden")
+    
+    measure = ProtectionMeasure.objects.create(
+        tenant_id=ctx.tenant_id,
+        concept=concept,
+        category=cmd.category,
+        title=cmd.title.strip(),
+        description=cmd.description or "",
+        catalog_reference_id=cmd.catalog_reference_id,
+        safety_function_id=cmd.safety_function_id,
+        status="planned",
+    )
+    
+    emit_audit_event(
+        tenant_id=ctx.tenant_id,
+        category=AuditCategory.MEASURE,
+        action="created",
+        entity_type="explosionsschutz.ProtectionMeasure",
+        entity_id=measure.id,
+        payload={
+            "concept_id": str(concept.id),
+            "category": measure.category,
+            "title": measure.title,
+            "has_safety_function": measure.safety_function_id is not None,
+        },
+    )
+    
+    return measure
+
+
+@transaction.atomic
+def create_equipment(cmd: CreateEquipmentCmd) -> Equipment:
+    """
+    Registriert ein Betriebsmittel in einer Zone.
+    
+    Validiert automatisch die ATEX-Kategorie gegen den Zonentyp.
+    
+    Audit: explosionsschutz.equipment.created
+    """
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise PermissionDenied("Tenant erforderlich")
+    
+    zone = ZoneDefinition.objects.get(
+        id=cmd.zone_id,
+        tenant_id=ctx.tenant_id
+    )
+    
+    from explosionsschutz.models import EquipmentType
+    equipment_type = EquipmentType.objects.for_tenant(ctx.tenant_id).get(
+        id=cmd.equipment_type_id
+    )
+    
+    # Validierung: ATEX-Kategorie passend zur Zone
+    if zone.zone_type not in equipment_type.allowed_zones:
+        raise ValidationError(
+            f"Equipment Kategorie {equipment_type.atex_category} "
+            f"nicht zulässig in Zone {zone.zone_type}. "
+            f"Erlaubte Zonen: {', '.join(equipment_type.allowed_zones)}"
+        )
+    
+    equipment = Equipment.objects.create(
+        tenant_id=ctx.tenant_id,
+        zone=zone,
+        equipment_type=equipment_type,
+        serial_number=cmd.serial_number.strip(),
+        installation_location=cmd.installation_location,
+        commissioned_at=cmd.commissioned_at,
+    )
+    
+    emit_audit_event(
+        tenant_id=ctx.tenant_id,
+        category=AuditCategory.EQUIPMENT,
+        action="created",
+        entity_type="explosionsschutz.Equipment",
+        entity_id=equipment.id,
+        payload={
+            "zone_id": str(zone.id),
+            "zone_type": zone.zone_type,
+            "equipment_type_id": str(equipment_type.id),
+            "atex_marking": equipment_type.full_atex_marking,
+            "serial_number": equipment.serial_number,
+        },
+    )
+    
+    # Outbox für Prüffristen-Setup
+    OutboxMessage.objects.create(
+        tenant_id=ctx.tenant_id,
+        topic="explosionsschutz.equipment.created",
+        payload={
+            "equipment_id": str(equipment.id),
+            "zone_type": zone.zone_type,
+        },
+    )
+    
+    return equipment
+
+
+@transaction.atomic
+def create_inspection(cmd: CreateInspectionCmd) -> Inspection:
+    """
+    Erfasst eine Prüfung nach BetrSichV.
+    
+    Audit: explosionsschutz.inspection.created
+    Outbox: explosionsschutz.inspection.created (für Fristenverwaltung)
+    """
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise PermissionDenied("Tenant erforderlich")
+    
+    equipment = Equipment.objects.get(
+        id=cmd.equipment_id,
+        tenant_id=ctx.tenant_id
+    )
+    
+    inspection = Inspection.objects.create(
+        tenant_id=ctx.tenant_id,
+        equipment=equipment,
+        inspection_type=cmd.inspection_type,
+        inspector_name=cmd.inspector_name.strip(),
+        result=cmd.result,
+        findings=cmd.findings,
+        next_inspection_date=cmd.next_inspection_date,
+    )
+    
+    # Aktualisiere Equipment mit nächstem Prüfdatum
+    if cmd.next_inspection_date:
+        equipment.next_inspection_date = cmd.next_inspection_date
+        equipment.save(update_fields=["next_inspection_date"])
+    
+    emit_audit_event(
+        tenant_id=ctx.tenant_id,
+        category=AuditCategory.INSPECTION,
+        action="created",
+        entity_type="explosionsschutz.Inspection",
+        entity_id=inspection.id,
+        payload={
+            "equipment_id": str(equipment.id),
+            "equipment_serial": equipment.serial_number,
+            "inspection_type": inspection.inspection_type,
+            "result": inspection.result,
+            "inspector": inspection.inspector_name,
+            "next_inspection": str(cmd.next_inspection_date) if cmd.next_inspection_date else None,
+        },
+    )
+    
+    # Outbox für Fristenverwaltung
+    OutboxMessage.objects.create(
+        tenant_id=ctx.tenant_id,
+        topic="explosionsschutz.inspection.created",
+        payload={
+            "inspection_id": str(inspection.id),
+            "equipment_id": str(equipment.id),
+            "result": inspection.result,
+            "next_inspection_date": str(cmd.next_inspection_date) if cmd.next_inspection_date else None,
+        },
+    )
+    
+    return inspection
+
+
+# ============================================================================
+# Archivierung / Löschung
+# ============================================================================
+
+@transaction.atomic
+def archive_explosion_concept(concept_id: UUID) -> ExplosionConcept:
+    """
+    Archiviert ein Ex-Konzept (Soft Delete).
+    
+    Nur validierte Konzepte können archiviert werden.
+    Archivierte Konzepte bleiben für Compliance-Zwecke erhalten.
+    
+    Audit: explosionsschutz.concept.archived
+    """
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise PermissionDenied("Tenant erforderlich")
+    
+    concept = ExplosionConcept.objects.select_for_update().get(
+        id=concept_id,
+        tenant_id=ctx.tenant_id
+    )
+    
+    if concept.status not in ["validated", "superseded"]:
+        raise ValidationError("Nur validierte oder ersetzte Konzepte können archiviert werden")
+    
+    concept.status = "archived"
+    concept.save(update_fields=["status"])
+    
+    emit_audit_event(
+        tenant_id=ctx.tenant_id,
+        category=AuditCategory.CONCEPT,
+        action="archived",
+        entity_type="explosionsschutz.ExplosionConcept",
+        entity_id=concept.id,
+        payload={
+            "version": concept.version,
+            "previous_status": "validated",
+        },
+    )
+    
+    return concept
+```
+
+### 3.3 Audit Event Übersicht
+
+| Entity | Action | Trigger | Payload-Highlights |
+|--------|--------|---------|-------------------|
+| `ExplosionConcept` | `created` | Neues Konzept | title, area_id, substance |
+| `ExplosionConcept` | `updated` | Änderung | changes (old/new) |
+| `ExplosionConcept` | `validated` | Freigabe | validated_by, zone_count |
+| `ExplosionConcept` | `archived` | Archivierung | version, previous_status |
+| `ZoneDefinition` | `created` | Neue Zone | zone_type, extent |
+| `ZoneDefinition` | `updated` | Zonenänderung | changes |
+| `ZoneDefinition` | `deleted` | Zonenlöschung | reason |
+| `ProtectionMeasure` | `created` | Neue Maßnahme | category, has_safety_function |
+| `ProtectionMeasure` | `status_changed` | Statusänderung | old_status, new_status |
+| `Equipment` | `created` | Neues Gerät | atex_marking, zone_type |
+| `Equipment` | `decommissioned` | Außerbetriebnahme | reason |
+| `Inspection` | `created` | Neue Prüfung | result, inspector, next_date |
+
+### 3.4 Outbox Topics
+
+| Topic | Zweck | Consumer |
+|-------|-------|----------|
+| `explosionsschutz.concept.created` | Benachrichtigung EHS-Manager | Notification Worker |
+| `explosionsschutz.concept.validated` | Freigabe-Benachrichtigung | Notification Worker, Reporting |
+| `explosionsschutz.equipment.created` | Prüffristen-Setup | Scheduler Worker |
+| `explosionsschutz.inspection.created` | Fristenverwaltung | Scheduler Worker |
+| `explosionsschutz.inspection.overdue` | Überfällige Prüfungen | Alert Worker |
+
+---
+
+## 4. Optimiertes Datenmodell (ERD v5)
+
+### 4.1 Vollständiges Entity-Relationship-Diagramm
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           EXPLOSIONSSCHUTZ ERD v5                               │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                 │
+│  ┌──────────────────────────────────────────────────────────────────────────┐  │
+│  │                        STAMMDATEN (Hybrid-Isolation)                      │  │
+│  │                                                                           │  │
+│  │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐          │  │
+│  │  │ReferenceStandard│  │  MeasureCatalog │  │  EquipmentType  │          │  │
+│  │  │                 │  │                 │  │                 │          │  │
+│  │  │ tenant_id (opt) │  │ tenant_id (opt) │  │ tenant_id (opt) │          │  │
+│  │  │ is_system       │  │ is_system       │  │ is_system       │          │  │
+│  │  │ code            │  │ title           │  │ manufacturer    │          │  │
+│  │  │ title           │  │ default_type    │  │ model           │          │  │
+│  │  │ category        │  │ description_tpl │  │ atex_group      │          │  │
+│  │  │ url             │  │                 │  │ atex_category   │          │  │
+│  │  └─────────────────┘  └─────────────────┘  │ protection_type │          │  │
+│  │                                            │ explosion_group │          │  │
+│  │  ┌─────────────────┐                       │ temperature_cls │          │  │
+│  │  │ SafetyFunction  │                       │ epl             │          │  │
+│  │  │                 │                       │ ip_rating       │          │  │
+│  │  │ tenant_id (opt) │                       └─────────────────┘          │  │
+│  │  │ is_system       │                                                     │  │
+│  │  │ name            │                                                     │  │
+│  │  │ performance_lvl │                                                     │  │
+│  │  │ sil_level       │                                                     │  │
+│  │  │ monitoring_meth │                                                     │  │
+│  │  └─────────────────┘                                                     │  │
+│  └──────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                 │
+│  ┌──────────────┐                                                               │
+│  │ Organization │ (tenancy)                                                     │
+│  └──────┬───────┘                                                               │
+│         │ 1:N                                                                   │
+│         ▼                                                                       │
+│  ┌──────────────┐                                                               │
+│  │     Site     │ (tenancy)                                                     │
+│  └──────┬───────┘                                                               │
+│         │ 1:N                                                                   │
+│         ▼                                                                       │
+│  ┌──────────────┐      ┌──────────────────┐                                     │
+│  │     Area     │◄─────│ SiteInventoryItem│ (substances)                        │
+│  │              │      │                  │                                     │
+│  │ @property:   │      │ substance ──────►│ Substance (SDS)                     │
+│  │ has_ex_hazard│      └──────────────────┘                                     │
+│  └──────┬───────┘                                                               │
+│         │ 1:N                                                                   │
+│         ▼                                                                       │
+│  ┌────────────────────────────────────────────────────────────────────────┐    │
+│  │                      ExplosionConcept                                  │    │
+│  │                                                                        │    │
+│  │  • tenant_id (REQUIRED)                                                │    │
+│  │  • area (FK)                                                           │    │
+│  │  • substance (FK → substances.Substance)                               │    │
+│  │  • assessment_id (optional FK → risk.Assessment)                       │    │
+│  │  • title, version, status                                              │    │
+│  │  • is_validated, validated_by, validated_at                            │    │
+│  │                                                                        │    │
+│  │  @property sds_data → H-Sätze, Piktogramme, CAS, etc.                  │    │
+│  │  @property completion_percentage                                       │    │
+│  └────────────────────────────────────────────────────────────────────────┘    │
+│         │                                                                       │
+│         ├─────────────────┬─────────────────┬─────────────────┐                 │
+│         │ 1:N             │ 1:N             │ 1:N             │ 1:N             │
+│         ▼                 ▼                 ▼                 ▼                 │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐        │
+│  │ZoneDefinition│  │ Protection   │  │Verification  │  │  Equipment   │        │
+│  │              │  │   Measure    │  │  Document    │  │              │        │
+│  │ zone_type    │  │              │  │              │  │ equipment_   │        │
+│  │ extent(JSON) │  │ category     │  │ document_type│  │ type (FK)    │        │
+│  │ reference_   │  │ safety_      │  │ file         │  │ zone (FK)    │        │
+│  │ standard(FK) │  │ function(FK) │  │ issued_at    │  │ serial_no    │        │
+│  │              │  │ status       │  │              │  │ next_insp    │        │
+│  │ ignition_    │  │ catalog_     │  └──────────────┘  └──────┬───────┘        │
+│  │ assessments  │  │ reference(FK)│                          │ 1:N             │
+│  └──────────────┘  └──────────────┘                          ▼                 │
+│                                                        ┌──────────────┐        │
+│                                                        │  Inspection  │        │
+│                                                        │              │        │
+│                                                        │ type         │        │
+│                                                        │ result       │        │
+│                                                        │ inspector    │        │
+│                                                        │ certificate  │        │
+│                                                        └──────────────┘        │
+│                                                                                 │
+│  ┌──────────────────────────────────────────────────────────────────────────┐  │
+│  │                        ZÜNDQUELLEN (EN 1127-1)                            │  │
+│  │                                                                           │  │
+│  │  ┌───────────────────────┐                                                │  │
+│  │  │ZoneIgnitionSource     │                                                │  │
+│  │  │Assessment             │                                                │  │
+│  │  │                       │                                                │  │
+│  │  │ zone (FK)             │                                                │  │
+│  │  │ ignition_source (Enum)│  S1-S13 nach EN 1127-1                        │  │
+│  │  │ is_present            │                                                │  │
+│  │  │ is_effective          │                                                │  │
+│  │  │ mitigation            │                                                │  │
+│  │  └───────────────────────┘                                                │  │
+│  └──────────────────────────────────────────────────────────────────────────┘  │
+│                                                                                 │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 4.2 Zündquellen-Model (NEU)
+
+```python
+# explosionsschutz/models.py (Fortsetzung)
+
+class IgnitionSource(models.TextChoices):
+    """13 Zündquellen nach EN 1127-1"""
+    S1_HOT_SURFACES = "S1", "Heiße Oberflächen"
+    S2_FLAMES = "S2", "Flammen und heiße Gase"
+    S3_MECHANICAL_SPARKS = "S3", "Mechanisch erzeugte Funken"
+    S4_ELECTRICAL = "S4", "Elektrische Anlagen"
+    S5_STRAY_CURRENTS = "S5", "Kathodischer Korrosionsschutz / Streuströme"
+    S6_STATIC = "S6", "Statische Elektrizität"
+    S7_LIGHTNING = "S7", "Blitzschlag"
+    S8_ELECTROMAGNETIC = "S8", "Elektromagnetische Felder (HF)"
+    S9_OPTICAL = "S9", "Optische Strahlung"
+    S10_IONIZING = "S10", "Ionisierende Strahlung"
+    S11_ULTRASOUND = "S11", "Ultraschall"
+    S12_ADIABATIC = "S12", "Adiabatische Kompression / Stoßwellen"
+    S13_EXOTHERMIC = "S13", "Exotherme Reaktionen"
+
+
+class ZoneIgnitionSourceAssessment(models.Model):
+    """
+    Bewertung der 13 Zündquellen pro Zone nach EN 1127-1.
+    
+    Für jede Zone müssen alle 13 Zündquellen bewertet werden:
+    - is_present: Ist die Zündquelle vorhanden?
+    - is_effective: Kann sie eine Zündung verursachen?
+    - mitigation: Welche Maßnahmen werden ergriffen?
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     
-    equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE, related_name="inspections")
-    inspection_type = models.CharField(max_length=20, choices=INSPECTION_TYPE)
-    
-    scheduled_date = models.DateField()
-    performed_date = models.DateField(null=True, blank=True)
-    performed_by_id = models.UUIDField(null=True, blank=True)
-    performed_by_external = models.CharField(max_length=200, blank=True)  # ZÜS-Name
-    
-    result = models.CharField(max_length=30, choices=RESULT_CHOICES, null=True, blank=True)
-    findings = models.TextField(blank=True)
-    
-    # Protokoll
-    protocol_document = models.ForeignKey(
-        "documents.Document",
-        on_delete=models.SET_NULL,
-        null=True, blank=True
+    zone = models.ForeignKey(
+        "ZoneDefinition",
+        on_delete=models.CASCADE,
+        related_name="ignition_assessments"
+    )
+    ignition_source = models.CharField(
+        max_length=10,
+        choices=IgnitionSource.choices
     )
     
-    # Folgeprüfung
-    next_inspection_date = models.DateField(null=True, blank=True)
+    is_present = models.BooleanField(
+        default=False,
+        help_text="Ist diese Zündquelle im Bereich vorhanden?"
+    )
+    is_effective = models.BooleanField(
+        default=False,
+        help_text="Kann diese Zündquelle wirksam werden (Energie ausreichend)?"
+    )
+    mitigation = models.TextField(
+        blank=True,
+        help_text="Beschreibung der Schutzmaßnahmen gegen diese Zündquelle"
+    )
     
-    created_at = models.DateTimeField(auto_now_add=True)
+    assessed_by_id = models.UUIDField(null=True, blank=True)
+    assessed_at = models.DateTimeField(null=True, blank=True)
+    
+    class Meta:
+        db_table = "explosionsschutz_zone_ignition_assessment"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["zone", "ignition_source"],
+                name="uq_zone_ignition_source"
+            ),
+        ]
+    
+    def __str__(self):
+        status = "wirksam" if self.is_effective else ("vorhanden" if self.is_present else "nicht vorhanden")
+        return f"{self.zone.name} - {self.get_ignition_source_display()}: {status}"
 ```
 
-### HTMX-Komponenten
+### 4.3 Zone Extent Schema (Pydantic)
 
-#### Empfohlene Partials-Struktur
-```
-templates/
-└── explosionsschutz/
-    ├── concept_detail.html          # Hauptansicht Ex-Konzept
-    ├── concept_form.html             # Formular Ex-Konzept
-    ├── partials/
-    │   ├── zone_list.html            # Zonenliste (HTMX-fähig)
-    │   ├── zone_form.html            # Zone hinzufügen/bearbeiten
-    │   ├── measure_list.html         # Maßnahmenliste nach Typ
-    │   ├── measure_form.html         # Maßnahme hinzufügen
-    │   ├── progress_bar.html         # Fortschrittsanzeige
-    │   ├── equipment_selector.html   # Geräteauswahl
-    │   └── inspection_schedule.html  # Prüfkalender
-    └── pdf/
-        └── explosionsschutzdokument.html  # PDF-Template
-```
+```python
+# explosionsschutz/schemas.py
 
-#### HTMX-Attribute für Live-Interaktion
-```html
-<!-- Maßnahme inline bearbeiten -->
-<button hx-get="/ex/measure/{{id}}/edit/"
-        hx-target="#measure-{{id}}"
-        hx-swap="outerHTML">
-    Bearbeiten
-</button>
+from pydantic import BaseModel, Field, model_validator
+from typing import Literal, Optional
 
-<!-- Zone hinzufügen -->
-<button hx-get="/ex/concept/{{concept.id}}/zone/add/"
-        hx-target="#zone-list"
-        hx-swap="beforeend">
-    + Zone hinzufügen
-</button>
 
-<!-- Live-Fortschritt -->
-<div hx-get="/ex/concept/{{concept.id}}/progress/"
-     hx-trigger="load, every 10s"
-     hx-swap="innerHTML">
-</div>
+class ZoneExtent(BaseModel):
+    """
+    JSON Schema für Zonenausdehnung nach IEC 60079-10-1.
+    
+    Unterstützt verschiedene geometrische Formen:
+    - sphere: Kugelförmige Zone (z.B. um Füllstutzen)
+    - cylinder: Zylindrische Zone (z.B. über Wannen)
+    - box: Quaderförmige Zone (z.B. Räume)
+    - custom: Freiform mit Beschreibung
+    """
+    
+    shape: Literal["sphere", "cylinder", "box", "custom"]
+    
+    # Für sphere
+    radius_m: Optional[float] = Field(None, ge=0, description="Radius in Metern")
+    
+    # Für cylinder
+    diameter_m: Optional[float] = Field(None, ge=0, description="Durchmesser in Metern")
+    height_m: Optional[float] = Field(None, ge=0, description="Höhe in Metern")
+    
+    # Für box
+    length_m: Optional[float] = Field(None, ge=0, description="Länge in Metern")
+    width_m: Optional[float] = Field(None, ge=0, description="Breite in Metern")
+    depth_m: Optional[float] = Field(None, ge=0, description="Tiefe in Metern")
+    
+    # Für alle
+    origin_description: Optional[str] = Field(
+        None,
+        description="Beschreibung des Ursprungspunkts, z.B. 'Füllstutzen Tank T-101'"
+    )
+    reference_drawing: Optional[str] = Field(
+        None,
+        description="Referenz auf technische Zeichnung"
+    )
+    
+    # Für custom
+    custom_description: Optional[str] = Field(
+        None,
+        description="Freitextbeschreibung für komplexe Geometrien"
+    )
+    
+    @model_validator(mode="after")
+    def validate_shape_fields(self):
+        """Validiert, dass die richtigen Felder für die Shape gesetzt sind"""
+        if self.shape == "sphere":
+            if self.radius_m is None:
+                raise ValueError("radius_m erforderlich für shape='sphere'")
+        elif self.shape == "cylinder":
+            if self.diameter_m is None or self.height_m is None:
+                raise ValueError("diameter_m und height_m erforderlich für shape='cylinder'")
+        elif self.shape == "box":
+            if not all([self.length_m, self.width_m, self.depth_m]):
+                raise ValueError("length_m, width_m und depth_m erforderlich für shape='box'")
+        elif self.shape == "custom":
+            if not self.custom_description:
+                raise ValueError("custom_description erforderlich für shape='custom'")
+        return self
+    
+    @property
+    def volume_m3(self) -> Optional[float]:
+        """Berechnet das Volumen der Zone in m³"""
+        import math
+        if self.shape == "sphere" and self.radius_m:
+            return (4/3) * math.pi * (self.radius_m ** 3)
+        elif self.shape == "cylinder" and self.diameter_m and self.height_m:
+            return math.pi * ((self.diameter_m / 2) ** 2) * self.height_m
+        elif self.shape == "box" and self.length_m and self.width_m and self.depth_m:
+            return self.length_m * self.width_m * self.depth_m
+        return None
+
+
+# Beispiel-Nutzung:
+"""
+extent = ZoneExtent(
+    shape="sphere",
+    radius_m=1.5,
+    origin_description="Füllstutzen Tank T-101",
+    reference_drawing="P&ID-001-Rev3"
+)
+
+# In Django Model speichern:
+zone.extent = extent.model_dump()
+zone.save()
+
+# Aus Django Model laden:
+extent = ZoneExtent(**zone.extent)
+print(f"Volumen: {extent.volume_m3:.2f} m³")
+"""
 ```
 
 ---
 
-## Konsequenzen
+## 5. Implementierungsplan (aktualisiert v5)
 
-### Positive Konsequenzen
+### Voraussetzung: substances-Modul (SDS)
 
-1. **Rechtssicherheit** - Vollständige Abdeckung der regulatorischen Anforderungen
-2. **Integration** - Nutzt bestehende Risk-Hub-Infrastruktur (Tenancy, Documents, Audit)
-3. **Skalierbarkeit** - Multi-Tenant-fähig von Anfang an
-4. **UX** - HTMX ermöglicht flüssige Interaktion ohne SPA-Komplexität
-5. **Nachvollziehbarkeit** - Audit-Trail für alle Änderungen
+> **WICHTIG:** Das `explosionsschutz`-Modul setzt das `substances`-Modul voraus.
 
-### Negative Konsequenzen
+```
+Phase 0: SDS-Modul Basis (Sprint 1-4)
+├── Substance + Party + Identifier Models
+├── SdsRevision + Classification Models
+├── H-/P-Sätze + Piktogramme
+├── SiteInventoryItem
+└── Referenztabellen (H-/P-Satz-Texte)
 
-1. **Komplexität** - 6 neue Models erhöhen Datenbankschema-Komplexität
-2. **Migration** - Bestehende Daten müssen ggf. migriert werden
-3. **Schulung** - Benutzer müssen mit ATEX-Terminologie vertraut sein
+Phase 1: Ex-Stammdaten (Sprint 5) ← UPDATED v5
+├── TenantScopedMasterData Basisklasse
+├── ReferenceStandard Model + Hybrid-Isolation
+├── MeasureCatalog Model + Default-Vorlagen
+├── SafetyFunction Model
+├── EquipmentType Model mit strukturierter ATEX-Kennzeichnung
+├── Management Command: seed_reference_standards
+├── Management Command: seed_measure_catalog
+├── RLS-Policies für Hybrid-Isolation
+└── Admin Interfaces
 
-### Risiken
+Phase 2: Ex-Core Models (Sprint 6-7) ← UPDATED v5
+├── Area Model + @property has_explosion_hazard
+├── ExplosionConcept Model + Substance-FK
+├── ZoneDefinition Model + ReferenceStandard-FK
+├── ZoneExtent Pydantic Schema
+├── IgnitionSource Enum + ZoneIgnitionSourceAssessment
+├── ProtectionMeasure Model + SafetyFunction-FK
+├── Service Layer mit Audit-Trail (services.py)
+├── Signal: SiteInventoryItem → Ex-Review-Trigger
+└── Unit Tests für Services
 
-| Risiko | Eintrittswahrscheinlichkeit | Auswirkung | Mitigation |
-|--------|---------------------------|------------|------------|
-| Regulatorische Änderungen | Mittel | Hoch | Konfigurierbare Regelwerks-Referenzen |
-| Performance bei vielen Zonen | Niedrig | Mittel | Pagination, Lazy Loading |
-| PDF-Generierung langsam | Mittel | Niedrig | Async mit Celery |
+Phase 3: Equipment & Inspections (Sprint 8-9)
+├── Equipment Model + EquipmentType-FK
+├── Zone-Equipment-Validierung (ATEX-Kategorie)
+├── Inspection Model + Prüfprotokoll
+├── VerificationDocument Model
+├── Prüffristenlogik (auto next_inspection)
+├── Benachrichtigungsservice (Outbox)
+└── Unit Tests
+
+Phase 4: UI/UX (Sprint 10-12)
+├── Concept CRUD Views
+├── Substance-Selector (aus SDS-Modul)
+├── Zone Editor (HTMX)
+├── Ignition Source Assessment UI
+├── Measure Management (HTMX)
+├── Equipment Views mit Zonen-Zuordnungsvalidierung
+├── SDS-Daten-Anzeige (read-only)
+└── E2E Tests (Playwright)
+
+Phase 5: PDF & Integration (Sprint 13)
+├── PDF Template Explosionsschutzdokument
+├── WeasyPrint Integration
+├── Assessment-Verknüpfung
+├── SDS-Daten im PDF (H-Sätze, Piktogramme)
+├── Zündquellen-Bewertung im PDF
+└── API Documentation
+
+Phase 6: QA & Release (Sprint 14-15)
+├── Security Review
+├── Performance Tests
+├── User Documentation
+└── Production Deployment
+```
 
 ---
 
-## Implementierungsplan
+## 6. Konsequenzen
 
-### Phase 1: Core Models (2 Wochen)
-- [ ] Area Model + Migration
-- [ ] ExplosionConcept Model + Migration
-- [ ] ZoneDefinition Model + Migration
-- [ ] ProtectionMeasure Model + Migration
-- [ ] Admin-Interface für alle Models
+### 6.1 Positive Konsequenzen
 
-### Phase 2: Equipment & Inspections (2 Wochen)
-- [ ] Equipment Model + Migration
-- [ ] Inspection Model + Migration
-- [ ] Prüffristenlogik (automatische Berechnung)
-- [ ] Benachrichtigungen bei fälligen Prüfungen
+| # | Konsequenz | Nutzen |
+| --- | ---------- | ------ |
+| 1 | Normalisierte ATEX-Daten | Validierung, Filterung, Reporting |
+| 2 | Entkoppelte MSR-Bewertung | Klare Trennung einfach vs. komplex |
+| 3 | Dynamische Ex-Prüfung | Immer aktuell, keine Inkonsistenzen |
+| 4 | Stammdatenkataloge | Wiederverwendbarkeit, Konsistenz |
+| 5 | SDS-Integration ohne Redundanz | Single Source of Truth |
+| 6 | **Hybrid Tenant-Isolation** | Globale Standards + tenant-spezifische Erweiterungen |
+| 7 | **Vollständiger Audit-Trail** | Compliance-konforme Nachverfolgbarkeit |
+| 8 | **Zündquellen-Bewertung** | EN 1127-1 Compliance |
 
-### Phase 3: UI/UX (3 Wochen)
-- [ ] Concept Detail View mit HTMX
-- [ ] Zone-Editor (Drag & Drop optional)
-- [ ] Maßnahmen-Management inline
-- [ ] Fortschrittsanzeige
-- [ ] Equipment-Zuordnung
+### 6.2 Negative Konsequenzen
 
-### Phase 4: PDF & Export (1 Woche)
-- [ ] PDF-Template Explosionsschutzdokument
-- [ ] WeasyPrint Integration
-- [ ] Export-API
-
-### Phase 5: Integration & Test (2 Wochen)
-- [ ] Integration in bestehendes Assessment-Modul
-- [ ] Berechtigungsprüfung
-- [ ] E2E-Tests
-- [ ] Dokumentation
+| # | Konsequenz | Mitigation |
+| --- | ---------- | ---------- |
+| 1 | Komplexeres Schema (+6 Models) | Saubere Dokumentation, ERD |
+| 2 | Mehr JOINs für Abfragen | Indexierung, select_related() |
+| 3 | SDS-Modul als Voraussetzung | Klare Dependency-Dokumentation |
+| 4 | Hybrid-Isolation Komplexität | Custom Manager kapselt Logik |
 
 ---
 
-## Referenzen
+## 7. Referenzen
 
-- [ATEX Directive 2014/34/EU](https://eur-lex.europa.eu/legal-content/EN/TXT/PDF/?uri=CELEX:32014L0034)
-- [TRGS 720-725](https://www.baua.de/DE/Angebote/Regelwerk/TRGS/TRGS.html)
-- [BetrSichV](https://www.gesetze-im-internet.de/betrsichv_2015/)
-- [IEC 60079-10-1:2020](https://webstore.iec.ch/en/publication/63327)
-- [ChatGPT Vorschlag](../concepts/ex%20schutz.md)
+| Dokument | Link |
+| -------- | ---- |
+| ATEX 114 Richtlinie | [EUR-Lex](https://eur-lex.europa.eu/legal-content/DE/TXT/?uri=CELEX:32014L0034) |
+| TRGS 720-725 | [BAuA](https://www.baua.de/DE/Angebote/Regelwerk/TRGS/TRGS.html) |
+| BetrSichV | [Gesetze im Internet](https://www.gesetze-im-internet.de/betrsichv_2015/) |
+| IEC 60079-10-1 | [IEC Webstore](https://webstore.iec.ch/publication/63327) |
+| EN 1127-1 Zündquellen | [Beuth](https://www.beuth.de/de/norm/din-en-1127-1/351422270) |
+| ISO 13849 (PL) | [ISO](https://www.iso.org/standard/69883.html) |
+| IEC 62061 (SIL) | [IEC](https://webstore.iec.ch/publication/67497) |
 
 ---
 
-## Entscheidungsprotokoll
+## 8. Änderungshistorie
 
-| Datum | Entscheidung | Begründung |
-|-------|--------------|------------|
-| 2026-01-31 | ADR erstellt | Initiale Architekturentscheidung |
-| | | |
+| Version | Datum | Autor | Änderung |
+| ------- | ----- | ----- | -------- |
+| 1.0 | 2026-01-31 | Cascade | Initial Draft |
+| 2.0 | 2026-01-31 | Cascade | Review-Ready Version |
+| 3.0 | 2026-01-31 | Cascade | SDS-Integration |
+| 4.0 | 2026-01-31 | Cascade | Review-Feedback - Normalisierung, SoC, strukturierte ATEX |
+| 5.0 | 2026-01-31 | Cascade | **Tenant-Isolation + Audit-Trail** - Hybrid-Modell, Service Layer, Zündquellen |
 
+---
+
+## 9. Approval
+
+| Rolle | Name | Datum | Signatur |
+| ----- | ---- | ----- | -------- |
+| Autor | Achim Dehnert | 2026-01-31 | ✅ |
+| Technical Review | AI Review | 2026-01-31 | ✅ |
+| Architecture | _ausstehend_ | | |
+
+**Nächster Schritt:** Phase 0 (SDS-Modul) parallel starten, dann Phase 1 (Stammdaten mit Hybrid-Isolation)

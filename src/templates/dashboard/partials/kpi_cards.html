@@ -1,6 +1,7 @@
 <!-- Top-level KPI summary cards -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-    <!-- Inspections -->
+    <!-- Inspections (ex module) -->
+    {% if "ex" in active_modules %}
     <div class="bg-white rounded-lg shadow p-4">
         <div class="flex items-center gap-2 mb-2">
             <i data-lucide="clipboard-check" class="w-4 h-4 text-teal-500"></i>
@@ -11,8 +12,10 @@
         </div>
         <div class="text-xs text-gray-400 mt-1">überfällig</div>
     </div>
+    {% endif %}
 
-    <!-- Open Actions -->
+    <!-- Open Actions (risk module) -->
+    {% if "risk" in active_modules %}
     <div class="bg-white rounded-lg shadow p-4">
         <div class="flex items-center gap-2 mb-2">
             <i data-lucide="check-square" class="w-4 h-4 text-green-500"></i>
@@ -23,8 +26,10 @@
         </div>
         <div class="text-xs text-gray-400 mt-1">offen ({{ kpis.actions_overdue }} überfällig)</div>
     </div>
+    {% endif %}
 
-    <!-- Equipment -->
+    <!-- Equipment (ex module) -->
+    {% if "ex" in active_modules %}
     <div class="bg-white rounded-lg shadow p-4">
         <div class="flex items-center gap-2 mb-2">
             <i data-lucide="cog" class="w-4 h-4 text-blue-500"></i>
@@ -33,8 +38,10 @@
         <div class="text-3xl font-bold text-gray-900">{{ kpis.equipment_total }}</div>
         <div class="text-xs text-gray-400 mt-1">{{ kpis.inspections_due_30d }} bald fällig</div>
     </div>
+    {% endif %}
 
-    <!-- Substances -->
+    <!-- Substances (ex module) -->
+    {% if "ex" in active_modules or "substances" in active_modules %}
     <div class="bg-white rounded-lg shadow p-4">
         <div class="flex items-center gap-2 mb-2">
             <i data-lucide="flask-conical" class="w-4 h-4 text-purple-500"></i>
@@ -43,5 +50,18 @@
         <div class="text-3xl font-bold text-gray-900">{{ kpis.substances_total }}</div>
         <div class="text-xs text-gray-400 mt-1">{{ kpis.sds_outdated }} SDB veraltet</div>
     </div>
+    {% endif %}
+
+    <!-- DSB (dsb module) -->
+    {% if "dsb" in active_modules %}
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center gap-2 mb-2">
+            <i data-lucide="shield" class="w-4 h-4 text-blue-600"></i>
+            <span class="text-xs font-medium text-gray-500 uppercase">Datenschutz</span>
+        </div>
+        <div class="text-3xl font-bold text-gray-900">DSB</div>
+        <div class="text-xs text-gray-400 mt-1">aktiv</div>
+    </div>
+    {% endif %}
 </div>
 <script>lucide.createIcons();</script>

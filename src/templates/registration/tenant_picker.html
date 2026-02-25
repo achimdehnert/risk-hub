@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Organisation wählen – Schutztat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root { --brand: #e85d04; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        .picker-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            width: 100%; max-width: 480px;
+        }
+        .org-btn {
+            display: flex; align-items: center; gap: 14px;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: #fff; text-decoration: none;
+            transition: background 0.2s, border-color 0.2s, transform 0.15s;
+            width: 100%;
+        }
+        .org-btn:hover {
+            background: rgba(232,93,4,0.15);
+            border-color: rgba(232,93,4,0.4);
+            color: #fff;
+            transform: translateX(4px);
+        }
+        .org-icon {
+            width: 44px; height: 44px; border-radius: 10px;
+            background: rgba(232,93,4,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; color: #ff8c42; flex-shrink: 0;
+        }
+        .role-badge {
+            font-size: 0.7rem; font-weight: 600; letter-spacing: 0.05em;
+            padding: 2px 8px; border-radius: 6px;
+            background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="picker-card">
+        <div class="text-center mb-4">
+            <div style="width:48px;height:48px;background:var(--brand);border-radius:12px;
+                        display:flex;align-items:center;justify-content:center;margin:0 auto 1rem;">
+                <i class="bi bi-building text-white fs-5"></i>
+            </div>
+            <h4 class="text-white fw-bold mb-1">Organisation wählen</h4>
+            <p style="color:rgba(255,255,255,0.5);font-size:0.875rem;">
+                Ihr Konto ist mehreren Organisationen zugeordnet.
+            </p>
+        </div>
+
+        <div class="d-flex flex-column gap-3">
+            {% for m in memberships %}
+            <a href="/accounts/login/pick/{{ m.organization.slug }}/" class="org-btn">
+                <div class="org-icon">
+                    <i class="bi bi-building"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold">{{ m.organization.name }}</div>
+                    <div class="text-white-50 small">{{ m.organization.slug }}.schutztat.de</div>
+                </div>
+                <div>
+                    <span class="role-badge">{{ m.get_role_display }}</span>
+                </div>
+                <i class="bi bi-chevron-right text-white-50"></i>
+            </a>
+            {% endfor %}
+        </div>
+
+        <hr style="border-color:rgba(255,255,255,0.1);margin:1.5rem 0;">
+        <p class="text-center mb-0" style="color:rgba(255,255,255,0.4);font-size:0.8rem;">
+            <a href="/accounts/logout/" class="text-decoration-none" style="color:rgba(255,255,255,0.4);">
+                <i class="bi bi-box-arrow-left me-1"></i>Abmelden
+            </a>
+        </p>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

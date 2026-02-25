@@ -13,10 +13,10 @@ DEFAULT_CATEGORIES: list[tuple[str, str]] = [
     ("Zugriffskontrolle", "technical"),
     ("Weitergabekontrolle", "technical"),
     ("Eingabekontrolle", "technical"),
-    ("Verfügbarkeitskontrolle", "technical"),
+    ("Verf\u00fcgbarkeitskontrolle", "technical"),
     ("Trennungsgebot", "technical"),
     # Organisatorisch
-    ("Organisatorische Maßnahmen", "organizational"),
+    ("Organisatorische Ma\u00dfnahmen", "organizational"),
     # AVV (Auftragsverarbeitung)
     ("Auftragskontrolle", "avv"),
 ]

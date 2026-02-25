@@ -49,11 +49,13 @@
                     <td class="px-4 py-3 text-sm">{% status_badge m.status %}</td>
                     <td class="px-4 py-3 text-sm text-right space-x-2">
                         <a href="{% url 'dsb:mandate-edit' m.pk %}"
-                           class="text-blue-600 hover:text-blue-800">
+                           class="text-blue-600 hover:text-blue-800"
+                           title="Bearbeiten">
                             <i data-lucide="pencil" class="w-4 h-4 inline"></i>
                         </a>
                         <a href="{% url 'dsb:mandate-delete' m.pk %}"
-                           class="text-red-500 hover:text-red-700">
+                           class="text-red-500 hover:text-red-700"
+                           title="Löschen">
                             <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
                         </a>
                     </td>
@@ -64,7 +66,15 @@
     </div>
 </div>
 {% else %}
-{% empty_state "building-2" "Keine Mandate" "Legen Sie Ihr erstes betreutes Unternehmen an." "{% url 'dsb:mandate-create' %}" "Mandat anlegen" %}
+<div class="text-center py-16 bg-white rounded-lg shadow">
+    <i data-lucide="building-2" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+    <h3 class="text-lg font-medium text-gray-900 mb-1">Keine Mandate</h3>
+    <p class="text-sm text-gray-500 mb-4">Legen Sie Ihr erstes betreutes Unternehmen an.</p>
+    <a href="{% url 'dsb:mandate-create' %}"
+       class="inline-flex items-center gap-1 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700">
+        <i data-lucide="plus" class="w-4 h-4"></i> Mandat anlegen
+    </a>
+</div>
 {% endif %}
 {% endblock %}
 

@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — DSB{% endblock %}
+
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">
+            <i data-lucide="trash-2" class="w-7 h-7 inline text-red-600 mr-1"></i>
+            {{ title }}
+        </h1>
+        <p class="text-sm text-gray-500 mt-1">Betroffene Person hat Recht auf Löschung gemäß Art. 17 DSGVO</p>
+    </div>
+    <a href="{% url 'dsb:deletion-request-list' %}"
+       class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Zurück
+    </a>
+</div>
+
+<div class="max-w-2xl">
+    <div class="bg-white rounded-lg shadow p-6">
+        <form method="post" class="space-y-5">
+            {% csrf_token %}
+
+            <div>
+                <label for="{{ form.mandate.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    Mandat <span class="text-red-500">*</span>
+                </label>
+                {{ form.mandate }}
+            </div>
+
+            <div class="border-t pt-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3">Betroffene Person</h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="{{ form.subject_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            Name <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.subject_name }}
+                    </div>
+                    <div>
+                        <label for="{{ form.subject_email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            E-Mail <span class="text-red-500">*</span>
+                        </label>
+                        {{ form.subject_email }}
+                    </div>
+                </div>
+                <div class="mt-4">
+                    <label for="{{ form.subject_reference.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Referenz / Kundennummer
+                    </label>
+                    {{ form.subject_reference }}
+                    <p class="text-xs text-gray-400 mt-1">Interne Referenz zur Identifikation der Person</p>
+                </div>
+            </div>
+
+            <div class="border-t pt-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3">Antrag</h3>
+                <div>
+                    <label for="{{ form.request_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Antragsdatum <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.request_date }}
+                    <p class="text-xs text-gray-400 mt-1">Ab diesem Datum läuft die 1-Monats-Frist (Art. 12 Abs. 3 DSGVO)</p>
+                </div>
+                <div class="mt-4">
+                    <label for="{{ form.data_categories.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Betroffene Datenkategorien
+                    </label>
+                    {{ form.data_categories }}
+                    <p class="text-xs text-gray-400 mt-1">Kommagetrennt, z.B. Stammdaten, Kontaktdaten, Kaufhistorie</p>
+                </div>
+                <div class="mt-4">
+                    <label for="{{ form.request_description.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        Beschreibung des Löschantrags <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.request_description }}
+                </div>
+            </div>
+
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm text-blue-800">
+                <i data-lucide="info" class="w-4 h-4 inline mr-1"></i>
+                Nach dem Speichern wird automatisch eine Eingangsbestätigung an die betroffene Person gesendet.
+            </div>
+
+            {% if form.errors %}
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <p class="text-sm text-red-700">{{ field }}: {{ error }}</p>
+                {% endfor %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="flex gap-3 pt-2">
+                <button type="submit"
+                        class="px-6 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700">
+                    <i data-lucide="save" class="w-4 h-4 inline mr-1"></i>
+                    Löschantrag anlegen & E-Mail senden
+                </button>
+                <a href="{% url 'dsb:deletion-request-list' %}"
+                   class="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+                    Abbrechen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

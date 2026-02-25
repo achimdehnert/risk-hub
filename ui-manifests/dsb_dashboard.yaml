@@ -1,0 +1,36 @@
+manifest_version: "1.0"
+page:
+  route: /dsb/
+  title: "Datenschutz-Dashboard"
+  django_view: "dsb.views.dashboard"
+  django_url_name: "dsb:dashboard"
+  template: "dsb/dashboard.html"
+
+components:
+  - id: dsb-dashboard-header
+    type: section
+    description: "Dashboard-Header mit Titel"
+    required_elements:
+      - element_id: dsb-dashboard-header
+        type: section
+        description: "Header-Wrapper"
+      - element_id: dsb-dashboard-title
+        type: text
+        description: "Dashboard-Titel"
+
+  - id: dsb-alert-banner
+    type: alert
+    description: "Handlungsbedarf-Banner (conditional)"
+    conditional: "Nur wenn kritische Einträge vorhanden"
+    required_elements:
+      - element_id: dsb-alert-banner
+        type: section
+        description: "Alert-Banner für Handlungsbedarf"
+
+  - id: dsb-kpi-grid
+    type: data-display
+    description: "KPI-Grid mit stat_card Components"
+    required_elements:
+      - element_id: dsb-kpi-grid
+        type: section
+        description: "KPI-Grid Wrapper"

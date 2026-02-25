@@ -7,6 +7,8 @@ from .audit import AuditFinding, PrivacyAudit
 from .breach import Breach
 from .choices import MeasureStatus, SeverityLevel
 from .deletion import DeletionLog
+from .deletion_request import DeletionRequest, DeletionRequestStatus, WORKFLOW_TRANSITIONS
+from .document import DsbDocument
 from .dpa import DataProcessingAgreement
 from .lookups import (
     Category,
@@ -26,6 +28,10 @@ __all__ = [
     "Category",
     "DataProcessingAgreement",
     "DeletionLog",
+    "DeletionRequest",
+    "DsbDocument",
+    "DeletionRequestStatus",
+    "WORKFLOW_TRANSITIONS",
     "Mandate",
     "MeasureStatus",
     "OrganizationalMeasure",

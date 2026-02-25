@@ -1,7 +1,7 @@
 """Subdomain-based tenant resolution middleware.
 
 Resolution order:
-    1. Subdomain: ``acme.example.com`` -> Organization(slug="acme")
+    1. Subdomain: ``acme.example.com`` → Organization(slug="acme")
     2. Header: ``X-Tenant-ID: <uuid>`` (for API clients and tests)
     3. None: ``request.tenant_id = None`` (public pages, health endpoints)
 
@@ -23,13 +23,7 @@ import uuid as _uuid
 from django.http import HttpRequest, HttpResponse
 from django.utils.deprecation import MiddlewareMixin
 
-from .context import (
-    clear_context,
-    set_db_tenant,
-    set_request_id,
-    set_tenant,
-    set_user,
-)
+from .context import clear_context, set_db_tenant, set_request_id, set_tenant, set_user
 from .healthz import HEALTH_PATHS
 
 logger = logging.getLogger(__name__)
@@ -38,9 +32,7 @@ logger = logging.getLogger(__name__)
 class SubdomainTenantMiddleware(MiddlewareMixin):
     """Subdomain-based tenant resolution with header fallback."""
 
-    def process_request(
-        self, request: HttpRequest
-    ) -> HttpResponse | None:
+    def process_request(self, request: HttpRequest) -> HttpResponse | None:
         """Resolve tenant from subdomain or header."""
         # Generate request ID for tracing
         set_request_id()
@@ -69,9 +61,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         if len(parts) > 2:
             subdomain = parts[0]
             if subdomain not in ("www", "api"):
-                result = self._resolve_from_subdomain(
-                    request, subdomain
-                )
+                result = self._resolve_from_subdomain(request, subdomain)
                 if result is not None:
                     return result
                 return None
@@ -79,9 +69,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         # Try header fallback (API clients, tests)
         header_tenant = request.META.get("HTTP_X_TENANT_ID")
         if header_tenant:
-            result = self._resolve_from_header(
-                request, header_tenant
-            )
+            result = self._resolve_from_header(request, header_tenant)
             if result is not None:
                 return result
             return None
@@ -102,26 +90,23 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
     def _resolve_from_subdomain(
         self, request: HttpRequest, subdomain: str
     ) -> HttpResponse | None:
-        """Resolve tenant from subdomain slug."""
+        """Resolve tenant from subdomain slug.
+
+        Returns None on success, HttpResponse on error.
+        """
         from .models import Organization
 
         try:
             org = Organization.objects.get(slug=subdomain)
         except Organization.DoesNotExist:
-            logger.warning(
-                "Unknown tenant subdomain: %s", subdomain
-            )
+            logger.warning("Unknown tenant subdomain: %s", subdomain)
             request.tenant_id = None
             request.tenant = None
             request.tenant_slug = None
             return None
 
         if not org.is_active:
-            logger.warning(
-                "Inactive tenant: %s (status=%s)",
-                subdomain,
-                org.status,
-            )
+            logger.warning("Inactive tenant: %s (status=%s)", subdomain, org.status)
             request.tenant_id = None
             request.tenant = None
             request.tenant_slug = None
@@ -133,15 +118,16 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
     def _resolve_from_header(
         self, request: HttpRequest, header_value: str
     ) -> HttpResponse | None:
-        """Resolve tenant from X-Tenant-ID header."""
+        """Resolve tenant from X-Tenant-ID header.
+
+        Returns None on success, HttpResponse on error.
+        """
         from .models import Organization
 
         try:
             tenant_uuid = _uuid.UUID(header_value)
         except (ValueError, TypeError):
-            logger.warning(
-                "Invalid X-Tenant-ID header: %s", header_value
-            )
+            logger.warning("Invalid X-Tenant-ID header: %s", header_value)
             request.tenant_id = None
             request.tenant = None
             request.tenant_slug = None
@@ -150,9 +136,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         try:
             org = Organization.objects.get(tenant_id=tenant_uuid)
         except Organization.DoesNotExist:
-            logger.warning(
-                "Unknown tenant from header: %s", tenant_uuid
-            )
+            logger.warning("Unknown tenant from header: %s", tenant_uuid)
             request.tenant_id = None
             request.tenant = None
             request.tenant_slug = None

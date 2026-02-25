@@ -1,0 +1,23 @@
+Django>=5.0,<6.0
+dj-database-url>=2.2
+psycopg[binary]>=3.2
+python-dotenv>=1.0
+django-htmx>=1.17
+django-ninja>=1.1.0
+djangorestframework>=3.15
+django-filter>=24.0
+pydantic>=2.7
+boto3>=1.34
+httpx>=0.27
+structlog>=24.0
+jinja2>=3.1
+jsonschema>=4.21
+tenacity>=8.2
+weasyprint>=62.0
+python-docx>=1.1
+celery[redis]>=5.4
+gunicorn>=22.0
+whitenoise>=6.6
+# Platform shared packages (private repo)
+django-tenancy @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-tenancy
+platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/platform-context

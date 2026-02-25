@@ -18,8 +18,8 @@
            class="text-sm text-gray-500 hover:text-gray-700 px-3 py-2">
             <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> Dashboard
         </a>
-        <a href="{% url 'dsb:csv-import' %}"
-           class="inline-flex items-center gap-1 px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+        <a href="{% url 'dsb:avv-import' %}"
+           class="inline-flex items-center gap-1 px-4 py-2 border border-purple-300 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-50">
             <i data-lucide="upload" class="w-4 h-4"></i> CSV Import
         </a>
         <a href="{% url 'dsb:dpa-create' %}"
@@ -36,31 +36,60 @@
 
 {% if rows %}
 <div class="bg-white rounded-lg shadow overflow-hidden">
-    <table class="min-w-full divide-y divide-gray-200" data-testid="dpa-table">
-        <thead class="bg-gray-50">
-            <tr>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Vertragspartner</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rolle</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gültig ab</th>
-                <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Ablauf</th>
-            </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-            {% for dpa in rows %}
-            <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ dpa.partner_name }}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.get_role_display }}</td>
-                <td class="px-4 py-3 text-sm">{% status_badge dpa.status %}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.effective_date|date:"d.m.Y"|default:"—" }}</td>
-                <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.expiry_date|date:"d.m.Y"|default:"—" }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Partner</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Rolle</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Mandat</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Gültig bis</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                {% for dpa in rows %}
+                <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'dsb:dpa-detail' dpa.pk %}'">
+                    <td class="px-4 py-3">
+                        <div class="text-sm font-medium text-blue-600">
+                            <a href="{% url 'dsb:dpa-detail' dpa.pk %}">{{ dpa.partner_name }}</a>
+                        </div>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.get_partner_role_display }}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.mandate.name }}</td>
+                    <td class="px-4 py-3 text-sm">{% status_badge dpa.status %}</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.expiry_date|default:"—" }}</td>
+                    <td class="px-4 py-3 text-right" onclick="event.stopPropagation()">
+                        <a href="{% url 'dsb:dpa-detail' dpa.pk %}" class="text-gray-500 hover:text-gray-700 mr-2">
+                            <i data-lucide="eye" class="w-4 h-4 inline"></i>
+                        </a>
+                        <a href="{% url 'dsb:dpa-edit' dpa.pk %}" class="text-blue-600 hover:text-blue-800">
+                            <i data-lucide="pencil" class="w-4 h-4 inline"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% else %}
-{% empty_state "file-signature" "Keine AVV" "Es wurden noch keine Auftragsverarbeitungsverträge angelegt." %}
+<div class="text-center py-16 bg-white rounded-lg shadow">
+    <i data-lucide="file-signature" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+    <h3 class="text-lg font-medium text-gray-900 mb-1">Keine AVV</h3>
+    <p class="text-sm text-gray-500 mb-4">Es wurden noch keine Auftragsverarbeitungsverträge angelegt.</p>
+    <div class="flex gap-2 justify-center">
+        <a href="{% url 'dsb:avv-import' %}"
+           class="inline-flex items-center gap-1 px-4 py-2 border border-purple-300 text-purple-700 text-sm font-medium rounded-lg hover:bg-purple-50">
+            <i data-lucide="upload" class="w-4 h-4"></i> CSV Import
+        </a>
+        <a href="{% url 'dsb:dpa-create' %}"
+           class="inline-flex items-center gap-1 px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700">
+            <i data-lucide="plus" class="w-4 h-4"></i> Neuer AVV
+        </a>
+    </div>
+</div>
 {% endif %}
 {% endblock %}
 
