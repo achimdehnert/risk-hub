@@ -2,7 +2,7 @@ name: Issue Triage
 
 on:
   issues:
-    types: [opened, edited, labeled]
+    types: [opened]
 
 permissions:
   issues: write
@@ -12,65 +12,41 @@ jobs:
   triage:
     runs-on: ubuntu-latest
     steps:
-      - name: Auto-label by title prefix
+      - name: Auto-label and set project fields
         uses: actions/github-script@v7
+        env:
+          PROJECT_NUMBER: ${{ vars.PROJECT_NUMBER }}
+          PLATFORM_PROJECT_NUMBER: ${{ vars.PLATFORM_PROJECT_NUMBER }}
         with:
+          github-token: ${{ secrets.PROJECT_PAT }}
           script: |
             const title = context.payload.issue.title || '';
+            const body = context.payload.issue.body || '';
             const issueNumber = context.payload.issue.number;
+            const issueNodeId = context.payload.issue.node_id;
             const existingLabels = context.payload.issue.labels.map(l => l.name);
+
+            // ── 1. LABELS ────────────────────────────────────────────────────
             const labelsToAdd = [];
 
-            // Title-prefix → Label mapping
-            if (title.startsWith('[BUG]') && !existingLabels.includes('bug')) {
-              labelsToAdd.push('bug');
-            }
-            if (title.startsWith('[FEATURE]') && !existingLabels.includes('enhancement')) {
-              labelsToAdd.push('enhancement');
-            }
-            if (title.startsWith('[TASK]') && !existingLabels.includes('task')) {
-              labelsToAdd.push('task');
-            }
-            if (title.startsWith('[UC]') && !existingLabels.includes('use-case')) {
-              labelsToAdd.push('use-case');
-            }
-            if (title.startsWith('[ADR]') && !existingLabels.includes('adr')) {
-              labelsToAdd.push('adr');
-            }
-            if (title.startsWith('[HOTFIX]') && !existingLabels.includes('hotfix')) {
+            // Title-prefix → Label (matches Issue Template title prefixes)
+            // Templates set labels directly — these handle manually-created issues
+            const titleUpper = title.toUpperCase();
+            if (titleUpper.startsWith('[BUG]')     && !existingLabels.includes('bug'))         labelsToAdd.push('bug');
+            if (titleUpper.startsWith('[FEATURE]') && !existingLabels.includes('enhancement')) labelsToAdd.push('enhancement');
+            if (titleUpper.startsWith('[TASK]')    && !existingLabels.includes('task'))        labelsToAdd.push('task');
+            if (titleUpper.startsWith('[UC]')      && !existingLabels.includes('use-case'))    labelsToAdd.push('use-case');
+            if (titleUpper.startsWith('[ADR]')     && !existingLabels.includes('adr'))         labelsToAdd.push('adr');
+            if (titleUpper.startsWith('[HOTFIX]')  && !existingLabels.includes('hotfix')) {
               labelsToAdd.push('hotfix');
               if (!existingLabels.includes('bug')) labelsToAdd.push('bug');
             }
 
-            if (labelsToAdd.length > 0) {
-              await github.rest.issues.addLabels({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                labels: labelsToAdd,
-              });
-              console.log(`Added labels: ${labelsToAdd.join(', ')}`);
-            }
-
-      - name: Auto-label severity from body
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const body = context.payload.issue.body || '';
-            const issueNumber = context.payload.issue.number;
-            const existingLabels = context.payload.issue.labels.map(l => l.name);
-            const labelsToAdd = [];
-
-            // Severity detection from dropdown value in bug_report.yml
-            if (body.includes('critical') && !existingLabels.includes('severity:critical')) {
-              labelsToAdd.push('severity:critical');
-            } else if (body.includes('high —') && !existingLabels.includes('severity:high')) {
-              labelsToAdd.push('severity:high');
-            } else if (body.includes('medium —') && !existingLabels.includes('severity:medium')) {
-              labelsToAdd.push('severity:medium');
-            } else if (body.includes('low —') && !existingLabels.includes('severity:low')) {
-              labelsToAdd.push('severity:low');
-            }
+            // Body severity → Label (matches bug_report.yml dropdown options)
+            if      (body.includes('critical —') && !existingLabels.includes('severity:critical')) labelsToAdd.push('severity:critical');
+            else if (body.includes('high —')     && !existingLabels.includes('severity:high'))     labelsToAdd.push('severity:high');
+            else if (body.includes('medium —')   && !existingLabels.includes('severity:medium'))   labelsToAdd.push('severity:medium');
+            else if (body.includes('low —')      && !existingLabels.includes('severity:low'))      labelsToAdd.push('severity:low');
 
             if (labelsToAdd.length > 0) {
               await github.rest.issues.addLabels({
@@ -79,115 +55,130 @@ jobs:
                 issue_number: issueNumber,
                 labels: labelsToAdd,
               });
-              console.log(`Added severity labels: ${labelsToAdd.join(', ')}`);
+              console.log(`Labels added: ${labelsToAdd.join(', ')}`);
             }
 
-      - name: Add to repo project board
-        uses: actions/github-script@v7
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          github-token: ${{ secrets.PROJECT_PAT }}
-          script: |
-            const issueNodeId = context.payload.issue.node_id;
+            // Merge all labels for downstream logic
+            const allLabels = [...new Set([...existingLabels, ...labelsToAdd])];
 
-            // Get project ID for this repo's project
-            // PROJECT_NUMBER is set as a repo variable (Settings → Variables)
+            // ── 2. DETERMINE Type + Priority ─────────────────────────────────
+            let typeOption = null;
+            let priorityOption = null;
+
+            if      (allLabels.includes('bug'))         typeOption = 'Bug';
+            else if (allLabels.includes('enhancement')) typeOption = 'Feature';
+            else if (allLabels.includes('use-case'))    typeOption = 'Use Case';
+            else if (allLabels.includes('adr'))         typeOption = 'ADR';
+            else if (allLabels.includes('task'))        typeOption = 'Task';
+
+            if      (allLabels.includes('severity:critical')) priorityOption = 'Critical';
+            else if (allLabels.includes('severity:high'))     priorityOption = 'High';
+            else if (allLabels.includes('severity:medium'))   priorityOption = 'Medium';
+            else if (allLabels.includes('severity:low'))      priorityOption = 'Low';
+            else if (allLabels.includes('hotfix'))            priorityOption = 'High';
+
+            // ── 3. Helper: add issue to project + set fields ──────────────────
+            async function addToProject(projectNumber, owner) {
+              const projectQuery = await github.graphql(`
+                query($owner: String!, $number: Int!) {
+                  user(login: $owner) {
+                    projectV2(number: $number) {
+                      id
+                      fields(first: 20) {
+                        nodes {
+                          ... on ProjectV2SingleSelectField { id name options { id name } }
+                        }
+                      }
+                    }
+                  }
+                }
+              `, { owner, number: projectNumber });
+
+              const project = projectQuery.user.projectV2;
+              const projectId = project.id;
+
+              // Add item (idempotent — returns existing item if already added)
+              const addResult = await github.graphql(`
+                mutation($projectId: ID!, $contentId: ID!) {
+                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
+                    item { id }
+                  }
+                }
+              `, { projectId, contentId: issueNodeId });
+
+              const itemId = addResult.addProjectV2ItemById.item.id;
+              console.log(`Issue added to project #${projectNumber}, item: ${itemId}`);
+
+              // Set Type field
+              if (typeOption) {
+                const typeField = project.fields.nodes.find(f => f && f.name === 'Type');
+                if (typeField) {
+                  const opt = typeField.options.find(o => o.name === typeOption);
+                  if (opt) {
+                    await github.graphql(`
+                      mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                        updateProjectV2ItemFieldValue(input: {
+                          projectId: $projectId, itemId: $itemId,
+                          fieldId: $fieldId, value: { singleSelectOptionId: $optionId }
+                        }) { projectV2Item { id } }
+                      }
+                    `, { projectId, itemId, fieldId: typeField.id, optionId: opt.id });
+                    console.log(`Type set to: ${typeOption}`);
+                  } else {
+                    console.log(`Type option '${typeOption}' not found in project #${projectNumber}`);
+                  }
+                }
+              }
+
+              // Set Priority field
+              if (priorityOption) {
+                const priorityField = project.fields.nodes.find(f => f && f.name === 'Priority');
+                if (priorityField) {
+                  const opt = priorityField.options.find(o => o.name === priorityOption);
+                  if (opt) {
+                    await github.graphql(`
+                      mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
+                        updateProjectV2ItemFieldValue(input: {
+                          projectId: $projectId, itemId: $itemId,
+                          fieldId: $fieldId, value: { singleSelectOptionId: $optionId }
+                        }) { projectV2Item { id } }
+                      }
+                    `, { projectId, itemId, fieldId: priorityField.id, optionId: opt.id });
+                    console.log(`Priority set to: ${priorityOption}`);
+                  } else {
+                    console.log(`Priority option '${priorityOption}' not found in project #${projectNumber}`);
+                  }
+                }
+              }
+            }
+
+            // ── 4. ADD TO REPO PROJECT ────────────────────────────────────────
             const projectNumber = parseInt(process.env.PROJECT_NUMBER || '0');
-            if (!projectNumber) {
-              console.log('PROJECT_NUMBER not set — skipping project assignment');
-              return;
+            if (projectNumber) {
+              try {
+                await addToProject(projectNumber, context.repo.owner);
+              } catch (e) {
+                console.log(`Repo project error: ${e.message}`);
+              }
+            } else {
+              console.log('PROJECT_NUMBER not set — skipping repo project');
             }
 
-            try {
-              // Get project node ID
-              const projectQuery = await github.graphql(`
-                query($owner: String!, $number: Int!) {
-                  user(login: $owner) {
-                    projectV2(number: $number) {
-                      id
-                    }
-                  }
-                }
-              `, {
-                owner: context.repo.owner,
-                number: projectNumber,
-              });
-
-              const projectId = projectQuery.user.projectV2.id;
-
-              // Add issue to project
-              await github.graphql(`
-                mutation($projectId: ID!, $contentId: ID!) {
-                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
-                    item { id }
-                  }
-                }
-              `, {
-                projectId,
-                contentId: issueNodeId,
-              });
-
-              console.log(`Issue added to project ${projectNumber}`);
-            } catch (e) {
-              console.log(`Could not add to project: ${e.message}`);
-            }
-
-      - name: Add to platform overview project
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.PROJECT_PAT }}
-          script: |
-            const issueNodeId = context.payload.issue.node_id;
-            const labels = context.payload.issue.labels.map(l => l.name);
-
-            // Only add critical/high severity or use-cases to platform overview
+            // ── 5. ADD TO PLATFORM OVERVIEW (critical/high/use-case/adr only) ─
             const isPlatformRelevant =
-              labels.includes('severity:critical') ||
-              labels.includes('severity:high') ||
-              labels.includes('use-case') ||
-              labels.includes('adr');
+              allLabels.includes('severity:critical') ||
+              allLabels.includes('severity:high') ||
+              allLabels.includes('use-case') ||
+              allLabels.includes('adr');
 
-            if (!isPlatformRelevant) {
-              console.log('Not platform-relevant — skipping platform overview project');
-              return;
-            }
-
-            // PLATFORM_PROJECT_NUMBER = achimdehnert/platform overview project
             const platformProjectNumber = parseInt(process.env.PLATFORM_PROJECT_NUMBER || '0');
-            if (!platformProjectNumber) {
-              console.log('PLATFORM_PROJECT_NUMBER not set — skipping');
-              return;
-            }
-
-            try {
-              const projectQuery = await github.graphql(`
-                query($owner: String!, $number: Int!) {
-                  user(login: $owner) {
-                    projectV2(number: $number) {
-                      id
-                    }
-                  }
-                }
-              `, {
-                owner: 'achimdehnert',
-                number: platformProjectNumber,
-              });
-
-              const projectId = projectQuery.user.projectV2.id;
-
-              await github.graphql(`
-                mutation($projectId: ID!, $contentId: ID!) {
-                  addProjectV2ItemById(input: {projectId: $projectId, contentId: $contentId}) {
-                    item { id }
-                  }
-                }
-              `, {
-                projectId,
-                contentId: issueNodeId,
-              });
-
-              console.log(`Issue added to platform overview project`);
-            } catch (e) {
-              console.log(`Could not add to platform project: ${e.message}`);
+            if (isPlatformRelevant && platformProjectNumber) {
+              try {
+                await addToProject(platformProjectNumber, 'achimdehnert');
+                console.log('Added to platform overview project');
+              } catch (e) {
+                console.log(`Platform project error: ${e.message}`);
+              }
+            } else {
+              console.log('Not platform-relevant or PLATFORM_PROJECT_NUMBER not set — skipping');
             }
