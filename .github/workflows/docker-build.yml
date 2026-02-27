@@ -1,142 +1,16 @@
-# ╔═══════════════════════════════════════════════════════════════════════════╗
-# ║  RISK-HUB CI/CD — Platform Reusable Workflows (ADR-022, ADR-057)         ║
-# ║  CI: _ci-python.yml@main (unit+integration+coverage+security)            ║
-# ╚═══════════════════════════════════════════════════════════════════════════╝
-
-name: CI/CD Pipeline
-
-permissions:
-  contents: read
-  packages: write
-
+# DEPRECATED: Replaced by ci.yml (ADR-090)
+# This file is kept to avoid GitHub Actions errors on deletion.
+# All CI/CD functionality is now in ci.yml.
+name: "[DEPRECATED] Docker Build"
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
   workflow_dispatch:
     inputs:
-      skip_tests:
-        description: 'Skip tests (emergency only)'
+      note:
+        description: "This workflow is deprecated. Use ci.yml instead."
         required: false
-        default: false
-        type: boolean
-
+        type: string
 jobs:
-  # ═══════════════════════════════════════════════════════════════════════════
-  # STAGE 1: CI (Lint, Unit Tests, Integration Tests, Coverage, Security)
-  # ADR-057: split test-unit / test-integration / coverage-report
-  # ═══════════════════════════════════════════════════════════════════════════
-  ci:
-    name: "CI"
-    uses: achimdehnert/platform/.github/workflows/_ci-python.yml@main
-    with:
-      python_version: "3.12"
-      coverage_threshold: 0
-      requirements_file: "requirements.txt"
-      test_requirements_file: "requirements-test.txt"
-      django_settings_module: "config.settings_test"
-      skip_tests: ${{ inputs.skip_tests || false }}
-      enable_security_scan: true
-      run_contract_tests: ${{ github.ref == 'refs/heads/main' }}
-    secrets: inherit
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # STAGE 2: Build Docker Image
-  # ═══════════════════════════════════════════════════════════════════════════
-  build:
-    name: "Build & Push"
-    needs: [ci]
-    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
-    runs-on: ubuntu-latest
-    outputs:
-      image_tag: ${{ steps.meta.outputs.version }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Checkout platform packages
-        uses: actions/checkout@v4
-        with:
-          repository: achimdehnert/platform
-          token: ${{ secrets.GITHUB_TOKEN }}
-          path: _platform
-          sparse-checkout: |
-            packages/django-tenancy
-            packages/platform-context
-            packages/bfagent-core
-            packages/bfagent-llm
-          sparse-checkout-cone-mode: false
-
-      - name: Copy platform packages into build context
-        run: |
-          mkdir -p packages
-          cp -r _platform/packages/django-tenancy packages/
-          cp -r _platform/packages/platform-context packages/
-          cp -r _platform/packages/bfagent-core packages/
-          cp -r _platform/packages/bfagent-llm packages/
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Docker metadata
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}/risk-hub-web
-          tags: |
-            type=sha,prefix=
-            type=ref,event=branch
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: docker/app/Dockerfile
-          platforms: linux/amd64
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  # ═══════════════════════════════════════════════════════════════════════════
-  # STAGE 3: Deploy to Hetzner
-  # ═══════════════════════════════════════════════════════════════════════════
-  deploy:
-    name: "Deploy"
-    needs: [build]
-    runs-on: [self-hosted, hetzner, dev]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Deploy
-        run: |
-          set -euo pipefail
-          cp /opt/risk-hub/.env.prod .env.prod
-          docker compose -f docker-compose.prod.yml pull risk-hub-web
-          docker compose -f docker-compose.prod.yml up -d --force-recreate risk-hub-web risk-hub-worker
-          sleep 15
-          docker exec risk_hub_web python manage.py migrate --noinput
-          docker exec risk_hub_web python manage.py seed_tom_categories
-          docker exec risk_hub_web python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')"
-
-  verify:
-    name: "Verify"
-    needs: [deploy]
+  deprecated:
     runs-on: ubuntu-latest
     steps:
-      - name: External health check
-        run: |
-          for i in $(seq 1 5); do
-            HTTP_CODE=$(curl -sf -o /dev/null -w '%{http_code}' "https://demo.schutztat.de/livez/" 2>/dev/null || echo "000")
-            if [ "$HTTP_CODE" = "200" ]; then echo "Health check passed"; exit 0; fi
-            echo "Attempt $i: HTTP $HTTP_CODE"; sleep 10
-          done
-          echo "::warning::External health check failed"
+      - run: echo "This workflow is deprecated. Use ci.yml instead."
