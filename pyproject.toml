@@ -52,7 +52,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings"
+DJANGO_SETTINGS_MODULE = "config.settings_test"
 python_files = ["test_*.py"]
 pythonpath = ["src"]
 testpaths = ["src", "tests"]
@@ -67,6 +67,7 @@ env = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+src = ["src"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
