@@ -27,3 +27,13 @@ LOGGING = {
     "handlers": {"null": {"class": "logging.NullHandler"}},
     "root": {"handlers": ["null"], "level": "CRITICAL"},
 }
+
+# Silence security warnings that only apply to production (SSL, HSTS, cookies).
+# These are configured via env vars in .env.prod, not relevant for CI.
+SILENCED_SYSTEM_CHECKS = [
+    "security.W004",  # SECURE_HSTS_SECONDS
+    "security.W008",  # SECURE_SSL_REDIRECT
+    "security.W009",  # SECRET_KEY strength
+    "security.W012",  # SESSION_COOKIE_SECURE
+    "security.W016",  # CSRF_COOKIE_SECURE
+]
