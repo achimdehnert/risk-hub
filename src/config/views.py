@@ -34,8 +34,6 @@ def tenant_login(request: HttpRequest) -> HttpResponse:
       4. If on base domain (schutztat.de) → redirect to <slug>.schutztat.de/dashboard/
       5. If multiple tenants → let user pick (future: show picker)
     """
-    from django_tenancy.models import Membership, Organization
-
     if request.user.is_authenticated:
         return _redirect_to_tenant_dashboard(request)
 

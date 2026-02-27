@@ -72,3 +72,26 @@ src = ["src"]
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "actions",
+    "ai_analysis",
+    "approvals",
+    "audit",
+    "common",
+    "config",
+    "core",
+    "dashboard",
+    "documents",
+    "dsb",
+    "explosionsschutz",
+    "identity",
+    "notifications",
+    "outbox",
+    "permissions",
+    "reporting",
+    "risk",
+    "substances",
+    "tenancy",
+]

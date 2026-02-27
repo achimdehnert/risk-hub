@@ -1,11 +1,11 @@
 import hashlib
 from uuid import UUID
 
-from common.context import set_db_tenant, set_tenant, set_user_id
 from django.http import HttpRequest
 from django.utils import timezone
 from ninja.security import HttpBearer
 
+from common.context import set_db_tenant, set_tenant, set_user_id
 from identity.models import ApiKey
 
 
