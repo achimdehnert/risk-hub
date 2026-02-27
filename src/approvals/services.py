@@ -6,13 +6,13 @@ from uuid import UUID
 from django.db import transaction
 from django.utils import timezone
 
-from common.context import emit_audit_event
 from approvals.models import (
     ApprovalDecision,
     ApprovalRequest,
     ApprovalStep,
     ApprovalWorkflow,
 )
+from common.context import emit_audit_event
 from permissions.authz import require_permission
 
 logger = logging.getLogger(__name__)
@@ -238,8 +238,8 @@ def _notify_rejection(
 ) -> None:
     """Create notification for rejection."""
     try:
-        from notifications.services import create_notification
         from notifications.models import Notification
+        from notifications.services import create_notification
 
         create_notification(
             tenant_id=request.tenant_id,

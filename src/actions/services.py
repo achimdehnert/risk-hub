@@ -2,9 +2,8 @@ from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
 
-from common.context import get_context
-
 from actions.models import ActionItem
+from common.context import get_context
 from permissions.authz import require_permission
 
 

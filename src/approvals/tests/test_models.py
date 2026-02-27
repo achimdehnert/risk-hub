@@ -53,7 +53,7 @@ class TestApprovalStep:
         step = ApprovalStep.objects.create(
             workflow=fixture_workflow,
             order=1,
-            name="Fachliche Prüfung",
+            name="Fachliche Pr\u00fcfung",
         )
         assert step.pk is not None
         assert step.require_comment is False
@@ -63,6 +63,7 @@ class TestApprovalStep:
             workflow=fixture_workflow, order=1, name="Step 1",
         )
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             ApprovalStep.objects.create(
                 workflow=fixture_workflow, order=1, name="Dup",
@@ -151,6 +152,6 @@ class TestApprovalDecision:
             request=req,
             step=step,
             outcome=ApprovalDecision.Outcome.REJECTED,
-            comment="Nachbesserung nötig",
+            comment="Nachbesserung n\u00f6tig",
         )
         assert dec.outcome == "rejected"

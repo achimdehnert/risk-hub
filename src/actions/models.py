@@ -1,6 +1,7 @@
 """Action item models."""
 
 import uuid
+
 from django.db import models
 
 
@@ -21,7 +22,7 @@ class ActionItem(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    
+
     title = models.CharField(max_length=240)
     description = models.TextField(blank=True, default="")
     status = models.CharField(
@@ -31,14 +32,14 @@ class ActionItem(models.Model):
     priority = models.IntegerField(
         choices=Priority.choices, default=Priority.MEDIUM,
     )
-    
+
     due_date = models.DateField(null=True, blank=True)
     assigned_to_id = models.UUIDField(null=True, blank=True, db_index=True)
-    
+
     # Link to assessment/hazard
     assessment_id = models.UUIDField(null=True, blank=True, db_index=True)
     hazard_id = models.UUIDField(null=True, blank=True, db_index=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
