@@ -73,6 +73,15 @@ jobs:
           pip install -r requirements.txt || echo "::warning::Some packages failed to install"
           pip install -r requirements-dev.txt
 
+      - name: Install iil-packages (aifw, promptfw, authoringfw, nl2cad)
+        run: |
+          pip install \
+            "iil-aifw>=0.5.0,<1" \
+            "iil-promptfw>=0.5.1,<1" \
+            "iil-authoringfw>=0.3.0,<1" \
+            "iil-nl2cad>=0.1.0,<1" \
+            2>/dev/null || true
+
       - name: Django System Check
         run: python -m django check --deploy --fail-level WARNING
 
