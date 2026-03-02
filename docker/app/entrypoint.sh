@@ -11,6 +11,9 @@ echo "Database ready!"
 echo "Running migrations..."
 python manage.py migrate --noinput --skip-checks
 
+echo "Seeding aifw action types..."
+python manage.py seed_action_types
+
 echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
