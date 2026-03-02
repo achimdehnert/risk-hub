@@ -4,7 +4,11 @@ import json
 import logging
 from uuid import UUID
 
-from ai_analysis.llm_client import llm_complete_sync
+from ai_analysis.llm_client import (
+    ACTION_HAZARD_ANALYSIS,
+    ACTION_SUBSTANCE_RISK,
+    llm_complete_sync,
+)
 from ai_analysis.prompts import (
     HAZARD_ANALYSIS_PROMPT,
     HAZARD_ANALYSIS_SYSTEM,
@@ -55,8 +59,11 @@ def analyze_area(area_id: UUID, tenant_id: UUID) -> dict:
         raw = llm_complete_sync(
             prompt=prompt,
             system=HAZARD_ANALYSIS_SYSTEM,
+            action_code=ACTION_HAZARD_ANALYSIS,
             temperature=0.2,
             max_tokens=3000,
+            tenant_id=tenant_id,
+            object_id=f"area:{area_id}",
         )
         result = _parse_json_response(raw)
         result["_raw"] = raw
@@ -98,8 +105,11 @@ def analyze_substance(
         raw = llm_complete_sync(
             prompt=prompt,
             system=HAZARD_ANALYSIS_SYSTEM,
+            action_code=ACTION_SUBSTANCE_RISK,
             temperature=0.2,
             max_tokens=2000,
+            tenant_id=tenant_id,
+            object_id=f"substance:{substance_id}",
         )
         result = _parse_json_response(raw)
         result["_raw"] = raw

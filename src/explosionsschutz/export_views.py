@@ -1,7 +1,8 @@
-"""Export views for Explosionsschutz documents (DOCX + PDF)."""
+"""Export views for Explosionsschutz documents (DOCX + PDF + GAEB)."""
 
 import io
 import logging
+from decimal import Decimal
 
 from django.db.models import Q
 from django.http import FileResponse, HttpRequest, HttpResponse
@@ -9,7 +10,7 @@ from django.shortcuts import get_object_or_404, render
 from django.views import View
 
 from .document_generator import ExSchutzDocumentGenerator
-from .models import Equipment, ExplosionConcept
+from .models import Equipment, ExplosionConcept, ProtectionMeasure
 
 logger = logging.getLogger(__name__)
 
@@ -144,6 +145,107 @@ class ZoneMapView(View):
                 "equipment": equipment,
             },
         )
+
+
+class ConceptExportGAEBView(View):
+    """GAEB X84 Export der Schutzmaßnahmen eines Explosionsschutzkonzepts."""
+
+    _CATEGORY_MAP = {
+        ProtectionMeasure.Category.PRIMARY: (
+            "01", "Primäre Maßnahmen (Vermeidung)"
+        ),
+        ProtectionMeasure.Category.SECONDARY: (
+            "02", "Sekundäre Maßnahmen (Zündquellenvermeidung)"
+        ),
+        ProtectionMeasure.Category.TERTIARY: (
+            "03", "Tertiäre Maßnahmen (Auswirkungsbegrenzung)"
+        ),
+        ProtectionMeasure.Category.ORGANIZATIONAL: (
+            "04", "Organisatorische Maßnahmen"
+        ),
+    }
+
+    def get(self, request: HttpRequest, pk) -> HttpResponse:
+        from nl2cad.gaeb.generator import GAEBGenerator
+        from nl2cad.gaeb.models import (
+            GAEBPhase,
+            Leistungsverzeichnis,
+            LosGruppe,
+            Position,
+        )
+
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+
+        concept = get_object_or_404(
+            ExplosionConcept.objects.filter(base_filter)
+            .select_related("area"),
+            pk=pk,
+        )
+
+        format_type = request.GET.get("format", "excel")
+
+        lv = Leistungsverzeichnis(
+            projekt_name=(
+                f"Ex-Schutz: {concept.title} — {concept.area.name}"
+            ),
+            projekt_nummer=str(concept.pk)[:8],
+            phase=GAEBPhase.X84,
+        )
+
+        measures_qs = (
+            ProtectionMeasure.objects
+            .filter(base_filter, concept=concept)
+            .order_by("category", "title")
+        )
+
+        # Gruppiere Maßnahmen nach Kategorie in Lose
+        by_category: dict[str, list[ProtectionMeasure]] = {}
+        for measure in measures_qs:
+            by_category.setdefault(measure.category, []).append(measure)
+
+        for cat_value, (los_oz, los_bezeichnung) in self._CATEGORY_MAP.items():
+            measures_in_cat = by_category.get(cat_value, [])
+            if not measures_in_cat:
+                continue
+            positionen = [
+                Position(
+                    oz=f"{los_oz}.{i + 1:03d}",
+                    kurztext=m.title,
+                    langtext=m.description or "",
+                    menge=Decimal("1"),
+                    einheit="Stk",
+                )
+                for i, m in enumerate(measures_in_cat)
+            ]
+            lv.lose.append(
+                LosGruppe(
+                    oz=los_oz,
+                    bezeichnung=los_bezeichnung,
+                    positionen=positionen,
+                )
+            )
+
+        generator = GAEBGenerator()
+        safe_name = concept.title.replace(" ", "_")[:40]
+
+        if format_type == "xml":
+            output = generator.generate_xml(lv)
+            content_type = "application/xml"
+            filename = f"LV_{safe_name}_v{concept.version}.x84"
+        else:
+            output = generator.generate_excel(lv)
+            content_type = (
+                "application/vnd.openxmlformats-officedocument"
+                ".spreadsheetml.sheet"
+            )
+            filename = f"LV_{safe_name}_v{concept.version}.xlsx"
+
+        response = HttpResponse(output.read(), content_type=content_type)
+        response["Content-Disposition"] = (
+            f'attachment; filename="{filename}"'
+        )
+        return response
 
 
 def _assign_zone_positions(zones):

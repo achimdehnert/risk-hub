@@ -21,3 +21,7 @@ whitenoise>=6.6
 # Platform shared packages (private repo)
 django-tenancy @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-tenancy
 platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/platform-context
+# AI / LLM
+iil-aifw>=0.5.0
+# CAD / BIM
+nl2cad-gaeb @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-gaeb

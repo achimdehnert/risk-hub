@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     # Platform shared packages
     "platform_context",
     "django_tenancy",
+    # AI Framework
+    "aifw",
     # Risk-Hub apps
     "common",
     "tenancy",

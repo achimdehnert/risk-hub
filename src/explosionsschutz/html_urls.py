@@ -7,6 +7,7 @@ from django.urls import path
 
 from .export_views import (
     ConceptExportDocxView,
+    ConceptExportGAEBView,
     ConceptExportPdfView,
     ConceptPreviewView,
     ZoneMapView,
@@ -73,6 +74,11 @@ urlpatterns = [
         "concepts/<uuid:pk>/export/pdf/",
         ConceptExportPdfView.as_view(),
         name="concept-export-pdf",
+    ),
+    path(
+        "concepts/<uuid:pk>/export/gaeb/",
+        ConceptExportGAEBView.as_view(),
+        name="concept-export-gaeb",
     ),
     # Tools
     path("tools/", ToolsView.as_view(), name="tools"),
