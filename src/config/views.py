@@ -5,6 +5,24 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
 
+def custom_403(request: HttpRequest, exception=None) -> HttpResponse:
+    """Custom 403 Forbidden handler."""
+    ctx = {}
+    if exception:
+        ctx["error_message"] = str(exception)
+    return render(request, "errors/403.html", ctx, status=403)
+
+
+def custom_404(request: HttpRequest, exception=None) -> HttpResponse:
+    """Custom 404 Not Found handler."""
+    return render(request, "errors/404.html", {}, status=404)
+
+
+def custom_500(request: HttpRequest) -> HttpResponse:
+    """Custom 500 Server Error handler."""
+    return render(request, "errors/500.html", {}, status=500)
+
+
 def home(request: HttpRequest) -> HttpResponse:
     tenant_slug = getattr(request, "tenant_slug", None)
     tenant_id = getattr(request, "tenant_id", None)

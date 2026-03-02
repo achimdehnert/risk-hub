@@ -7,8 +7,20 @@ from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
 from config.api import api
-from config.views import home, tenant_login, tenant_pick, user_profile
+from config.views import (
+    custom_403,
+    custom_404,
+    custom_500,
+    home,
+    tenant_login,
+    tenant_pick,
+    user_profile,
+)
 from core.healthz import liveness, readiness
+
+handler403 = custom_403
+handler404 = custom_404
+handler500 = custom_500
 
 urlpatterns = [
     # Health checks (ADR-021: /livez/ liveness + /healthz/ readiness)
