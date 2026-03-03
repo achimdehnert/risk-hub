@@ -9,13 +9,58 @@
       <h1 class="text-2xl font-bold text-gray-900">GBU-Tätigkeiten</h1>
       <p class="text-sm text-gray-500 mt-1">Gefährdungsbeurteilungen nach GefStoffV §6</p>
     </div>
-    <a href="{% url 'gbu:wizard-step1' %}"
-       class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors">
-      <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
-      Neue GBU-Tätigkeit
-    </a>
+    <div class="flex gap-3">
+      <a href="{% url 'gbu:compliance-dashboard' %}"
+         class="inline-flex items-center px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+        <i data-lucide="shield-check" class="w-4 h-4 mr-1.5"></i>
+        Compliance
+      </a>
+      <a href="{% url 'gbu:wizard-step1' %}"
+         class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors">
+        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+        Neue GBU-Tätigkeit
+      </a>
+    </div>
   </div>
 
+  {# ─ HTMX-Filter ─────────────────────────────────────────────── #}
+  <div class="bg-white rounded-xl border border-gray-200 p-4 mb-5 flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+      <select name="status" id="filter-status"
+              hx-get="{% url 'gbu:partial-activity-list' %}"
+              hx-target="#activity-table-body"
+              hx-include="#filter-status, #filter-risk"
+              hx-trigger="change"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="">Alle Status</option>
+        <option value="draft" {% if current_status == 'draft' %}selected{% endif %}>Entwurf</option>
+        <option value="review" {% if current_status == 'review' %}selected{% endif %}>In Prüfung</option>
+        <option value="approved" {% if current_status == 'approved' %}selected{% endif %}>Freigegeben</option>
+        <option value="outdated" {% if current_status == 'outdated' %}selected{% endif %}>Veraltet</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Risikostufe</label>
+      <select name="risk" id="filter-risk"
+              hx-get="{% url 'gbu:partial-activity-list' %}"
+              hx-target="#activity-table-body"
+              hx-include="#filter-status, #filter-risk"
+              hx-trigger="change"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="">Alle Risikostufen</option>
+        <option value="low" {% if current_risk == 'low' %}selected{% endif %}>Gering</option>
+        <option value="medium" {% if current_risk == 'medium' %}selected{% endif %}>Mittel</option>
+        <option value="high" {% if current_risk == 'high' %}selected{% endif %}>Hoch</option>
+        <option value="critical" {% if current_risk == 'critical' %}selected{% endif %}>Kritisch</option>
+      </select>
+    </div>
+    <div class="ml-auto text-xs text-gray-400 self-center" id="result-count">
+      {{ activities|length }} Einträg{{ activities|length|pluralize:",e" }}
+    </div>
+  </div>
+
+  {# ─ Tabelle ──────────────────────────────────────────────────── #}
   {% if activities %}
   <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
     <table class="min-w-full divide-y divide-gray-200">
@@ -29,58 +74,21 @@
           <th class="px-6 py-3"></th>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-200">
-        {% for activity in activities %}
-        <tr class="hover:bg-gray-50">
-          <td class="px-6 py-4">
-            <p class="text-sm font-medium text-gray-900">{{ activity.activity_description|truncatechars:60 }}</p>
-            <p class="text-xs text-gray-400 mt-1">{{ activity.sds_revision.substance.name }}</p>
-          </td>
-          <td class="px-6 py-4 text-sm text-gray-600">{{ activity.site.name }}</td>
-          <td class="px-6 py-4">
-            {% if activity.risk_score %}
-            {% with badge=risk_badge|default:"" %}
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-              {% if activity.risk_score == 'low' %}bg-green-100 text-green-800
-              {% elif activity.risk_score == 'medium' %}bg-yellow-100 text-yellow-800
-              {% elif activity.risk_score == 'high' %}bg-orange-100 text-orange-800
-              {% else %}bg-red-100 text-red-800{% endif %}">
-              {{ activity.get_risk_score_display }}
-            </span>
-            {% endwith %}
-            {% else %}
-            <span class="text-gray-400 text-xs">—</span>
-            {% endif %}
-          </td>
-          <td class="px-6 py-4">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-              {% if activity.status == 'approved' %}bg-green-100 text-green-800
-              {% elif activity.status == 'review' %}bg-blue-100 text-blue-800
-              {% elif activity.status == 'outdated' %}bg-red-100 text-red-800
-              {% else %}bg-gray-100 text-gray-800{% endif %}">
-              {{ activity.get_status_display }}
-            </span>
-          </td>
-          <td class="px-6 py-4 text-sm text-gray-600">
-            {{ activity.next_review_date|default:"—" }}
-          </td>
-          <td class="px-6 py-4 text-right">
-            <a href="{% url 'gbu:activity-detail' activity.id %}"
-               class="text-orange-600 hover:text-orange-800 text-sm font-medium">Detail</a>
-          </td>
-        </tr>
-        {% endfor %}
+      <tbody id="activity-table-body" class="divide-y divide-gray-200">
+        {% include "gbu/partials/_activity_rows.html" %}
       </tbody>
     </table>
   </div>
   {% else %}
-  <div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
-    <i data-lucide="clipboard-list" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
-    <p class="text-gray-500 font-medium">Noch keine GBU-Tätigkeiten erfasst.</p>
-    <a href="{% url 'gbu:wizard-step1' %}"
-       class="mt-4 inline-block px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
-      Erste GBU-Tätigkeit anlegen
-    </a>
+  <div id="activity-table-body">
+    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
+      <i data-lucide="clipboard-list" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+      <p class="text-gray-500 font-medium">Noch keine GBU-Tätigkeiten erfasst.</p>
+      <a href="{% url 'gbu:wizard-step1' %}"
+         class="mt-4 inline-block px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
+        Erste GBU-Tätigkeit anlegen
+      </a>
+    </div>
   </div>
   {% endif %}
 
