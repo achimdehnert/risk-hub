@@ -21,5 +21,9 @@ app.conf.beat_schedule = {
         "task": "outbox.tasks.process_outbox",
         "schedule": 30.0,  # Every 30 seconds
     },
+    "check-gbu-review-deadlines": {
+        "task": "gbu.tasks.check_review_deadlines",
+        "schedule": crontab(hour=7, minute=0),  # Daily at 07:00
+    },
 }
 app.conf.timezone = "Europe/Berlin"

@@ -1,10 +1,8 @@
 """
-GBU Celery-Tasks (Phase 2D).
+GBU Celery-Tasks (Phase 2D + 2E).
 
-generate_documents_task — erzeugt GBU-PDF + BA-PDF nach Freigabe.
-
-Wird nach approve_activity() per delay() angestoßen.
-Nutzt shared_task → kein App-Import nötig.
+generate_documents_task  — erzeugt GBU-PDF + BA-PDF nach Freigabe
+check_gbu_review_deadlines — t\u00e4glicher Beat: mark_outdated + Log
 """
 import logging
 from uuid import UUID
@@ -22,7 +20,7 @@ logger = logging.getLogger(__name__)
 )
 def generate_documents_task(activity_id: str, tenant_id: str) -> dict:
     """
-    GBU-PDF und Betriebsanweisung (BA) für eine Tätigkeit erzeugen.
+    GBU-PDF und Betriebsanweisung (BA) f\u00fcr eine T\u00e4tigkeit erzeugen.
 
     Args:
         activity_id: str (UUID der HazardAssessmentActivity)
@@ -58,3 +56,34 @@ def generate_documents_task(activity_id: str, tenant_id: str) -> dict:
         "gbu_version_id": str(gbu_version.id),
         "ba_version_id": str(ba_version.id),
     }
+
+
+@shared_task(
+    name="gbu.tasks.check_review_deadlines",
+    acks_late=True,
+)
+def check_gbu_review_deadlines() -> dict:
+    """
+    T\u00e4glicher Beat-Task: markiert \u00fcberf\u00e4llige GBU-T\u00e4tigkeiten als OUTDATED.
+
+    Iteriert alle aktiven Tenants und ruft mark_outdated_activities() auf.
+    Gibt Statistik zur\u00fcck.
+    """
+    from tenancy.models import Organization
+
+    from gbu.services.compliance import mark_outdated_activities
+
+    orgs = Organization.objects.filter(is_active=True).values_list(
+        "tenant_id", flat=True
+    )
+
+    total = 0
+    for tenant_id in orgs:
+        count = mark_outdated_activities(tenant_id)
+        total += count
+
+    logger.info(
+        "[GBU Beat] Review-Deadline-Check: %d T\u00e4tigkeiten als outdated markiert",
+        total,
+    )
+    return {"marked_outdated": total, "tenants_checked": len(list(orgs))}
