@@ -29,5 +29,7 @@ iil-aifw>=0.5.0,<1
 iil-promptfw>=0.5.1,<1
 iil-authoringfw>=0.3.0,<1
 iil-nl2cad>=0.1.0,<1
+# Safety Framework
+riskfw @ git+https://github.com/achimdehnert/riskfw@v0.1.0
 # CAD / BIM
 nl2cad-gaeb @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-gaeb
