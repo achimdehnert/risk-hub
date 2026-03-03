@@ -22,4 +22,9 @@ urlpatterns = [
         views.partial_risk_badge,
         name="partial-risk-badge",
     ),
+    path(
+        "partials/activity-list/",
+        views.partial_activity_list,
+        name="partial-activity-list",
+    ),
 ]

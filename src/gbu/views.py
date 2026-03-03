@@ -1,5 +1,5 @@
 """
-GBU-Wizard Views (Phase 2C + 2D + 2E).
+GBU-Wizard Views (Phase 2C + 2D + 2E + 2H).
 
 5-Schritt HTMX-Wizard:
   Schritt 1 — Stoff + Standort wählen
@@ -15,11 +15,15 @@ PDF-Download:
 Compliance-Dashboard:
   GET /gbu/compliance/  — Review-Fristen, KPI-Übersicht
 
+HTMX-Partials:
+  GET /gbu/partials/activity-list/  — Gefilterte Tabellenzeilen
+
 Pattern: Views nur HTTP, keine Business-Logik → gbu_engine.py / compliance.py
 HTMX-Detection: request.headers.get("HX-Request") (kein django_htmx)
 """
 import logging
 import uuid
+from datetime import date
 from uuid import UUID
 
 from django.contrib.auth.decorators import login_required
@@ -63,16 +67,53 @@ def _tenant_id(request: HttpRequest) -> UUID:
 @require_GET
 def activity_list(request: HttpRequest) -> HttpResponse:
     tenant_id = _tenant_id(request)
-    activities = (
+    status_filter = request.GET.get("status", "")
+    risk_filter = request.GET.get("risk", "")
+
+    qs = (
         HazardAssessmentActivity.objects
         .filter(tenant_id=tenant_id)
-        .select_related("site", "sds_revision")
+        .select_related("site", "sds_revision", "sds_revision__substance")
         .order_by("-created_at")
     )
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    if risk_filter:
+        qs = qs.filter(risk_score=risk_filter)
+
     return render(request, "gbu/activity_list.html", {
-        "activities": activities,
+        "activities": qs,
         "status_choices": ActivityStatus,
         "risk_badge": _RISK_BADGE,
+        "current_status": status_filter,
+        "current_risk": risk_filter,
+        "today": date.today(),
+    })
+
+
+# ── HTMX Partial: Aktivitätsliste (gefiltert) ─────────────────────────────
+
+@login_required
+@require_GET
+def partial_activity_list(request: HttpRequest) -> HttpResponse:
+    tenant_id = _tenant_id(request)
+    status_filter = request.GET.get("status", "")
+    risk_filter = request.GET.get("risk", "")
+
+    qs = (
+        HazardAssessmentActivity.objects
+        .filter(tenant_id=tenant_id)
+        .select_related("site", "sds_revision", "sds_revision__substance")
+        .order_by("-created_at")
+    )
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    if risk_filter:
+        qs = qs.filter(risk_score=risk_filter)
+
+    return render(request, "gbu/partials/_activity_rows.html", {
+        "activities": qs,
+        "today": date.today(),
     })
 
 
