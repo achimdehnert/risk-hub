@@ -1,12 +1,34 @@
-# ADR-007: Paketarchitektur für Explosionsschutz und Brandschutz
+# ADR-007: Paketarchitektur für Explosionsschutz- und Brandschutz-Fachlogik
 
-| Feld            | Wert                                                                |
-|-----------------|---------------------------------------------------------------------|
-| **Status**      | Proposed                                                            |
-| **Datum**       | 2026-03-03                                                          |
-| **Autor**       | Achim Dehnert                                                       |
-| **Kontext**     | risk-hub (Schutztat), nl2cad, neues PyPI-Package `nl2cad-exschutz` |
-| **Entscheider** | IT-Architekt, Ex-Schutz-SV, Brandschutz-SV                         |
+| Feld            | Wert                                                           |
+|-----------------|----------------------------------------------------------------|
+| **Status**      | **Proposed — zur externen Review**                             |
+| **Datum**       | 2026-03-03                                                     |
+| **Autor**       | Achim Dehnert                                                  |
+| **PyPI-Account**| `iildehnert`                                                   |
+| **Repos**       | `risk-hub` (Schutztat), `nl2cad`, neues Repo `riskfw`          |
+| **Entscheider** | IT-Architekt, Explosionsschutz-SV, Brandschutz-SV              |
+| **Review durch**| *(externe Sachverständige, bitte Kommentare in GitHub Issues)* |
+
+---
+
+## Zusammenfassung für Reviewer
+
+Dieses ADR trifft eine grundlegende Architekturentscheidung über die Aufteilung von
+Sicherheitsfachlogik auf Python-Packages:
+
+> **`riskfw`** ist ein neues, eigenständiges PyPI-Package (kein CAD-Bezug),
+> das Berechnungslogik für Explosionsschutz (TRGS 721/722, ATEX, EN 1127-1)
+> als wiederverwendbare, Framework-agnostische Python-Library bereitstellt.
+> Es ist **kein Teil des `nl2cad`-Ökosystems**, da `nl2cad` ausschließlich
+> CAD-Dateiverarbeitung (IFC/DXF) adressiert.
+
+**Kernfragen an Reviewer:**
+
+1. Ist die fachliche Abgrenzung Explosionsschutz / Brandschutz korrekt getroffen?
+2. Sind die Normbezüge (TRGS 721, EN 1127-1, IEC 60079-10-1) vollständig?
+3. Fehlen sicherheitstechnisch relevante Berechnungsmodule?
+4. Ist `riskfw` als Name für ein öffentliches PyPI-Package geeignet?
 
 ---
 
@@ -14,191 +36,225 @@
 
 ### 1.1 Ausgangslage
 
-risk-hub implementiert aktuell Explosionsschutz- und Brandschutzlogik direkt in der Django-App:
+**risk-hub** (`Schutztat`) ist eine Multi-Tenant Django-App für Arbeitssicherheit.
+Das Modul `explosionsschutz` enthält aktuell Berechnungslogik direkt in der App:
 
-- `explosionsschutz/calculations.py` — Stoffdatenbank (GESTIS-basiert), Zonenberechnung (TRGS 721), ATEX-Equipment-Prüfung
-- `explosionsschutz/models.py` — Django-ORM für Zonen, Konzepte, Betriebsmittel, Zündquellen
-- `explosionsschutz/export_views.py` — GAEB X84-Export via `nl2cad.gaeb` (bereits umgestellt)
+```
+risk-hub/src/explosionsschutz/
+├── calculations.py     ← Stoff-DB, TRGS 721 Zonenberechnung, ATEX-Check
+├── models.py           ← Django-ORM: Konzepte, Zonen, Betriebsmittel
+├── services.py         ← Service-Layer mit Audit-Trail
+├── export_views.py     ← GAEB/PDF-Export (nutzt bereits nl2cad.gaeb)
+└── schemas.py          ← Pydantic: ZoneExtent-Geometrie
+```
 
-nl2cad enthält parallel in `nl2cad-brandschutz`:
+**nl2cad** ist eine separate CAD-Analyse-Library:
 
-- `analyzer.py` — IFC/DXF Layer-Erkennung für Brandschutz
-- `models.py` — `BrandschutzAnalyse`, `Fluchtweg`, `Brandabschnitt`, `ExBereich`
-- `rules/` — ASR A2.3, DIN 4102 Regelwerk-Checks
+```
+nl2cad-core         → IFC/DXF Parsing, Dataclasses, Handler-Pipeline
+nl2cad-brandschutz  → Erkennt Brandschutz-Elemente AUS DXF-Layern (ASR A2.3, DIN 4102)
+nl2cad-areas        → Berechnet Flächen AUS IFC-Räumen (DIN 277, WoFlV)
+nl2cad-gaeb         → Exportiert CAD-Daten nach GAEB XML/Excel
+nl2cad-nlp          → Konvertiert natürliche Sprache → CAD-Befehle
+```
 
-**Kernproblem:** Es gibt keine klare Grenzziehung, welche Logik in Framework-agnostische
-Python-Packages (nl2cad-*) und welche in die Django-App (risk-hub) gehört. Das führt zu:
+### 1.2 Das Kernproblem
 
-- Duplikation (Stoff-Datenbank in `calculations.py` vs. potentiell nl2cad)
-- Nicht-wiederverwendbarer Fachlogik (TRGS 721 Berechnung nur in risk-hub)
-- Fehlender Trennung von Analyse (CAD/Normen) und Persistenz (Django)
+`calculations.py` in risk-hub enthält Fachlogik, die **keinen CAD-Bezug** hat:
 
-### 1.2 Akteure und ihre Anforderungen
+| Funktion | Norm | CAD-Bezug? |
+|---|---|---|
+| `calculate_zone_extent()` | TRGS 721 | ❌ reine Physik/Mathematik |
+| `calculate_ventilation_effectiveness()` | TRGS 722 | ❌ Strömungslehre |
+| `check_equipment_suitability()` | ATEX 2014/34/EU | ❌ Kennzeichnungsprüfung |
+| Stoff-Datenbank (GESTIS) | — | ❌ Chemie-Daten |
+| Zündquellen-Bewertung | EN 1127-1 | ❌ Sicherheitstechnik |
+
+Diese Logik gehört **nicht** in nl2cad (kein CAD-Bezug) und **nicht** dauerhaft
+in risk-hub (nicht wiederverwendbar, schlechte Testbarkeit ohne Django).
+
+**Einzige Verbindung zu nl2cad:** `nl2cad-brandschutz` erkennt `ExBereich`-Objekte
+aus DXF-Layer-Namen — diese werden als Ergebnis an risk-hub übergeben.
+Das ist eine Konsumenten-Beziehung, kein Grund für eine Package-Zugehörigkeit.
+
+### 1.3 Anforderungen der Stakeholder
 
 **Explosionsschutz-Sachverständiger (Ex-SV):**
 
-- Berechnung Zonenausdehnung nach TRGS 721 mit Nachweisarchivierung (Zeitstempel, Norm, Berechner)
-- Zündquellen-Bewertungsmatrix (alle 13 EN 1127-1 Quellen) als Prüfdokument
-- ATEX-Kennzeichnungsprüfung bei Betriebsmittel-Erfassung
-- Import von Ex-Zonen aus CAD-Plänen (DXF)
-- Revisionssichere Prüfberichtserstellung
+- Zonenausdehnung nach TRGS 721 berechnen mit revisionssicherem Nachweis
+  (Zeitstempel, Norm-Referenz, ausführende Person, archiviertes Rohergebnis)
+- Zündquellen-Bewertungsmatrix nach EN 1127-1 (alle 13 Quellen) als
+  druckfertiges Prüfdokument exportieren
+- ATEX-Kennzeichnung von Betriebsmitteln automatisch gegen Zone prüfen
+- Ex-Zonen aus CAD-Plänen (DXF) importieren statt manuell erfassen
+- Prüfberichte revisionssicher archivieren (BetrSichV §§ 14–17)
 
 **Brandschutz-Sachverständiger (BS-SV):**
 
-- Analyse von IFC/DXF-Plänen auf Brandschutz-Elemente (Fluchtwege, Brandabschnitte, Melder)
-- ASR A2.3 / DIN 4102 Konformitätsprüfung mit Mangelprotokoll
-- Kombination Ex-Zone + Brandschutz-Anforderungen (z.B. F60-Wand an Zone 1)
-- Wiederkehrende Prüffristen-Verwaltung
+- IFC/DXF-Pläne automatisch auf Brandschutz-Elemente analysieren
+  (Fluchtwege, Brandabschnitte, Rauchmelder, Sprinkler)
+- ASR A2.3 / DIN 4102 Konformitätsprüfung mit Mängel-Protokoll
+- Kombinierten Ex + Brand-Check: Zone 1 erfordert F60-Wand — vorhanden?
+- Wiederkehrende Prüffristen verwalten und überwachen
 
 **IT-Architekt:**
 
-- Framework-agnostische Fachlogik in wiederverwendbaren PyPI-Packages
-- Django-App enthält nur Persistenz, UI, Tenant-Isolation, Audit-Trail
-- Klare Paket-Grenzen und Abhängigkeiten
+- Klares Package-Ökosystem: jede Library hat **einen** Zweck
+- Framework-agnostische Fachlogik: testbar ohne Django, wiederverwendbar
+- risk-hub enthält nur: Persistenz, Tenant-Isolation, UI, Audit-Trail
 - Keine zirkulären Abhängigkeiten zwischen Packages
+- PyPI-Releases unabhängig versionierbar
 
 ---
 
 ## 2. Entscheidung
 
-### 2.1 Ziel-Architektur: Vier-Schichten-Modell
+### 2.1 Ziel-Architektur
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│  SCHICHT 4: risk-hub (Django)                                   │
-│  Persistenz · Tenant-Isolation · UI · Audit · Prüf-Workflow     │
-│                                                                 │
-│  explosionsschutz/  brandschutz/  substances/                   │
-│  ↓ delegiert an ↓                                               │
-├─────────────────────────────────────────────────────────────────┤
-│  SCHICHT 3: nl2cad-exschutz (NEU — PyPI)                        │
-│  Ex-Schutz Fachlogik ohne Framework-Abhängigkeit                │
-│                                                                 │
-│  • Zonenberechnung TRGS 721/722                                 │
-│  • ATEX-Equipment-Eignungsprüfung (2014/34/EU)                  │
-│  • Zündquellen-Bewertung EN 1127-1 (13 Quellen)                 │
-│  • Stoff-Datenbank (GESTIS-basiert, erweiterbar)                │
-│  • ZoneExtent-Geometrie-Berechnung                              │
-│  • IEC 60079-10-1 Lüftungseffektivität                          │
-├─────────────────────────────────────────────────────────────────┤
-│  SCHICHT 2: nl2cad-brandschutz (bestehend — PyPI)               │
-│  Brandschutz-Analyse aus IFC/DXF                                │
-│                                                                 │
-│  • BrandschutzAnalyzer (IFC + DXF)                              │
-│  • ASR A2.3 Fluchtweg-Validierung                               │
-│  • DIN 4102 Feuerwiderstand-Checks                              │
-│  • ExBereich-Erkennung (ATEX-Zonen aus CAD)                     │
-│  • BrandschutzAnalyse Dataclass (Export-fähig)                  │
-├─────────────────────────────────────────────────────────────────┤
-│  SCHICHT 1: nl2cad-core (bestehend — PyPI)                      │
-│  IFC/DXF Parsing · Dataclasses · Handler-Pipeline               │
-└─────────────────────────────────────────────────────────────────┘
+ ┌──────────────────────────────────────────────────────────────────┐
+ │  SCHICHT 4: risk-hub (Django App)                                │
+ │  Persistenz · Tenant-Isolation · UI/HTMX · Audit · Workflow     │
+ │                                                                  │
+ │  explosionsschutz/   brandschutz/   substances/                 │
+ │  → delegiert Berechnung → speichert Ergebnis                    │
+ ├────────────────────┬─────────────────────────────────────────────┤
+ │  SCHICHT 3a:       │  SCHICHT 3b:                                │
+ │  riskfw (NEU)      │  nl2cad-brandschutz (bestehend)             │
+ │  PyPI: iildehnert  │  PyPI: achimdehnert                         │
+ │                    │                                             │
+ │  Ex-Schutz         │  CAD-Analyse                                │
+ │  Fachlogik         │  Brandschutz                                │
+ │  (kein CAD)        │  (aus IFC/DXF)                              │
+ ├────────────────────┴─────────────────────────────────────────────┤
+ │  SCHICHT 2: nl2cad-core (bestehend)                              │
+ │  IFC/DXF Parsing · Dataclasses · Handler-Pipeline               │
+ │  (Basis für nl2cad-brandschutz; riskfw hat KEINE Abhängigkeit)  │
+ └──────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Neues Package: `nl2cad-exschutz`
+### 2.2 Entschiedene Paket-Zugehörigkeit
 
-**Begründung für eigenständiges Package (nicht in nl2cad-brandschutz):**
+#### Neues Package: `riskfw`
 
-- Explosionsschutz (ATEX/BetrSichV) und Brandschutz (ASR/DIN 4102) sind **normativ getrennte Disziplinen**
-- `nl2cad-brandschutz` analysiert CAD-Dateien; `nl2cad-exschutz` berechnet physikalische Kenngrößen
-- Unterschiedliche Downstream-Konsumenten denkbar (risk-hub nutzt beide; ein reines Ex-Schutz-Tool nur `nl2cad-exschutz`)
-- Stoff-Datenbank (GESTIS) ist eigenständige Ressource ohne CAD-Bezug
+**Begründung für eigenständiges Package außerhalb von `nl2cad`:**
 
-**PyPI-Name:** `nl2cad-exschutz`
-**Abhängigkeiten:** nur `nl2cad-core>=0.1.0` (keine Django, keine httpx)
+`nl2cad` = "Natural Language to CAD" — das Ökosystem verarbeitet CAD-Dateien.
+`riskfw` = "Risk Framework" — berechnet physikalische und normative Kenngrößen
+für Arbeitssicherheit. Kein einziges Modul in `riskfw` liest oder schreibt
+eine IFC- oder DXF-Datei.
 
-### 2.3 Funktionszuordnung
+**Abhängigkeiten:** keine (pure Python, stdlib only)
+**Kein** nl2cad-core, **kein** Django, **kein** httpx
 
-#### `nl2cad-exschutz` — Framework-agnostische Fachlogik
-
-| Modul | Inhalt | Migriert aus |
+| Modul | Inhalt | Norm |
 |---|---|---|
-| `substances/database.py` | Stoff-Datenbank (GESTIS), `SubstanceProperties` Dataclass | `risk-hub/calculations.py` |
-| `substances/lookup.py` | `get_substance_properties()`, Alias-Auflösung, Fuzzy-Search | `risk-hub/calculations.py` |
-| `zones/calculator.py` | `calculate_zone_extent()` nach TRGS 721 | `risk-hub/calculations.py` |
-| `zones/ventilation.py` | `calculate_ventilation_effectiveness()` nach TRGS 722 | `risk-hub/calculations.py` |
-| `zones/models.py` | `ZoneExtentResult`, `VentilationResult` Dataclasses | neu |
-| `equipment/checker.py` | `check_equipment_suitability()` nach ATEX 2014/34/EU | `risk-hub/calculations.py` |
-| `equipment/models.py` | `ATEXCheckResult` Dataclass | neu |
-| `ignition/assessor.py` | `IgnitionSourceMatrix`, alle 13 EN 1127-1 Quellen | neu |
-| `ignition/models.py` | `IgnitionAssessment`, `IgnitionRisk` Dataclasses | neu |
-| `reports/pdf_builder.py` | `IgnitionAssessmentReport`, `ZoneCalculationReport` | neu |
-| `constants.py` | ATEX-Kategorien, Explosionsgruppen, Temperaturklassen | `risk-hub/calculations.py` |
+| `riskfw.substances` | GESTIS Stoff-Datenbank, `SubstanceProperties` | GESTIS/DGUV |
+| `riskfw.zones.calculator` | `calculate_zone_extent()` | TRGS 721 |
+| `riskfw.zones.ventilation` | `calculate_ventilation_effectiveness()` | TRGS 722 |
+| `riskfw.zones.models` | `ZoneExtentResult`, `VentilationResult` Dataclasses | — |
+| `riskfw.equipment.checker` | `check_equipment_suitability()` | ATEX 2014/34/EU |
+| `riskfw.equipment.models` | `ATEXCheckResult` Dataclass | IEC 60079-0 |
+| `riskfw.ignition.assessor` | `IgnitionSourceMatrix`, 13 Quellen | EN 1127-1 |
+| `riskfw.ignition.models` | `IgnitionAssessment`, `IgnitionRisk` Dataclasses | — |
+| `riskfw.reports` | `ZoneCalculationReport`, `IgnitionAssessmentReport` | — |
+| `riskfw.constants` | ATEX-Kategorien, Explosionsgruppen, Temperaturklassen | IEC 60079 |
 
-#### `nl2cad-brandschutz` — Erweiterungen (bestehend)
+#### `nl2cad-brandschutz` — unverändert + eine Erweiterung
 
-| Modul | Ergänzung | Priorität |
-|---|---|---|
-| `analyzer.py` | `analyze_dxf()` gibt `ex_bereiche` bereits zurück — **unverändert** | — |
-| `models.py` | `ExBereich` bereits definiert — **unverändert** | — |
-| `rules/combined.py` | `CombinedExBrandCheck`: Zone 1 + F60-Wand Prüfung (NEU) | P2 |
-
-#### `risk-hub/explosionsschutz` — Nur Django-Schicht
-
-| Verbleibend in risk-hub | Begründung |
+| Modul | Status |
 |---|---|
-| `models.py` — alle Django-ORM Models | Persistenz, Tenant-Isolation, Migrations |
-| `models.py` — `ZoneCalculationResult` (NEU) | TRGS 721 Ergebnis archivieren (Nachweispflicht) |
-| `services.py` — alle `create_*` / `update_*` Funktionen | Audit-Trail, `@transaction.atomic`, Permissions |
-| `services.py` — `calculate_and_store_zone()` (NEU) | Delegiert an `nl2cad-exschutz`, speichert Ergebnis |
-| `services.py` — `import_zones_from_dxf()` (NEU) | Delegiert an `nl2cad-brandschutz`, erstellt DB-Records |
-| `export_views.py` — alle Export-Views | UI-Schicht, WeasyPrint, GAEB |
-| `export_views.py` — `IgnitionAssessmentExportView` (NEU) | PDF-Export via WeasyPrint |
-| `calculations.py` | **DEPRECATE** → schrittweise leeren, auf nl2cad-exschutz delegieren |
-| `schemas.py` — `ZoneExtent` | Bleibt als Pydantic-Validierung für Django Forms/API |
+| `analyzer.py` — IFC/DXF Analyse | **unverändert** |
+| `models.py` — `ExBereich`, `Fluchtweg`, `Brandabschnitt` | **unverändert** |
+| `rules/asr_a23.py`, `rules/din4102.py` | **unverändert** |
+| `rules/combined.py` — Zone 1 + F60-Wand Check | **NEU (P2)** |
+
+#### `risk-hub` — nur Django-Schicht
+
+| Verbleibend | Begründung |
+|---|---|
+| `models.py` — alle Django ORM Models | Persistenz, Migrations, Tenant-Isolation |
+| `models.py` — `ZoneCalculationResult` **(NEU)** | TRGS 721 Nachweisarchivierung |
+| `services.py` — alle `create_*` / `update_*` | Audit, `@transaction.atomic` |
+| `services.py` — `calculate_and_store_zone()` **(NEU)** | Delegiert an `riskfw`, persistiert |
+| `services.py` — `import_zones_from_dxf()` **(NEU)** | Delegiert an `nl2cad-brandschutz` |
+| `export_views.py` — PDF/GAEB Export | WeasyPrint, nl2cad.gaeb |
+| `export_views.py` — `IgnitionAssessmentExportView` **(NEU)** | PDF via WeasyPrint |
+| `calculations.py` | **→ DEPRECATE** nach Phase 3, auf riskfw delegieren |
+| `schemas.py` — `ZoneExtent` | Bleibt als Pydantic-Validierung für Forms/API |
 
 ---
 
-## 3. Detailspezifikation: `nl2cad-exschutz`
+## 3. Spezifikation: `riskfw`
 
 ### 3.1 Package-Struktur
 
 ```text
-packages/nl2cad-exschutz/
-├── pyproject.toml
+riskfw/                          ← eigenständiges Git-Repo
+├── pyproject.toml               ← name = "riskfw", PyPI: iildehnert
 ├── README.md
-└── src/nl2cad/exschutz/
-    ├── __init__.py
-    ├── constants.py
+├── CHANGELOG.md
+└── src/riskfw/
+    ├── __init__.py              # __version__ = "0.1.0"
+    ├── constants.py             # ATEX_CATEGORIES, TEMP_CLASSES, EXP_GROUPS
     ├── substances/
-    │   ├── __init__.py
-    │   ├── database.py       # SubstanceProperties + SUBSTANCE_DATABASE
-    │   └── lookup.py         # get_substance_properties()
+    │   ├── __init__.py          # Public: get_substance_properties, list_substances
+    │   ├── database.py          # SUBSTANCE_DATABASE (GESTIS-basiert)
+    │   └── lookup.py            # Alias-Auflösung, Fuzzy-Search
     ├── zones/
-    │   ├── __init__.py
-    │   ├── models.py         # ZoneExtentResult, VentilationResult
-    │   ├── calculator.py     # calculate_zone_extent() — TRGS 721
-    │   └── ventilation.py    # calculate_ventilation_effectiveness() — TRGS 722
+    │   ├── __init__.py          # Public: calculate_zone_extent, ...
+    │   ├── models.py            # ZoneExtentResult, VentilationResult
+    │   ├── calculator.py        # TRGS 721 Zonenberechnung
+    │   └── ventilation.py       # TRGS 722 Lüftungseffektivität
     ├── equipment/
-    │   ├── __init__.py
-    │   ├── models.py         # ATEXCheckResult
-    │   └── checker.py        # check_equipment_suitability()
+    │   ├── __init__.py          # Public: check_equipment_suitability
+    │   ├── models.py            # ATEXCheckResult
+    │   └── checker.py           # ATEX 2014/34/EU Eignungsprüfung
     ├── ignition/
-    │   ├── __init__.py
-    │   ├── models.py         # IgnitionAssessment, IgnitionRisk
-    │   └── assessor.py       # IgnitionSourceMatrix, 13 EN 1127-1 Quellen
+    │   ├── __init__.py          # Public: IgnitionSourceMatrix
+    │   ├── models.py            # IgnitionAssessment, IgnitionRisk
+    │   └── assessor.py          # 13 Zündquellen nach EN 1127-1
     └── reports/
-        ├── __init__.py
-        └── pdf_builder.py    # ReportSection, export_to_dict()
+        ├── __init__.py          # Public: ZoneCalculationReport, ...
+        └── builder.py           # Report-Strukturen als Dataclasses
 ```
 
 ### 3.2 Public API
 
 ```python
 # Stoff-Lookup
-from nl2cad.exschutz.substances import get_substance_properties, list_substances
+from riskfw.substances import get_substance_properties, list_substances
 
-# Zonenberechnung
-from nl2cad.exschutz.zones import calculate_zone_extent, calculate_ventilation_effectiveness
+props = get_substance_properties("ethanol")
+# → SubstanceProperties(name="Ethanol", lel=3.1, uel=27.7, ...)
 
-# ATEX-Prüfung
-from nl2cad.exschutz.equipment import check_equipment_suitability
+# Zonenberechnung TRGS 721
+from riskfw.zones import calculate_zone_extent
 
-# Zündquellen-Bewertung
-from nl2cad.exschutz.ignition import IgnitionSourceMatrix, IgnitionSource
+result = calculate_zone_extent(
+    release_rate_kg_s=0.1,
+    ventilation_rate_m3_s=2.0,
+    substance_name="ethanol",
+    release_type="jet",
+)
+# → ZoneExtentResult(zone_type="1", radius_m=2.3, basis_norm="TRGS 721")
 
-# Report-Strukturen
-from nl2cad.exschutz.reports import ZoneCalculationReport, IgnitionAssessmentReport
+# ATEX-Eignungsprüfung
+from riskfw.equipment import check_equipment_suitability
+
+check = check_equipment_suitability(
+    ex_marking="II 2G Ex d IIB T4",
+    zone="1",
+)
+# → ATEXCheckResult(is_suitable=True, detected_category="2G", ...)
+
+# Zündquellen-Bewertung EN 1127-1
+from riskfw.ignition import IgnitionSourceMatrix
+
+matrix = IgnitionSourceMatrix()
+assessment = matrix.assess("S01_heisse_oberflaechen", is_present=True,
+                            is_effective=False, mitigation="Hitzeschild")
+# → IgnitionAssessment(risk_level="low", norm_reference="EN 1127-1")
 ```
 
 ### 3.3 Zentrale Dataclasses
@@ -207,7 +263,7 @@ from nl2cad.exschutz.reports import ZoneCalculationReport, IgnitionAssessmentRep
 # zones/models.py
 @dataclass
 class ZoneExtentResult:
-    zone_type: str           # "0", "1", "2"
+    zone_type: str           # "0" | "1" | "2"
     radius_m: float
     volume_m3: float
     dilution_factor: float
@@ -223,9 +279,9 @@ class ATEXCheckResult:
     is_suitable: bool
     equipment_marking: str
     target_zone: str
-    detected_category: str | None
-    detected_temp_class: str | None
-    detected_exp_group: str | None
+    detected_category: str | None    # "1G" | "2G" | "3G" | "1D" | ...
+    detected_temp_class: str | None  # "T1" .. "T6"
+    detected_exp_group: str | None   # "IIA" | "IIB" | "IIC"
     issues: list[str] = field(default_factory=list)
     recommendations: list[str] = field(default_factory=list)
     basis_norm: str = "ATEX 2014/34/EU"
@@ -234,7 +290,8 @@ class ATEXCheckResult:
 # ignition/models.py
 @dataclass
 class IgnitionAssessment:
-    ignition_source: str     # "S1" .. "S13"
+    source_id: str           # "S01" .. "S13"
+    source_name: str         # "Heiße Oberflächen"
     is_present: bool
     is_effective: bool
     risk_level: str          # "none" | "low" | "high"
@@ -244,47 +301,55 @@ class IgnitionAssessment:
 
 ---
 
-## 4. Detailspezifikation: risk-hub Erweiterungen
+## 4. Spezifikation: risk-hub Erweiterungen
 
-### 4.1 Neues Modell: `ZoneCalculationResult`
+### 4.1 Neues Modell `ZoneCalculationResult`
 
 ```python
 class ZoneCalculationResult(models.Model):
-    """Archivierte TRGS 721 Zonenberechnung — Nachweispflicht nach BetrSichV."""
-
+    """
+    Archivierte TRGS 721 Zonenberechnung.
+    Nachweispflicht nach BetrSichV §§ 14–17.
+    Unveränderlich nach Erstellung (kein Update, kein Delete).
+    """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
+
     zone = models.ForeignKey(
-        ZoneDefinition, on_delete=models.CASCADE, related_name="calculations"
+        "ZoneDefinition", on_delete=models.CASCADE, related_name="calculations"
     )
-    substance_name = models.CharField(max_length=200)  # Denormalisiert für Archiv
+    substance_name = models.CharField(max_length=200)    # denorm. für Archiv
     release_rate_kg_s = models.DecimalField(max_digits=12, decimal_places=6)
     ventilation_rate_m3_s = models.DecimalField(max_digits=12, decimal_places=4)
-    release_type = models.CharField(max_length=20)    # jet | pool | diffuse
-    calculated_zone_type = models.CharField(max_length=5)   # "0", "1", "2"
+    release_type = models.CharField(max_length=20)       # jet | pool | diffuse
+    calculated_zone_type = models.CharField(max_length=5)
     calculated_radius_m = models.DecimalField(max_digits=8, decimal_places=3)
     calculated_volume_m3 = models.DecimalField(max_digits=12, decimal_places=3)
     basis_norm = models.CharField(max_length=50, default="TRGS 721")
-    raw_result = models.JSONField()    # Vollständiges ZoneExtentResult
-    calculated_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    raw_result = models.JSONField()                      # vollständiges ZoneExtentResult
+    calculated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True
+    )
     calculated_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, default="")
 
     class Meta:
         db_table = "ex_zone_calculation_result"
         ordering = ["-calculated_at"]
+        # Compliance: kein Löschen erlaubt
+        default_permissions = ("add", "view")
 ```
 
-### 4.2 Neuer Service: `calculate_and_store_zone()`
+### 4.2 Service `calculate_and_store_zone()`
 
 ```python
-# services.py
+# services.py — delegiert an riskfw, persistiert Ergebnis
 @dataclass(frozen=True)
 class CalculateZoneCmd:
     zone_id: UUID
     release_rate_kg_s: float
     ventilation_rate_m3_s: float
-    release_type: str  # "jet" | "pool" | "diffuse"
+    release_type: str   # "jet" | "pool" | "diffuse"
     notes: str = ""
 
 
@@ -295,10 +360,11 @@ def calculate_and_store_zone(
     user_id: UUID | None = None,
 ) -> ZoneCalculationResult:
     """
-    Delegiert Berechnung an nl2cad-exschutz, persistiert Ergebnis.
+    Delegiert an riskfw.zones.calculate_zone_extent(),
+    archiviert Ergebnis in DB.
     Audit: explosionsschutz.zone.calculated
     """
-    from nl2cad.exschutz.zones import calculate_zone_extent
+    from riskfw.zones import calculate_zone_extent
 
     zone = ZoneDefinition.objects.get(id=cmd.zone_id, tenant_id=tenant_id)
     substance_name = zone.concept.substance.name
@@ -309,7 +375,6 @@ def calculate_and_store_zone(
         substance_name=substance_name,
         release_type=cmd.release_type,
     )
-
     calc = ZoneCalculationResult.objects.create(
         tenant_id=tenant_id,
         zone=zone,
@@ -337,7 +402,7 @@ def calculate_and_store_zone(
     return calc
 ```
 
-### 4.3 Neuer Service: `import_zones_from_dxf()`
+### 4.3 Service `import_zones_from_dxf()`
 
 ```python
 @transaction.atomic
@@ -348,81 +413,34 @@ def import_zones_from_dxf(
     user_id: UUID | None = None,
 ) -> int:
     """
-    DXF → nl2cad-brandschutz.BrandschutzAnalyzer
-    → ExBereich-Liste → ZoneDefinition-Records in DB.
-    Gibt Anzahl importierter Zonen zurück.
+    DXF-Upload → nl2cad-brandschutz erkennt ExBereich-Objekte
+    → ZoneDefinition-Records in risk-hub DB anlegen.
+    riskfw wird hier NICHT verwendet (das ist CAD-Analyse).
     """
     import io
-
     import ezdxf
     from nl2cad.brandschutz.analyzer import BrandschutzAnalyzer
 
     concept = ExplosionConcept.objects.get(id=concept_id, tenant_id=tenant_id)
-    doc = ezdxf.read(io.BytesIO(dxf_bytes))
-    analyse = BrandschutzAnalyzer().analyze_dxf(doc)
+    analyse = BrandschutzAnalyzer().analyze_dxf(ezdxf.read(io.BytesIO(dxf_bytes)))
 
     count = 0
     for ex_bereich in analyse.ex_bereiche:
-        zone_type = ex_bereich.zone.value.replace("Zone ", "")  # "Zone 1" → "1"
         ZoneDefinition.objects.create(
             tenant_id=tenant_id,
             concept=concept,
-            zone_type=zone_type,
+            zone_type=ex_bereich.zone.value.replace("Zone ", ""),
             name=ex_bereich.name or f"Import: {ex_bereich.zone.value}",
-            justification=(
-                f"DXF-Import via nl2cad-brandschutz, Layer: {ex_bereich.layer}"
-            ),
+            justification=f"DXF-Import, Layer: {ex_bereich.layer}",
         )
         count += 1
 
     emit_audit_event(
-        tenant_id=tenant_id,
-        category=AuditCategory.ZONE,
-        action="imported",
-        entity_type="ZoneDefinition",
-        entity_id=concept_id,
-        payload={"count": count, "source": "dxf"},
-        user_id=user_id,
+        tenant_id=tenant_id, category=AuditCategory.ZONE, action="imported",
+        entity_type="ZoneDefinition", entity_id=concept_id,
+        payload={"count": count, "source": "dxf"}, user_id=user_id,
     )
     return count
-```
-
-### 4.4 Neuer Export: `IgnitionAssessmentExportView`
-
-```python
-# export_views.py
-class IgnitionAssessmentExportView(View):
-    """PDF-Export der Zündquellen-Bewertungsmatrix nach EN 1127-1."""
-
-    def get(self, request: HttpRequest, pk) -> HttpResponse:
-        from nl2cad.exschutz.ignition import IgnitionSourceMatrix  # noqa: F401
-        from nl2cad.exschutz.reports import IgnitionAssessmentReport
-        from weasyprint import HTML
-
-        tenant_id = getattr(request, "tenant_id", None)
-        concept = get_object_or_404(
-            ExplosionConcept.objects.filter(tenant_id=tenant_id), pk=pk
-        )
-        assessments = ZoneIgnitionSourceAssessment.objects.filter(
-            zone__concept=concept
-        ).select_related("zone")
-
-        # nl2cad-exschutz baut Report-Struktur (framework-agnostisch)
-        report = IgnitionAssessmentReport.from_assessments(
-            project_name=concept.title,
-            assessments=[vars(a) for a in assessments],
-        )
-
-        # risk-hub rendert via WeasyPrint
-        html = render_to_string(
-            "explosionsschutz/reports/ignition_matrix.html",
-            {"report": report},
-        )
-        pdf_bytes = HTML(string=html).write_pdf()
-        buf = io.BytesIO(pdf_bytes)
-        filename = f"Zuendquellen_{concept.title[:30]}_v{concept.version}.pdf"
-        return FileResponse(buf, as_attachment=True, filename=filename,
-                            content_type="application/pdf")
 ```
 
 ---
@@ -430,72 +448,81 @@ class IgnitionAssessmentExportView(View):
 ## 5. Abhängigkeitsmatrix
 
 ```text
-nl2cad-core
-    ↑
-nl2cad-brandschutz   nl2cad-exschutz (NEU)
-         ↑                  ↑
-         └──────────────────┘
-                  risk-hub (Django)
+                    ┌─────────────────────────────┐
+                    │         risk-hub             │
+                    │         (Django)             │
+                    └──────┬──────────┬────────────┘
+                           │          │
+                           ↓          ↓
+              ┌────────────┐    ┌─────────────────┐
+              │  riskfw    │    │ nl2cad-brandschutz│
+              │  (NEU)     │    │  (bestehend)     │
+              │            │    └────────┬─────────┘
+              │ KEINE      │             ↓
+              │ nl2cad-    │    ┌─────────────────┐
+              │ Abhängigkeit│   │   nl2cad-core   │
+              └────────────┘    └─────────────────┘
 ```
 
-**Verbotene Abhängigkeiten:**
+**Verbote:**
 
-| Von | Nach | Verboten |
+| Von | Nach | Grund |
 |---|---|---|
-| `nl2cad-exschutz` | Django | ✗ kein ORM, kein request |
-| `nl2cad-exschutz` | `nl2cad-brandschutz` | ✗ keine Querabhängigkeit |
-| `nl2cad-brandschutz` | `nl2cad-exschutz` | ✗ keine Querabhängigkeit |
-| `risk-hub` | `calculations.py` direkt | ✗ nach Migration (Phase 3) |
+| `riskfw` | `nl2cad-*` | kein CAD-Bezug, kein gemeinsames Ökosystem |
+| `riskfw` | Django | Framework-agnostisch |
+| `nl2cad-brandschutz` | `riskfw` | keine Querabhängigkeit |
+| `risk-hub` | `calculations.py` (direkt) | nach Phase 3 obsolet |
 
 ---
 
 ## 6. Migrationspfad
 
-### Phase 1 — nl2cad-exschutz Grundgerüst (Sprint 1)
+### Phase 1 — `riskfw` erstellen (Sprint 1, ~1 Woche)
 
-1. Package anlegen: `uv new packages/nl2cad-exschutz`
-2. `substances/` migrieren aus `calculations.py` → Tests schreiben
-3. `zones/calculator.py` migrieren → Tests: TRGS 721 Fälle
-4. `equipment/checker.py` migrieren → Tests: ATEX-Kategorien
-5. `nl2cad-exschutz` in risk-hub `requirements.txt` aufnehmen
+1. Neues Git-Repo `riskfw` anlegen, PyPI-Account `iildehnert`
+2. `substances/` aus `calculations.py` migrieren + Tests
+3. `zones/calculator.py` migrieren + Tests (TRGS 721 Referenzfälle)
+4. `equipment/checker.py` migrieren + Tests (ATEX-Kategorien)
+5. `riskfw==0.1.0` nach PyPI publishen
+6. `riskfw` in `risk-hub/requirements.txt` aufnehmen
 
-### Phase 2 — risk-hub Integration (Sprint 2)
+### Phase 2 — risk-hub Integration (Sprint 2, ~1 Woche)
 
 1. `ZoneCalculationResult` Modell + Migration
-2. `calculate_and_store_zone()` Service
-3. `import_zones_from_dxf()` Service
-4. `IgnitionAssessmentExportView` + Template
-5. Equipment-ATEX-Check-Signal bei `post_save`
+2. `calculate_and_store_zone()` + `import_zones_from_dxf()` Services
+3. `IgnitionAssessmentExportView` + WeasyPrint-Template
+4. Equipment `post_save`-Signal: ATEX-Check via `riskfw`
 
-### Phase 3 — Konsolidierung (Sprint 3)
+### Phase 3 — Konsolidierung (Sprint 3, ~3 Tage)
 
-1. `calculations.py` deprecaten: Funktionen auf `nl2cad-exschutz` delegieren
-2. `ignition/assessor.py` in `nl2cad-exschutz` implementieren
-3. `CombinedExBrandCheck` in `nl2cad-brandschutz` (Zone + F60-Prüfung)
-4. End-to-End-Tests: DXF-Upload → Zonen → Berechnung → PDF-Report
+1. `ignition/` in `riskfw` implementieren (EN 1127-1, 13 Quellen)
+2. `calculations.py` leeren — nur noch Delegation an `riskfw`
+3. `CombinedExBrandCheck` in `nl2cad-brandschutz` (Zone + F60-Wand)
+4. End-to-End-Test: DXF-Upload → Zonen-Import → Berechnung → PDF-Nachweis
 
 ---
 
 ## 7. Bewertung der Alternativen
 
-### Alternative A: Alles in risk-hub belassen
+### Option A: Alles in `risk-hub/calculations.py` belassen (Status quo)
 
-- ❌ Fachlogik nicht wiederverwendbar
-- ❌ Tests nur mit Django-Setup möglich
-- ❌ Wachsende Kopplung zwischen Berechnung und ORM
+- ✅ Kein Aufwand
+- ❌ Fachlogik nicht wiederverwendbar außerhalb risk-hub
+- ❌ Tests erfordern Django-Setup
+- ❌ Wachsende Kopplung, zunehmende technische Schuld
 
-### Alternative B: Alles in nl2cad-brandschutz
+### Option B: Logik in `nl2cad-exschutz` (abgelehnt)
 
-- ❌ Explosionsschutz ≠ Brandschutz — fachlich falsch
-- ❌ Package würde zu groß und zu viele Normen abdecken
-- ❌ ATEX/BetrSichV hat keine CAD-Abhängigkeit
+- ❌ **Fachlich falsch**: nl2cad ist eine CAD-Library, kein Safety-Framework
+- ❌ Irreführend für externe Nutzer von nl2cad
+- ❌ Explosionsschutz-Berechnung hat keinen CAD-Datei-Bezug
 
-### Alternative C: nl2cad-exschutz (diese Entscheidung) ✅
+### Option C: `riskfw` als eigenständiges Package ✅ (diese Entscheidung)
 
-- ✅ Klare fachliche Trennung (Ex ≠ Brand)
-- ✅ Unabhängig testbar ohne Django
-- ✅ Wiederverwendbar in anderen Apps (z.B. cad-hub ATEX-Analyse)
-- ✅ risk-hub bleibt schlank — nur Persistenz und UI
+- ✅ Klare fachliche Identität: Safety-Berechnungen ohne CAD-Bezug
+- ✅ Unabhängig testbar, unabhängig versionierbar
+- ✅ Wiederverwendbar in anderen Apps (MCP-Tools, future SafetyHub)
+- ✅ nl2cad bleibt sauber als CAD-Ökosystem
 
 ---
 
@@ -503,34 +530,53 @@ nl2cad-brandschutz   nl2cad-exschutz (NEU)
 
 ### Positiv
 
-- `calculations.py` kann mittelfristig geleert werden (Tech Debt abgebaut)
-- `nl2cad-exschutz` ist eigenständig über PyPI verteilbar
-- Sachverständigen-Funktionen (PDF-Reports, Nachweise) klar lokalisiert
-- Testbarkeit: `pytest packages/nl2cad-exschutz/` ohne Django-Overhead
+- `calculations.py` wird mittelfristig zur dünnen Delegation (Tech Debt abgebaut)
+- `riskfw` auf PyPI als eigenständige Safety-Library verfügbar (`iildehnert`)
+- Testbarkeit: `pytest` ohne Django, schnell und isoliert
+- Klare Kommunikation nach außen: nl2cad = CAD, riskfw = Safety-Berechnungen
 
 ### Negativ / Risiken
 
-- Initial-Aufwand für Package-Erstellung (~2 Sprints)
-- Zwei Abhängigkeiten in risk-hub (`nl2cad-brandschutz` + `nl2cad-exschutz`)
-- Stoff-Datenbank muss gepflegt werden (GESTIS-Updates)
+- Neues Git-Repo und PyPI-Release-Prozess notwendig
+- Stoff-Datenbank (GESTIS) ist statisch — benötigt manuelle Pflege bei Updates
+- Zwei externe Dependencies in risk-hub: `riskfw` + `nl2cad-brandschutz`
 
-### Offene Fragen
+### Offene Fragen für Reviewer
 
-- [ ] Stoff-Datenbank: statisch in Package oder externe GESTIS-API?
-- [ ] `nl2cad-exschutz` Versionierung: gleiches Release-Cadence wie andere nl2cad-Packages?
-- [ ] `ZoneExtent` Pydantic-Schema: in `nl2cad-exschutz` oder in risk-hub bleiben?
+- [ ] **Stoff-Datenbank:** Statisch in Package (aktuell 13 Stoffe) oder
+      externe GESTIS-API-Anbindung? Letzteres würde httpx erfordern und
+      das Package komplexer machen.
+- [ ] **Normerweiterung:** Soll `riskfw` auch BetrSichV §§ 14–17
+      Prüffristen-Berechnung enthalten? Oder bleibt das in risk-hub?
+- [ ] **Brandschutz in riskfw:** Soll `riskfw` auch Brandschutz-Berechnungen
+      (z.B. Feuerwiderstandsdauer) enthalten — oder bleibt das vollständig
+      in `nl2cad-brandschutz` (CAD-seitig)?
+- [ ] **Package-Name:** Ist `riskfw` eindeutig genug oder besser
+      `safetycalc`, `exschutz-py`, `atex-tools`?
 
 ---
 
-## 9. Verweise
+## 9. Normbezüge
 
-- TRGS 721: Gefährliche explosionsfähige Atmosphäre — Beurteilung der Explosionsgefährlichkeit
-- TRGS 722: Vermeidung oder Einschränkung gefährlicher explosionsfähiger Atmosphären
-- EN 1127-1: Explosionsfähige Atmosphären — Grundlagen und Methodik
-- IEC 60079-10-1: Klassifizierung von Bereichen bei gasförmigen Brennstoffen
-- ATEX-Richtlinie 2014/34/EU: Geräte und Schutzsysteme in explosionsgefährdeten Bereichen
-- BetrSichV §§ 14–17: Prüfpflichten für überwachungsbedürftige Anlagen
-- ASR A2.3: Fluchtwege und Notausgänge
-- DIN 4102: Brandverhalten von Baustoffen und Bauteilen
-- `ADR-001` risk-hub: Multi-Tenant-Architektur und Domain-Modell
+| Norm | Titel | Modul in riskfw |
+|---|---|---|
+| TRGS 721 | Gefährliche explosionsfähige Atmosphäre — Beurteilung | `zones.calculator` |
+| TRGS 722 | Vermeidung gefährlicher explosionsfähiger Atmosphären | `zones.ventilation` |
+| EN 1127-1 | Explosionsfähige Atmosphären — Grundlagen und Methodik | `ignition.assessor` |
+| IEC 60079-10-1 | Klassifizierung von Bereichen (Gas) | `zones.calculator` |
+| ATEX 2014/34/EU | Geräte in explosionsgefährdeten Bereichen | `equipment.checker` |
+| IEC 60079-0 | Allgemeine Anforderungen Ex-Geräte | `equipment.models` |
+| BetrSichV §§ 14–17 | Prüfpflichten überwachungsbedürftige Anlagen | risk-hub (nicht riskfw) |
+| ASR A2.3 | Fluchtwege und Notausgänge | nl2cad-brandschutz (nicht riskfw) |
+| DIN 4102 | Brandverhalten von Baustoffen | nl2cad-brandschutz (nicht riskfw) |
+
+---
+
+## 10. Verweise
+
+- `ADR-001` risk-hub: Explosionsschutz-Modul und Domain-Modell
+- `ADR-003` risk-hub: Multi-Tenant RBAC Architektur
+- `ADR-006` risk-hub: Audit und Compliance
 - `AGENTS.md` nl2cad: Package-Übersicht und Coding-Konventionen
+- GitHub risk-hub: <https://github.com/achimdehnert/risk-hub>
+- PyPI Account: `iildehnert`
