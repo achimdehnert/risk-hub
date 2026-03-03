@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<title>GBU – Gefährdungsbeurteilung</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 10pt; color: #222; margin: 0; }
+  .page { padding: 20mm 20mm 15mm 20mm; }
+  h1 { font-size: 14pt; color: #e65c00; margin-bottom: 4mm; }
+  h2 { font-size: 11pt; color: #333; border-bottom: 1px solid #e65c00; padding-bottom: 2mm; margin-top: 6mm; }
+  table { width: 100%; border-collapse: collapse; margin-top: 3mm; }
+  th { background: #f5f5f5; text-align: left; padding: 2mm 3mm; font-size: 9pt; }
+  td { padding: 2mm 3mm; vertical-align: top; border-bottom: 1px solid #eee; }
+  .badge { display: inline-block; padding: 1mm 3mm; border-radius: 3mm; font-weight: bold; font-size: 9pt; }
+  .risk-low      { background: #d4edda; color: #155724; }
+  .risk-medium   { background: #fff3cd; color: #856404; }
+  .risk-high     { background: #ffe5d0; color: #7d3b00; }
+  .risk-critical { background: #f8d7da; color: #721c24; }
+  .footer { position: fixed; bottom: 10mm; left: 20mm; right: 20mm; font-size: 8pt; color: #888; border-top: 1px solid #ddd; padding-top: 2mm; }
+  @page { size: A4; margin: 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <h1>Gefährdungsbeurteilung beim Umgang mit Gefahrstoffen</h1>
+  <p style="font-size:9pt; color:#666;">gemäß GefStoffV §6 / TRGS 400</p>
+
+  <h2>1. Allgemeine Angaben</h2>
+  <table>
+    <tr><th style="width:35%">Standort</th><td>{{ activity.site.name }}</td></tr>
+    <tr><th>Gefahrstoff</th><td>{{ activity.sds_revision.substance.name }}</td></tr>
+    <tr><th>Tätigkeitsbeschreibung</th><td>{{ activity.activity_description }}</td></tr>
+    <tr><th>Expositionsfrequenz</th><td>{{ activity.get_activity_frequency_display }}</td></tr>
+    <tr><th>Expositionsdauer</th><td>{{ activity.duration_minutes }} Minuten pro Vorgang</td></tr>
+    <tr><th>Mengenkategorie (EMKG)</th><td>{{ activity.get_quantity_class_display }}</td></tr>
+  </table>
+
+  <h2>2. Risikobewertung (EMKG)</h2>
+  <table>
+    <tr>
+      <th style="width:35%">Risikostufe</th>
+      <td>
+        <span class="badge risk-{{ activity.risk_score }}">
+          {{ activity.get_risk_score_display|default:"—" }}
+        </span>
+      </td>
+    </tr>
+  </table>
+
+  <h2>3. Substitutionsprüfung (§7 GefStoffV)</h2>
+  <table>
+    <tr>
+      <th style="width:35%">Geprüft</th>
+      <td>{% if activity.substitution_checked %}Ja{% else %}Nein{% endif %}</td>
+    </tr>
+    {% if activity.substitution_notes %}
+    <tr><th>Ergebnis</th><td>{{ activity.substitution_notes }}</td></tr>
+    {% endif %}
+  </table>
+
+  <h2>4. Gefährdungskategorien</h2>
+  {% if activity.derived_hazard_categories.exists %}
+  <table>
+    <tr><th>Kategorie</th><th>TRGS-Referenz</th></tr>
+    {% for cat in activity.derived_hazard_categories.all %}
+    <tr>
+      <td>{{ cat.name }}</td>
+      <td>{{ cat.trgs_reference|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="color:#888;">Keine Gefährdungskategorien abgeleitet.</p>
+  {% endif %}
+
+  <h2>5. Schutzmaßnahmen (TOPS)</h2>
+  {% if activity.measures.exists %}
+  <table>
+    <tr><th style="width:10%">Typ</th><th>Maßnahme</th><th>Rechtsgrundlage</th></tr>
+    {% for m in activity.measures.all %}
+    <tr>
+      <td style="font-weight:bold;">{{ m.tops_type }}</td>
+      <td>{{ m.title }}{% if m.description %}<br/><small style="color:#666;">{{ m.description }}</small>{% endif %}</td>
+      <td style="font-size:9pt;">{{ m.legal_basis|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p style="color:#888;">Keine Schutzmaßnahmen erfasst.</p>
+  {% endif %}
+
+  <h2>6. Freigabe</h2>
+  <table>
+    <tr><th style="width:35%">Status</th><td>{{ activity.get_status_display }}</td></tr>
+    {% if activity.is_approved %}
+    <tr><th>Freigegeben durch</th><td>{{ activity.approved_by_name }}</td></tr>
+    <tr><th>Freigabedatum</th><td>{{ activity.approved_at|date:"d.m.Y" }}</td></tr>
+    <tr><th>Nächste Überprüfung</th><td>{{ activity.next_review_date|date:"d.m.Y" }}</td></tr>
+    {% endif %}
+  </table>
+
+  <div style="margin-top:15mm; border-top:1px solid #ccc; padding-top:4mm;">
+    <p style="font-size:9pt; color:#666;">
+      Dokument erstellt: {{ activity.approved_at|date:"d.m.Y H:i"|default:"—" }} &nbsp;|&nbsp;
+      GBU-ID: {{ activity.id }}
+    </p>
+  </div>
+
+</div>
+<div class="footer">
+  Schutztat &ndash; GBU-Dokumentation gemäß GefStoffV §6 / TRGS 400 &nbsp;|&nbsp; Seite <span class="page-number"></span>
+</div>
+</body>
+</html>

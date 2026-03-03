@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8"/>
+<title>Betriebsanweisung – {{ activity.sds_revision.substance.name }}</title>
+<style>
+  body { font-family: Arial, sans-serif; font-size: 10pt; color: #222; margin: 0; }
+  .page { padding: 15mm 15mm 12mm 15mm; }
+  .header-bar { background: #e65c00; color: white; padding: 4mm 6mm; margin-bottom: 4mm; }
+  .header-bar h1 { font-size: 13pt; margin: 0; }
+  .header-bar p { font-size: 9pt; margin: 1mm 0 0; opacity: 0.9; }
+  .section { border: 1px solid #ddd; margin-bottom: 3mm; }
+  .section-title { background: #f5f5f5; padding: 2mm 3mm; font-weight: bold; font-size: 9pt;
+    border-bottom: 1px solid #ddd; text-transform: uppercase; color: #555; }
+  .section-body { padding: 3mm; font-size: 10pt; }
+  .measure-row { padding: 1mm 0; border-bottom: 1px solid #f0f0f0; }
+  .measure-row:last-child { border-bottom: none; }
+  .tops-badge { display: inline-block; width: 6mm; height: 6mm; border-radius: 1mm;
+    background: #e65c00; color: white; font-weight: bold; font-size: 8pt;
+    text-align: center; line-height: 6mm; margin-right: 2mm; }
+  .signature-box { margin-top: 8mm; display: flex; gap: 10mm; }
+  .sig-field { flex: 1; border-top: 1px solid #333; padding-top: 2mm; font-size: 8pt; color: #666; }
+  .footer { position: fixed; bottom: 8mm; left: 15mm; right: 15mm;
+    font-size: 7pt; color: #888; border-top: 1px solid #ddd; padding-top: 1mm; }
+  @page { size: A4; margin: 0; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="header-bar">
+    <h1>Betriebsanweisung</h1>
+    <p>gemäß §14 GefStoffV / TRGS 555 &nbsp;|&nbsp; Standort: {{ activity.site.name }}</p>
+  </div>
+
+  <div class="section">
+    <div class="section-title">1. Anwendungsbereich</div>
+    <div class="section-body">
+      <strong>Tätigkeit:</strong> {{ activity.activity_description }}<br/>
+      <strong>Stoff:</strong> {{ activity.sds_revision.substance.name }}<br/>
+      <strong>Frequenz:</strong> {{ activity.get_activity_frequency_display }} &nbsp;|
+      <strong>Dauer:</strong> {{ activity.duration_minutes }} Min.
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">2. Gefahren für Mensch und Umwelt</div>
+    <div class="section-body">
+      {% if activity.derived_hazard_categories.exists %}
+      {% for cat in activity.derived_hazard_categories.all %}
+      <div>&#9654; {{ cat.name }}{% if cat.trgs_reference %} ({{ cat.trgs_reference }}){% endif %}</div>
+      {% endfor %}
+      {% else %}
+      <p style="color:#888;">Keine Gefährdungen abgeleitet.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">3. Schutzmaßnahmen und Verhaltensregeln</div>
+    <div class="section-body">
+      {% if activity.measures.exists %}
+      {% for m in activity.measures.all %}
+      <div class="measure-row">
+        <span class="tops-badge">{{ m.tops_type }}</span>
+        <strong>{{ m.title }}</strong>
+        {% if m.description %}<br/><span style="margin-left:8mm; color:#555;">{{ m.description }}</span>{% endif %}
+      </div>
+      {% endfor %}
+      {% else %}
+      <p style="color:#888;">Keine Schutzmaßnahmen erfasst.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">4. Verhalten im Gefahrfall</div>
+    <div class="section-body">
+      Bei Unfällen oder Zwischenfällen: Bereich verlassen, Vorgesetzte informieren,
+      Notruf 112. Sicherheitsdatenblatt beachten.
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">5. Erste Hilfe</div>
+    <div class="section-body">
+      Erste-Hilfe-Maßnahmen gemäß Abschnitt 4 des Sicherheitsdatenblatts durchführen.
+      Betriebssanitäter/Notruf: <strong>112</strong>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">6. Freigabe</div>
+    <div class="section-body">
+      {% if activity.is_approved %}
+      Freigegeben durch: <strong>{{ activity.approved_by_name }}</strong>
+      am {{ activity.approved_at|date:"d.m.Y" }}
+      &nbsp;|&nbsp; Nächste Überprüfung: {{ activity.next_review_date|date:"d.m.Y" }}
+      {% else %}
+      <span style="color:#c00;">Noch nicht freigegeben.</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="signature-box">
+    <div class="sig-field">Datum / Unterschrift Ersteller</div>
+    <div class="sig-field">Datum / Unterschrift Vorgesetzter</div>
+    <div class="sig-field">Empfangsbestätigung Mitarbeiter</div>
+  </div>
+
+</div>
+<div class="footer">
+  Betriebsanweisung gemäß §14 GefStoffV / TRGS 555 &nbsp;|&nbsp;
+  BA-ID: {{ activity.id }} &nbsp;|&nbsp; Seite <span class="page-number"></span>
+</div>
+</body>
+</html>
