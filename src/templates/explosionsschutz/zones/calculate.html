@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Zonenberechnung — {{ zone.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+  <!-- Breadcrumb + Header -->
+  <div>
+    <nav class="text-sm text-gray-500 mb-2">
+      <a href="/ex/" class="hover:text-gray-700">Explosionsschutz</a>
+      <span class="mx-2">/</span>
+      <a href="{% url 'explosionsschutz:concept-detail-html' zone.concept.id %}"
+         class="hover:text-gray-700">{{ zone.concept.title|truncatechars:30 }}</a>
+      <span class="mx-2">/</span>
+      <span>Zonenberechnung</span>
+    </nav>
+    <div class="flex items-center space-x-3">
+      <span class="inline-flex items-center justify-center w-10 h-10 rounded-full
+        {% if zone.zone_type == "0" %}bg-red-500
+        {% elif zone.zone_type == "1" %}bg-orange-500
+        {% elif zone.zone_type == "2" %}bg-yellow-500
+        {% else %}bg-gray-400{% endif %} text-white font-bold">
+        {{ zone.zone_type }}
+      </span>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ zone.name }}</h1>
+        <p class="text-sm text-gray-500">
+          TRGS 721 Berechnung · Stoff:
+          <span class="font-medium text-gray-800">
+            {{ zone.concept.substance_name|default:"nicht gesetzt" }}
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    <!-- Berechnungsformular -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+        <i data-lucide="calculator" class="w-5 h-5 mr-2 text-orange-500"></i>
+        Neue Berechnung
+      </h2>
+
+      <form id="zone-calc-form"
+            hx-post="{% url 'explosionsschutz:zone-calculate' zone.id %}"
+            hx-target="#zone-calc-result"
+            hx-swap="innerHTML"
+            hx-indicator="#calc-spinner"
+            enctype="multipart/form-data">
+        {% csrf_token %}
+        {{ form.zone_id }}
+
+        <div class="space-y-4">
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              {{ form.release_rate_kg_s.label }}
+            </label>
+            {{ form.release_rate_kg_s }}
+            {% if form.release_rate_kg_s.errors %}
+            <p class="text-xs text-red-600 mt-1">
+              {{ form.release_rate_kg_s.errors|join:", " }}
+            </p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              {{ form.ventilation_rate_m3_s.label }}
+            </label>
+            {{ form.ventilation_rate_m3_s }}
+            {% if form.ventilation_rate_m3_s.errors %}
+            <p class="text-xs text-red-600 mt-1">
+              {{ form.ventilation_rate_m3_s.errors|join:", " }}
+            </p>
+            {% endif %}
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              {{ form.release_type.label }}
+            </label>
+            {{ form.release_type }}
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+              {{ form.notes.label }}
+            </label>
+            {{ form.notes }}
+          </div>
+
+        </div>
+
+        <div class="mt-5 flex items-center space-x-3">
+          <button type="submit"
+                  class="inline-flex items-center px-5 py-2 bg-orange-500
+                         text-white rounded-lg hover:bg-orange-600 font-medium">
+            <i data-lucide="play" class="w-4 h-4 mr-2"></i>
+            Berechnen
+          </button>
+          <span id="calc-spinner"
+                class="htmx-indicator text-sm text-gray-500 flex items-center">
+            <i data-lucide="loader" class="w-4 h-4 mr-1 animate-spin"></i>
+            Berechne…
+          </span>
+        </div>
+      </form>
+    </div>
+
+    <!-- Ergebnis-Bereich -->
+    <div id="zone-calc-result">
+      {% include "explosionsschutz/zones/_calc_result.html" with result=None error=None %}
+    </div>
+
+  </div>
+
+  <!-- Berechnungshistorie -->
+  {% if history %}
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+      <i data-lucide="history" class="w-5 h-5 mr-2 text-gray-400"></i>
+      Letzte Berechnungen
+    </h2>
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead>
+          <tr class="border-b border-gray-200 text-left text-gray-500">
+            <th class="pb-2 pr-4">Datum</th>
+            <th class="pb-2 pr-4">Zone</th>
+            <th class="pb-2 pr-4">Radius</th>
+            <th class="pb-2 pr-4">Volumen</th>
+            <th class="pb-2 pr-4">Art</th>
+            <th class="pb-2">Norm</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for c in history %}
+          <tr class="hover:bg-gray-50">
+            <td class="py-2 pr-4 text-gray-600">
+              {{ c.calculated_at|date:"d.m.Y H:i" }}
+            </td>
+            <td class="py-2 pr-4">
+              <span class="inline-flex items-center justify-center w-6 h-6
+                           rounded-full text-white text-xs font-bold
+                {% if c.calculated_zone_type == "0" %}bg-red-500
+                {% elif c.calculated_zone_type == "1" %}bg-orange-500
+                {% else %}bg-yellow-500{% endif %}">
+                {{ c.calculated_zone_type }}
+              </span>
+            </td>
+            <td class="py-2 pr-4 font-mono">{{ c.calculated_radius_m }} m</td>
+            <td class="py-2 pr-4 font-mono">{{ c.calculated_volume_m3 }} m³</td>
+            <td class="py-2 pr-4 text-gray-600">{{ c.release_type }}</td>
+            <td class="py-2 text-xs text-gray-400">{{ c.basis_norm }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

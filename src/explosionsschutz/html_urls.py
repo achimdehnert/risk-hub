@@ -18,13 +18,17 @@ from .template_views import (
     AreaDetailView,
     AreaCreateView,
     AreaEditView,
+    AreaDxfUploadView,
+    AreaBrandschutzView,
     ConceptListView,
     ConceptDetailView,
     ConceptCreateView,
+    ConceptDxfImportView,
     EquipmentListView,
     EquipmentDetailView,
     EquipmentCreateView,
     ToolsView,
+    ZoneCalculateView,
 )
 
 app_name = "explosionsschutz"
@@ -34,8 +38,22 @@ urlpatterns = [
     # Areas
     path("areas/", AreaListView.as_view(), name="area-list-html"),
     path("areas/create/", AreaCreateView.as_view(), name="area-create"),
-    path("areas/<uuid:pk>/", AreaDetailView.as_view(), name="area-detail-html"),
+    path(
+        "areas/<uuid:pk>/",
+        AreaDetailView.as_view(),
+        name="area-detail-html",
+    ),
     path("areas/<uuid:pk>/edit/", AreaEditView.as_view(), name="area-edit"),
+    path(
+        "areas/<uuid:pk>/dxf/",
+        AreaDxfUploadView.as_view(),
+        name="area-dxf-upload",
+    ),
+    path(
+        "areas/<uuid:pk>/brandschutz/",
+        AreaBrandschutzView.as_view(),
+        name="area-brandschutz",
+    ),
     # Concepts
     path("concepts/", ConceptListView.as_view(), name="concept-list-html"),
     path("concepts/new/", ConceptCreateView.as_view(), name="concept-new"),
@@ -79,6 +97,18 @@ urlpatterns = [
         "concepts/<uuid:pk>/export/gaeb/",
         ConceptExportGAEBView.as_view(),
         name="concept-export-gaeb",
+    ),
+    # Zone Calculation (riskfw)
+    path(
+        "zones/<uuid:zone_pk>/calculate/",
+        ZoneCalculateView.as_view(),
+        name="zone-calculate",
+    ),
+    # DXF Import für Zonen
+    path(
+        "concepts/<uuid:pk>/dxf-import/",
+        ConceptDxfImportView.as_view(),
+        name="concept-dxf-import",
     ),
     # Tools
     path("tools/", ToolsView.as_view(), name="tools"),

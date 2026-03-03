@@ -1,0 +1,94 @@
+{% if error %}
+<div class="bg-red-50 border border-red-200 rounded-xl p-5">
+  <div class="flex items-start space-x-3">
+    <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 mt-0.5 shrink-0"></i>
+    <div>
+      <p class="font-medium text-red-800">Berechnungsfehler</p>
+      <p class="text-sm text-red-700 mt-1">{{ error }}</p>
+    </div>
+  </div>
+</div>
+
+{% elif result %}
+<div class="bg-white rounded-xl border-2 border-orange-200 p-6 space-y-4">
+  <div class="flex items-center justify-between">
+    <h3 class="font-semibold text-gray-900 flex items-center">
+      <i data-lucide="check-circle" class="w-5 h-5 mr-2 text-green-500"></i>
+      Berechnungsergebnis
+    </h3>
+    <span class="text-xs text-gray-400">{{ result.basis_norm }}</span>
+  </div>
+
+  <div class="grid grid-cols-3 gap-4">
+    <div class="bg-gray-50 rounded-lg p-4 text-center">
+      <p class="text-xs text-gray-500 mb-1">Zonentyp</p>
+      <span class="inline-flex items-center justify-center w-12 h-12 rounded-full
+        {% if result.calculated_zone_type == "0" %}bg-red-500
+        {% elif result.calculated_zone_type == "1" %}bg-orange-500
+        {% elif result.calculated_zone_type == "2" %}bg-yellow-500
+        {% else %}bg-gray-400{% endif %} text-white font-bold text-xl mx-auto">
+        {{ result.calculated_zone_type }}
+      </span>
+    </div>
+    <div class="bg-gray-50 rounded-lg p-4 text-center">
+      <p class="text-xs text-gray-500 mb-1">Radius</p>
+      <p class="text-2xl font-bold text-gray-900">{{ result.calculated_radius_m }}</p>
+      <p class="text-xs text-gray-400">Meter</p>
+    </div>
+    <div class="bg-gray-50 rounded-lg p-4 text-center">
+      <p class="text-xs text-gray-500 mb-1">Volumen</p>
+      <p class="text-2xl font-bold text-gray-900">{{ result.calculated_volume_m3 }}</p>
+      <p class="text-xs text-gray-400">m³</p>
+    </div>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-x-6 gap-y-2 text-sm border-t border-gray-100 pt-4">
+    <div>
+      <dt class="text-gray-500">Stoff</dt>
+      <dd class="font-medium text-gray-900">{{ result.substance_name }}</dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">Freisetzungsart</dt>
+      <dd class="font-medium text-gray-900">{{ result.release_type }}</dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">Freisetzungsrate</dt>
+      <dd class="font-mono text-gray-900">{{ result.release_rate_kg_s }} kg/s</dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">Lüftungsrate</dt>
+      <dd class="font-mono text-gray-900">{{ result.ventilation_rate_m3_s }} m³/s</dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">riskfw Version</dt>
+      <dd class="text-gray-500 text-xs">{{ result.riskfw_version }}</dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">Berechnet am</dt>
+      <dd class="text-gray-500 text-xs">{{ result.calculated_at|date:"d.m.Y H:i" }}</dd>
+    </div>
+  </dl>
+
+  {% if result.notes %}
+  <p class="text-sm text-gray-600 border-t border-gray-100 pt-3">
+    <span class="font-medium">Hinweis:</span> {{ result.notes }}
+  </p>
+  {% endif %}
+
+  <p class="text-xs text-gray-400 border-t border-gray-100 pt-3">
+    <i data-lucide="lock" class="w-3 h-3 inline mr-1"></i>
+    Archiviert als unveränderlicher Nachweis (BetrSichV §§ 14–17)
+  </p>
+</div>
+
+{% else %}
+<div class="bg-gray-50 rounded-xl border border-dashed border-gray-300 p-8 text-center">
+  <i data-lucide="calculator" class="w-10 h-10 text-gray-300 mx-auto mb-3"></i>
+  <p class="text-gray-500 text-sm">
+    Eingaben ausfüllen und auf <strong>Berechnen</strong> klicken.
+  </p>
+  <p class="text-xs text-gray-400 mt-1">
+    Ergebnis wird hier inline angezeigt und automatisch archiviert.
+  </p>
+</div>
+{% endif %}

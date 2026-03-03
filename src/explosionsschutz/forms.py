@@ -9,7 +9,6 @@ from .models import (
     Area,
     ExplosionConcept,
     ZoneDefinition,
-    ProtectionMeasure,
     Equipment,
     EquipmentType,
 )
@@ -144,6 +143,70 @@ class EquipmentForm(forms.ModelForm):
                 tenant_id=tenant_id
             )
             self.fields["zone"].required = False
-            self.fields["equipment_type"].queryset = EquipmentType.objects.filter(
-                tenant_id__isnull=True
-            ) | EquipmentType.objects.filter(tenant_id=tenant_id)
+            self.fields["equipment_type"].queryset = (
+                EquipmentType.objects.filter(tenant_id__isnull=True)
+                | EquipmentType.objects.filter(tenant_id=tenant_id)
+            )
+
+
+_INPUT_CSS = (
+    "w-full px-4 py-2 border border-gray-300 rounded-lg"
+    " focus:ring-2 focus:ring-orange-300"
+)
+
+
+class ZoneCalculationForm(forms.Form):
+    """Formular für TRGS 721 Zonenberechnung via riskfw"""
+
+    RELEASE_CHOICES = [
+        ("jet", "Strahlausbreitung (Jet)"),
+        ("pool", "Lachenausbreitung (Pool)"),
+        ("diffuse", "Diffuse Freisetzung"),
+    ]
+
+    zone_id = forms.UUIDField(widget=forms.HiddenInput())
+    release_rate_kg_s = forms.FloatField(
+        label="Freisetzungsrate (kg/s)",
+        min_value=0.0001,
+        widget=forms.NumberInput(attrs={
+            "class": _INPUT_CSS,
+            "step": "0.0001",
+            "placeholder": "z.B. 0.01",
+        }),
+    )
+    ventilation_rate_m3_s = forms.FloatField(
+        label="Lüftungsrate (m³/s)",
+        min_value=0.001,
+        widget=forms.NumberInput(attrs={
+            "class": _INPUT_CSS,
+            "step": "0.001",
+            "placeholder": "z.B. 0.5",
+        }),
+    )
+    release_type = forms.ChoiceField(
+        label="Freisetzungsart",
+        choices=RELEASE_CHOICES,
+        widget=forms.Select(attrs={"class": _INPUT_CSS}),
+    )
+    notes = forms.CharField(
+        label="Bemerkungen",
+        required=False,
+        widget=forms.Textarea(attrs={
+            "class": _INPUT_CSS,
+            "rows": 2,
+            "placeholder": "Optionale Hinweise zur Berechnung...",
+        }),
+    )
+
+
+class ConceptDxfImportForm(forms.Form):
+    """Formular für DXF-Import von Ex-Zonen via nl2cad-brandschutz"""
+
+    dxf_file = forms.FileField(
+        label="DXF-Datei",
+        widget=forms.ClearableFileInput(attrs={
+            "class": _INPUT_CSS,
+            "accept": ".dxf",
+        }),
+        help_text="Max. 50 MB. Ex-Zonen-Layer werden automatisch erkannt.",
+    )
