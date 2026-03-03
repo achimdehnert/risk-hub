@@ -12,6 +12,12 @@ echo "Collecting static files..."
 python manage.py collectstatic --noinput
 
 if [ "$1" = "web" ]; then
+    echo "Running migrations..."
+    python manage.py migrate --noinput
+
+    echo "Seeding GBU reference data..."
+    python manage.py seed_all_gbu || echo "WARNING: GBU seed failed (non-fatal)"
+
     echo "Starting web server (gunicorn)..."
     exec gunicorn config.wsgi:application \
         --bind 0.0.0.0:8000 \
