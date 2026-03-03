@@ -1,12 +1,16 @@
 """
-GBU-Wizard Views (Phase 2C).
+GBU-Wizard Views (Phase 2C + 2D).
 
 5-Schritt HTMX-Wizard:
   Schritt 1 — Stoff + Standort wählen
   Schritt 2 — Tätigkeitsdaten erfassen
   Schritt 3 — Gefährdungskategorien bestätigen (HTMX-Partial)
   Schritt 4 — Maßnahmen bestätigen (HTMX-Partial)
-  Schritt 5 — Freigabe
+  Schritt 5 — Freigabe (löst Celery-Task aus)
+
+PDF-Download:
+  GET /gbu/<uuid>/pdf/gbu/  — GBU-Dokument (TRGS 400)
+  GET /gbu/<uuid>/pdf/ba/   — Betriebsanweisung (TRGS 555)
 
 Pattern: Views nur HTTP, keine Business-Logik → gbu_engine.py
 HTMX-Detection: request.headers.get("HX-Request") (kein django_htmx)
@@ -50,7 +54,7 @@ def _tenant_id(request: HttpRequest) -> UUID:
     return UUID(str(request.tenant_id))
 
 
-# ── Aktivitätsliste ────────────────────────────────────────────────────────────
+# ── Aktivitätsliste ───────────────────────────────────────────────────────
 
 @login_required
 @require_GET
@@ -69,7 +73,7 @@ def activity_list(request: HttpRequest) -> HttpResponse:
     })
 
 
-# ── Schritt 1: Stoff + Standort ────────────────────────────────────────────────
+# ── Schritt 1: Stoff + Standort ───────────────────────────────────────────
 
 @login_required
 @require_GET
@@ -92,7 +96,7 @@ def wizard_step1(request: HttpRequest) -> HttpResponse:
     })
 
 
-# ── Schritt 2: Tätigkeitsdaten ─────────────────────────────────────────────────
+# ── Schritt 2: Tätigkeitsdaten ───────────────────────────────────────────
 
 @login_required
 def wizard_step2(request: HttpRequest) -> HttpResponse:
@@ -132,7 +136,7 @@ def wizard_step2(request: HttpRequest) -> HttpResponse:
     })
 
 
-# ── Schritt 3: Gefährdungskategorien ──────────────────────────────────────────
+# ── Schritt 3: Gefährdungskategorien ─────────────────────────────────────
 
 @login_required
 def wizard_step3(request: HttpRequest) -> HttpResponse:
@@ -160,7 +164,7 @@ def wizard_step3(request: HttpRequest) -> HttpResponse:
     })
 
 
-# ── HTMX Partial: Gefährdungsliste ────────────────────────────────────────────
+# ── HTMX Partial: Gefährdungsliste ──────────────────────────────────────
 
 @login_required
 @require_GET
@@ -177,7 +181,7 @@ def partial_hazard_list(request: HttpRequest) -> HttpResponse:
     })
 
 
-# ── Schritt 4: Maßnahmen ──────────────────────────────────────────────────────
+# ── Schritt 4: Maßnahmen ───────────────────────────────────────────────
 
 @login_required
 def wizard_step4(request: HttpRequest) -> HttpResponse:
@@ -211,7 +215,7 @@ def wizard_step4(request: HttpRequest) -> HttpResponse:
     })
 
 
-# ── HTMX Partial: Maßnahmenliste ──────────────────────────────────────────────
+# ── HTMX Partial: Maßnahmenliste ────────────────────────────────────────
 
 @login_required
 @require_GET
@@ -233,7 +237,7 @@ def partial_measure_list(request: HttpRequest) -> HttpResponse:
     })
 
 
-# ── Schritt 5: Freigabe ───────────────────────────────────────────────────────
+# ── Schritt 5: Freigabe ───────────────────────────────────────────────
 
 @login_required
 def wizard_step5(request: HttpRequest) -> HttpResponse:
@@ -255,7 +259,9 @@ def wizard_step5(request: HttpRequest) -> HttpResponse:
                     activity_frequency=wizard["activity_frequency"],
                     duration_minutes=wizard["duration_minutes"],
                     quantity_class=wizard["quantity_class"],
-                    substitution_checked=wizard.get("substitution_checked", False),
+                    substitution_checked=wizard.get(
+                        "substitution_checked", False
+                    ),
                     substitution_notes=wizard.get("substitution_notes", ""),
                 )
                 activity = create_activity(
@@ -275,11 +281,19 @@ def wizard_step5(request: HttpRequest) -> HttpResponse:
                 )
 
                 request.session.pop("gbu_wizard", None)
+
+                from gbu.tasks import generate_documents_task
+                generate_documents_task.delay(
+                    str(activity.id), str(tenant_id)
+                )
+
                 return redirect("gbu:activity-detail", pk=activity.id)
 
             except Exception as exc:
                 logger.exception("[GBU Wizard] Fehler bei Freigabe: %s", exc)
-                form.add_error(None, "Fehler bei der Freigabe. Bitte erneut versuchen.")
+                form.add_error(
+                    None, "Fehler bei der Freigabe. Bitte erneut versuchen."
+                )
     else:
         form = WizardStep5Form()
 
@@ -290,7 +304,7 @@ def wizard_step5(request: HttpRequest) -> HttpResponse:
     })
 
 
-# ── Detail-Ansicht ────────────────────────────────────────────────────────────
+# ── Detail-Ansicht ─────────────────────────────────────────────────────
 
 @login_required
 @require_GET
@@ -320,7 +334,63 @@ def activity_detail(request: HttpRequest, pk: UUID) -> HttpResponse:
     })
 
 
-# ── HTMX Partial: Risiko-Badge ────────────────────────────────────────────────
+# ── PDF-Download ─────────────────────────────────────────────────────────
+
+@login_required
+@require_GET
+def download_gbu_pdf(request: HttpRequest, pk: UUID) -> HttpResponse:
+    from django.core.files.storage import default_storage
+
+    tenant_id = _tenant_id(request)
+    activity = get_object_or_404(
+        HazardAssessmentActivity,
+        id=pk,
+        tenant_id=tenant_id,
+    )
+    if not activity.gbu_document:
+        return HttpResponse(
+            "GBU-PDF noch nicht generiert. Bitte warten.",
+            status=404,
+            content_type="text/plain",
+        )
+    version = activity.gbu_document
+    try:
+        pdf_bytes = default_storage.open(version.s3_key).read()
+    except Exception:
+        return HttpResponse("PDF nicht verf\xfcgbar.", status=404)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'inline; filename="{version.filename}"'
+    return response
+
+
+@login_required
+@require_GET
+def download_ba_pdf(request: HttpRequest, pk: UUID) -> HttpResponse:
+    from django.core.files.storage import default_storage
+
+    tenant_id = _tenant_id(request)
+    activity = get_object_or_404(
+        HazardAssessmentActivity,
+        id=pk,
+        tenant_id=tenant_id,
+    )
+    if not activity.ba_document:
+        return HttpResponse(
+            "BA-PDF noch nicht generiert. Bitte warten.",
+            status=404,
+            content_type="text/plain",
+        )
+    version = activity.ba_document
+    try:
+        pdf_bytes = default_storage.open(version.s3_key).read()
+    except Exception:
+        return HttpResponse("PDF nicht verf\xfcgbar.", status=404)
+    response = HttpResponse(pdf_bytes, content_type="application/pdf")
+    response["Content-Disposition"] = f'inline; filename="{version.filename}"'
+    return response
+
+
+# ── HTMX Partial: Risiko-Badge ──────────────────────────────────────────
 
 @login_required
 @require_GET
