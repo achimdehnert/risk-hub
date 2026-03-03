@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "approvals",
     "ai_analysis",
     "dsb",
+    "gbu",
 ]
 
 MIDDLEWARE = [
@@ -135,6 +136,8 @@ MODULE_URL_MAP = {
     "/api/ex/": "ex",
     "/substances/": "ex",
     "/api/substances/": "ex",
+    "/gbu/": "gbu",
+    "/api/gbu/": "gbu",
 }
 
 # CSRF
