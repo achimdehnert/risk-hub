@@ -262,7 +262,7 @@ class SafetyFunction(TenantScopedMasterData):
         help_text="Required Performance Level nach ISO 13849"
     )
     sil_level = models.CharField(
-        max_length=5,
+        max_digits=5,
         choices=SILLevel.choices,
         blank=True,
         default="",
@@ -326,13 +326,30 @@ class Area(models.Model):
     
     name = models.CharField(max_length=200)
     code = models.CharField(
-        max_length=50, 
-        blank=True, 
+        max_length=50,
+        blank=True,
         default="",
         help_text="Anlagenkennzeichen (z.B. 'E2-50.01')"
     )
     description = models.TextField(blank=True, default="")
-    
+
+    dxf_file = models.FileField(
+        upload_to="areas/dxf/",
+        null=True,
+        blank=True,
+        help_text="Grundriss-DXF für Zonengeometrie und Brandschutz-Analyse"
+    )
+    dxf_analysis_json = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Ergebnis der nl2cad-core/areas DXF-Analyse (Räume, Flächen)"
+    )
+    brandschutz_analysis_json = models.JSONField(
+        null=True,
+        blank=True,
+        help_text="Ergebnis der nl2cad-brandschutz Analyse (Fluchtwege, Mängel)"
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -675,17 +692,6 @@ class ProtectionMeasure(models.Model):
 class EquipmentType(TenantScopedMasterData):
     """
     Stammdaten für Betriebsmittel-Typen mit strukturierter ATEX-Kennzeichnung.
-    
-    ATEX-Kennzeichnung Struktur:
-    ╔══════════════════════════════════════════════════════════════════╗
-    ║  II 2G Ex d IIB T4 Gb                                            ║
-    ║  ├─ Gruppe (I=Bergbau, II=Industrie)                             ║
-    ║  │  ├─ Kategorie (1/2/3 + G=Gas oder D=Staub)                    ║
-    ║  │  │     ├─ Schutzart (Ex d, Ex e, Ex i, ...)                   ║
-    ║  │  │     │       ├─ Explosionsgruppe (IIA/IIB/IIC)              ║
-    ║  │  │     │       │      ├─ Temperaturklasse (T1-T6)             ║
-    ║  │  │     │       │      │    └─ EPL (Ga/Gb/Gc oder Da/Db/Dc)    ║
-    ╚══════════════════════════════════════════════════════════════════╝
     """
     
     class AtexGroup(models.TextChoices):
@@ -736,12 +742,10 @@ class EquipmentType(TenantScopedMasterData):
         DB = "Db", "Db (hohes Schutzniveau - Staub)"
         DC = "Dc", "Dc (erhöhtes Schutzniveau - Staub)"
     
-    # Hersteller & Modell
     manufacturer = models.CharField(max_length=200)
     model = models.CharField(max_length=200)
     description = models.TextField(blank=True, default="")
     
-    # Strukturierte ATEX-Kennzeichnung
     atex_group = models.CharField(
         max_length=5,
         choices=AtexGroup.choices,
@@ -778,8 +782,6 @@ class EquipmentType(TenantScopedMasterData):
         default="",
         help_text="Equipment Protection Level"
     )
-    
-    # Zusätzliche technische Daten
     ip_rating = models.CharField(
         max_length=10,
         blank=True,
@@ -796,8 +798,6 @@ class EquipmentType(TenantScopedMasterData):
         blank=True,
         help_text="Max. Umgebungstemperatur in °C"
     )
-    
-    # Dokumentation
     datasheet_url = models.URLField(blank=True, default="")
     certificate_number = models.CharField(max_length=100, blank=True, default="")
     notified_body = models.CharField(
@@ -806,8 +806,6 @@ class EquipmentType(TenantScopedMasterData):
         default="",
         help_text="z.B. 'PTB', 'DEKRA', 'TÜV'"
     )
-    
-    # Prüfintervall
     default_inspection_interval_months = models.PositiveIntegerField(
         default=12,
         help_text="Standard-Prüfintervall in Monaten"
@@ -879,7 +877,6 @@ class Equipment(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     
-    # Beziehungen
     equipment_type = models.ForeignKey(
         EquipmentType,
         on_delete=models.PROTECT,
@@ -898,7 +895,6 @@ class Equipment(models.Model):
         related_name="equipment"
     )
     
-    # Identifikation
     serial_number = models.CharField(max_length=100, blank=True, default="")
     asset_number = models.CharField(
         max_length=100,
@@ -913,7 +909,6 @@ class Equipment(models.Model):
         help_text="Genauer Standort (z.B. 'Halle 3, Ebene 2')"
     )
     
-    # Status
     status = models.CharField(
         max_length=20,
         choices=Status.choices,
@@ -921,7 +916,6 @@ class Equipment(models.Model):
     )
     installation_date = models.DateField(null=True, blank=True)
     
-    # Prüfungen
     last_inspection_date = models.DateField(null=True, blank=True)
     next_inspection_date = models.DateField(null=True, blank=True)
     inspection_interval_months = models.PositiveIntegerField(
@@ -930,7 +924,6 @@ class Equipment(models.Model):
         help_text="Überschreibt Standard-Intervall des Typs"
     )
     
-    # Audit
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
@@ -1025,7 +1018,6 @@ class Inspection(models.Model):
     findings = models.TextField(blank=True, default="")
     recommendations = models.TextField(blank=True, default="")
     
-    # Dokumente
     certificate_number = models.CharField(max_length=100, blank=True, default="")
     document_id = models.UUIDField(
         null=True,
@@ -1033,7 +1025,6 @@ class Inspection(models.Model):
         help_text="FK zu documents.Document"
     )
     
-    # Audit
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(
         User,
@@ -1048,16 +1039,15 @@ class Inspection(models.Model):
         ordering = ["-inspection_date"]
     
     def __str__(self) -> str:
-        return f"{self.get_inspection_type_display()} - {self.equipment} ({self.inspection_date})"
+        return (
+            f"{self.get_inspection_type_display()} - "
+            f"{self.equipment} ({self.inspection_date})"
+        )
     
     # NOTE: Equipment inspection date updates are handled in
     # explosionsschutz.services.create_inspection() to keep
     # the model free of hidden side-effects (F-07).
 
-
-# =============================================================================
-# NACHWEISDOKUMENTE
-# =============================================================================
 
 # =============================================================================
 # ZÜNDQUELLEN-BEWERTUNG (EN 1127-1)
@@ -1083,11 +1073,6 @@ class IgnitionSource(models.TextChoices):
 class ZoneIgnitionSourceAssessment(models.Model):
     """
     Bewertung der 13 Zündquellen pro Zone nach EN 1127-1.
-    
-    Für jede Zone müssen alle 13 Zündquellen bewertet werden:
-    - is_present: Ist die Zündquelle vorhanden?
-    - is_effective: Kann sie eine Zündung verursachen?
-    - mitigation: Welche Maßnahmen werden ergriffen?
     """
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
@@ -1139,7 +1124,10 @@ class ZoneIgnitionSourceAssessment(models.Model):
         status = "wirksam" if self.is_effective else (
             "vorhanden" if self.is_present else "nicht vorhanden"
         )
-        return f"{self.zone.name} - {self.get_ignition_source_display()}: {status}"
+        return (
+            f"{self.zone.name} - "
+            f"{self.get_ignition_source_display()}: {status}"
+        )
 
 
 # =============================================================================
@@ -1175,7 +1163,6 @@ class VerificationDocument(models.Model):
     )
     description = models.TextField(blank=True, default="")
     
-    # Datei
     file = models.FileField(
         upload_to="exschutz/docs/%Y/%m/",
         null=True,
@@ -1187,12 +1174,10 @@ class VerificationDocument(models.Model):
         help_text="FK zu documents.DocumentVersion"
     )
     
-    # Metadaten
     issued_at = models.DateField(null=True, blank=True)
     issued_by = models.CharField(max_length=200, blank=True, default="")
     valid_until = models.DateField(null=True, blank=True)
     
-    # Audit
     created_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(
         User,
@@ -1205,6 +1190,117 @@ class VerificationDocument(models.Model):
         verbose_name = "Nachweisdokument"
         verbose_name_plural = "Nachweisdokumente"
         ordering = ["-issued_at"]
-    
+
     def __str__(self) -> str:
         return f"{self.title} ({self.get_document_type_display()})"
+
+
+# =============================================================================
+# ZONENBERECHNUNGS-NACHWEIS (BetrSichV §§ 14-17)
+# =============================================================================
+
+class ZoneCalculationResult(models.Model):
+    """
+    Archivierter TRGS 721 Zonenberechnungs-Nachweis.
+    Nachweispflicht nach BetrSichV §§ 14-17.
+
+    INVARIANTE: Unveränderlich und unlöschbar nach Erstellung.
+    Kein 'change'- oder 'delete'-Permission — nur 'add' und 'view'.
+    PostgreSQL RLS verhindert DELETE auf DB-Ebene (siehe Migration).
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True)
+
+    zone = models.ForeignKey(
+        ZoneDefinition,
+        on_delete=models.PROTECT,
+        related_name="calculations",
+        help_text="PROTECT: Zone nicht löschbar solange Nachweis existiert",
+    )
+    substance_name = models.CharField(max_length=200)
+    release_rate_kg_s = models.DecimalField(max_digits=12, decimal_places=6)
+    ventilation_rate_m3_s = models.DecimalField(
+        max_digits=12, decimal_places=4
+    )
+    release_type = models.CharField(
+        max_length=20,
+        choices=[("jet", "Strahl"), ("pool", "Lache"), ("diffuse", "Diffus")],
+    )
+    calculated_zone_type = models.CharField(
+        max_length=5,
+        choices=[("0", "Zone 0"), ("1", "Zone 1"), ("2", "Zone 2")],
+    )
+    calculated_radius_m = models.DecimalField(max_digits=8, decimal_places=3)
+    calculated_volume_m3 = models.DecimalField(max_digits=12, decimal_places=3)
+    basis_norm = models.CharField(
+        max_length=100,
+        default="TRGS 721:2017-09",
+        help_text="Normversion inkl. Ausgabejahr (z.B. 'TRGS 721:2017-09')",
+    )
+    riskfw_version = models.CharField(
+        max_length=20,
+        help_text="riskfw Package-Version zum Zeitpunkt der Berechnung",
+    )
+    raw_result = models.JSONField(
+        help_text="Vollständiges ZoneExtentResult (dataclasses.asdict())",
+    )
+    calculated_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="zone_calculations",
+    )
+    calculated_at = models.DateTimeField(auto_now_add=True)
+    notes = models.TextField(blank=True, default="")
+
+    class Meta:
+        db_table = "ex_zone_calculation_result"
+        verbose_name = "Zonenberechnungs-Nachweis"
+        verbose_name_plural = "Zonenberechnungs-Nachweise"
+        ordering = ["-calculated_at"]
+        default_permissions = ("add", "view")
+
+    def __str__(self) -> str:
+        return (
+            f"Zone {self.calculated_zone_type} — {self.substance_name} "
+            f"r={self.calculated_radius_m}m ({self.calculated_at:%Y-%m-%d})"
+        )
+
+
+# =============================================================================
+# ATEX-EIGNUNGSPRÜFUNGS-NACHWEIS
+# =============================================================================
+
+class EquipmentATEXCheck(models.Model):
+    """
+    Archivierter ATEX-Eignungsnachweis für ein Betriebsmittel.
+    Wird explizit in create_equipment_with_atex_check() angelegt (kein Signal).
+    """
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True)
+
+    equipment = models.ForeignKey(
+        Equipment,
+        on_delete=models.PROTECT,
+        related_name="atex_checks",
+    )
+    is_suitable = models.BooleanField()
+    result = models.JSONField(
+        help_text="Vollständiges ATEXCheckResult (dataclasses.asdict())",
+    )
+    riskfw_version = models.CharField(max_length=20)
+    checked_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = "ex_equipment_atex_check"
+        verbose_name = "ATEX-Eignungsprüfung"
+        verbose_name_plural = "ATEX-Eignungsprüfungen"
+        ordering = ["-checked_at"]
+        default_permissions = ("add", "view")
+
+    def __str__(self) -> str:
+        status = "geeignet" if self.is_suitable else "NICHT geeignet"
+        return f"{self.equipment} — {status} ({self.checked_at:%Y-%m-%d})"

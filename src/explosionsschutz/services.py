@@ -21,8 +21,10 @@ from permissions.authz import require_permission
 
 from .models import (
     Area,
+    EquipmentATEXCheck,
     ExplosionConcept,
     ZoneDefinition,
+    ZoneCalculationResult,
     ProtectionMeasure,
     Equipment,
     EquipmentType,
@@ -144,9 +146,6 @@ class AuditCategory:
 def get_request_context():
     """
     Holt den aktuellen Request-Kontext (tenant_id, user_id).
-    
-    Falls kein Kontext verfügbar, gibt None zurück.
-    In Produktion würde dies über Thread-Local oder Middleware gesetzt.
     """
     try:
         from common.request_context import get_context
@@ -166,13 +165,8 @@ def emit_audit_event(
 ):
     """
     Emittiert ein Audit-Event via common.context.
-
-    Raises ImportError if audit module is missing — this is
-    intentional to catch misconfiguration early.
     """
-    from common.context import (
-        emit_audit_event as _emit,
-    )
+    from common.context import emit_audit_event as _emit
     _emit(
         tenant_id=tenant_id,
         category=category,
@@ -189,12 +183,8 @@ def create_outbox_message(
 ):
     """
     Erstellt eine Outbox-Nachricht für async Verarbeitung.
-
-    Raises ImportError if outbox module is missing.
     """
-    from common.context import (
-        emit_outbox_event as _emit_outbox,
-    )
+    from common.context import emit_outbox_event as _emit_outbox
     _emit_outbox(
         topic=topic,
         payload=payload,
@@ -214,44 +204,39 @@ def create_explosion_concept(
 ) -> ExplosionConcept:
     """
     Erstellt ein neues Explosionsschutzkonzept.
-    
+
     Audit: explosionsschutz.concept.created
-    Outbox: explosionsschutz.concept.created
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
 
     require_permission("ex_concept.create")
 
-    # Validierung: Area muss zum Tenant gehören
     area = Area.objects.get(id=cmd.area_id)
     if area.tenant_id != tenant_id:
         raise PermissionDenied("Area gehört nicht zum Tenant")
-    
-    # Validierung: Substance muss existieren
+
     from substances.models import Substance
     substance = Substance.objects.get(id=cmd.substance_id)
-    
-    # Ermittle nächste Version für diesen Bereich
+
     existing_versions = ExplosionConcept.objects.filter(
         tenant_id=tenant_id,
         area_id=cmd.area_id
     ).count()
     next_version = existing_versions + 1
-    
-    # Erstelle Konzept
+
     concept = ExplosionConcept.objects.create(
         tenant_id=tenant_id,
         area=area,
-        substance=substance,
+        substance_id=cmd.substance_id,
+        substance_name=substance.name,
         title=cmd.title.strip(),
         version=next_version,
         status=ExplosionConcept.Status.DRAFT,
         assessment_id=cmd.assessment_id,
-        created_by_id=user_id,
+        created_by=user_id,
     )
-    
-    # Audit Event
+
     emit_audit_event(
         tenant_id=tenant_id,
         category=AuditCategory.CONCEPT,
@@ -264,12 +249,10 @@ def create_explosion_concept(
             "area_id": str(concept.area_id),
             "substance_id": str(concept.substance_id),
             "substance_name": substance.name,
-            "assessment_id": str(cmd.assessment_id) if cmd.assessment_id else None,
         },
         user_id=user_id,
     )
-    
-    # Outbox Message für async Verarbeitung
+
     create_outbox_message(
         tenant_id=tenant_id,
         topic="explosionsschutz.concept.created",
@@ -279,7 +262,7 @@ def create_explosion_concept(
             "version": concept.version,
         },
     )
-    
+
     return concept
 
 
@@ -291,7 +274,7 @@ def update_explosion_concept(
 ) -> ExplosionConcept:
     """
     Aktualisiert ein bestehendes Ex-Konzept.
-    
+
     Audit: explosionsschutz.concept.updated
     """
     if tenant_id is None:
@@ -303,30 +286,31 @@ def update_explosion_concept(
         id=cmd.concept_id,
         tenant_id=tenant_id
     )
-    
+
     if concept.status != ExplosionConcept.Status.DRAFT:
         raise ValidationError("Nur Entwürfe können bearbeitet werden")
-    
-    # Sammle Änderungen für Audit
+
     changes = {}
-    
+
     if cmd.title is not None and cmd.title != concept.title:
         changes["title"] = {"old": concept.title, "new": cmd.title}
         concept.title = cmd.title.strip()
-    
-    if cmd.substance_id is not None and cmd.substance_id != concept.substance_id:
+
+    if (
+        cmd.substance_id is not None
+        and cmd.substance_id != concept.substance_id
+    ):
         from substances.models import Substance
         new_substance = Substance.objects.get(id=cmd.substance_id)
-        old_substance_name = concept.substance.name
         changes["substance"] = {
-            "old": {"id": str(concept.substance_id), "name": old_substance_name},
-            "new": {"id": str(cmd.substance_id), "name": new_substance.name},
+            "old": str(concept.substance_id),
+            "new": str(cmd.substance_id),
         }
-        concept.substance = new_substance
-    
+        concept.substance_id = cmd.substance_id
+        concept.substance_name = new_substance.name
+
     if changes:
         concept.save()
-        
         emit_audit_event(
             tenant_id=tenant_id,
             category=AuditCategory.CONCEPT,
@@ -336,7 +320,7 @@ def update_explosion_concept(
             payload={"changes": changes},
             user_id=user_id,
         )
-    
+
     return concept
 
 
@@ -348,14 +332,8 @@ def validate_explosion_concept(
 ) -> ExplosionConcept:
     """
     Validiert/gibt ein Ex-Konzept frei.
-    
-    Prüft:
-    - Mindestens eine Zone definiert
-    - Alle Zonen haben Maßnahmen
-    - Equipment in Zonen hat gültige ATEX-Kategorie
-    
+
     Audit: explosionsschutz.concept.validated
-    Outbox: explosionsschutz.concept.validated
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
@@ -367,62 +345,41 @@ def validate_explosion_concept(
         tenant_id=tenant_id
     )
 
-    if concept.status != ExplosionConcept.Status.DRAFT:
-        raise ValidationError("Nur Entwürfe können validiert werden")
-    
-    # Validierung: Mindestens eine Zone
-    zones = concept.zones.all()
-    if not zones.exists():
-        raise ValidationError("Mindestens eine Zone muss definiert sein")
-    
-    # Validierung: Equipment-Zonenzuordnung
-    validation_errors = []
-    for zone in zones:
-        for equipment in zone.equipment.all():
-            allowed = equipment.equipment_type.allowed_zones
-            if zone.zone_type not in allowed:
-                validation_errors.append(
-                    f"Equipment '{equipment.serial_number or equipment.asset_number}' "
-                    f"(Kategorie {equipment.equipment_type.atex_category}) "
-                    f"nicht zulässig in Zone {zone.zone_type}"
-                )
-    
-    if validation_errors:
-        raise ValidationError(validation_errors)
-    
-    # Status ändern
-    concept.status = ExplosionConcept.Status.APPROVED
+    if concept.status != ExplosionConcept.Status.IN_REVIEW:
+        raise ValidationError(
+            "Nur Konzepte in Prüfung können freigegeben werden"
+        )
+
+    if not concept.zones.exists():
+        raise ValidationError(
+            "Mindestens eine Zone muss definiert sein"
+        )
+
     concept.is_validated = True
     concept.validated_by_id = user_id
     concept.validated_at = timezone.now()
-    concept.save()
-    
-    # Audit Event
+    concept.status = ExplosionConcept.Status.APPROVED
+    concept.save(update_fields=[
+        "is_validated", "validated_by_id",
+        "validated_at", "status", "updated_at",
+    ])
+
     emit_audit_event(
         tenant_id=tenant_id,
         category=AuditCategory.CONCEPT,
         action="validated",
         entity_type="explosionsschutz.ExplosionConcept",
         entity_id=concept.id,
-        payload={
-            "version": concept.version,
-            "validated_by": str(user_id) if user_id else None,
-            "notes": cmd.notes,
-            "zone_count": zones.count(),
-        },
+        payload={"version": concept.version},
         user_id=user_id,
     )
-    
-    # Outbox für Benachrichtigungen
+
     create_outbox_message(
         tenant_id=tenant_id,
         topic="explosionsschutz.concept.validated",
-        payload={
-            "concept_id": str(concept.id),
-            "validated_by": str(user_id) if user_id else None,
-        },
+        payload={"concept_id": str(concept.id)},
     )
-    
+
     return concept
 
 
@@ -434,35 +391,42 @@ def create_zone_definition(
 ) -> ZoneDefinition:
     """
     Erstellt eine Zonendefinition für ein Ex-Konzept.
-    
+
     Audit: explosionsschutz.zone.created
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
-    
+
     concept = ExplosionConcept.objects.get(
         id=cmd.concept_id,
         tenant_id=tenant_id
     )
-    
-    if concept.status != ExplosionConcept.Status.DRAFT:
-        raise ValidationError("Zonen können nur in Entwürfen hinzugefügt werden")
-    
-    # Validierung: Zonentyp
-    valid_zones = {"0", "1", "2", "20", "21", "22", "non_ex"}
-    if cmd.zone_type not in valid_zones:
-        raise ValidationError(f"Ungültiger Zonentyp: {cmd.zone_type}")
-    
+
+    if concept.status not in [
+        ExplosionConcept.Status.DRAFT,
+        ExplosionConcept.Status.IN_REVIEW,
+    ]:
+        raise ValidationError(
+            "Zonen können nur zu Entwürfen oder Konzepten in Prüfung "
+            "hinzugefügt werden"
+        )
+
+    reference_standard = None
+    if cmd.reference_standard_id:
+        reference_standard = ReferenceStandard.objects.for_tenant(
+            tenant_id
+        ).get(id=cmd.reference_standard_id)
+
     zone = ZoneDefinition.objects.create(
         tenant_id=tenant_id,
         concept=concept,
         zone_type=cmd.zone_type,
         name=cmd.name.strip(),
         extent=cmd.extent,
-        reference_standard_id=cmd.reference_standard_id,
+        reference_standard=reference_standard,
         justification=cmd.justification or "",
     )
-    
+
     emit_audit_event(
         tenant_id=tenant_id,
         category=AuditCategory.ZONE,
@@ -473,11 +437,10 @@ def create_zone_definition(
             "concept_id": str(concept.id),
             "zone_type": zone.zone_type,
             "name": zone.name,
-            "extent": zone.extent,
         },
         user_id=user_id,
     )
-    
+
     return zone
 
 
@@ -489,37 +452,41 @@ def create_protection_measure(
 ) -> ProtectionMeasure:
     """
     Erstellt eine Schutzmaßnahme für ein Ex-Konzept.
-    
+
     Audit: explosionsschutz.measure.created
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
-    
+
     concept = ExplosionConcept.objects.get(
         id=cmd.concept_id,
         tenant_id=tenant_id
     )
-    
-    if concept.status != ExplosionConcept.Status.DRAFT:
-        raise ValidationError("Maßnahmen können nur in Entwürfen hinzugefügt werden")
-    
-    # Validierung: Kategorie
-    valid_categories = {c[0] for c in ProtectionMeasure.Category.choices}
-    if cmd.category not in valid_categories:
-        raise ValidationError(f"Ungültige Kategorie: {cmd.category}")
-    
+
+    catalog_reference = None
+    if cmd.catalog_reference_id:
+        catalog_reference = MeasureCatalog.objects.for_tenant(
+            tenant_id
+        ).get(id=cmd.catalog_reference_id)
+
+    safety_function = None
+    if cmd.safety_function_id:
+        safety_function = SafetyFunction.objects.for_tenant(
+            tenant_id
+        ).get(id=cmd.safety_function_id)
+
     measure = ProtectionMeasure.objects.create(
         tenant_id=tenant_id,
         concept=concept,
         category=cmd.category,
         title=cmd.title.strip(),
         description=cmd.description or "",
-        catalog_reference_id=cmd.catalog_reference_id,
-        safety_function_id=cmd.safety_function_id,
+        catalog_reference=catalog_reference,
+        safety_function=safety_function,
         status=ProtectionMeasure.Status.OPEN,
         due_date=cmd.due_date,
     )
-    
+
     emit_audit_event(
         tenant_id=tenant_id,
         category=AuditCategory.MEASURE,
@@ -534,7 +501,7 @@ def create_protection_measure(
         },
         user_id=user_id,
     )
-    
+
     return measure
 
 
@@ -545,32 +512,30 @@ def create_equipment(
     user_id: Optional[UUID] = None
 ) -> Equipment:
     """
-    Registriert ein Betriebsmittel in einem Bereich.
-    
-    Validiert automatisch die ATEX-Kategorie gegen den Zonentyp.
-    
+    Registriert ein Betriebsmittel.
+
     Audit: explosionsschutz.equipment.created
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
-    
+
     area = Area.objects.get(id=cmd.area_id, tenant_id=tenant_id)
-    
     equipment_type = EquipmentType.objects.for_tenant(tenant_id).get(
         id=cmd.equipment_type_id
     )
-    
-    # Validierung: ATEX-Kategorie passend zur Zone (falls Zone angegeben)
+
     zone = None
     if cmd.zone_id:
-        zone = ZoneDefinition.objects.get(id=cmd.zone_id, tenant_id=tenant_id)
+        zone = ZoneDefinition.objects.get(
+            id=cmd.zone_id, tenant_id=tenant_id
+        )
         if zone.zone_type not in equipment_type.allowed_zones:
             raise ValidationError(
                 f"Equipment Kategorie {equipment_type.atex_category} "
                 f"nicht zulässig in Zone {zone.zone_type}. "
                 f"Erlaubte Zonen: {', '.join(equipment_type.allowed_zones)}"
             )
-    
+
     equipment = Equipment.objects.create(
         tenant_id=tenant_id,
         area=area,
@@ -581,7 +546,7 @@ def create_equipment(
         location_detail=cmd.location_detail or "",
         installation_date=cmd.installation_date,
     )
-    
+
     emit_audit_event(
         tenant_id=tenant_id,
         category=AuditCategory.EQUIPMENT,
@@ -591,16 +556,11 @@ def create_equipment(
         payload={
             "area_id": str(area.id),
             "zone_id": str(zone.id) if zone else None,
-            "zone_type": zone.zone_type if zone else None,
-            "equipment_type_id": str(equipment_type.id),
             "atex_marking": equipment_type.full_atex_marking,
-            "serial_number": equipment.serial_number,
-            "asset_number": equipment.asset_number,
         },
         user_id=user_id,
     )
-    
-    # Outbox für Prüffristen-Setup
+
     create_outbox_message(
         tenant_id=tenant_id,
         topic="explosionsschutz.equipment.created",
@@ -609,7 +569,7 @@ def create_equipment(
             "zone_type": zone.zone_type if zone else None,
         },
     )
-    
+
     return equipment
 
 
@@ -621,28 +581,29 @@ def create_inspection(
 ) -> Inspection:
     """
     Erfasst eine Prüfung nach BetrSichV.
-    
+
     Audit: explosionsschutz.inspection.created
-    Outbox: explosionsschutz.inspection.created (für Fristenverwaltung)
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
-    
+
     equipment = Equipment.objects.get(
         id=cmd.equipment_id,
         tenant_id=tenant_id
     )
-    
-    # Validierung: Inspection Type
+
     valid_types = {t[0] for t in Inspection.InspectionType.choices}
     if cmd.inspection_type not in valid_types:
-        raise ValidationError(f"Ungültiger Prüfungstyp: {cmd.inspection_type}")
-    
-    # Validierung: Result
+        raise ValidationError(
+            f"Ungültiger Prüfungstyp: {cmd.inspection_type}"
+        )
+
     valid_results = {r[0] for r in Inspection.Result.choices}
     if cmd.result not in valid_results:
-        raise ValidationError(f"Ungültiges Prüfergebnis: {cmd.result}")
-    
+        raise ValidationError(
+            f"Ungültiges Prüfergebnis: {cmd.result}"
+        )
+
     require_permission("ex_inspection.create")
 
     inspection = Inspection.objects.create(
@@ -658,25 +619,18 @@ def create_inspection(
         created_by_id=user_id,
     )
 
-    # Update equipment inspection schedule (moved from
-    # Inspection.save() to keep model side-effect-free)
     if inspection.result in (
         Inspection.Result.PASSED,
         Inspection.Result.PASSED_WITH_NOTES,
     ):
         from dateutil.relativedelta import relativedelta
-
         interval = (
             equipment.inspection_interval_months
-            or equipment.equipment_type
-            .default_inspection_interval_months
+            or equipment.equipment_type.default_inspection_interval_months
         )
-        equipment.last_inspection_date = (
-            inspection.inspection_date
-        )
+        equipment.last_inspection_date = inspection.inspection_date
         equipment.next_inspection_date = (
-            inspection.inspection_date
-            + relativedelta(months=interval)
+            inspection.inspection_date + relativedelta(months=interval)
         )
         equipment.save(update_fields=[
             "last_inspection_date",
@@ -692,15 +646,12 @@ def create_inspection(
         entity_id=inspection.id,
         payload={
             "equipment_id": str(equipment.id),
-            "equipment_serial": equipment.serial_number,
             "inspection_type": inspection.inspection_type,
             "result": inspection.result,
-            "inspector": inspection.inspector_name,
         },
         user_id=user_id,
     )
-    
-    # Outbox für Fristenverwaltung
+
     create_outbox_message(
         tenant_id=tenant_id,
         topic="explosionsschutz.inspection.created",
@@ -708,11 +659,9 @@ def create_inspection(
             "inspection_id": str(inspection.id),
             "equipment_id": str(equipment.id),
             "result": inspection.result,
-            "next_inspection_date": str(equipment.next_inspection_date)
-            if equipment.next_inspection_date else None,
         },
     )
-    
+
     return inspection
 
 
@@ -724,20 +673,22 @@ def assess_ignition_source(
 ) -> ZoneIgnitionSourceAssessment:
     """
     Bewertet eine Zündquelle für eine Zone nach EN 1127-1.
-    
+
     Audit: explosionsschutz.ignition.assessed
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
-    
-    zone = ZoneDefinition.objects.get(id=cmd.zone_id, tenant_id=tenant_id)
-    
-    # Validierung: Ignition Source
+
+    zone = ZoneDefinition.objects.get(
+        id=cmd.zone_id, tenant_id=tenant_id
+    )
+
     valid_sources = {s[0] for s in IgnitionSource.choices}
     if cmd.ignition_source not in valid_sources:
-        raise ValidationError(f"Ungültige Zündquelle: {cmd.ignition_source}")
-    
-    # Update or Create
+        raise ValidationError(
+            f"Ungültige Zündquelle: {cmd.ignition_source}"
+        )
+
     assessment, created = ZoneIgnitionSourceAssessment.objects.update_or_create(
         tenant_id=tenant_id,
         zone=zone,
@@ -750,7 +701,7 @@ def assess_ignition_source(
             "assessed_at": timezone.now(),
         }
     )
-    
+
     emit_audit_event(
         tenant_id=tenant_id,
         category=AuditCategory.IGNITION,
@@ -766,7 +717,7 @@ def assess_ignition_source(
         },
         user_id=user_id,
     )
-    
+
     return assessment
 
 
@@ -778,20 +729,17 @@ def archive_explosion_concept(
 ) -> ExplosionConcept:
     """
     Archiviert ein Ex-Konzept (Soft Delete).
-    
-    Nur validierte Konzepte können archiviert werden.
-    Archivierte Konzepte bleiben für Compliance-Zwecke erhalten.
-    
+
     Audit: explosionsschutz.concept.archived
     """
     if tenant_id is None:
         raise PermissionDenied("Tenant erforderlich")
-    
+
     concept = ExplosionConcept.objects.select_for_update().get(
         id=concept_id,
         tenant_id=tenant_id
     )
-    
+
     if concept.status not in [
         ExplosionConcept.Status.APPROVED,
         ExplosionConcept.Status.ARCHIVED
@@ -799,11 +747,11 @@ def archive_explosion_concept(
         raise ValidationError(
             "Nur freigegebene Konzepte können archiviert werden"
         )
-    
+
     previous_status = concept.status
     concept.status = ExplosionConcept.Status.ARCHIVED
     concept.save(update_fields=["status", "updated_at"])
-    
+
     emit_audit_event(
         tenant_id=tenant_id,
         category=AuditCategory.CONCEPT,
@@ -816,5 +764,269 @@ def archive_explosion_concept(
         },
         user_id=user_id,
     )
-    
+
     return concept
+
+
+# =============================================================================
+# RISKFW-INTEGRATION: Zonenberechnung, DXF-Import, ATEX-Check
+# =============================================================================
+
+DXF_MAX_BYTES = 50 * 1024 * 1024  # 50 MB
+
+_ZONE_VALUE_MAP: dict[str, str] = {
+    "Zone 0": "0", "Zone 1": "1", "Zone 2": "2",
+    "EX_ZONE_0": "0", "EX_ZONE_1": "1", "EX_ZONE_2": "2",
+}
+
+
+def _parse_ex_zone_type(raw_value: str) -> str:
+    result = _ZONE_VALUE_MAP.get(raw_value)
+    if result is None:
+        raise ValueError(
+            f"Unbekannter Ex-Zonen-Wert: {raw_value!r}. "
+            f"Erlaubt: {list(_ZONE_VALUE_MAP)}"
+        )
+    return result
+
+
+@dataclass(frozen=True)
+class CalculateZoneCmd:
+    zone_id: UUID
+    release_rate_kg_s: float
+    ventilation_rate_m3_s: float
+    release_type: str
+    notes: str = ""
+
+
+@transaction.atomic
+def calculate_and_store_zone(
+    cmd: CalculateZoneCmd,
+    tenant_id: UUID,
+    user_id: Optional[UUID] = None,
+) -> "ZoneCalculationResult":
+    """
+    Delegiert TRGS 721 Berechnung an riskfw, archiviert Ergebnis.
+    Audit: explosionsschutz.zone.calculated
+    """
+    import dataclasses as _dc
+    import riskfw
+    from riskfw.zones import calculate_zone_extent
+    from riskfw.exceptions import SubstanceNotFoundError
+
+    try:
+        zone = ZoneDefinition.objects.select_related(
+            "concept"
+        ).get(id=cmd.zone_id, tenant_id=tenant_id)
+    except ZoneDefinition.DoesNotExist:
+        raise ValidationError(
+            f"ZoneDefinition {cmd.zone_id} nicht gefunden"
+        )
+
+    if zone.concept is None:
+        raise ValidationError(
+            f"ZoneDefinition {cmd.zone_id} hat kein ExplosionConcept"
+        )
+
+    substance_name = zone.concept.substance_name
+    if not substance_name:
+        raise ValidationError(
+            f"Concept {zone.concept_id} hat keinen Stoff zugewiesen"
+        )
+
+    try:
+        result = calculate_zone_extent(
+            release_rate_kg_s=cmd.release_rate_kg_s,
+            ventilation_rate_m3_s=cmd.ventilation_rate_m3_s,
+            substance_name=substance_name,
+            release_type=cmd.release_type,
+        )
+    except SubstanceNotFoundError as exc:
+        raise ValidationError(
+            f"Stoff '{substance_name}' nicht in riskfw-DB: {exc}"
+        ) from exc
+
+    calc = ZoneCalculationResult.objects.create(
+        tenant_id=tenant_id,
+        zone=zone,
+        substance_name=substance_name,
+        release_rate_kg_s=cmd.release_rate_kg_s,
+        ventilation_rate_m3_s=cmd.ventilation_rate_m3_s,
+        release_type=cmd.release_type,
+        calculated_zone_type=str(result.zone_type),
+        calculated_radius_m=result.radius_m,
+        calculated_volume_m3=result.volume_m3,
+        basis_norm=result.basis_norm,
+        riskfw_version=riskfw.__version__,
+        raw_result=_dc.asdict(result),
+        calculated_by_id=user_id,
+        notes=cmd.notes,
+    )
+
+    emit_audit_event(
+        tenant_id=tenant_id,
+        category=AuditCategory.ZONE,
+        action="calculated",
+        entity_type="explosionsschutz.ZoneCalculationResult",
+        entity_id=calc.id,
+        payload={
+            "zone_type": str(result.zone_type),
+            "radius_m": result.radius_m,
+            "substance": substance_name,
+        },
+        user_id=user_id,
+    )
+    return calc
+
+
+@transaction.atomic
+def import_zones_from_dxf(
+    concept_id: UUID,
+    dxf_bytes: bytes,
+    tenant_id: UUID,
+    user_id: Optional[UUID] = None,
+) -> int:
+    """
+    DXF -> nl2cad-brandschutz -> ExBereich-Liste -> ZoneDefinition-Records.
+    Audit: explosionsschutz.zone.imported
+    """
+    import io
+    import ezdxf
+    from ezdxf.lldxf.const import DXFError
+    from nl2cad.brandschutz.analyzer import BrandschutzAnalyzer
+
+    if len(dxf_bytes) > DXF_MAX_BYTES:
+        raise ValidationError(
+            f"DXF zu gross: {len(dxf_bytes):,} Bytes"
+            f" (max {DXF_MAX_BYTES:,})"
+        )
+
+    try:
+        doc = ezdxf.read(io.BytesIO(dxf_bytes))
+    except DXFError as exc:
+        raise ValidationError(
+            f"Ungueltige DXF-Datei: {exc}"
+        ) from exc
+
+    concept = ExplosionConcept.objects.get(
+        id=concept_id, tenant_id=tenant_id
+    )
+    analyse = BrandschutzAnalyzer().analyze_dxf(doc)
+
+    created_ids: list[UUID] = []
+    for ex_bereich in analyse.ex_bereiche:
+        zone = ZoneDefinition.objects.create(
+            tenant_id=tenant_id,
+            concept=concept,
+            zone_type=_parse_ex_zone_type(ex_bereich.zone.value),
+            name=(
+                ex_bereich.name
+                or f"Import: {ex_bereich.zone.value}"
+            ),
+            justification=(
+                "DXF-Import via nl2cad-brandschutz, "
+                f"Layer: {ex_bereich.layer}"
+            ),
+        )
+        created_ids.append(zone.id)
+
+    emit_audit_event(
+        tenant_id=tenant_id,
+        category=AuditCategory.ZONE,
+        action="imported",
+        entity_type="explosionsschutz.ExplosionConcept",
+        entity_id=concept_id,
+        payload={
+            "count": len(created_ids),
+            "zone_ids": [str(i) for i in created_ids],
+            "source": "dxf",
+        },
+        user_id=user_id,
+    )
+    return len(created_ids)
+
+
+@dataclass(frozen=True)
+class CreateEquipmentWithATEXCmd:
+    area_id: UUID
+    equipment_type_id: UUID
+    zone_id: Optional[UUID] = None
+    serial_number: Optional[str] = None
+    asset_number: Optional[str] = None
+    location_detail: Optional[str] = None
+    installation_date: Optional[str] = None
+
+
+@transaction.atomic
+def create_equipment_with_atex_check(
+    cmd: CreateEquipmentWithATEXCmd,
+    tenant_id: UUID,
+    user_id: Optional[UUID] = None,
+) -> Equipment:
+    """
+    Erstellt Betriebsmittel + ATEX-Check explizit im Service.
+    Kein post_save-Signal: deterministisch, kein Seiteneffekt bei loaddata.
+    Audit: explosionsschutz.equipment.created
+    """
+    import dataclasses as _dc
+    import riskfw
+    from riskfw.equipment import check_equipment_suitability
+    from riskfw.exceptions import ATEXCheckError
+
+    equipment_type = EquipmentType.objects.get(
+        id=cmd.equipment_type_id
+    )
+    equipment = Equipment.objects.create(
+        tenant_id=tenant_id,
+        area_id=cmd.area_id,
+        equipment_type=equipment_type,
+        zone_id=cmd.zone_id,
+        serial_number=cmd.serial_number or "",
+        asset_number=cmd.asset_number or "",
+        location_detail=cmd.location_detail or "",
+    )
+
+    atex_marking = equipment_type.full_atex_marking
+    zone_str = "2"
+    if cmd.zone_id:
+        try:
+            zone_obj = ZoneDefinition.objects.get(
+                id=cmd.zone_id, tenant_id=tenant_id
+            )
+            zone_str = zone_obj.zone_type
+        except ZoneDefinition.DoesNotExist:
+            pass
+
+    atex_result = None
+    try:
+        atex_result = check_equipment_suitability(
+            ex_marking=atex_marking,
+            zone=zone_str,
+        )
+    except ATEXCheckError:
+        pass
+
+    if atex_result is not None:
+        EquipmentATEXCheck.objects.create(
+            tenant_id=tenant_id,
+            equipment=equipment,
+            is_suitable=atex_result.is_suitable,
+            result=_dc.asdict(atex_result),
+            riskfw_version=riskfw.__version__,
+        )
+
+    emit_audit_event(
+        tenant_id=tenant_id,
+        category=AuditCategory.EQUIPMENT,
+        action="created",
+        entity_type="explosionsschutz.Equipment",
+        entity_id=equipment.id,
+        payload={
+            "atex_suitable": (
+                atex_result.is_suitable if atex_result else None
+            ),
+            "marking": atex_marking,
+        },
+        user_id=user_id,
+    )
+    return equipment
