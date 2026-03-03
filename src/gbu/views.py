@@ -1,5 +1,5 @@
 """
-GBU-Wizard Views (Phase 2C + 2D).
+GBU-Wizard Views (Phase 2C + 2D + 2E).
 
 5-Schritt HTMX-Wizard:
   Schritt 1 — Stoff + Standort wählen
@@ -12,7 +12,10 @@ PDF-Download:
   GET /gbu/<uuid>/pdf/gbu/  — GBU-Dokument (TRGS 400)
   GET /gbu/<uuid>/pdf/ba/   — Betriebsanweisung (TRGS 555)
 
-Pattern: Views nur HTTP, keine Business-Logik → gbu_engine.py
+Compliance-Dashboard:
+  GET /gbu/compliance/  — Review-Fristen, KPI-Übersicht
+
+Pattern: Views nur HTTP, keine Business-Logik → gbu_engine.py / compliance.py
 HTMX-Detection: request.headers.get("HX-Request") (kein django_htmx)
 """
 import logging
@@ -69,6 +72,30 @@ def activity_list(request: HttpRequest) -> HttpResponse:
     return render(request, "gbu/activity_list.html", {
         "activities": activities,
         "status_choices": ActivityStatus,
+        "risk_badge": _RISK_BADGE,
+    })
+
+
+# ── Compliance-Dashboard ───────────────────────────────────────────────
+
+@login_required
+@require_GET
+def compliance_dashboard(request: HttpRequest) -> HttpResponse:
+    from gbu.services.compliance import (
+        compliance_summary,
+        list_due_reviews,
+        list_overdue_reviews,
+    )
+
+    tenant_id = _tenant_id(request)
+    summary = compliance_summary(tenant_id)
+    overdue_list = list_overdue_reviews(tenant_id)
+    due_soon_list = list_due_reviews(tenant_id)
+
+    return render(request, "gbu/compliance_dashboard.html", {
+        "summary": summary,
+        "overdue_list": overdue_list,
+        "due_soon_list": due_soon_list,
         "risk_badge": _RISK_BADGE,
     })
 
