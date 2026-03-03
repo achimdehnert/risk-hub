@@ -1,0 +1,18 @@
+{% if templates %}
+<div class="space-y-2">
+  {% for tpl in templates %}
+  <div class="flex items-start p-3 border border-gray-200 rounded-lg">
+    <span class="inline-block w-6 h-6 rounded text-xs font-bold text-center leading-6
+      bg-orange-100 text-orange-700 mr-3 shrink-0">{{ tpl.tops_type }}</span>
+    <div>
+      <p class="text-sm font-medium text-gray-900">{{ tpl.title }}</p>
+      {% if tpl.is_mandatory %}
+      <span class="text-xs text-red-600 font-medium">Pflichtmaßnahme</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<p class="text-sm text-gray-400">Keine Maßnahmen-Vorlagen verfügbar.</p>
+{% endif %}

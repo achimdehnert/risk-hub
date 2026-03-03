@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}GBU-Wizard — Schritt 1: Stoff wählen{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  {% include "gbu/partials/_wizard_progress.html" with current_step=1 %}
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-1">Schritt 1: Gefahrstoff und Standort</h2>
+    <p class="text-sm text-gray-500 mb-6">Wählen Sie das Sicherheitsdatenblatt und den Standort.</p>
+
+    <form method="get" action="{% url 'gbu:wizard-step2' %}">
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Standort</label>
+        <select name="site_id" required
+                class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-orange-500">
+          <option value="">— Standort wählen —</option>
+          {% for site in sites %}
+          <option value="{{ site.id }}">{{ site.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="mb-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Gefahrstoff (SDB-Revision)</label>
+        <select name="sds_revision_id" required
+                class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-orange-500"
+                hx-get="{% url 'gbu:partial-hazards' %}"
+                hx-trigger="change"
+                hx-target="#hazard-preview"
+                hx-include="[name='sds_revision_id']">
+          <option value="">— SDB wählen —</option>
+          {% for rev in revisions %}
+          <option value="{{ rev.id }}">{{ rev.substance.name }} (Rev. {{ rev.revision_number|default:"1" }})</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div id="hazard-preview" class="mb-6"></div>
+
+      <div class="flex justify-end">
+        <button type="submit"
+                class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+          Weiter
+          <i data-lucide="arrow-right" class="w-4 h-4 inline ml-1"></i>
+        </button>
+      </div>
+
+    </form>
+  </div>
+</div>
+{% endblock %}

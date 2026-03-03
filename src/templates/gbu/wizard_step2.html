@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}GBU-Wizard — Schritt 2: Tätigkeitsdaten{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  {% include "gbu/partials/_wizard_progress.html" with current_step=2 %}
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-1">Schritt 2: Tätigkeitsdaten</h2>
+    <p class="text-sm text-gray-500 mb-2">Stoff: <strong>{{ revision.substance.name }}</strong></p>
+
+    <form method="post" action="{% url 'gbu:wizard-step2' %}?sds_revision_id={{ sds_revision_id }}&site_id={{ site_id }}">
+      {% csrf_token %}
+      <input type="hidden" name="sds_revision_id" value="{{ sds_revision_id }}">
+      <input type="hidden" name="site_id" value="{{ site_id }}">
+
+      {% if form.non_field_errors %}
+      <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        {{ form.non_field_errors }}
+      </div>
+      {% endif %}
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.activity_description.label }}</label>
+        {{ form.activity_description }}
+        {% if form.activity_description.errors %}<p class="text-red-600 text-xs mt-1">{{ form.activity_description.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="mb-4 grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.activity_frequency.label }}</label>
+          {% for choice in form.activity_frequency %}
+          <label class="flex items-center mb-1 text-sm">{{ choice.tag }} {{ choice.choice_label }}</label>
+          {% endfor %}
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">{{ form.quantity_class.label }}</label>
+          {% for choice in form.quantity_class %}
+          <label class="flex items-center mb-1 text-sm">{{ choice.tag }} {{ choice.choice_label }}</label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.duration_minutes.label }}</label>
+        {{ form.duration_minutes }}
+      </div>
+
+      <div class="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+        <label class="flex items-start text-sm">
+          {{ form.substitution_checked }}
+          <span class="ml-2 font-medium text-amber-800">{{ form.substitution_checked.label }}</span>
+        </label>
+        <div class="mt-2">
+          {{ form.substitution_notes }}
+        </div>
+      </div>
+
+      <div id="risk-badge-preview"
+           hx-get="{% url 'gbu:partial-risk-badge' %}"
+           hx-trigger="change from:select, change from:input[type=radio]"
+           hx-include="[name='quantity_class'],[name='activity_frequency']"
+           class="mb-4">
+      </div>
+
+      <div class="flex justify-between">
+        <a href="{% url 'gbu:wizard-step1' %}"
+           class="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+          <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i> Zurück
+        </a>
+        <button type="submit"
+                class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+          Weiter <i data-lucide="arrow-right" class="w-4 h-4 inline ml-1"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

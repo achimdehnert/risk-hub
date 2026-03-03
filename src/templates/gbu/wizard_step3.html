@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}GBU-Wizard — Schritt 3: Gefährdungen{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  {% include "gbu/partials/_wizard_progress.html" with current_step=3 %}
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-1">Schritt 3: Gefährdungskategorien</h2>
+    <p class="text-sm text-gray-500 mb-6">Auto-abgeleitete Kategorien aus den H-Sätzen des Sicherheitsdatenblatts.</p>
+
+    {% include "gbu/partials/_hazard_list.html" %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+      <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+        {{ form.non_field_errors }}
+      </div>
+      {% endif %}
+
+      <div class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        <label class="flex items-start text-sm">
+          {{ form.confirmed }}
+          <span class="ml-2 text-blue-800">{{ form.confirmed.label }}</span>
+        </label>
+        {% if form.confirmed.errors %}
+        <p class="text-red-600 text-xs mt-1">{{ form.confirmed.errors.0 }}</p>
+        {% endif %}
+      </div>
+
+      <div class="flex justify-between mt-6">
+        <a href="{% url 'gbu:wizard-step2' %}"
+           class="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+          <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i> Zurück
+        </a>
+        <button type="submit"
+                class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+          Weiter <i data-lucide="arrow-right" class="w-4 h-4 inline ml-1"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

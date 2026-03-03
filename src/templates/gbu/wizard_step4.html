@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}GBU-Wizard — Schritt 4: Maßnahmen{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  {% include "gbu/partials/_wizard_progress.html" with current_step=4 %}
+
+  <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mt-6">
+    <h2 class="text-lg font-semibold text-gray-900 mb-1">Schritt 4: Schutzmaßnahmen</h2>
+    <p class="text-sm text-gray-500 mb-6">TOPS-Maßnahmen aus den abgeleiteten Gefährdungskategorien.</p>
+
+    <form method="post" id="measures-form">
+      {% csrf_token %}
+      {{ form.confirmed_measure_ids }}
+
+      {% regroup templates by tops_type as tops_groups %}
+      {% for group in tops_groups %}
+      <div class="mb-6">
+        <h3 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+          {% if group.grouper == 'S' %}Substitution
+          {% elif group.grouper == 'T' %}Technische Maßnahmen
+          {% elif group.grouper == 'O' %}Organisatorische Maßnahmen
+          {% elif group.grouper == 'P' %}Persönliche Schutzausrüstung
+          {% endif %}
+        </h3>
+        <div class="space-y-2">
+          {% for tpl in group.list %}
+          <label class="flex items-start p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+            <input type="checkbox" name="measure_{{ tpl.id }}" value="{{ tpl.id }}"
+                   {% if tpl.is_mandatory %}checked disabled{% endif %}
+                   class="mt-0.5 mr-3"
+                   onchange="updateMeasureIds()">
+            <div>
+              <span class="text-sm font-medium text-gray-900">{{ tpl.title }}</span>
+              {% if tpl.is_mandatory %}
+              <span class="ml-2 text-xs text-red-600 font-medium">Pflicht</span>
+              {% endif %}
+              {% if tpl.description %}
+              <p class="text-xs text-gray-500 mt-0.5">{{ tpl.description }}</p>
+              {% endif %}
+            </div>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      {% empty %}
+      <div class="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-700">
+        Keine Maßnahmen-Vorlagen für die abgeleiteten Gefährdungskategorien vorhanden.
+        Bitte prüfen Sie die Referenzdaten.
+      </div>
+      {% endregroup %}
+
+      <div class="flex justify-between mt-6">
+        <a href="{% url 'gbu:wizard-step3' %}"
+           class="px-4 py-2 border border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50">
+          <i data-lucide="arrow-left" class="w-4 h-4 inline mr-1"></i> Zurück
+        </a>
+        <button type="submit"
+                class="px-6 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+          Weiter <i data-lucide="arrow-right" class="w-4 h-4 inline ml-1"></i>
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function updateMeasureIds() {
+  const checked = [...document.querySelectorAll('input[type=checkbox]:checked')]
+    .map(el => el.value).join(',');
+  document.getElementById('id_confirmed_measure_ids').value = checked;
+}
+document.addEventListener('DOMContentLoaded', updateMeasureIds);
+</script>
+{% endblock %}

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}GBU-Tätigkeit — {{ activity.activity_description|truncatechars:40 }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <a href="{% url 'gbu:activity-list' %}" class="text-sm text-gray-500 hover:text-gray-700">
+        <i data-lucide="arrow-left" class="w-4 h-4 inline"></i> GBU-Tätigkeiten
+      </a>
+      <h1 class="text-xl font-bold text-gray-900 mt-1">{{ activity.activity_description|truncatechars:80 }}</h1>
+    </div>
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium {{ badge_css }}">
+      {{ badge_label }}
+    </span>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Tätigkeit</h2>
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Standort</dt>
+          <dd class="font-medium">{{ activity.site.name }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Gefahrstoff</dt>
+          <dd class="font-medium">{{ activity.sds_revision.substance.name }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Frequenz</dt>
+          <dd>{{ activity.get_activity_frequency_display }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Dauer</dt>
+          <dd>{{ activity.duration_minutes }} Min.</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Menge (EMKG)</dt>
+          <dd>{{ activity.get_quantity_class_display }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Status</dt>
+          <dd>
+            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+              {% if activity.status == 'approved' %}bg-green-100 text-green-800
+              {% elif activity.status == 'review' %}bg-blue-100 text-blue-800
+              {% else %}bg-gray-100 text-gray-800{% endif %}">
+              {{ activity.get_status_display }}
+            </span>
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Freigabe</h2>
+      {% if activity.is_approved %}
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Freigegeben durch</dt>
+          <dd class="font-medium">{{ activity.approved_by_name }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Freigabe am</dt>
+          <dd>{{ activity.approved_at|date:"d.m.Y H:i" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Nächste Prüfung</dt>
+          <dd>{{ activity.next_review_date|date:"d.m.Y" }}</dd>
+        </div>
+      </dl>
+      {% else %}
+      <p class="text-sm text-gray-400">Noch nicht freigegeben.</p>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if activity.derived_hazard_categories.exists %}
+  <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Gefährdungskategorien</h2>
+    <div class="flex flex-wrap gap-2">
+      {% for cat in activity.derived_hazard_categories.all %}
+      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+        {{ cat.name }}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% if activity.measures.exists %}
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Schutzmaßnahmen</h2>
+    <div class="space-y-2">
+      {% for measure in activity.measures.all %}
+      <div class="flex items-start p-3 border border-gray-100 rounded-lg">
+        <span class="inline-block w-6 h-6 rounded text-xs font-bold text-center leading-6
+          bg-orange-100 text-orange-700 mr-3 shrink-0">{{ measure.tops_type }}</span>
+        <div>
+          <p class="text-sm font-medium text-gray-900">{{ measure.title }}</p>
+          {% if measure.description %}
+          <p class="text-xs text-gray-500 mt-0.5">{{ measure.description }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

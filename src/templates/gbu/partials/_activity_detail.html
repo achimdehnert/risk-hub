@@ -1,0 +1,11 @@
+<div class="p-4 bg-white border border-gray-200 rounded-lg">
+  <div class="flex items-center justify-between mb-2">
+    <span class="text-sm font-medium text-gray-900">{{ activity.activity_description|truncatechars:60 }}</span>
+    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ badge_css }}">
+      {{ badge_label }}
+    </span>
+  </div>
+  <div class="text-xs text-gray-500">
+    {{ activity.site.name }} &middot; {{ activity.get_status_display }}
+  </div>
+</div>
