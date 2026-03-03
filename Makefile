@@ -1,25 +1,33 @@
-.PHONY: up down logs migrate seed rls shell test
+# risk-hub — Developer Makefile
+# src/ layout: tests/ lives under src/
 
-up:
-	docker compose up --build -d
+.PHONY: install test test-v lint clean help
 
-down:
-	docker compose down -v
+PYTHON := python3
+PIP    := pip
 
-logs:
-	docker compose logs -f --tail=200
+help:
+	@echo "Available targets:"
+	@echo "  install   — pip install -r requirements.txt -r requirements-test.txt"
+	@echo "  test      — pytest (quiet, test settings)"
+	@echo "  test-v    — pytest (verbose)"
+	@echo "  lint      — ruff check src/"
+	@echo "  clean     — remove __pycache__ + .pytest_cache"
 
-migrate:
-	docker compose exec app python manage.py migrate
-
-seed:
-	docker compose exec app python manage.py seed_demo
-
-rls:
-	docker compose exec db psql -U app -d app -f /app/scripts/enable_rls.sql
-
-shell:
-	docker compose exec app python manage.py shell
+install:
+	$(PIP) install -r requirements.txt -r requirements-test.txt
 
 test:
-	docker compose exec app pytest
+	DJANGO_SETTINGS_MODULE=config.settings.test $(PYTHON) -m pytest --tb=short -q
+
+test-v:
+	DJANGO_SETTINGS_MODULE=config.settings.test $(PYTHON) -m pytest --tb=short -v
+
+lint:
+	ruff check src/
+
+clean:
+	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
+	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
+	find . -name '*.pyc' -delete 2>/dev/null || true
+	@echo "Cleaned."
