@@ -2,6 +2,7 @@ from django.contrib import admin
 
 from gbu.models.activity import ActivityMeasure, HazardAssessmentActivity
 from gbu.models.reference import (
+    ExposureRiskMatrix,
     HazardCategoryRef,
     HCodeCategoryMapping,
     MeasureTemplate,
@@ -51,10 +52,25 @@ class HazardAssessmentActivityAdmin(admin.ModelAdmin):
     ]
     list_filter = ["status", "risk_score", "activity_frequency"]
     search_fields = ["activity_description"]
-    readonly_fields = ["id", "created_at", "updated_at", "approved_at", "approved_by_id"]
+    readonly_fields = [
+        "id", "created_at", "updated_at", "approved_at", "approved_by_id",
+    ]
     inlines = [ActivityMeasureInline]
 
     def activity_description_short(self, obj):
         return obj.activity_description[:60]
 
     activity_description_short.short_description = "Tätigkeit"
+
+
+@admin.register(ExposureRiskMatrix)
+class ExposureRiskMatrixAdmin(admin.ModelAdmin):
+    list_display = [
+        "quantity_class",
+        "activity_frequency",
+        "has_cmr",
+        "risk_score",
+        "emkg_class",
+    ]
+    list_filter = ["risk_score", "emkg_class", "has_cmr"]
+    ordering = ["quantity_class", "activity_frequency", "has_cmr"]

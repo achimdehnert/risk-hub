@@ -7,6 +7,7 @@ from gbu.models.activity import (
     RiskScore,
 )
 from gbu.models.reference import (
+    ExposureRiskMatrix,
     HazardCategoryRef,
     HazardCategoryType,
     HCodeCategoryMapping,
@@ -18,6 +19,7 @@ __all__ = [
     "ActivityFrequency",
     "ActivityMeasure",
     "ActivityStatus",
+    "ExposureRiskMatrix",
     "HazardAssessmentActivity",
     "HazardCategoryRef",
     "HazardCategoryType",
