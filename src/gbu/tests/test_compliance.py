@@ -1,5 +1,5 @@
 """
-Tests f\u00fcr GBU Phase 2E \u2014 Compliance-Service und Review-Deadline-Task.
+Tests für GBU Phase 2E — Compliance-Service und Review-Deadline-Task.
 """
 
 import uuid
@@ -32,7 +32,6 @@ def _make_approved_activity(db, tenant_id, review_date, user_id=None):
     substance, _ = Substance.objects.get_or_create(
         tenant_id=tenant_id,
         name=f"Stoff-{uuid.uuid4()}",
-        defaults={"cas_number": "67-64-1"},
     )
     revision, _ = SdsRevision.objects.get_or_create(
         tenant_id=tenant_id,
@@ -46,7 +45,7 @@ def _make_approved_activity(db, tenant_id, review_date, user_id=None):
         tenant_id=tenant_id,
         site=site,
         sds_revision=revision,
-        activity_description="Testaktivit\u00e4t",
+        activity_description="Testaktivität",
         activity_frequency="weekly",
         duration_minutes=30,
         quantity_class="s",
@@ -64,7 +63,7 @@ def _make_approved_activity(db, tenant_id, review_date, user_id=None):
 
 @pytest.mark.django_db
 def test_should_list_activity_due_within_30_days(db):
-    """list_due_reviews() soll T\u00e4tigkeiten mit Frist in 30 Tagen zur\u00fcckgeben."""
+    """list_due_reviews() soll Tätigkeiten mit Frist in 30 Tagen zurückgeben."""
     from gbu.services.compliance import list_due_reviews
 
     tenant_id = uuid.uuid4()
@@ -77,7 +76,7 @@ def test_should_list_activity_due_within_30_days(db):
 
 @pytest.mark.django_db
 def test_should_not_list_activity_due_in_60_days(db):
-    """list_due_reviews() soll T\u00e4tigkeiten mit Frist > 30 Tage NICHT listen."""
+    """list_due_reviews() soll Tätigkeiten mit Frist > 30 Tage NICHT listen."""
     from gbu.services.compliance import list_due_reviews
 
     tenant_id = uuid.uuid4()
@@ -90,7 +89,7 @@ def test_should_not_list_activity_due_in_60_days(db):
 
 @pytest.mark.django_db
 def test_should_not_list_overdue_in_due_reviews(db):
-    """list_due_reviews() soll \u00fcberf\u00e4llige T\u00e4tigkeiten NICHT einschlie\u00dfen."""
+    """list_due_reviews() soll überfällige Tätigkeiten NICHT einschließen."""
     from gbu.services.compliance import list_due_reviews
 
     tenant_id = uuid.uuid4()
@@ -106,7 +105,7 @@ def test_should_not_list_overdue_in_due_reviews(db):
 
 @pytest.mark.django_db
 def test_should_list_overdue_activity(db):
-    """list_overdue_reviews() soll T\u00e4tigkeiten mit past review date zur\u00fcckgeben."""
+    """list_overdue_reviews() soll Tätigkeiten mit past review date zurückgeben."""
     from gbu.services.compliance import list_overdue_reviews
 
     tenant_id = uuid.uuid4()
@@ -119,7 +118,7 @@ def test_should_list_overdue_activity(db):
 
 @pytest.mark.django_db
 def test_should_not_list_future_as_overdue(db):
-    """list_overdue_reviews() soll zuk\u00fcnftige Frist NICHT als \u00fcberf\u00e4llig listen."""
+    """list_overdue_reviews() soll zukünftige Frist NICHT als überfällig listen."""
     from gbu.services.compliance import list_overdue_reviews
 
     tenant_id = uuid.uuid4()
@@ -136,7 +135,7 @@ def test_should_not_list_future_as_overdue(db):
 @pytest.mark.django_db
 def test_should_mark_overdue_as_outdated(db):
     """
-    mark_outdated_activities() soll \u00fcberf\u00e4llige APPROVED-T\u00e4tigkeiten
+    mark_outdated_activities() soll überfällige APPROVED-Tätigkeiten
     auf OUTDATED setzen.
     """
     from gbu.models.activity import ActivityStatus
@@ -156,7 +155,7 @@ def test_should_mark_overdue_as_outdated(db):
 
 @pytest.mark.django_db
 def test_should_not_mark_future_as_outdated(db):
-    """mark_outdated_activities() soll zuk\u00fcnftige Fristen NICHT ver\u00e4ndern."""
+    """mark_outdated_activities() soll zukünftige Fristen NICHT verändern."""
     from gbu.models.activity import ActivityStatus
     from gbu.services.compliance import mark_outdated_activities
 
@@ -178,7 +177,7 @@ def test_should_not_mark_future_as_outdated(db):
 @pytest.mark.django_db
 def test_should_return_correct_summary_counts(db):
     """
-    compliance_summary() soll korrekte Z\u00e4hler f\u00fcr overdue,
+    compliance_summary() soll korrekte Zähler für overdue,
     due_soon und total_approved liefern.
     """
     from gbu.services.compliance import compliance_summary
