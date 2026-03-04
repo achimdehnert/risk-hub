@@ -71,10 +71,6 @@ INSTALLED_APPS = [
     "gbu",
 ]
 
-MIGRATION_MODULES = {
-    "django_tenancy": "config.test_migrations.django_tenancy",
-}
-
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
