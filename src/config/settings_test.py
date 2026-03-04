@@ -19,6 +19,38 @@ PASSWORD_HASHERS = [
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
+INSTALLED_APPS = [
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "django_htmx",
+    "rest_framework",
+    "django_filters",
+    "platform_context",
+    "aifw",
+    "common",
+    "tenancy",
+    "identity",
+    "permissions",
+    "audit",
+    "outbox",
+    "risk",
+    "actions",
+    "documents",
+    "reporting",
+    "explosionsschutz",
+    "substances",
+    "notifications",
+    "dashboard",
+    "approvals",
+    "ai_analysis",
+    "dsb",
+    "gbu",
+]
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
