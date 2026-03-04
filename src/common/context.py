@@ -66,8 +66,12 @@ def set_db_tenant(tenant_id: UUID | None) -> None:
     Uses session-scoped ``SET`` (not ``SET LOCAL``) so the
     variable persists across autocommit queries until the
     next request resets it via middleware.
+    No-op on SQLite (test environment).
     """
     from django.db import connection
+
+    if connection.vendor != "postgresql":
+        return
 
     if tenant_id is not None:
         with connection.cursor() as cursor:
