@@ -22,7 +22,7 @@ in `mcp_config.json` eingetragenen Pfaden und trägt fehlende Repos automatisch 
 
 // turbo
 ```bash
-python3 /home/dehnert/github/bfagent/scripts/sync_mcp_repos.py
+python3 /home/dehnert/github/infra-deploy/scripts/sync_mcp_repos.py
 ```
 
 ---
