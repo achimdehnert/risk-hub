@@ -16,13 +16,7 @@
             </nav>
             <div class="flex items-center space-x-3">
                 <h1 class="text-2xl font-bold text-gray-900">{{ concept.title }}</h1>
-                {% if concept.status == "draft" %}
-                <span class="px-3 py-1 text-sm rounded-full bg-yellow-100 text-yellow-800">Entwurf</span>
-                {% elif concept.status == "in_review" %}
-                <span class="px-3 py-1 text-sm rounded-full bg-blue-100 text-blue-800">In Prüfung</span>
-                {% elif concept.status == "approved" %}
-                <span class="px-3 py-1 text-sm rounded-full bg-green-100 text-green-800">Freigegeben</span>
-                {% endif %}
+                {% include "components/_status_badge.html" with status=concept.status %}
                 {% if concept.is_validated %}
                 <span class="text-green-600" title="Validiert am {{ concept.validated_at }}">
                     <i data-lucide="check-circle" class="w-5 h-5"></i>
@@ -30,9 +24,9 @@
                 {% endif %}
             </div>
         </div>
-        <div class="flex space-x-3">
+        <div class="flex flex-wrap gap-2">
             {% if concept.status == "draft" %}
-            <form method="post" action="/ex/concepts/{{ concept.id }}/validate/" class="inline">
+            <form method="post" action="{% url 'explosionsschutz:concept-validate' concept.id %}" class="inline">
                 {% csrf_token %}
                 <button type="submit" class="inline-flex items-center px-4 py-2 border border-green-500 text-green-600 rounded-lg hover:bg-green-50">
                     <i data-lucide="check" class="w-4 h-4 mr-2"></i>
@@ -40,14 +34,44 @@
                 </button>
             </form>
             {% endif %}
-            <a href="/ex/concepts/{{ concept.id }}/edit/" class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+            <a href="{% url 'explosionsschutz:concept-edit' concept.id %}" class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
                 <i data-lucide="edit" class="w-4 h-4 mr-2"></i>
                 Bearbeiten
             </a>
-            <a href="/api/ex/concepts/{{ concept.id }}/export-pdf/" class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
-                <i data-lucide="download" class="w-4 h-4 mr-2"></i>
-                PDF Export
-            </a>
+            <!-- Export Dropdown -->
+            <div class="relative">
+                <button data-toggle="export-dropdown"
+                        class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                    <i data-lucide="download" class="w-4 h-4 mr-2"></i>
+                    Export
+                    <i data-lucide="chevron-down" class="w-4 h-4 ml-1"></i>
+                </button>
+                <div id="export-dropdown"
+                     class="hidden absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                    <div class="py-1">
+                        <a href="{% url 'explosionsschutz:concept-export-pdf' concept.id %}"
+                           class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i data-lucide="file-text" class="w-4 h-4 mr-2 text-gray-400"></i>
+                            PDF Export
+                        </a>
+                        <a href="{% url 'explosionsschutz:concept-export-docx' concept.id %}"
+                           class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i data-lucide="file" class="w-4 h-4 mr-2 text-gray-400"></i>
+                            Word (DOCX)
+                        </a>
+                        <a href="{% url 'explosionsschutz:concept-export-gaeb' concept.id %}?format=excel"
+                           class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i data-lucide="table" class="w-4 h-4 mr-2 text-gray-400"></i>
+                            GAEB LV (Excel)
+                        </a>
+                        <a href="{% url 'explosionsschutz:concept-export-gaeb' concept.id %}?format=xml"
+                           class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i data-lucide="code" class="w-4 h-4 mr-2 text-gray-400"></i>
+                            GAEB X84 (XML)
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -55,7 +79,7 @@
     <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
             <p class="text-sm text-gray-500">Bereich</p>
-            <a href="/ex/areas/{{ concept.area.id }}/" class="text-lg font-semibold text-orange-600 hover:text-orange-700">
+            <a href="{% url 'explosionsschutz:area-detail-html' concept.area.id %}" class="text-lg font-semibold text-orange-600 hover:text-orange-700">
                 {{ concept.area.name }}
             </a>
         </div>
@@ -76,24 +100,30 @@
     <!-- Tabs -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="border-b border-gray-200">
-            <nav class="flex -mb-px">
-                <button class="px-6 py-3 border-b-2 border-orange-500 text-orange-600 font-medium" data-tab="zones">
+            <nav class="flex -mb-px" id="concept-tabs">
+                <button class="px-6 py-3 border-b-2 border-orange-500 text-orange-600 font-medium"
+                        data-tab-btn data-tab-target="tab-zones">
+                    <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>
                     Zonen
                 </button>
-                <button class="px-6 py-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="measures">
+                <button class="px-6 py-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+                        data-tab-btn data-tab-target="tab-measures">
+                    <i data-lucide="shield-check" class="w-4 h-4 inline mr-1"></i>
                     Maßnahmen
                 </button>
-                <button class="px-6 py-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700" data-tab="documents">
+                <button class="px-6 py-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+                        data-tab-btn data-tab-target="tab-documents">
+                    <i data-lucide="file" class="w-4 h-4 inline mr-1"></i>
                     Dokumente
                 </button>
             </nav>
         </div>
 
         <!-- Zones Tab -->
-        <div id="zones" class="p-6">
+        <div id="tab-zones" class="p-6">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-semibold text-gray-900">Zonendefinitionen</h3>
-                <a href="/ex/zones/new/?concept={{ concept.id }}" class="text-sm text-orange-600 hover:text-orange-700">
+                <a href="{% url 'explosionsschutz:concept-detail-html' concept.id %}" class="text-sm text-orange-600 hover:text-orange-700">
                     + Zone hinzufügen
                 </a>
             </div>
@@ -128,10 +158,10 @@
         </div>
 
         <!-- Measures Tab -->
-        <div id="measures" class="p-6 hidden">
+        <div id="tab-measures" class="p-6 hidden">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-semibold text-gray-900">Schutzmaßnahmen</h3>
-                <a href="/ex/measures/new/?concept={{ concept.id }}" class="text-sm text-orange-600 hover:text-orange-700">
+                <a href="{% url 'explosionsschutz:concept-detail-html' concept.id %}" class="text-sm text-orange-600 hover:text-orange-700">
                     + Maßnahme hinzufügen
                 </a>
             </div>
@@ -169,10 +199,10 @@
         </div>
 
         <!-- Documents Tab -->
-        <div id="documents" class="p-6 hidden">
+        <div id="tab-documents" class="p-6 hidden">
             <div class="flex justify-between items-center mb-4">
                 <h3 class="font-semibold text-gray-900">Nachweisdokumente</h3>
-                <a href="/ex/documents/new/?concept={{ concept.id }}" class="text-sm text-orange-600 hover:text-orange-700">
+                <a href="{% url 'explosionsschutz:concept-detail-html' concept.id %}" class="text-sm text-orange-600 hover:text-orange-700">
                     + Dokument hinzufügen
                 </a>
             </div>
@@ -204,18 +234,19 @@
 
 {% block extra_scripts %}
 <script>
-document.querySelectorAll('[data-tab]').forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelectorAll('[data-tab]').forEach(b => {
-            b.classList.remove('border-orange-500', 'text-orange-600');
-            b.classList.add('border-transparent', 'text-gray-500');
-        });
-        btn.classList.add('border-orange-500', 'text-orange-600');
-        btn.classList.remove('border-transparent', 'text-gray-500');
-        
-        document.querySelectorAll('#zones, #measures, #documents').forEach(el => el.classList.add('hidden'));
-        document.getElementById(btn.dataset.tab).classList.remove('hidden');
+document.getElementById('concept-tabs').addEventListener('click', function(e) {
+    var btn = e.target.closest('[data-tab-btn]');
+    if (!btn) return;
+    document.querySelectorAll('[data-tab-btn]').forEach(function(b) {
+        b.classList.remove('border-orange-500', 'text-orange-600');
+        b.classList.add('border-transparent', 'text-gray-500');
     });
+    btn.classList.add('border-orange-500', 'text-orange-600');
+    btn.classList.remove('border-transparent', 'text-gray-500');
+    document.querySelectorAll('[id^="tab-"]').forEach(function(el) {
+        el.classList.add('hidden');
+    });
+    document.getElementById(btn.dataset.tabTarget).classList.remove('hidden');
 });
 </script>
 {% endblock %}

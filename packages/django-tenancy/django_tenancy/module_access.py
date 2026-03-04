@@ -211,9 +211,7 @@ class ModuleAccessMiddleware(MiddlewareMixin):
                 },
                 request=request,
             )
-            return HttpResponse(
-                body, status=403, content_type="text/html"
-            )
+            return HttpResponse(body, status=403, content_type="text/html")
 
         return None
 
@@ -268,9 +266,7 @@ def require_module(module: str, min_role: str = "viewer") -> Callable:
                     },
                     request=request,
                 )
-                return HttpResponse(
-                    body, status=403, content_type="text/html"
-                )
+                return HttpResponse(body, status=403, content_type="text/html")
 
             return view_func(request, *args, **kwargs)
 

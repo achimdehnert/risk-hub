@@ -10,34 +10,17 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# System deps (weasyprint needs pango, gdk-pixbuf, cairo)
+# System deps (weasyprint needs pango/gdk-pixbuf/cairo; git for git+https requirements)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
+    build-essential git \
     libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libfribidi0 \
     libgdk-pixbuf-2.0-0 libcairo2 libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy shared packages first
-COPY packages/bfagent-core /app/packages/bfagent-core
-COPY packages/bfagent-llm /app/packages/bfagent-llm
-COPY packages/platform-context /app/packages/platform-context
-COPY packages/django-tenancy /app/packages/django-tenancy
-
-# Install shared packages
+# Install all dependencies from requirements.txt (single source of truth)
+COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir /app/packages/bfagent-core \
-    && pip install --no-cache-dir /app/packages/bfagent-llm \
-    && pip install --no-cache-dir /app/packages/platform-context \
-    && pip install --no-cache-dir /app/packages/django-tenancy
-
-# Install main app dependencies
-COPY pyproject.toml /app/pyproject.toml
-RUN pip install --no-cache-dir \
-    Django dj-database-url "psycopg[binary]" python-dotenv \
-    django-htmx django-ninja djangorestframework django-filter \
-    pydantic boto3 httpx structlog jinja2 jsonschema tenacity \
-    weasyprint python-docx "celery[redis]" \
-    gunicorn whitenoise
+    && pip install --no-cache-dir -r /app/requirements.txt
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

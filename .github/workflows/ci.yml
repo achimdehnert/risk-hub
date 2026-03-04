@@ -281,8 +281,10 @@ jobs:
           echo "Rolling back to ${{ vars.DEPLOY_IMAGE }}:${PREV_SHA}..."
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -f docker-compose.prod.yml down && \
-            docker compose -f docker-compose.prod.yml up -d
+            docker pull ${{ vars.DEPLOY_IMAGE }}:${PREV_SHA} && \
+            IMAGE_TAG=${PREV_SHA} docker compose -f docker-compose.prod.yml \
+              up -d --no-deps --force-recreate \
+              ${{ vars.DEPLOY_WEB_SERVICE }} ${{ vars.DEPLOY_APP_NAME }}-worker
           "
 
       - name: Notify

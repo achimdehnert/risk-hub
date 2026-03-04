@@ -26,28 +26,14 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 <i data-lucide="zap" class="w-5 h-5 inline text-orange-500 mr-1"></i>
-                Explosionsschutz
+                <a href="{% url 'explosionsschutz:home' %}" class="hover:text-orange-600">Explosionsschutz</a>
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-gray-900">{{ kpis.areas_total }}</div>
-                    <div class="text-xs text-gray-500">Bereiche</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-orange-600">{{ kpis.areas_with_hazard }}</div>
-                    <div class="text-xs text-gray-500">mit Ex-Gefahr</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-gray-900">{{ kpis.zones_total }}</div>
-                    <div class="text-xs text-gray-500">Zonen</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-gray-900">{{ kpis.equipment_total }}</div>
-                    <div class="text-xs text-gray-500">Betriebsmittel</div>
-                </div>
+                {% include "components/_stat_card.html" with icon="map-pin" value=kpis.areas_total label="Bereiche" color="orange" %}
+                {% include "components/_stat_card.html" with icon="zap" value=kpis.areas_with_hazard label="mit Ex-Gefahr" color="red" %}
+                {% include "components/_stat_card.html" with icon="target" value=kpis.zones_total label="Zonen" color="gray" %}
+                {% include "components/_stat_card.html" with icon="cpu" value=kpis.equipment_total label="Betriebsmittel" color="purple" %}
             </div>
-
-            <!-- Concept Status Bar -->
             {% if kpis.concepts_total %}
             <div class="mt-4">
                 <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
@@ -56,7 +42,7 @@
                 </div>
                 <div class="w-full bg-gray-200 rounded-full h-2">
                     {% widthratio kpis.concepts_approved kpis.concepts_total 100 as approved_pct %}
-                    <div class="bg-green-500 h-2 rounded-full" style="width: {% widthratio kpis.concepts_approved kpis.concepts_total 100 %}%"></div>
+                    <div class="bg-green-500 h-2 rounded-full" style="width: {{ approved_pct }}%"></div>
                 </div>
             </div>
             {% endif %}
@@ -68,25 +54,13 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 <i data-lucide="flask-conical" class="w-5 h-5 inline text-purple-500 mr-1"></i>
-                Gefahrstoffe
+                <a href="{% url 'substances:home' %}" class="hover:text-purple-600">Gefahrstoffe</a>
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-gray-900">{{ kpis.substances_total }}</div>
-                    <div class="text-xs text-gray-500">Stoffe gesamt</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-green-600">{{ kpis.sds_current }}</div>
-                    <div class="text-xs text-gray-500">SDB aktuell</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold {% if kpis.sds_outdated %}text-red-600{% else %}text-gray-400{% endif %}">{{ kpis.sds_outdated }}</div>
-                    <div class="text-xs text-gray-500">SDB veraltet</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-gray-900">{{ kpis.site_inventory_items }}</div>
-                    <div class="text-xs text-gray-500">Lagerbestand</div>
-                </div>
+                {% include "components/_stat_card.html" with icon="flask-conical" value=kpis.substances_total label="Stoffe gesamt" color="purple" %}
+                {% include "components/_stat_card.html" with icon="check-circle" value=kpis.sds_current label="SDB aktuell" color="green" %}
+                {% include "components/_stat_card.html" with icon="alert-circle" value=kpis.sds_outdated label="SDB veraltet" color=kpis.sds_outdated|yesno:"red,gray" %}
+                {% include "components/_stat_card.html" with icon="package" value=kpis.site_inventory_items label="Lagerbestand" color="gray" %}
             </div>
         </div>
         {% endif %}
@@ -96,25 +70,13 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 <i data-lucide="shield-alert" class="w-5 h-5 inline text-red-500 mr-1"></i>
-                Risikobewertung & Maßnahmen
+                <a href="{% url 'risk:assessment_list' %}" class="hover:text-red-600">Risikobewertung & Maßnahmen</a>
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div class="text-center">
-                    <div class="text-2xl font-bold text-gray-900">{{ kpis.assessments_total }}</div>
-                    <div class="text-xs text-gray-500">Bewertungen</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold {% if kpis.assessments_open %}text-yellow-600{% else %}text-gray-400{% endif %}">{{ kpis.assessments_open }}</div>
-                    <div class="text-xs text-gray-500">offen</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold {% if kpis.actions_open %}text-yellow-600{% else %}text-gray-400{% endif %}">{{ kpis.actions_open }}</div>
-                    <div class="text-xs text-gray-500">Maßnahmen offen</div>
-                </div>
-                <div class="text-center">
-                    <div class="text-2xl font-bold {% if kpis.actions_overdue %}text-red-600{% else %}text-gray-400{% endif %}">{{ kpis.actions_overdue }}</div>
-                    <div class="text-xs text-gray-500">überfällig</div>
-                </div>
+                {% include "components/_stat_card.html" with icon="shield-alert" value=kpis.assessments_total label="Bewertungen" color="gray" %}
+                {% include "components/_stat_card.html" with icon="clock" value=kpis.assessments_open label="offen" color=kpis.assessments_open|yesno:"orange,gray" %}
+                {% include "components/_stat_card.html" with icon="list-todo" value=kpis.actions_open label="Maßnahmen offen" color=kpis.actions_open|yesno:"orange,gray" %}
+                {% include "components/_stat_card.html" with icon="alert-triangle" value=kpis.actions_overdue label="überfällig" color=kpis.actions_overdue|yesno:"red,gray" %}
             </div>
         </div>
         {% endif %}
@@ -177,29 +139,29 @@
             <h3 class="text-sm font-semibold text-gray-900 mb-3">Schnellzugriff</h3>
             <div class="space-y-2">
                 {% if "risk" in active_modules %}
-                <a href="/risk/assessments/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                <a href="{% url 'risk:assessment_list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="shield-alert" class="w-4 h-4"></i> Risikobewertung
                 </a>
                 {% endif %}
                 {% if "ex" in active_modules %}
-                <a href="/ex/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                <a href="{% url 'explosionsschutz:home' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="zap" class="w-4 h-4"></i> Explosionsschutz
                 </a>
-                <a href="/substances/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                <a href="{% url 'substances:home' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="flask-conical" class="w-4 h-4"></i> Gefahrstoffe
                 </a>
                 {% endif %}
                 {% if "dsb" in active_modules %}
-                <a href="/dsb/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
-                    <i data-lucide="shield-lock" class="w-4 h-4"></i> Datenschutz
+                <a href="{% url 'dsb:dashboard' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="shield" class="w-4 h-4"></i> Datenschutz
                 </a>
                 {% endif %}
                 {% if "documents" in active_modules %}
-                <a href="/documents/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                <a href="{% url 'documents:document_list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="file-text" class="w-4 h-4"></i> Dokumente
                 </a>
                 {% endif %}
-                <a href="/notifications/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                <a href="{% url 'notifications:list' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="bell" class="w-4 h-4"></i> Benachrichtigungen
                     {% if kpis.notifications_unread %}
                     <span class="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{{ kpis.notifications_unread }}</span>
