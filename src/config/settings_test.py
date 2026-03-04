@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "platform_context",
+    "django_tenancy",
     "aifw",
     "common",
     "tenancy",
@@ -50,6 +51,10 @@ INSTALLED_APPS = [
     "dsb",
     "gbu",
 ]
+
+MIGRATION_MODULES = {
+    "django_tenancy": None,
+}
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
