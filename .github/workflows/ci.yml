@@ -45,16 +45,30 @@ jobs:
           }
 
   # ──────────────────────────────────────────────────────────────
-  # Stage ③: Tests (SQLite, pytest)
+  # Stage ③: Tests (PostgreSQL — required by django-tenancy)
   # ──────────────────────────────────────────────────────────────
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     needs: fast-checks
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_risk_hub
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DJANGO_SETTINGS_MODULE: config.settings_test
       PYTHONPATH: src
-      DATABASE_URL: "sqlite:///test.db"
+      DATABASE_URL: "postgresql://test:test@localhost:5432/test_risk_hub"
       SECRET_KEY: "test-secret-key-not-for-production"
     steps:
       - uses: actions/checkout@v4
