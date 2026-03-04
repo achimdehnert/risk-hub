@@ -64,7 +64,7 @@ jobs:
 
       - name: Configure git for private packages
         run: |
-          git config --global url."https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/".insteadOf "https://github.com/"
+          git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install Dependencies
         run: |
