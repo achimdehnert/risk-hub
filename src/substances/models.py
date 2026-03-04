@@ -551,3 +551,6 @@ class LocationSubstanceEntry(TenantScopedModel):
             return None
         qty_t = float(self.current_quantity_kg) / 1000
         return round(qty_t / float(thr) * 100, 1)
+
+
+StorageClass = Substance.StorageClass
