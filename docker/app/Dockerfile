@@ -17,10 +17,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdk-pixbuf-2.0-0 libcairo2 libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Build-time secret for private GitHub packages (platform-context, django-tenancy)
+ARG PROJECT_PAT
+
 # Install all dependencies from requirements.txt (single source of truth)
 COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir -r /app/requirements.txt
+RUN git config --global url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf "https://github.com/" \
+    && pip install --no-cache-dir -U pip \
+    && pip install --no-cache-dir -r /app/requirements.txt \
+    && git config --global --unset url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf || true
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
