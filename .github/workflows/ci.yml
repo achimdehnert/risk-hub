@@ -110,7 +110,6 @@ jobs:
             --cov-report=html \
             --cov-fail-under=30 || {
               EXIT=$?
-              # exit 1 = test failures (tolerated), exit 2+ = internal error
               [ $EXIT -le 1 ] && exit 0 || exit $EXIT
             }
 
@@ -123,11 +122,11 @@ jobs:
           fi
 
   # ──────────────────────────────────────────────────────────────
-  # Stage ⑥: Build + Push Docker Image (only on main push)
+  # Stage ⑤: Build + Push Docker Image (only on main push)
   # ──────────────────────────────────────────────────────────────
   deploy-build:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
@@ -167,6 +166,7 @@ jobs:
             --label "org.opencontainers.image.revision=${GITHUB_SHA::7}" \
             --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
             --build-arg GIT_SHA=${GITHUB_SHA::7} \
+            --build-arg PROJECT_PAT=${{ secrets.PROJECT_PAT }} \
             -f ${{ vars.DEPLOY_DOCKERFILE }} \
             -t ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7} \
             -t ${{ vars.DEPLOY_IMAGE }}:latest \
@@ -182,7 +182,7 @@ jobs:
       previous_sha: ${{ steps.pre_deploy.outputs.previous_sha }}
 
   # ──────────────────────────────────────────────────────────────
-  # Stage ⑦: Deploy + Verify
+  # Stage ⑥: Deploy + Verify
   # ──────────────────────────────────────────────────────────────
   deploy-verify:
     runs-on: ubuntu-latest
@@ -265,7 +265,7 @@ jobs:
           echo "- **Image:** ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
 
   # ──────────────────────────────────────────────────────────────
-  # Stage ⑧: Rollback (only if deploy-verify fails)
+  # Stage ⑦: Rollback (only if deploy-verify fails)
   # ──────────────────────────────────────────────────────────────
   rollback:
     runs-on: ubuntu-latest
