@@ -242,7 +242,7 @@ class SafetyFunction(TenantScopedMasterData):
         help_text="Required Performance Level nach ISO 13849",
     )
     sil_level = models.CharField(
-        max_digits=5,
+        max_length=5,
         choices=SILLevel.choices,
         blank=True,
         default="",
