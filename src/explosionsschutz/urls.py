@@ -22,88 +22,45 @@ router.register(r"inspections", views.InspectionViewSet, basename="inspection")
 router.register(r"documents", views.VerificationDocumentViewSet, basename="document")
 
 # Stammdaten (Read-Only für normale User)
-router.register(
-    r"master/standards",
-    views.ReferenceStandardViewSet,
-    basename="standard"
-)
-router.register(
-    r"master/catalog",
-    views.MeasureCatalogViewSet,
-    basename="catalog"
-)
-router.register(
-    r"master/equipment-types",
-    views.EquipmentTypeViewSet,
-    basename="equipment-type"
-)
-router.register(
-    r"master/safety-functions",
-    views.SafetyFunctionViewSet,
-    basename="safety-function"
-)
+router.register(r"master/standards", views.ReferenceStandardViewSet, basename="standard")
+router.register(r"master/catalog", views.MeasureCatalogViewSet, basename="catalog")
+router.register(r"master/equipment-types", views.EquipmentTypeViewSet, basename="equipment-type")
+router.register(r"master/safety-functions", views.SafetyFunctionViewSet, basename="safety-function")
 
 urlpatterns = [
     path("", include(router.urls)),
-    
     # Custom Actions
     path(
         "concepts/<uuid:pk>/validate/",
         views.ExplosionConceptViewSet.as_view({"post": "validate"}),
-        name="concept-validate"
+        name="concept-validate",
     ),
     path(
         "concepts/<uuid:pk>/archive/",
         views.ExplosionConceptViewSet.as_view({"post": "archive"}),
-        name="concept-archive"
+        name="concept-archive",
     ),
     path(
         "concepts/<uuid:pk>/export-pdf/",
         views.ExplosionConceptViewSet.as_view({"get": "export_pdf"}),
-        name="concept-export-pdf"
+        name="concept-export-pdf",
     ),
-    
     # Calculation Tools (migriert von expert_hub)
+    path("tools/substances/", views.SubstanceListView.as_view(), name="substance-list"),
     path(
-        "tools/substances/",
-        views.SubstanceListView.as_view(),
-        name="substance-list"
+        "tools/substances/<str:name>/", views.SubstanceDetailView.as_view(), name="substance-detail"
     ),
-    path(
-        "tools/substances/<str:name>/",
-        views.SubstanceDetailView.as_view(),
-        name="substance-detail"
-    ),
-    path(
-        "tools/zone-calculate/",
-        views.ZoneCalculateView.as_view(),
-        name="zone-calculate"
-    ),
-    path(
-        "tools/equipment-check/",
-        views.EquipmentCheckView.as_view(),
-        name="equipment-check"
-    ),
+    path("tools/zone-calculate/", views.ZoneCalculateView.as_view(), name="zone-calculate"),
+    path("tools/equipment-check/", views.EquipmentCheckView.as_view(), name="equipment-check"),
     path(
         "tools/ventilation-analyze/",
         views.VentilationAnalyzeView.as_view(),
-        name="ventilation-analyze"
+        name="ventilation-analyze",
     ),
-    
     # Dashboard & Reports
+    path("dashboard/", views.DashboardView.as_view(), name="dashboard"),
     path(
-        "dashboard/",
-        views.DashboardView.as_view(),
-        name="dashboard"
+        "reports/inspections-due/", views.InspectionsDueReportView.as_view(), name="inspections-due"
     ),
-    path(
-        "reports/inspections-due/",
-        views.InspectionsDueReportView.as_view(),
-        name="inspections-due"
-    ),
-    path(
-        "reports/zone-summary/",
-        views.ZoneSummaryReportView.as_view(),
-        name="zone-summary"
-    ),
+    path("reports/zone-summary/", views.ZoneSummaryReportView.as_view(), name="zone-summary"),
 ]

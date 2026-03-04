@@ -100,16 +100,22 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
         return _build_tenant_redirect(request, slug)
 
     # Multiple tenants → show picker (rendered inline)
-    return render(request, "registration/tenant_picker.html", {
-        "memberships": active,
-    })
+    return render(
+        request,
+        "registration/tenant_picker.html",
+        {
+            "memberships": active,
+        },
+    )
 
 
 def _build_tenant_redirect(request: HttpRequest, slug: str) -> HttpResponse:
     """Build redirect URL for tenant subdomain."""
     base_domains = list(getattr(django_settings, "TENANT_BASE_DOMAINS", []))
-    base_domain = base_domains[0] if base_domains else getattr(
-        django_settings, "TENANT_BASE_DOMAIN", "localhost"
+    base_domain = (
+        base_domains[0]
+        if base_domains
+        else getattr(django_settings, "TENANT_BASE_DOMAIN", "localhost")
     )
     host = request.get_host()
     # Dev: keep same host:port, just prepend slug as path hint via header

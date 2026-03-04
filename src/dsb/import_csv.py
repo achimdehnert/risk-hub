@@ -61,9 +61,7 @@ def detect_csv_type(headers: list[str]) -> str:
         return "tom"
     if "partner" in h_lower or "auftragsverarbeiter" in h_lower or "avv-partner" in h_lower:
         return "avv"
-    raise ValueError(
-        f"Unbekanntes CSV-Format. Header: {', '.join(headers[:5])}"
-    )
+    raise ValueError(f"Unbekanntes CSV-Format. Header: {', '.join(headers[:5])}")
 
 
 def _map_legal_basis(text: str) -> str:
@@ -114,7 +112,8 @@ def _resolve_tom_category(
 def _build_vvt_desc(row: dict[str, str]) -> str:
     parts: list[str] = []
     for csv_key, label in [
-        ("Gruppe", "Gruppe"), ("Zweck", "Zweck"),
+        ("Gruppe", "Gruppe"),
+        ("Zweck", "Zweck"),
         ("Betroffene Personen", "Betroffene Personen"),
         ("Datenkategorien", "Datenkategorien"),
         ("Empfaenger", "Empf\u00e4nger"),
@@ -130,10 +129,7 @@ def _build_vvt_desc(row: dict[str, str]) -> str:
 
 def _build_tom_desc(row: dict[str, str]) -> str:
     parts: list[str] = []
-    desc = (
-        row.get("Beschreibung", "").strip()
-        or row.get("Konkrete Umsetzung MAROLD", "").strip()
-    )
+    desc = row.get("Beschreibung", "").strip() or row.get("Konkrete Umsetzung MAROLD", "").strip()
     if desc:
         parts.append(desc)
     for csv_key, label in [
@@ -191,7 +187,9 @@ def import_vvt(
                 continue
 
             pa, created = ProcessingActivity.objects.update_or_create(
-                tenant_id=tenant_id, mandate=mandate, number=number,
+                tenant_id=tenant_id,
+                mandate=mandate,
+                number=number,
                 defaults={
                     "name": name[:300],
                     "legal_basis": _map_legal_basis(
@@ -257,7 +255,8 @@ def import_tom(
 
             if mtype == TomCategory.MeasureType.AVV:
                 DataProcessingAgreement.objects.update_or_create(
-                    tenant_id=tenant_id, mandate=mandate,
+                    tenant_id=tenant_id,
+                    mandate=mandate,
                     partner_name=title[:300],
                     defaults={
                         "subject_matter": desc,
@@ -268,7 +267,8 @@ def import_tom(
                 result.avv_created += 1
             elif mtype == TomCategory.MeasureType.ORGANIZATIONAL:
                 OrganizationalMeasure.objects.update_or_create(
-                    tenant_id=tenant_id, mandate=mandate,
+                    tenant_id=tenant_id,
+                    mandate=mandate,
                     title=title[:255],
                     defaults={
                         "category": cat,
@@ -280,7 +280,8 @@ def import_tom(
                 result.tom_org_created += 1
             else:
                 TechnicalMeasure.objects.update_or_create(
-                    tenant_id=tenant_id, mandate=mandate,
+                    tenant_id=tenant_id,
+                    mandate=mandate,
                     title=title[:255],
                     defaults={
                         "category": cat,
@@ -347,8 +348,7 @@ def import_avv(
                 continue
 
             role_raw = (
-                row.get("Rolle", "").strip()
-                or row.get("Partner-Rolle", "").strip()
+                row.get("Rolle", "").strip() or row.get("Partner-Rolle", "").strip()
             ).lower()
             role = _AVV_ROLE_MAP.get(role_raw, "processor")
 
@@ -368,20 +368,27 @@ def import_avv(
                 for fmt in ("%d.%m.%Y", "%Y-%m-%d", "%d/%m/%Y"):
                     try:
                         from datetime import datetime
+
                         return datetime.strptime(val, fmt).date()
                     except ValueError:
                         continue
                 return None
 
             effective_date = _parse_date(
-                row.get("Gueltig_ab", "") or row.get("Gültig_ab", "") or row.get("Abschlussdatum", "")
+                row.get("Gueltig_ab", "")
+                or row.get("Gültig_ab", "")
+                or row.get("Abschlussdatum", "")
             )
             expiry_date = _parse_date(
-                row.get("Gueltig_bis", "") or row.get("Gültig_bis", "") or row.get("Ablaufdatum", "")
+                row.get("Gueltig_bis", "")
+                or row.get("Gültig_bis", "")
+                or row.get("Ablaufdatum", "")
             )
 
             subprocessors = row.get("Unterauftragsverarbeiter", "").strip()
-            subprocessors_allowed = bool(subprocessors and subprocessors.lower() not in ("nein", "no", "0", "false"))
+            subprocessors_allowed = bool(
+                subprocessors and subprocessors.lower() not in ("nein", "no", "0", "false")
+            )
 
             notes = row.get("Notizen", "").strip() or row.get("Bemerkungen", "").strip()
 

@@ -98,11 +98,10 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
     # --- Risikobewertung ---
     try:
         from risk.models import Assessment
+
         assessments = Assessment.objects.filter(tf)
         assessments_total = assessments.count()
-        assessments_open = assessments.exclude(
-            status="approved"
-        ).count()
+        assessments_open = assessments.exclude(status="approved").count()
     except Exception:
         assessments_total = 0
         assessments_open = 0
@@ -114,45 +113,39 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
 
     return ComplianceKPI(
         areas_total=areas.count(),
-        areas_with_hazard=areas.filter(
-            explosion_concepts__status__in=["approved", "in_review"]
-        ).distinct().count(),
+        areas_with_hazard=areas.filter(explosion_concepts__status__in=["approved", "in_review"])
+        .distinct()
+        .count(),
         concepts_total=concepts.count(),
         concepts_draft=concepts.filter(status="draft").count(),
-        concepts_validated=concepts.filter(
-            status="validated"
-        ).count(),
-        concepts_approved=concepts.filter(
-            status="approved"
-        ).count(),
+        concepts_validated=concepts.filter(status="validated").count(),
+        concepts_approved=concepts.filter(status="approved").count(),
         zones_total=ZoneDefinition.objects.filter(tf).count(),
         equipment_total=equipment.count(),
         inspections_overdue=inspections_overdue,
         inspections_due_7d=inspections_due_7d,
         inspections_due_30d=inspections_due_30d,
-        measures_open=ProtectionMeasure.objects.filter(
-            tf, status="open"
-        ).count(),
+        measures_open=ProtectionMeasure.objects.filter(tf, status="open").count(),
         substances_total=substances.count(),
-        sds_current=sds_qs.filter(
-            revision_date__gte=two_years_ago
-        ).values("substance_id").distinct().count(),
-        sds_outdated=sds_qs.filter(
-            revision_date__lt=two_years_ago
-        ).values("substance_id").distinct().count(),
+        sds_current=sds_qs.filter(revision_date__gte=two_years_ago)
+        .values("substance_id")
+        .distinct()
+        .count(),
+        sds_outdated=sds_qs.filter(revision_date__lt=two_years_ago)
+        .values("substance_id")
+        .distinct()
+        .count(),
         site_inventory_items=0,  # TODO: SiteInventoryItem
         assessments_total=assessments_total,
         assessments_open=assessments_open,
-        actions_open=actions_qs.exclude(
-            status="completed"
-        ).count(),
+        actions_open=actions_qs.exclude(status="completed").count(),
         actions_overdue=actions_qs.filter(
             due_date__lt=today,
-        ).exclude(status="completed").count(),
+        )
+        .exclude(status="completed")
+        .count(),
         notifications_unread=notifs.count(),
-        notifications_critical=notifs.filter(
-            severity="critical"
-        ).count(),
+        notifications_critical=notifs.filter(severity="critical").count(),
     )
 
 
@@ -170,14 +163,16 @@ def get_recent_activities(
     activities = []
     for ev in events:
         icon = _event_icon(ev.resource_type or "")
-        activities.append({
-            "icon": icon[0],
-            "color": icon[1],
-            "title": f"{ev.event_type}.{ev.resource_type or ''}",
-            "detail": str(ev.resource_id or ""),
-            "timestamp": ev.created_at.strftime("%d.%m. %H:%M"),
-            "url": "",
-        })
+        activities.append(
+            {
+                "icon": icon[0],
+                "color": icon[1],
+                "title": f"{ev.event_type}.{ev.resource_type or ''}",
+                "detail": str(ev.resource_id or ""),
+                "timestamp": ev.created_at.strftime("%d.%m. %H:%M"),
+                "url": "",
+            }
+        )
     return activities
 
 

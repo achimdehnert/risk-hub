@@ -17,6 +17,7 @@ import pytest
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def tenant_a_id():
     return uuid.UUID("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")
@@ -30,6 +31,7 @@ def tenant_b_id():
 @pytest.fixture
 def org_a(db, tenant_a_id):
     from django_tenancy.models import Organization
+
     return Organization.objects.create(
         tenant_id=tenant_a_id,
         name="Organisation A",
@@ -40,6 +42,7 @@ def org_a(db, tenant_a_id):
 @pytest.fixture
 def org_b(db, tenant_b_id):
     from django_tenancy.models import Organization
+
     return Organization.objects.create(
         tenant_id=tenant_b_id,
         name="Organisation B",
@@ -50,6 +53,7 @@ def org_b(db, tenant_b_id):
 # ---------------------------------------------------------------------------
 # Layer 1: Isolation Tests — Organization
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 def test_organization_isolated_by_tenant(org_a, org_b, tenant_a_id, tenant_b_id):
@@ -100,6 +104,7 @@ def test_two_tenants_have_independent_site_counts(db, org_a, org_b, tenant_a_id,
 # ---------------------------------------------------------------------------
 # Layer 2: Propagation Tests — ApiKey isolation
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.django_db
 def test_api_key_isolated_by_tenant(db, tenant_a_id, tenant_b_id):

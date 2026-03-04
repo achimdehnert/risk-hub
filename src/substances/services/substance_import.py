@@ -92,16 +92,16 @@ class SubstanceImportService:
         """
         data_path = path or DEFAULT_DATA_FILE
         if not data_path.exists():
-            raise FileNotFoundError(
-                f"Datendatei nicht gefunden: {data_path}"
-            )
+            raise FileNotFoundError(f"Datendatei nicht gefunden: {data_path}")
 
         with open(data_path, encoding="utf-8") as f:
             records: list[dict[str, Any]] = json.load(f)
 
         logger.info(
             "Importiere %d Stoffe aus %s (dry_run=%s)",
-            len(records), data_path.name, dry_run,
+            len(records),
+            data_path.name,
+            dry_run,
         )
         return self._import_records(records, dry_run=dry_run)
 
@@ -144,7 +144,8 @@ class SubstanceImportService:
 
     @transaction.atomic
     def _upsert_substance(
-        self, record: dict[str, Any],
+        self,
+        record: dict[str, Any],
     ) -> bool:
         """Create or update a single substance. Returns True if created."""
         name = record["name"]
@@ -159,18 +160,10 @@ class SubstanceImportService:
                 "storage_class": record.get("storage_class", ""),
                 "is_cmr": record.get("is_cmr", False),
                 "flash_point_c": record.get("flash_point_c"),
-                "ignition_temperature_c": record.get(
-                    "ignition_temperature_c"
-                ),
-                "lower_explosion_limit": record.get(
-                    "lower_explosion_limit"
-                ),
-                "upper_explosion_limit": record.get(
-                    "upper_explosion_limit"
-                ),
-                "temperature_class": record.get(
-                    "temperature_class", ""
-                ),
+                "ignition_temperature_c": record.get("ignition_temperature_c"),
+                "lower_explosion_limit": record.get("lower_explosion_limit"),
+                "upper_explosion_limit": record.get("upper_explosion_limit"),
+                "temperature_class": record.get("temperature_class", ""),
                 "explosion_group": record.get("explosion_group", ""),
                 "vapor_density": record.get("vapor_density"),
                 "created_by": self.user_id,
@@ -240,21 +233,15 @@ class SubstanceImportService:
         )
 
         if h_codes:
-            refs = HazardStatementRef.objects.filter(
-                code__in=h_codes
-            )
+            refs = HazardStatementRef.objects.filter(code__in=h_codes)
             sds.hazard_statements.set(refs)
 
         if p_codes:
-            refs = PrecautionaryStatementRef.objects.filter(
-                code__in=p_codes
-            )
+            refs = PrecautionaryStatementRef.objects.filter(code__in=p_codes)
             sds.precautionary_statements.set(refs)
 
         if pictogram_codes:
-            refs = PictogramRef.objects.filter(
-                code__in=pictogram_codes
-            )
+            refs = PictogramRef.objects.filter(code__in=pictogram_codes)
             sds.pictograms.set(refs)
 
     @staticmethod
@@ -267,6 +254,4 @@ class SubstanceImportService:
         signal = record.get("signal_word", "none")
         valid_signals = {c.value for c in SdsRevision.SignalWord}
         if signal not in valid_signals:
-            raise ValueError(
-                f"Ungültiges Signalwort: {signal}"
-            )
+            raise ValueError(f"Ungültiges Signalwort: {signal}")

@@ -56,7 +56,6 @@ def reverse_seed(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("tenancy", "0001_initial"),
     ]

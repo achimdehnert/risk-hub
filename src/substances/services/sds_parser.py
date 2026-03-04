@@ -15,12 +15,14 @@ from dataclasses import dataclass, field
 # PDF-Bibliotheken (optional)
 try:
     import PyPDF2  # noqa: F401
+
     PYPDF2_AVAILABLE = True
 except ImportError:
     PYPDF2_AVAILABLE = False
 
 try:
     import pdfplumber  # noqa: F401
+
     PDFPLUMBER_AVAILABLE = True
 except ImportError:
     PDFPLUMBER_AVAILABLE = False
@@ -48,32 +50,30 @@ class SdsParserService:
     """Service zum Parsen von SDS-PDFs."""
 
     # Regex-Patterns für H-/P-Sätze
-    H_PATTERN = re.compile(r'\b(H[0-9]{3}[A-Za-z]?)\b')
-    P_PATTERN = re.compile(r'\b(P[0-9]{3}(?:\+P[0-9]{3})*)\b')
+    H_PATTERN = re.compile(r"\b(H[0-9]{3}[A-Za-z]?)\b")
+    P_PATTERN = re.compile(r"\b(P[0-9]{3}(?:\+P[0-9]{3})*)\b")
 
     # Regex für Piktogramme
-    GHS_PATTERN = re.compile(r'\b(GHS0[1-9])\b', re.IGNORECASE)
+    GHS_PATTERN = re.compile(r"\b(GHS0[1-9])\b", re.IGNORECASE)
 
     # Regex für physikalische Eigenschaften
     FLASH_POINT_PATTERN = re.compile(
-        r'[Ff]lammpunkt[:\s]*([->]?\s*\d+(?:[.,]\d+)?)\s*°?C',
-        re.IGNORECASE
+        r"[Ff]lammpunkt[:\s]*([->]?\s*\d+(?:[.,]\d+)?)\s*°?C", re.IGNORECASE
     )
     IGNITION_TEMP_PATTERN = re.compile(
-        r'[Zz]ünd(?:temperatur|punkt)[:\s]*([->]?\s*\d+(?:[.,]\d+)?)\s*°?C',
-        re.IGNORECASE
+        r"[Zz]ünd(?:temperatur|punkt)[:\s]*([->]?\s*\d+(?:[.,]\d+)?)\s*°?C", re.IGNORECASE
     )
     LEL_PATTERN = re.compile(
-        r'(?:UEG|LEL|[Uu]ntere\s+[Ee]xplosions(?:grenze)?)'
-        r'(?:\s*\([^)]*\))?'  # optional (UEG) etc.
-        r'[:\s]*(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)',
-        re.IGNORECASE
+        r"(?:UEG|LEL|[Uu]ntere\s+[Ee]xplosions(?:grenze)?)"
+        r"(?:\s*\([^)]*\))?"  # optional (UEG) etc.
+        r"[:\s]*(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)",
+        re.IGNORECASE,
     )
     UEL_PATTERN = re.compile(
-        r'(?:OEG|UEL|[Oo]bere\s+[Ee]xplosions(?:grenze)?)'
-        r'(?:\s*\([^)]*\))?'  # optional (OEG) etc.
-        r'[:\s]*(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)',
-        re.IGNORECASE
+        r"(?:OEG|UEL|[Oo]bere\s+[Ee]xplosions(?:grenze)?)"
+        r"(?:\s*\([^)]*\))?"  # optional (OEG) etc.
+        r"[:\s]*(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)",
+        re.IGNORECASE,
     )
 
     # Signalwörter
@@ -132,7 +132,7 @@ class SdsParserService:
         import pdfplumber
 
         # Reset file pointer
-        if hasattr(pdf_file, 'seek'):
+        if hasattr(pdf_file, "seek"):
             pdf_file.seek(0)
 
         text_parts = []
@@ -149,7 +149,7 @@ class SdsParserService:
         import PyPDF2
 
         # Reset file pointer
-        if hasattr(pdf_file, 'seek'):
+        if hasattr(pdf_file, "seek"):
             pdf_file.seek(0)
 
         reader = PyPDF2.PdfReader(pdf_file)
@@ -189,26 +189,14 @@ class SdsParserService:
                 break
 
         # Physikalische Eigenschaften extrahieren
-        result.flash_point_c = self._extract_number(
-            self.FLASH_POINT_PATTERN, text
-        )
-        result.ignition_temperature_c = self._extract_number(
-            self.IGNITION_TEMP_PATTERN, text
-        )
-        result.lower_explosion_limit = self._extract_number(
-            self.LEL_PATTERN, text
-        )
-        result.upper_explosion_limit = self._extract_number(
-            self.UEL_PATTERN, text
-        )
+        result.flash_point_c = self._extract_number(self.FLASH_POINT_PATTERN, text)
+        result.ignition_temperature_c = self._extract_number(self.IGNITION_TEMP_PATTERN, text)
+        result.lower_explosion_limit = self._extract_number(self.LEL_PATTERN, text)
+        result.upper_explosion_limit = self._extract_number(self.UEL_PATTERN, text)
 
         return result
 
-    def _extract_number(
-        self,
-        pattern: re.Pattern,
-        text: str
-    ) -> float | None:
+    def _extract_number(self, pattern: re.Pattern, text: str) -> float | None:
         """Extrahiert eine Zahl aus Text mittels Regex."""
         match = pattern.search(text)
         if match:

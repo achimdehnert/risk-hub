@@ -14,6 +14,7 @@ from dsb.models.deletion_request import DeletionRequest, DeletionRequestStatus
 def _dsb_context(req: DeletionRequest, extra: dict | None = None) -> dict:
     """Gemeinsamer Template-Kontext für alle Löschungs-E-Mails."""
     from dateutil.relativedelta import relativedelta
+
     deadline = req.request_date + relativedelta(months=1)
     ctx = {
         "request_id": str(req.id)[:8].upper(),
@@ -28,10 +29,18 @@ def _dsb_context(req: DeletionRequest, extra: dict | None = None) -> dict:
         "dsb_name": "Datenschutzbeauftragter/in",
         "dsb_email": "datenschutz@schutztat.de",
         "auth_deadline": (date.today() + timedelta(days=14)).strftime("%d.%m.%Y"),
-        "auth_received_date": req.auth_received_at.strftime("%d.%m.%Y") if req.auth_received_at else "—",
-        "ordered_date": req.deletion_ordered_at.strftime("%d.%m.%Y") if req.deletion_ordered_at else "—",
-        "confirmed_date": req.deletion_confirmed_at.strftime("%d.%m.%Y") if req.deletion_confirmed_at else "—",
-        "closed_date": req.closed_at.strftime("%d.%m.%Y") if req.closed_at else date.today().strftime("%d.%m.%Y"),
+        "auth_received_date": req.auth_received_at.strftime("%d.%m.%Y")
+        if req.auth_received_at
+        else "—",
+        "ordered_date": req.deletion_ordered_at.strftime("%d.%m.%Y")
+        if req.deletion_ordered_at
+        else "—",
+        "confirmed_date": req.deletion_confirmed_at.strftime("%d.%m.%Y")
+        if req.deletion_confirmed_at
+        else "—",
+        "closed_date": req.closed_at.strftime("%d.%m.%Y")
+        if req.closed_at
+        else date.today().strftime("%d.%m.%Y"),
         "deletion_notes": req.deletion_notes,
     }
     if extra:
@@ -85,7 +94,9 @@ STEP_TIMESTAMPS = {
 }
 
 
-def advance_workflow(req: DeletionRequest, new_status: str, notes: str = "", send_mail: bool = True) -> None:
+def advance_workflow(
+    req: DeletionRequest, new_status: str, notes: str = "", send_mail: bool = True
+) -> None:
     """Advance deletion request to new_status, set timestamp, send e-mail."""
     req.status = new_status
 
@@ -99,7 +110,10 @@ def advance_workflow(req: DeletionRequest, new_status: str, notes: str = "", sen
     if notes:
         if new_status in (DeletionRequestStatus.AUTH_SENT, DeletionRequestStatus.AUTH_RECEIVED):
             req.auth_notes = notes
-        elif new_status in (DeletionRequestStatus.DELETION_ORDERED, DeletionRequestStatus.DELETION_CONFIRMED):
+        elif new_status in (
+            DeletionRequestStatus.DELETION_ORDERED,
+            DeletionRequestStatus.DELETION_CONFIRMED,
+        ):
             req.deletion_notes = notes
         elif new_status == DeletionRequestStatus.REJECTED:
             req.rejection_reason = notes

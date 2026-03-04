@@ -89,7 +89,9 @@ class TestListHazardsService:
     """Tests for list_hazards service function."""
 
     def test_should_list_hazards(
-        self, fixture_assignment, fixture_hazard,
+        self,
+        fixture_assignment,
+        fixture_hazard,
     ):
         a = fixture_assignment
         set_tenant(a.tenant_id, "test-corp")
@@ -131,7 +133,9 @@ class TestListHazardsService:
         assert result[0].title == "Test Hazard"
 
     def test_should_respect_offset_limit(
-        self, fixture_assignment, fixture_hazards_batch,
+        self,
+        fixture_assignment,
+        fixture_hazards_batch,
     ):
         a = fixture_assignment
         set_tenant(a.tenant_id, "test-corp")
@@ -147,7 +151,10 @@ class TestListHazardsService:
         assert len(result3) == 1
 
     def test_should_isolate_tenants(
-        self, fixture_assignment, fixture_hazard, fixture_tenant_b,
+        self,
+        fixture_assignment,
+        fixture_hazard,
+        fixture_tenant_b,
     ):
         a = fixture_assignment
         set_tenant(fixture_tenant_b.tenant_id, "other-corp")
@@ -162,7 +169,9 @@ class TestGetHazardService:
     """Tests for get_hazard service function."""
 
     def test_should_get_hazard(
-        self, fixture_assignment, fixture_hazard,
+        self,
+        fixture_assignment,
+        fixture_hazard,
     ):
         a = fixture_assignment
         set_tenant(a.tenant_id, "test-corp")
@@ -173,7 +182,10 @@ class TestGetHazardService:
         assert result.risk_score == 6
 
     def test_should_raise_for_other_tenant(
-        self, fixture_assignment, fixture_hazard, fixture_tenant_b,
+        self,
+        fixture_assignment,
+        fixture_hazard,
+        fixture_tenant_b,
     ):
         a = fixture_assignment
         set_tenant(fixture_tenant_b.tenant_id, "other-corp")
@@ -193,7 +205,10 @@ class TestHazardAPIEndpoint:
     """Tests for GET /api/v1/risk/hazards via Django Ninja."""
 
     def test_should_list_hazards_via_api(
-        self, client, fixture_api_key, fixture_hazard,
+        self,
+        client,
+        fixture_api_key,
+        fixture_hazard,
     ):
         raw_key, _ = fixture_api_key
         response = client.get(
@@ -211,7 +226,10 @@ class TestHazardAPIEndpoint:
         assert response.status_code == 401
 
     def test_should_get_hazard_detail_via_api(
-        self, client, fixture_api_key, fixture_hazard,
+        self,
+        client,
+        fixture_api_key,
+        fixture_hazard,
     ):
         raw_key, _ = fixture_api_key
         response = client.get(
@@ -225,7 +243,10 @@ class TestHazardAPIEndpoint:
         assert data["probability"] == 2
 
     def test_should_support_offset_limit(
-        self, client, fixture_api_key, fixture_hazards_batch,
+        self,
+        client,
+        fixture_api_key,
+        fixture_hazards_batch,
     ):
         raw_key, _ = fixture_api_key
         response = client.get(
@@ -237,7 +258,11 @@ class TestHazardAPIEndpoint:
         assert len(data) == 2
 
     def test_should_filter_by_assessment(
-        self, client, fixture_api_key, fixture_hazard, fixture_assessment,
+        self,
+        client,
+        fixture_api_key,
+        fixture_hazard,
+        fixture_assessment,
     ):
         raw_key, _ = fixture_api_key
         response = client.get(

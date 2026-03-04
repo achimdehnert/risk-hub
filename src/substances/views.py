@@ -33,8 +33,10 @@ from .serializers import (
 # PARTY
 # =============================================================================
 
+
 class PartyViewSet(TenantAwareViewSet):
     """API für Hersteller/Lieferanten."""
+
     queryset = Party.objects.all()
     serializer_class = PartySerializer
     filterset_fields = ["party_type"]
@@ -46,11 +48,13 @@ class PartyViewSet(TenantAwareViewSet):
 # SUBSTANCE
 # =============================================================================
 
+
 class SubstanceViewSet(TenantAwareViewSet):
     """API für Gefahrstoffe."""
-    queryset = Substance.objects.select_related(
-        "manufacturer", "supplier"
-    ).prefetch_related("identifiers", "sds_revisions")
+
+    queryset = Substance.objects.select_related("manufacturer", "supplier").prefetch_related(
+        "identifiers", "sds_revisions"
+    )
     serializer_class = SubstanceSerializer
     filterset_fields = ["status", "storage_class", "is_cmr"]
     search_fields = ["name", "trade_name", "description"]
@@ -82,11 +86,11 @@ class SubstanceViewSet(TenantAwareViewSet):
 # SDS REVISION
 # =============================================================================
 
+
 class SdsRevisionViewSet(TenantAwareViewSet):
     """API für SDS-Revisionen."""
-    queryset = SdsRevision.objects.select_related(
-        "substance"
-    ).prefetch_related(
+
+    queryset = SdsRevision.objects.select_related("substance").prefetch_related(
         "hazard_statements",
         "precautionary_statements",
         "pictograms",
@@ -104,8 +108,7 @@ class SdsUploadView(APIView):
         """Lädt neues SDS hoch."""
         # TODO: Implementieren mit document-upload
         return Response(
-            {"message": "SDS upload not yet implemented"},
-            status=status.HTTP_501_NOT_IMPLEMENTED
+            {"message": "SDS upload not yet implemented"}, status=status.HTTP_501_NOT_IMPLEMENTED
         )
 
 
@@ -123,9 +126,9 @@ class SdsApproveView(APIView):
             sds = SdsRevision.objects.get(id=pk, tenant_id=tenant_id)
 
             # Vorherige freigegebene Revisionen archivieren
-            sds.substance.sds_revisions.filter(
-                status=SdsRevision.Status.APPROVED
-            ).update(status=SdsRevision.Status.ARCHIVED)
+            sds.substance.sds_revisions.filter(status=SdsRevision.Status.APPROVED).update(
+                status=SdsRevision.Status.ARCHIVED
+            )
 
             # Diese Revision freigeben
             sds.status = SdsRevision.Status.APPROVED
@@ -133,23 +136,19 @@ class SdsApproveView(APIView):
             sds.approved_at = timezone.now()
             sds.save()
 
-            return Response(
-                SdsRevisionSerializer(sds).data,
-                status=status.HTTP_200_OK
-            )
+            return Response(SdsRevisionSerializer(sds).data, status=status.HTTP_200_OK)
         except SdsRevision.DoesNotExist:
-            return Response(
-                {"error": "SDS nicht gefunden"},
-                status=status.HTTP_404_NOT_FOUND
-            )
+            return Response({"error": "SDS nicht gefunden"}, status=status.HTTP_404_NOT_FOUND)
 
 
 # =============================================================================
 # SITE INVENTORY
 # =============================================================================
 
+
 class SiteInventoryViewSet(TenantAwareViewSet):
     """API für Standort-Inventar."""
+
     queryset = SiteInventoryItem.objects.select_related("substance", "site")
     serializer_class = SiteInventoryItemSerializer
     filterset_fields = ["site_id", "substance_id", "state"]
@@ -161,8 +160,10 @@ class SiteInventoryViewSet(TenantAwareViewSet):
 # REFERENZDATEN
 # =============================================================================
 
+
 class HazardStatementRefViewSet(ReadOnlyRefViewSet):
     """API für H-Sätze Referenz."""
+
     queryset = HazardStatementRef.objects.all()
     serializer_class = HazardStatementRefSerializer
     filterset_fields = ["category"]
@@ -171,6 +172,7 @@ class HazardStatementRefViewSet(ReadOnlyRefViewSet):
 
 class PrecautionaryStatementRefViewSet(ReadOnlyRefViewSet):
     """API für P-Sätze Referenz."""
+
     queryset = PrecautionaryStatementRef.objects.all()
     serializer_class = PrecautionaryStatementRefSerializer
     filterset_fields = ["category"]
@@ -179,6 +181,7 @@ class PrecautionaryStatementRefViewSet(ReadOnlyRefViewSet):
 
 class PictogramRefViewSet(ReadOnlyRefViewSet):
     """API für Piktogramme Referenz."""
+
     queryset = PictogramRef.objects.all()
     serializer_class = PictogramRefSerializer
     search_fields = ["code", "name_de"]
@@ -187,6 +190,7 @@ class PictogramRefViewSet(ReadOnlyRefViewSet):
 # =============================================================================
 # EXPORTS
 # =============================================================================
+
 
 class HazardRegisterExportView(APIView):
     """Export Gefahrstoffverzeichnis als Excel."""
@@ -202,15 +206,9 @@ class HazardRegisterExportView(APIView):
             buffer = generate_hazard_register_excel(tenant_id, site_id)
             response = HttpResponse(
                 buffer.getvalue(),
-                content_type="application/vnd.openxmlformats-officedocument"
-                             ".spreadsheetml.sheet"
+                content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             )
-            response["Content-Disposition"] = (
-                'attachment; filename="Gefahrstoffverzeichnis.xlsx"'
-            )
+            response["Content-Disposition"] = 'attachment; filename="Gefahrstoffverzeichnis.xlsx"'
             return response
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

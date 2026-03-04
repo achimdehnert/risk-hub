@@ -29,18 +29,28 @@ class DeletionRequestForm(forms.ModelForm):
         ]
         widgets = {
             "mandate": forms.Select(attrs={"class": _TW_SELECT}),
-            "subject_name": forms.TextInput(attrs={"class": _TW_INPUT, "placeholder": "Max Mustermann"}),
-            "subject_email": forms.EmailInput(attrs={"class": _TW_INPUT, "placeholder": "max@beispiel.de"}),
-            "subject_reference": forms.TextInput(attrs={"class": _TW_INPUT, "placeholder": "Kundennr. / Referenz (optional)"}),
+            "subject_name": forms.TextInput(
+                attrs={"class": _TW_INPUT, "placeholder": "Max Mustermann"}
+            ),
+            "subject_email": forms.EmailInput(
+                attrs={"class": _TW_INPUT, "placeholder": "max@beispiel.de"}
+            ),
+            "subject_reference": forms.TextInput(
+                attrs={"class": _TW_INPUT, "placeholder": "Kundennr. / Referenz (optional)"}
+            ),
             "request_date": forms.DateInput(attrs={"class": _TW_INPUT, "type": "date"}),
-            "request_description": forms.Textarea(attrs={
-                "class": _TW_TEXTAREA,
-                "placeholder": "Welche Daten sollen gelöscht werden? Wo wurden diese gespeichert?",
-            }),
-            "data_categories": forms.TextInput(attrs={
-                "class": _TW_INPUT,
-                "placeholder": "z.B. Stammdaten, Kontaktdaten, Kaufhistorie",
-            }),
+            "request_description": forms.Textarea(
+                attrs={
+                    "class": _TW_TEXTAREA,
+                    "placeholder": "Welche Daten sollen gelöscht werden? Wo wurden diese gespeichert?",
+                }
+            ),
+            "data_categories": forms.TextInput(
+                attrs={
+                    "class": _TW_INPUT,
+                    "placeholder": "z.B. Stammdaten, Kontaktdaten, Kaufhistorie",
+                }
+            ),
         }
 
     def __init__(self, *args, tenant_id=None, **kwargs):

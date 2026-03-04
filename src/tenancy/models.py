@@ -19,11 +19,15 @@ class Site(models.Model):
     """Physical site/location within an organization."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     organization = models.ForeignKey(
-        Organization, on_delete=models.CASCADE, related_name="sites",
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="sites",
     )
     name = models.CharField(max_length=200)
     address = models.TextField(blank=True, default="")

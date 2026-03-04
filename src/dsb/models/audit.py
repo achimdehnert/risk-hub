@@ -23,7 +23,9 @@ class PrivacyAudit(models.Model):
         CANCELLED = "cancelled", "Abgebrochen"
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
@@ -83,7 +85,9 @@ class AuditFinding(models.Model):
         ACCEPTED = "accepted", "Akzeptiert"
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     audit = models.ForeignKey(

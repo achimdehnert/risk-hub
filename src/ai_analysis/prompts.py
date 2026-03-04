@@ -7,23 +7,26 @@ def _build_stack() -> PromptStack:
     """Builds and returns the shared PromptStack for hazard analysis."""
     stack = PromptStack()
 
-    stack.register(PromptTemplate(
-        id="hazard.system",
-        layer=TemplateLayer.SYSTEM,
-        template=(
-            "Du bist ein Experte für Arbeitssicherheit, "
-            "Explosionsschutz (ATEX/IECEx) und Gefahrstoffmanagement.\n"
-            "Du analysierst Bereiche, Stoffe und Betriebsbedingungen"
-            " und gibst strukturierte Gefährdungsbeurteilungen ab.\n"
-            "Antworte immer auf Deutsch. Strukturiere deine Antwort als JSON."
-        ),
-        variables=[],
-    ))
+    stack.register(
+        PromptTemplate(
+            id="hazard.system",
+            layer=TemplateLayer.SYSTEM,
+            template=(
+                "Du bist ein Experte für Arbeitssicherheit, "
+                "Explosionsschutz (ATEX/IECEx) und Gefahrstoffmanagement.\n"
+                "Du analysierst Bereiche, Stoffe und Betriebsbedingungen"
+                " und gibst strukturierte Gefährdungsbeurteilungen ab.\n"
+                "Antworte immer auf Deutsch. Strukturiere deine Antwort als JSON."
+            ),
+            variables=[],
+        )
+    )
 
-    stack.register(PromptTemplate(
-        id="hazard.task.area",
-        layer=TemplateLayer.TASK,
-        template="""Analysiere den folgenden Bereich und erstelle eine \
+    stack.register(
+        PromptTemplate(
+            id="hazard.task.area",
+            layer=TemplateLayer.TASK,
+            template="""Analysiere den folgenden Bereich und erstelle eine \
 Gefährdungsbeurteilung:
 
 **Bereich:** {{ area_name }} ({{ area_code }})
@@ -56,16 +59,22 @@ Erstelle eine strukturierte Gefährdungsanalyse im folgenden JSON-Format:
   ],
   "regulatory_references": ["BetrSichV § ...", "TRBS ...", "TRGS ..."]
 }""",
-        variables=[
-            "area_name", "area_code", "has_explosion_hazard",
-            "description", "substances", "equipment",
-        ],
-    ))
+            variables=[
+                "area_name",
+                "area_code",
+                "has_explosion_hazard",
+                "description",
+                "substances",
+                "equipment",
+            ],
+        )
+    )
 
-    stack.register(PromptTemplate(
-        id="hazard.task.substance",
-        layer=TemplateLayer.TASK,
-        template="""Bewerte das Gefahrenpotenzial des folgenden Gefahrstoffs \
+    stack.register(
+        PromptTemplate(
+            id="hazard.task.substance",
+            layer=TemplateLayer.TASK,
+            template="""Bewerte das Gefahrenpotenzial des folgenden Gefahrstoffs \
 im Kontext von Explosionsschutz:
 
 **Stoff:** {{ name }}
@@ -85,11 +94,17 @@ Erstelle eine Risikobewertung als JSON:
   "handling_measures": ["..."],
   "regulatory_references": ["..."]
 }""",
-        variables=[
-            "name", "cas_number", "h_statements",
-            "flash_point", "lel", "uel", "auto_ignition_temp",
-        ],
-    ))
+            variables=[
+                "name",
+                "cas_number",
+                "h_statements",
+                "flash_point",
+                "lel",
+                "uel",
+                "auto_ignition_temp",
+            ],
+        )
+    )
 
     return stack
 

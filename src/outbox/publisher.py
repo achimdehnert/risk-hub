@@ -28,8 +28,7 @@ def run_forever():
     while True:
         with transaction.atomic():
             qs = (
-                OutboxMessage.objects
-                .select_for_update(skip_locked=True)
+                OutboxMessage.objects.select_for_update(skip_locked=True)
                 .filter(published_at__isnull=True)
                 .order_by("created_at")[:50]
             )

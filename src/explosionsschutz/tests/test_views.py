@@ -32,6 +32,7 @@ User = get_user_model()
 # FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def fixture_tenant_id():
     """Tenant UUID für Tests"""
@@ -168,6 +169,7 @@ def fixture_zone(fixture_tenant_id, fixture_explosion_concept):
 # TESTS: REFERENCE STANDARDS API
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestReferenceStandardsAPI:
     """Tests für /api/ex/reference-standards/"""
@@ -206,10 +208,7 @@ class TestReferenceStandardsAPI:
         fixture_tenant_standard,
     ):
         """GET /{id} gibt einzelnen Standard zurück"""
-        url = reverse(
-            "explosionsschutz:standard-detail",
-            kwargs={"pk": fixture_tenant_standard.id}
-        )
+        url = reverse("explosionsschutz:standard-detail", kwargs={"pk": fixture_tenant_standard.id})
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -219,6 +218,7 @@ class TestReferenceStandardsAPI:
 # =============================================================================
 # TESTS: EQUIPMENT TYPES API
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestEquipmentTypesAPI:
@@ -243,8 +243,7 @@ class TestEquipmentTypesAPI:
     ):
         """Response enthält berechnete ATEX-Kennzeichnung"""
         url = reverse(
-            "explosionsschutz:equipment-type-detail",
-            kwargs={"pk": fixture_equipment_type.id}
+            "explosionsschutz:equipment-type-detail", kwargs={"pk": fixture_equipment_type.id}
         )
         response = fixture_api_client.get(url)
 
@@ -257,6 +256,7 @@ class TestEquipmentTypesAPI:
 # =============================================================================
 # TESTS: AREAS API
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestAreasAPI:
@@ -293,6 +293,7 @@ class TestAreasAPI:
 # TESTS: EXPLOSION CONCEPTS API
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestExplosionConceptsAPI:
     """Tests für /api/ex/concepts/"""
@@ -317,8 +318,7 @@ class TestExplosionConceptsAPI:
     ):
         """GET /{id} gibt Konzept mit Zonen zurück"""
         url = reverse(
-            "explosionsschutz:concept-detail",
-            kwargs={"pk": fixture_explosion_concept.id}
+            "explosionsschutz:concept-detail", kwargs={"pk": fixture_explosion_concept.id}
         )
         response = fixture_api_client.get(url)
 
@@ -344,6 +344,7 @@ class TestExplosionConceptsAPI:
 # TESTS: ZONES API
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestZonesAPI:
     """Tests für /api/ex/zones/"""
@@ -366,10 +367,7 @@ class TestZonesAPI:
         fixture_zone,
     ):
         """Response enthält erforderliche Equipment-Kategorie"""
-        url = reverse(
-            "explosionsschutz:zone-detail",
-            kwargs={"pk": fixture_zone.id}
-        )
+        url = reverse("explosionsschutz:zone-detail", kwargs={"pk": fixture_zone.id})
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -379,6 +377,7 @@ class TestZonesAPI:
 # =============================================================================
 # TESTS: EQUIPMENT API
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestEquipmentAPI:
@@ -409,6 +408,7 @@ class TestEquipmentAPI:
 # TESTS: DASHBOARD API
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestDashboardAPI:
     """Tests für /api/ex/dashboard/"""
@@ -432,6 +432,7 @@ class TestDashboardAPI:
 # =============================================================================
 # TESTS: TENANT ISOLATION
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestTenantIsolation:
@@ -474,10 +475,7 @@ class TestTenantIsolation:
             title="Fremdes Konzept",
         )
 
-        url = reverse(
-            "explosionsschutz:concept-detail",
-            kwargs={"pk": other_concept.id}
-        )
+        url = reverse("explosionsschutz:concept-detail", kwargs={"pk": other_concept.id})
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND

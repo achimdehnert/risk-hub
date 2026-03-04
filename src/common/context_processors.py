@@ -14,9 +14,9 @@ def tenant_context(request: HttpRequest) -> dict:
     if not tenant_id and getattr(request, "user", None) and request.user.is_authenticated:
         try:
             from django_tenancy.models import Membership
+
             m = (
-                Membership.objects
-                .filter(user=request.user)
+                Membership.objects.filter(user=request.user)
                 .select_related("organization")
                 .order_by("created_at")
                 .first()
@@ -30,6 +30,7 @@ def tenant_context(request: HttpRequest) -> dict:
     if tenant_id:
         try:
             from django_tenancy.module_models import ModuleSubscription
+
             active_modules = set(
                 ModuleSubscription.objects.filter(
                     tenant_id=tenant_id,

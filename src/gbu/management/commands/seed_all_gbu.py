@@ -10,6 +10,7 @@ Reihenfolge (Abhängigkeiten beachten):
 Idempotent: alle Unter-Commands sind idempotent.
 Nutzung in CI/CD und lokalem Setup: python manage.py seed_all_gbu
 """
+
 import logging
 
 from django.core.management import call_command
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 _GBU_SEED_COMMANDS: list[tuple[str, dict]] = [
     ("seed_hazard_categories", {}),
-    ("seed_h_code_mappings",   {}),
+    ("seed_h_code_mappings", {}),
     ("seed_exposure_risk_matrix", {}),
     ("seed_measure_templates", {}),
 ]
@@ -36,9 +37,7 @@ class Command(BaseCommand):
             try:
                 call_command(cmd_name, **cmd_kwargs, stdout=self.stdout, stderr=self.stderr)
             except SystemExit:
-                self.stderr.write(
-                    self.style.ERROR(f"  FEHLER bei {cmd_name} — Abbruch.")
-                )
+                self.stderr.write(self.style.ERROR(f"  FEHLER bei {cmd_name} — Abbruch."))
                 raise
 
         self.stdout.write(self.style.SUCCESS("GBU Seed-Daten vollständig."))

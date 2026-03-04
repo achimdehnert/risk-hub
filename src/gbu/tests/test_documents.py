@@ -6,6 +6,7 @@ Folgende Bereiche werden getestet:
 - store_gbu_pdf / store_ba_pdf (DB + Storage)
 - generate_documents_task (Celery-Task, synchron per CELERY_TASK_ALWAYS_EAGER)
 """
+
 import hashlib
 import uuid
 from unittest.mock import MagicMock, patch
@@ -13,6 +14,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # ── Hilfsfunktionen ────────────────────────────────────────────────────────────
+
 
 def _make_activity(db, tenant_id, user_id):
     """Minimale HazardAssessmentActivity für Tests."""
@@ -60,6 +62,7 @@ def _make_activity(db, tenant_id, user_id):
 
 
 # ── Tests: PDF-Rendering ───────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_render_gbu_html_template(settings):
@@ -134,6 +137,7 @@ def test_should_raise_runtime_error_without_weasyprint(db):
 
 # ── Tests: Dokumentenspeicherung ───────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 def test_should_store_gbu_pdf_creates_document_version(db):
     """
@@ -203,6 +207,7 @@ def test_should_increment_version_on_second_store(db):
 
 # ── Tests: Celery-Task ─────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 def test_should_generate_documents_task_returns_ids(db):
     """
@@ -216,15 +221,15 @@ def test_should_generate_documents_task_returns_ids(db):
 
     fake_pdf = b"%PDF-fake"
 
-    with patch("gbu.services.pdf_service.HTML") as mock_html_cls, \
-         patch("gbu.services.document_store._write_storage"):
+    with (
+        patch("gbu.services.pdf_service.HTML") as mock_html_cls,
+        patch("gbu.services.document_store._write_storage"),
+    ):
         mock_inst = MagicMock()
         mock_inst.write_pdf.return_value = fake_pdf
         mock_html_cls.return_value = mock_inst
 
-        result = generate_documents_task(
-            str(activity.id), str(tenant_id)
-        )
+        result = generate_documents_task(str(activity.id), str(tenant_id))
 
     assert "gbu_version_id" in result
     assert "ba_version_id" in result

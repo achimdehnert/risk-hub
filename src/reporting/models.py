@@ -19,7 +19,8 @@ class RetentionPolicy(models.Model):
     category = models.CharField(max_length=120)
     retention_days = models.IntegerField()
     delete_mode = models.CharField(
-        max_length=12, choices=DeleteMode.choices,
+        max_length=12,
+        choices=DeleteMode.choices,
         default=DeleteMode.SOFT,
     )
     legal_hold_allowed = models.BooleanField(default=True)
@@ -48,7 +49,8 @@ class ExportJob(models.Model):
     params_json = models.JSONField(default=dict)
     params_hash = models.CharField(max_length=64)
     status = models.CharField(
-        max_length=16, choices=Status.choices,
+        max_length=16,
+        choices=Status.choices,
         default=Status.QUEUED,
     )
     priority = models.IntegerField(default=0)
@@ -56,7 +58,9 @@ class ExportJob(models.Model):
     finished_at = models.DateTimeField(null=True, blank=True)
     error = models.TextField(null=True, blank=True)
     output_document_id = models.UUIDField(null=True, blank=True)
-    retention_policy = models.ForeignKey(RetentionPolicy, null=True, blank=True, on_delete=models.SET_NULL)
+    retention_policy = models.ForeignKey(
+        RetentionPolicy, null=True, blank=True, on_delete=models.SET_NULL
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

@@ -13,6 +13,7 @@ Mocking:
   - Celery-Task generate_documents_task → gepatch
   - emit_audit_event → gepatch (kein Outbox-Setup nötig)
 """
+
 import uuid
 from datetime import date, timedelta
 from unittest.mock import patch
@@ -21,6 +22,7 @@ import pytest
 from django.test import Client
 
 # ── Fixtures ───────────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def tenant_id():
@@ -36,6 +38,7 @@ def user_id():
 def api_context(tenant_id, user_id):
     """Setzt common.context für API-Calls ohne echten ApiKey."""
     from common.context import set_tenant, set_user_id
+
     set_tenant(tenant_id, None)
     set_user_id(user_id)
     return {"tenant_id": tenant_id, "user_id": user_id}
@@ -89,6 +92,7 @@ def activity(db, tenant_id, user_id):
 
 # ── Tests: list_activities ────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 def test_should_list_activities_for_tenant(db, api_context, activity):
     """api_list_activities soll Tätigkeiten des Tenants zurückgeben."""
@@ -113,14 +117,13 @@ def test_should_filter_activities_by_status(db, api_context, activity):
     result = api_list_activities(FakeRequest(), status="draft", limit=100, offset=0)
     assert all(r.status == "draft" for r in result)
 
-    result_approved = api_list_activities(
-        FakeRequest(), status="approved", limit=100, offset=0
-    )
+    result_approved = api_list_activities(FakeRequest(), status="approved", limit=100, offset=0)
     ids = [r.id for r in result_approved]
     assert activity.id not in ids
 
 
 # ── Tests: get_activity ───────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_get_activity_detail(db, api_context, activity):
@@ -152,6 +155,7 @@ def test_should_raise_404_for_unknown_activity(db, api_context):
 
 # ── Tests: create_activity ───────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 def test_should_create_activity_via_api(db, api_context, activity):
     """api_create_activity soll neue Aktivität mit DRAFT-Status erzeugen."""
@@ -170,8 +174,10 @@ def test_should_create_activity_via_api(db, api_context, activity):
         quantity_class="xs",
     )
 
-    with patch("gbu.services.gbu_engine.emit_audit_event"), \
-         patch("gbu.models.reference.ExposureRiskMatrix.objects"):
+    with (
+        patch("gbu.services.gbu_engine.emit_audit_event"),
+        patch("gbu.models.reference.ExposureRiskMatrix.objects"),
+    ):
         result = api_create_activity(FakeRequest(), payload=payload)
 
     assert result.activity_description == "API-Test-Tätigkeit"
@@ -179,6 +185,7 @@ def test_should_create_activity_via_api(db, api_context, activity):
 
 
 # ── Tests: approve_activity ──────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_approve_activity_via_api(db, api_context, activity):
@@ -194,12 +201,12 @@ def test_should_approve_activity_via_api(db, api_context, activity):
         approved_by_name="API-Tester",
     )
 
-    with patch("gbu.services.gbu_engine.emit_audit_event"), \
-         patch("gbu.tasks.generate_documents_task") as mock_task:
+    with (
+        patch("gbu.services.gbu_engine.emit_audit_event"),
+        patch("gbu.tasks.generate_documents_task") as mock_task,
+    ):
         mock_task.delay.return_value = None
-        result = api_approve_activity(
-            FakeRequest(), activity_id=activity.id, payload=payload
-        )
+        result = api_approve_activity(FakeRequest(), activity_id=activity.id, payload=payload)
 
     assert result.status == ActivityStatus.APPROVED
     assert result.approved_by_name == "API-Tester"
@@ -207,6 +214,7 @@ def test_should_approve_activity_via_api(db, api_context, activity):
 
 
 # ── Tests: compliance ─────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_return_compliance_summary(db, api_context):

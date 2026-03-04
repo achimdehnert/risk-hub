@@ -68,10 +68,7 @@ def api_list_actions(
     offset: int = 0,
 ):
     try:
-        return [
-            _to_action_out(a)
-            for a in list_actions(limit=limit, offset=offset)
-        ]
+        return [_to_action_out(a) for a in list_actions(limit=limit, offset=offset)]
     except PermissionDenied as exc:
         raise HttpError(403, str(exc))
 

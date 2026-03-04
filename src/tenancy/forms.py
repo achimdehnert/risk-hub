@@ -133,13 +133,16 @@ class ModuleSubscriptionForm(forms.ModelForm):
             "status": forms.Select(attrs={"class": _TW_SELECT}),
             "plan_code": forms.TextInput(attrs={"class": _TW_INPUT}),
             "trial_ends_at": forms.DateTimeInput(
-                attrs={"class": _TW_INPUT, "type": "datetime-local"}, format="%Y-%m-%dT%H:%M",
+                attrs={"class": _TW_INPUT, "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
             ),
             "activated_at": forms.DateTimeInput(
-                attrs={"class": _TW_INPUT, "type": "datetime-local"}, format="%Y-%m-%dT%H:%M",
+                attrs={"class": _TW_INPUT, "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
             ),
             "expires_at": forms.DateTimeInput(
-                attrs={"class": _TW_INPUT, "type": "datetime-local"}, format="%Y-%m-%dT%H:%M",
+                attrs={"class": _TW_INPUT, "type": "datetime-local"},
+                format="%Y-%m-%dT%H:%M",
             ),
         }
         labels = {
@@ -168,7 +171,8 @@ class ModuleMembershipGrantForm(forms.Form):
     expires_at = forms.DateTimeField(
         required=False,
         widget=forms.DateTimeInput(
-            attrs={"class": _TW_INPUT, "type": "datetime-local"}, format="%Y-%m-%dT%H:%M",
+            attrs={"class": _TW_INPUT, "type": "datetime-local"},
+            format="%Y-%m-%dT%H:%M",
         ),
         label="Ablaufdatum (optional)",
     )
@@ -177,11 +181,16 @@ class ModuleMembershipGrantForm(forms.Form):
         super().__init__(*args, **kwargs)
         if org is not None:
             already_granted = ModuleMembership.objects.filter(
-                tenant_id=org.tenant_id, module=module,
-            ).values_list("user_id", flat=True)
-            self.fields["user"].queryset = User.objects.filter(
                 tenant_id=org.tenant_id,
-            ).exclude(pk__in=already_granted).order_by("username")
+                module=module,
+            ).values_list("user_id", flat=True)
+            self.fields["user"].queryset = (
+                User.objects.filter(
+                    tenant_id=org.tenant_id,
+                )
+                .exclude(pk__in=already_granted)
+                .order_by("username")
+            )
 
 
 class ModuleMembershipRoleForm(forms.Form):

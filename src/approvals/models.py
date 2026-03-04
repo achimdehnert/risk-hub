@@ -16,9 +16,7 @@ class ApprovalWorkflow(models.Model):
         RISK_ASSESSMENT = "risk_assessment", "Risikobewertung"
         PROTECTION_MEASURE = "protection_measure", "Schutzmaßnahme"
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     workflow_type = models.CharField(
         max_length=30,
@@ -48,21 +46,14 @@ class ApprovalWorkflow(models.Model):
 class ApprovalStep(models.Model):
     """A single step in an approval workflow."""
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     workflow = models.ForeignKey(
         ApprovalWorkflow,
         on_delete=models.CASCADE,
         related_name="steps",
     )
-    order = models.IntegerField(
-        help_text="Reihenfolge der Freigabestufe (1, 2, 3...)"
-    )
-    name = models.CharField(
-        max_length=200,
-        help_text="z.B. 'Fachliche Prüfung', 'Freigabe GF'"
-    )
+    order = models.IntegerField(help_text="Reihenfolge der Freigabestufe (1, 2, 3...)")
+    name = models.CharField(max_length=200, help_text="z.B. 'Fachliche Prüfung', 'Freigabe GF'")
     required_permission = models.CharField(
         max_length=100,
         blank=True,
@@ -98,9 +89,7 @@ class ApprovalRequest(models.Model):
         REJECTED = "rejected", "Abgelehnt"
         WITHDRAWN = "withdrawn", "Zurückgezogen"
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     workflow = models.ForeignKey(
         ApprovalWorkflow,
@@ -151,10 +140,7 @@ class ApprovalRequest(models.Model):
         ]
 
     def __str__(self) -> str:
-        return (
-            f"{self.entity_type}:{self.entity_id} "
-            f"({self.get_status_display()})"
-        )
+        return f"{self.entity_type}:{self.entity_id} ({self.get_status_display()})"
 
 
 class ApprovalDecision(models.Model):
@@ -164,9 +150,7 @@ class ApprovalDecision(models.Model):
         APPROVED = "approved", "Freigegeben"
         REJECTED = "rejected", "Abgelehnt"
 
-    id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False
-    )
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     request = models.ForeignKey(
         ApprovalRequest,
         on_delete=models.CASCADE,
@@ -177,9 +161,7 @@ class ApprovalDecision(models.Model):
         on_delete=models.PROTECT,
         related_name="decisions",
     )
-    outcome = models.CharField(
-        max_length=10, choices=Outcome.choices
-    )
+    outcome = models.CharField(max_length=10, choices=Outcome.choices)
     comment = models.TextField(blank=True, default="")
     decided_by = models.ForeignKey(
         User,
@@ -193,7 +175,4 @@ class ApprovalDecision(models.Model):
         ordering = ["decided_at"]
 
     def __str__(self) -> str:
-        return (
-            f"Step {self.step.order}: "
-            f"{self.get_outcome_display()} by {self.decided_by}"
-        )
+        return f"Step {self.step.order}: {self.get_outcome_display()} by {self.decided_by}"

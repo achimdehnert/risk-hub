@@ -21,13 +21,17 @@ class Permission(models.Model):
         APPROVE = "approve", "Approve"
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     code = models.CharField(max_length=100, unique=True)
     module = models.CharField(max_length=50, db_index=True)
     resource = models.CharField(max_length=50)
     action = models.CharField(
-        max_length=20, choices=Action.choices, default=Action.VIEW,
+        max_length=20,
+        choices=Action.choices,
+        default=Action.VIEW,
     )
     description = models.TextField(blank=True, default="")
     is_system = models.BooleanField(default=False)
@@ -51,14 +55,18 @@ class Role(models.Model):
     """Role with permissions, per tenant or system (ADR-003 §2.4)."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True, default="")
     is_system = models.BooleanField(default=False)
     permissions = models.ManyToManyField(
-        Permission, through="RolePermission", related_name="roles",
+        Permission,
+        through="RolePermission",
+        related_name="roles",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -80,7 +88,9 @@ class RolePermission(models.Model):
     """Role \u2192 Permission mapping."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     permission = models.ForeignKey(Permission, on_delete=models.CASCADE)
@@ -110,7 +120,9 @@ class Scope(models.Model):
     ]
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     scope_type = models.CharField(max_length=12, choices=SCOPE_CHOICES)
@@ -128,17 +140,11 @@ class Scope(models.Model):
                 name="ck_scope_type_valid",
             ),
             models.CheckConstraint(
-                check=(
-                    ~models.Q(scope_type="SITE")
-                    | models.Q(site_id__isnull=False)
-                ),
+                check=(~models.Q(scope_type="SITE") | models.Q(site_id__isnull=False)),
                 name="scope_site_chk",
             ),
             models.CheckConstraint(
-                check=(
-                    ~models.Q(scope_type="ASSET")
-                    | models.Q(asset_id__isnull=False)
-                ),
+                check=(~models.Q(scope_type="ASSET") | models.Q(asset_id__isnull=False)),
                 name="scope_asset_chk",
             ),
         ]
@@ -155,12 +161,16 @@ class Assignment(models.Model):
     """User \u2192 Role \u2192 Scope assignment (ADR-003 §2.5)."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     user_id = models.UUIDField(db_index=True)
     role = models.ForeignKey(
-        Role, on_delete=models.CASCADE, related_name="assignments",
+        Role,
+        on_delete=models.CASCADE,
+        related_name="assignments",
     )
     scope = models.ForeignKey(Scope, on_delete=models.CASCADE)
     created_by_user_id = models.UUIDField(null=True, blank=True)
@@ -188,7 +198,9 @@ class PermissionOverride(models.Model):
     """Explicit grant/deny override per membership (ADR-003 §2.4)."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     membership = models.ForeignKey(
         "django_tenancy.Membership",
@@ -196,7 +208,8 @@ class PermissionOverride(models.Model):
         related_name="permission_overrides",
     )
     permission = models.ForeignKey(
-        Permission, on_delete=models.CASCADE,
+        Permission,
+        on_delete=models.CASCADE,
     )
     allowed = models.BooleanField(
         help_text="True = grant, False = deny",

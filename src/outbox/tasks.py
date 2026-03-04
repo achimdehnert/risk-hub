@@ -37,8 +37,6 @@ def process_outbox(batch_size: int = 50) -> dict:
             msg.save(update_fields=["published_at"])
             published += 1
         except Exception:
-            logger.exception(
-                "Failed to publish outbox message %s", msg.id
-            )
+            logger.exception("Failed to publish outbox message %s", msg.id)
 
     return {"published": published, "pending": pending.count()}

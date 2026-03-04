@@ -65,10 +65,7 @@ class TenantAwareViewSet(viewsets.ModelViewSet):
         user = getattr(self.request, "user", None)
         if user and user.is_authenticated:
             model = serializer.Meta.model
-            field_names = [
-                f.name
-                for f in model._meta.get_fields()
-            ]
+            field_names = [f.name for f in model._meta.get_fields()]
             if "created_by" in field_names:
                 extra["created_by"] = user.id
         serializer.save(**extra)
@@ -88,10 +85,7 @@ class ReadOnlyMasterDataViewSet(TenantAwareViewSet):
         qs = self.queryset
         tenant_id = self.get_tenant_id()
         if tenant_id:
-            return qs.filter(
-                Q(tenant_id__isnull=True)
-                | Q(tenant_id=tenant_id)
-            )
+            return qs.filter(Q(tenant_id__isnull=True) | Q(tenant_id=tenant_id))
         return qs.filter(tenant_id__isnull=True)
 
     def perform_create(self, serializer):

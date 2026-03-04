@@ -58,19 +58,11 @@ urlpatterns = [
     path("concepts/", ConceptListView.as_view(), name="concept-list-html"),
     path("concepts/new/", ConceptCreateView.as_view(), name="concept-new"),
     path("concepts/create/", ConceptCreateView.as_view(), name="concept-create"),
-    path(
-        "concepts/<uuid:pk>/",
-        ConceptDetailView.as_view(),
-        name="concept-detail-html"
-    ),
+    path("concepts/<uuid:pk>/", ConceptDetailView.as_view(), name="concept-detail-html"),
     # Equipment
     path("equipment/", EquipmentListView.as_view(), name="equipment-list-html"),
     path("equipment/create/", EquipmentCreateView.as_view(), name="equipment-create"),
-    path(
-        "equipment/<uuid:pk>/",
-        EquipmentDetailView.as_view(),
-        name="equipment-detail-html"
-    ),
+    path("equipment/<uuid:pk>/", EquipmentDetailView.as_view(), name="equipment-detail-html"),
     # Zone Map
     path(
         "concepts/<uuid:pk>/zone-map/",

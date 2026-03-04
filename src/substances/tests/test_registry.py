@@ -51,7 +51,8 @@ class TestLocationSubstanceEntry:
         assert entry.seveso_category == SevesoCategory.NONE
 
     def test_should_calculate_seveso_utilization(
-        self, fixture_substance,
+        self,
+        fixture_substance,
     ):
         entry = LocationSubstanceEntry(
             tenant_id=TENANT_ID,
@@ -65,7 +66,8 @@ class TestLocationSubstanceEntry:
         assert entry.seveso_utilization_pct == 5.0
 
     def test_should_return_none_utilization_without_threshold(
-        self, fixture_substance,
+        self,
+        fixture_substance,
     ):
         entry = LocationSubstanceEntry(
             tenant_id=TENANT_ID,
@@ -77,7 +79,8 @@ class TestLocationSubstanceEntry:
         assert entry.seveso_utilization_pct is None
 
     def test_should_enforce_unique_per_area(
-        self, fixture_substance,
+        self,
+        fixture_substance,
     ):
         area_id = uuid.uuid4()
         LocationSubstanceEntry.objects.create(
@@ -87,6 +90,7 @@ class TestLocationSubstanceEntry:
             substance_name="Ethanol",
         )
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             LocationSubstanceEntry.objects.create(
                 tenant_id=TENANT_ID,

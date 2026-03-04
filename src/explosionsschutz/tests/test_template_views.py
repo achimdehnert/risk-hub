@@ -168,9 +168,7 @@ class TestConceptViews:
         assert response.status_code == 200
         assert b"Test-Konzept" in response.content
 
-    def test_should_show_concept_detail(
-        self, fixture_client, fixture_concept, fixture_zone
-    ):
+    def test_should_show_concept_detail(self, fixture_client, fixture_concept, fixture_zone):
         """GET /ex/concepts/{id}/ zeigt Konzeptdetails mit Zonen"""
         response = fixture_client.get(f"/ex/concepts/{fixture_concept.id}/")
         assert response.status_code == 200
@@ -206,9 +204,7 @@ class TestEquipmentViews:
 class TestTenantIsolation:
     """Tests für Tenant-Isolierung bei HTML-Views"""
 
-    def test_should_not_show_other_tenant_area(
-        self, fixture_client, fixture_tenant_id
-    ):
+    def test_should_not_show_other_tenant_area(self, fixture_client, fixture_tenant_id):
         """Fremder Bereich wird nicht angezeigt"""
         other_tenant = uuid.uuid4()
         _other_area = Area.objects.create(
@@ -222,9 +218,7 @@ class TestTenantIsolation:
         assert response.status_code == 200
         assert b"Fremder Bereich" not in response.content
 
-    def test_should_return_404_for_other_tenant_detail(
-        self, fixture_client, fixture_tenant_id
-    ):
+    def test_should_return_404_for_other_tenant_detail(self, fixture_client, fixture_tenant_id):
         """Fremder Bereich-Detail gibt 404"""
         other_tenant = uuid.uuid4()
         other_area = Area.objects.create(

@@ -1,4 +1,5 @@
 """Unit-Tests für GBU-Services (Phase 2A)."""
+
 import datetime
 import uuid
 

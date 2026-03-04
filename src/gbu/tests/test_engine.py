@@ -1,4 +1,5 @@
 """Unit-Tests für GBU-Engine Phase 2B (calculate_risk_score, approve_activity)."""
+
 import datetime
 import uuid
 
@@ -8,6 +9,7 @@ from gbu.models.reference import ExposureRiskMatrix
 from gbu.services.gbu_engine import calculate_risk_score
 
 # ── ExposureRiskMatrix Model-Tests ────────────────────────────────────────────
+
 
 def test_should_exposure_risk_matrix_str_contain_risk_score():
     entry = ExposureRiskMatrix(
@@ -31,6 +33,7 @@ def test_should_exposure_risk_matrix_str_contain_cmr_flag():
 
 
 # ── calculate_risk_score Tests ────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_calculate_risk_score_return_db_value():
@@ -80,6 +83,7 @@ def test_should_calculate_risk_score_critical_for_large_cmr_daily():
 
 # ── approve_activity Tests ─────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 def test_should_approve_activity_set_status_and_snapshot(mocker):
     """approve_activity setzt Status, approved_by_id, approved_by_name."""
@@ -102,8 +106,7 @@ def test_should_approve_activity_set_status_and_snapshot(mocker):
     )
 
     mocker.patch(
-        "gbu.services.gbu_engine.HazardAssessmentActivity.objects"
-        ".select_for_update"
+        "gbu.services.gbu_engine.HazardAssessmentActivity.objects.select_for_update"
     ).return_value.get.return_value = activity
 
     save_mock = mocker.patch.object(activity, "save")
@@ -140,8 +143,7 @@ def test_should_approve_activity_raise_for_already_approved(mocker):
     )
 
     mocker.patch(
-        "gbu.services.gbu_engine.HazardAssessmentActivity.objects"
-        ".select_for_update"
+        "gbu.services.gbu_engine.HazardAssessmentActivity.objects.select_for_update"
     ).return_value.get.return_value = activity
 
     cmd = ApproveActivityCmd(

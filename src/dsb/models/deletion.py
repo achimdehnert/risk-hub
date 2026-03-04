@@ -13,7 +13,9 @@ class DeletionLog(models.Model):
     """Löschprotokoll gemäß Art. 17 DSGVO."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
@@ -63,7 +65,4 @@ class DeletionLog(models.Model):
         ]
 
     def __str__(self) -> str:
-        return (
-            f"Löschung {self.data_category}"
-            f" @ {self.requested_at:%Y-%m-%d}"
-        )
+        return f"Löschung {self.data_category} @ {self.requested_at:%Y-%m-%d}"

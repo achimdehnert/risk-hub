@@ -68,9 +68,13 @@ class HazardAssessmentActivityAdmin(admin.ModelAdmin):
     list_filter = ["status", "risk_score", "activity_frequency", "quantity_class"]
     search_fields = ["activity_description", "approved_by_name"]
     readonly_fields = [
-        "id", "created_at", "updated_at",
-        "approved_at", "approved_by_id",
-        "gbu_document", "ba_document",
+        "id",
+        "created_at",
+        "updated_at",
+        "approved_at",
+        "approved_by_id",
+        "gbu_document",
+        "ba_document",
     ]
     date_hierarchy = "next_review_date"
     inlines = [ActivityMeasureInline]
@@ -84,17 +88,15 @@ class HazardAssessmentActivityAdmin(admin.ModelAdmin):
     @admin.action(description="Status → In Prüfung setzen")
     def mark_as_review(self, request: HttpRequest, queryset) -> None:
         from gbu.models.activity import ActivityStatus
-        updated = queryset.filter(
-            status=ActivityStatus.DRAFT
-        ).update(status=ActivityStatus.REVIEW)
+
+        updated = queryset.filter(status=ActivityStatus.DRAFT).update(status=ActivityStatus.REVIEW)
         self.message_user(request, f"{updated} Tätigkeiten auf 'review' gesetzt.")
 
     @admin.action(description="Status → Veraltet markieren (Compliance)")
     def mark_as_outdated(self, request: HttpRequest, queryset) -> None:
         from gbu.models.activity import ActivityStatus
-        updated = queryset.filter(
-            status=ActivityStatus.APPROVED
-        ).update(
+
+        updated = queryset.filter(status=ActivityStatus.APPROVED).update(
             status=ActivityStatus.OUTDATED,
             updated_at=timezone.now(),
         )

@@ -7,6 +7,7 @@ als PDF via WeasyPrint aus Django-Templates.
 Beide Funktionen geben rohe PDF-Bytes zurück und sind
 seiteneffektfrei — Persistenz liegt in den aufrufenden Schichten.
 """
+
 import logging
 from uuid import UUID
 
@@ -33,8 +34,9 @@ def render_gbu_pdf(activity_id: UUID, tenant_id: UUID) -> bytes:
     from gbu.models.activity import HazardAssessmentActivity
 
     activity = (
-        HazardAssessmentActivity.objects
-        .select_related("site", "sds_revision", "sds_revision__substance")
+        HazardAssessmentActivity.objects.select_related(
+            "site", "sds_revision", "sds_revision__substance"
+        )
         .prefetch_related("derived_hazard_categories", "measures")
         .get(id=activity_id, tenant_id=tenant_id)
     )
@@ -60,8 +62,9 @@ def render_ba_pdf(activity_id: UUID, tenant_id: UUID) -> bytes:
     from gbu.models.activity import HazardAssessmentActivity
 
     activity = (
-        HazardAssessmentActivity.objects
-        .select_related("site", "sds_revision", "sds_revision__substance")
+        HazardAssessmentActivity.objects.select_related(
+            "site", "sds_revision", "sds_revision__substance"
+        )
         .prefetch_related("derived_hazard_categories", "measures")
         .get(id=activity_id, tenant_id=tenant_id)
     )

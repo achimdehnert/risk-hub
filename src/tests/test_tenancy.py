@@ -13,7 +13,8 @@ class TestOrganization:
 
     def test_should_create_with_trial_status(self):
         org = Organization.objects.create(
-            slug="new-corp", name="New Corp",
+            slug="new-corp",
+            name="New Corp",
         )
         assert org.status == Organization.Status.TRIAL
         assert org.plan_code == "free"
@@ -36,9 +37,11 @@ class TestOrganization:
 
     def test_should_have_unique_slug(self, fixture_tenant):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             Organization.objects.create(
-                slug=fixture_tenant.slug, name="Dup",
+                slug=fixture_tenant.slug,
+                name="Dup",
             )
 
     def test_should_have_unique_tenant_id(self, fixture_tenant):
@@ -54,9 +57,12 @@ class TestSite:
         assert fixture_site.tenant_id is not None
 
     def test_should_enforce_unique_name_per_tenant(
-        self, fixture_tenant, fixture_site,
+        self,
+        fixture_tenant,
+        fixture_site,
     ):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             Site.objects.create(
                 tenant_id=fixture_tenant.tenant_id,
@@ -65,7 +71,9 @@ class TestSite:
             )
 
     def test_should_allow_same_name_different_tenant(
-        self, fixture_tenant_b, fixture_site,
+        self,
+        fixture_tenant_b,
+        fixture_site,
     ):
         site_b = Site.objects.create(
             tenant_id=fixture_tenant_b.tenant_id,
@@ -87,9 +95,12 @@ class TestMembership:
         assert m.role == Membership.Role.MEMBER
 
     def test_should_enforce_unique_user_per_tenant(
-        self, fixture_user, fixture_tenant,
+        self,
+        fixture_user,
+        fixture_tenant,
     ):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             Membership.objects.create(
                 tenant_id=fixture_tenant.tenant_id,
@@ -99,7 +110,9 @@ class TestMembership:
             )
 
     def test_should_allow_user_in_multiple_tenants(
-        self, fixture_user, fixture_tenant_b,
+        self,
+        fixture_user,
+        fixture_tenant_b,
     ):
         m = Membership.objects.create(
             tenant_id=fixture_tenant_b.tenant_id,

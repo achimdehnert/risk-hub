@@ -4,7 +4,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("explosionsschutz", "0002_initial"),
     ]
@@ -26,9 +25,7 @@ class Migration(migrations.Migration):
             field=models.JSONField(
                 blank=True,
                 null=True,
-                help_text=(
-                    "Ergebnis der nl2cad-core/areas DXF-Analyse (Räume, Flächen)"
-                ),
+                help_text=("Ergebnis der nl2cad-core/areas DXF-Analyse (Räume, Flächen)"),
             ),
         ),
         migrations.AddField(
@@ -37,9 +34,7 @@ class Migration(migrations.Migration):
             field=models.JSONField(
                 blank=True,
                 null=True,
-                help_text=(
-                    "Ergebnis der nl2cad-brandschutz Analyse (Fluchtwege, Mängel)"
-                ),
+                help_text=("Ergebnis der nl2cad-brandschutz Analyse (Fluchtwege, Mängel)"),
             ),
         ),
     ]

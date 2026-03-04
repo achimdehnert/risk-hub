@@ -7,6 +7,7 @@ Funktionen:
   mark_outdated_activities() — Setzt status=OUTDATED für überfällige APPROVED-Einträge
   compliance_summary()     — Tenant-Übersicht für Dashboard
 """
+
 import logging
 from dataclasses import dataclass
 from datetime import date, timedelta
@@ -51,8 +52,7 @@ def list_due_reviews(
     deadline = today + timedelta(days=warning_days)
 
     return list(
-        HazardAssessmentActivity.objects
-        .filter(
+        HazardAssessmentActivity.objects.filter(
             tenant_id=tenant_id,
             status=ActivityStatus.APPROVED,
             next_review_date__gte=today,
@@ -72,8 +72,7 @@ def list_overdue_reviews(tenant_id: UUID) -> list:
     from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
 
     return list(
-        HazardAssessmentActivity.objects
-        .filter(
+        HazardAssessmentActivity.objects.filter(
             tenant_id=tenant_id,
             status=ActivityStatus.APPROVED,
             next_review_date__lt=date.today(),
@@ -95,9 +94,7 @@ def mark_outdated_activities(tenant_id: UUID) -> int:
     from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
 
     overdue = list(
-        HazardAssessmentActivity.objects
-        .select_for_update(skip_locked=True)
-        .filter(
+        HazardAssessmentActivity.objects.select_for_update(skip_locked=True).filter(
             tenant_id=tenant_id,
             status=ActivityStatus.APPROVED,
             next_review_date__lt=date.today(),

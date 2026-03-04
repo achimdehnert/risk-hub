@@ -71,7 +71,8 @@ class DsbDocument(models.Model):
     )
     description = models.TextField(blank=True, verbose_name="Beschreibung")
     document_date = models.DateField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         verbose_name="Dokumentdatum",
         help_text="Datum des Dokuments (z.B. Unterzeichnungsdatum)",
     )

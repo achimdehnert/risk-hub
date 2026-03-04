@@ -14,6 +14,7 @@ from risk.models import Assessment, Hazard
 @dataclass(frozen=True)
 class CreateAssessmentCmd:
     """Command to create an assessment."""
+
     title: str
     description: str = ""
     category: str = "general"
@@ -23,6 +24,7 @@ class CreateAssessmentCmd:
 @dataclass(frozen=True)
 class ApproveAssessmentCmd:
     """Command to approve an assessment."""
+
     assessment_id: UUID
 
 
@@ -37,8 +39,9 @@ def list_assessments(
     require_permission("risk.assessment.read")
 
     return list(
-        Assessment.objects.filter(tenant_id=ctx.tenant_id)
-        .order_by("-created_at")[offset: offset + limit]
+        Assessment.objects.filter(tenant_id=ctx.tenant_id).order_by("-created_at")[
+            offset : offset + limit
+        ]
     )
 
 
@@ -110,9 +113,7 @@ def approve_assessment(cmd: ApproveAssessmentCmd) -> Assessment:
     )
 
     if assessment.status not in ("draft", "in_review"):
-        raise ValueError(
-            f"Cannot approve assessment in status: {assessment.status}"
-        )
+        raise ValueError(f"Cannot approve assessment in status: {assessment.status}")
 
     assessment.status = "approved"
     assessment.approved_by_id = ctx.user_id
@@ -159,7 +160,7 @@ def list_hazards(
     qs = Hazard.objects.filter(tenant_id=ctx.tenant_id).order_by("-created_at")
     if assessment_id is not None:
         qs = qs.filter(assessment_id=assessment_id)
-    return list(qs[offset: offset + limit])
+    return list(qs[offset : offset + limit])
 
 
 def get_hazard(hazard_id: UUID) -> Hazard:

@@ -12,6 +12,7 @@ from dsb.models.breach import Breach, BreachStatus
 def _breach_context(breach: Breach, extra: dict | None = None) -> dict:
     """Gemeinsamer Template-Kontext für alle Breach-E-Mails."""
     from datetime import timedelta
+
     deadline = breach.discovered_at + timedelta(hours=72)
     ctx = {
         "breach_ref": str(breach.id)[:8].upper(),
@@ -26,8 +27,12 @@ def _breach_context(breach: Breach, extra: dict | None = None) -> dict:
         "authority_reference": breach.authority_reference,
         "dsb_name": "Datenschutzbeauftragter/in",
         "dsb_email": "datenschutz@schutztat.de",
-        "dsb_notified_at": breach.dsb_notified_at.strftime("%d.%m.%Y %H:%M") if breach.dsb_notified_at else "—",
-        "authority_notified_at": breach.authority_notified_at.strftime("%d.%m.%Y %H:%M") if breach.authority_notified_at else "—",
+        "dsb_notified_at": breach.dsb_notified_at.strftime("%d.%m.%Y %H:%M")
+        if breach.dsb_notified_at
+        else "—",
+        "authority_notified_at": breach.authority_notified_at.strftime("%d.%m.%Y %H:%M")
+        if breach.authority_notified_at
+        else "—",
         "resolved_at": breach.resolved_at.strftime("%d.%m.%Y %H:%M") if breach.resolved_at else "—",
         "closed_at": breach.closed_at.strftime("%d.%m.%Y %H:%M") if breach.closed_at else "—",
         "dsb_notes": breach.dsb_notes,

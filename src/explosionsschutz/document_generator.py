@@ -18,6 +18,7 @@ try:
     from docx.oxml import OxmlElement
     from docx.oxml.ns import qn
     from docx.shared import Pt
+
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
@@ -27,6 +28,7 @@ from .models import Equipment, ExplosionConcept
 # Substances Integration
 try:
     from substances.services import ExIntegrationService
+
     SUBSTANCES_AVAILABLE = True
 except ImportError:
     SUBSTANCES_AVAILABLE = False
@@ -44,10 +46,9 @@ class ExSchutzDocumentGenerator:
         """Lädt Ex-relevante Stoffdaten aus dem Substances-Modul."""
         if not SUBSTANCES_AVAILABLE:
             return
-        if hasattr(self.concept, 'substance_id') and self.concept.substance_id:
+        if hasattr(self.concept, "substance_id") and self.concept.substance_id:
             self.substance_data = ExIntegrationService.get_ex_data(
-                self.concept.substance_id,
-                self.concept.tenant_id
+                self.concept.substance_id, self.concept.tenant_id
             )
 
     def create_document(self, template_path: str | None = None) -> "Document":
@@ -62,8 +63,7 @@ class ExSchutzDocumentGenerator:
         """
         if not DOCX_AVAILABLE:
             raise ImportError(
-                "python-docx ist nicht installiert. "
-                "Bitte 'pip install python-docx' ausführen."
+                "python-docx ist nicht installiert. Bitte 'pip install python-docx' ausführen."
             )
 
         if template_path:
@@ -170,8 +170,7 @@ class ExSchutzDocumentGenerator:
 
         hint = self.document.add_paragraph()
         hint.add_run(
-            "(Bitte Inhaltsverzeichnis in Word aktualisieren: "
-            "Rechtsklick → Felder aktualisieren)"
+            "(Bitte Inhaltsverzeichnis in Word aktualisieren: Rechtsklick → Felder aktualisieren)"
         ).italic = True
 
         self.document.add_page_break()
@@ -184,8 +183,7 @@ class ExSchutzDocumentGenerator:
 
         if zones.exists():
             self.document.add_paragraph(
-                f"Für das Konzept '{self.concept.title}' wurden "
-                f"{zones.count()} Zonen definiert:"
+                f"Für das Konzept '{self.concept.title}' wurden {zones.count()} Zonen definiert:"
             )
 
             table = self.document.add_table(rows=1, cols=4)
@@ -264,9 +262,7 @@ class ExSchutzDocumentGenerator:
                 row[1].text = eq.equipment_type.atex_marking if eq.equipment_type else "-"
                 row[2].text = eq.zone.get_zone_type_display() if eq.zone else "-"
                 row[3].text = (
-                    eq.next_inspection_date.strftime("%d.%m.%Y")
-                    if eq.next_inspection_date
-                    else "-"
+                    eq.next_inspection_date.strftime("%d.%m.%Y") if eq.next_inspection_date else "-"
                 )
         else:
             self.document.add_paragraph("Keine Betriebsmittel erfasst.")
@@ -289,11 +285,7 @@ class ExSchutzDocumentGenerator:
         row = table.rows[1].cells
         row[0].text = str(self.concept.version)
         row[1].text = datetime.now().strftime("%d.%m.%Y")
-        row[2].text = (
-            self.concept.created_by.get_full_name()
-            if self.concept.created_by
-            else "N/A"
-        )
+        row[2].text = self.concept.created_by.get_full_name() if self.concept.created_by else "N/A"
         row[3].text = "Erstversion" if self.concept.version == 1 else "Aktualisierung"
 
     def get_html_preview(self) -> str:
@@ -329,7 +321,7 @@ class ExSchutzDocumentGenerator:
                 <tr>
                     <td>{zone.get_zone_type_display()}</td>
                     <td>{zone.name}</td>
-                    <td>{zone.justification[:100] if zone.justification else '-'}</td>
+                    <td>{zone.justification[:100] if zone.justification else "-"}</td>
                 </tr>
             """
 

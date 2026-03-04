@@ -13,18 +13,12 @@ from dataclasses import dataclass
 from uuid import UUID
 
 # Context variables (thread-safe)
-_tenant_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar(
-    "tenant_id", default=None
-)
+_tenant_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar("tenant_id", default=None)
 _tenant_slug: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "tenant_slug", default=None
 )
-_user_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar(
-    "user_id", default=None
-)
-_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "request_id", default=None
-)
+_user_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar("user_id", default=None)
+_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)
 
 
 @dataclass(frozen=True)
@@ -97,6 +91,7 @@ def clear_context() -> None:
 # =============================================================================
 # EVENT EMISSION HELPERS
 # =============================================================================
+
 
 def emit_audit_event(
     tenant_id: UUID | None = None,

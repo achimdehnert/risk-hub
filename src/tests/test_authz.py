@@ -22,43 +22,68 @@ class TestHasPermission:
     def test_should_grant_via_role(self, fixture_assignment):
         """User with role-based read permission should pass."""
         a = fixture_assignment
-        assert has_permission(
-            a.user_id, a.tenant_id, "risk.assessment.read",
-        ) is True
+        assert (
+            has_permission(
+                a.user_id,
+                a.tenant_id,
+                "risk.assessment.read",
+            )
+            is True
+        )
 
     def test_should_deny_without_assignment(
-        self, fixture_user, fixture_tenant,
+        self,
+        fixture_user,
+        fixture_tenant,
     ):
         """User without any assignment should be denied."""
-        assert has_permission(
-            fixture_user.id, fixture_tenant.tenant_id,
-            "risk.assessment.read",
-        ) is False
+        assert (
+            has_permission(
+                fixture_user.id,
+                fixture_tenant.tenant_id,
+                "risk.assessment.read",
+            )
+            is False
+        )
 
     def test_should_deny_without_membership(
-        self, fixture_tenant,
+        self,
+        fixture_tenant,
     ):
         """Non-existent user should be denied."""
         import uuid
-        assert has_permission(
-            uuid.uuid4(), fixture_tenant.tenant_id,
-            "risk.assessment.read",
-        ) is False
+
+        assert (
+            has_permission(
+                uuid.uuid4(),
+                fixture_tenant.tenant_id,
+                "risk.assessment.read",
+            )
+            is False
+        )
 
     def test_should_deny_wrong_permission(self, fixture_assignment):
         """User should be denied for permission not in role."""
         a = fixture_assignment
-        assert has_permission(
-            a.user_id, a.tenant_id, "risk.assessment.write",
-        ) is False
+        assert (
+            has_permission(
+                a.user_id,
+                a.tenant_id,
+                "risk.assessment.write",
+            )
+            is False
+        )
 
     def test_should_deny_via_override(
-        self, fixture_assignment, fixture_permission_read,
+        self,
+        fixture_assignment,
+        fixture_permission_read,
     ):
         """Explicit deny override should block role-based grant."""
         a = fixture_assignment
         membership = Membership.objects.get(
-            tenant_id=a.tenant_id, user_id=a.user_id,
+            tenant_id=a.tenant_id,
+            user_id=a.user_id,
         )
         PermissionOverride.objects.create(
             membership=membership,
@@ -66,9 +91,14 @@ class TestHasPermission:
             allowed=False,
             reason="Test deny",
         )
-        assert has_permission(
-            a.user_id, a.tenant_id, "risk.assessment.read",
-        ) is False
+        assert (
+            has_permission(
+                a.user_id,
+                a.tenant_id,
+                "risk.assessment.read",
+            )
+            is False
+        )
 
     def test_should_grant_via_override(
         self,
@@ -86,18 +116,25 @@ class TestHasPermission:
             permission=fixture_permission_write,
             allowed=True,
         )
-        assert has_permission(
-            fixture_user.id, fixture_tenant.tenant_id,
-            "risk.assessment.write",
-        ) is True
+        assert (
+            has_permission(
+                fixture_user.id,
+                fixture_tenant.tenant_id,
+                "risk.assessment.write",
+            )
+            is True
+        )
 
     def test_should_ignore_expired_override(
-        self, fixture_assignment, fixture_permission_read,
+        self,
+        fixture_assignment,
+        fixture_permission_read,
     ):
         """Expired deny override should not block access."""
         a = fixture_assignment
         membership = Membership.objects.get(
-            tenant_id=a.tenant_id, user_id=a.user_id,
+            tenant_id=a.tenant_id,
+            user_id=a.user_id,
         )
         PermissionOverride.objects.create(
             membership=membership,
@@ -105,9 +142,14 @@ class TestHasPermission:
             allowed=False,
             expires_at=timezone.now() - timezone.timedelta(days=1),
         )
-        assert has_permission(
-            a.user_id, a.tenant_id, "risk.assessment.read",
-        ) is True
+        assert (
+            has_permission(
+                a.user_id,
+                a.tenant_id,
+                "risk.assessment.read",
+            )
+            is True
+        )
 
 
 @pytest.mark.django_db
@@ -122,7 +164,8 @@ class TestRequirePermission:
             require_permission("risk.assessment.read")
 
     def test_should_pass_with_valid_context(
-        self, fixture_assignment,
+        self,
+        fixture_assignment,
     ):
         """Valid context + assignment should pass."""
         a = fixture_assignment
@@ -131,7 +174,8 @@ class TestRequirePermission:
         require_permission("risk.assessment.read")
 
     def test_should_raise_for_wrong_permission(
-        self, fixture_assignment,
+        self,
+        fixture_assignment,
     ):
         """Valid context but wrong permission should raise."""
         a = fixture_assignment
@@ -146,11 +190,17 @@ class TestTenantIsolation:
     """Test cross-tenant isolation."""
 
     def test_should_deny_cross_tenant_access(
-        self, fixture_assignment, fixture_tenant_b,
+        self,
+        fixture_assignment,
+        fixture_tenant_b,
     ):
         """User in tenant A should not access tenant B."""
         a = fixture_assignment
-        assert has_permission(
-            a.user_id, fixture_tenant_b.tenant_id,
-            "risk.assessment.read",
-        ) is False
+        assert (
+            has_permission(
+                a.user_id,
+                fixture_tenant_b.tenant_id,
+                "risk.assessment.read",
+            )
+            is False
+        )

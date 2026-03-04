@@ -30,7 +30,10 @@ def _parse_subdomain(host: str, base_domain: str) -> str | None:
 
 
 def _sync_platform_context(
-    tenant_id=None, slug=None, request_id=None, user_id=None,
+    tenant_id=None,
+    slug=None,
+    request_id=None,
+    user_id=None,
 ):
     """Sync state with platform_context (ADR-028).
 
@@ -55,10 +58,7 @@ class RequestContextMiddleware(MiddlewareMixin):
     """Set up request context (request_id, user_id)."""
 
     def process_request(self, request: HttpRequest) -> None:
-        request_id = (
-            request.headers.get("X-Request-Id")
-            or str(uuid.uuid4())
-        )
+        request_id = request.headers.get("X-Request-Id") or str(uuid.uuid4())
         set_request_id(request_id)
 
         user = getattr(request, "user", None)
@@ -66,12 +66,14 @@ class RequestContextMiddleware(MiddlewareMixin):
             uid = user.id if hasattr(user, "id") else None
             set_user_id(uid)
             _sync_platform_context(
-                request_id=request_id, user_id=uid,
+                request_id=request_id,
+                user_id=uid,
             )
         else:
             set_user_id(None)
             _sync_platform_context(
-                request_id=request_id, user_id=None,
+                request_id=request_id,
+                user_id=None,
             )
 
 
@@ -79,7 +81,8 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
     """Subdomain-based tenant resolution."""
 
     def process_request(
-        self, request: HttpRequest,
+        self,
+        request: HttpRequest,
     ) -> HttpResponse | None:
         base_domains = list(
             getattr(settings, "TENANT_BASE_DOMAINS", []),
@@ -87,15 +90,21 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         if not base_domains:
             base_domains = [
                 getattr(
-                    settings, "TENANT_BASE_DOMAIN", "localhost",
+                    settings,
+                    "TENANT_BASE_DOMAIN",
+                    "localhost",
                 ),
             ]
         allow_localhost = getattr(
-            settings, "TENANT_ALLOW_LOCALHOST", False,
+            settings,
+            "TENANT_ALLOW_LOCALHOST",
+            False,
         )
         reserved_subdomains = set(
             getattr(
-                settings, "TENANT_RESERVED_SUBDOMAINS", ["www"],
+                settings,
+                "TENANT_RESERVED_SUBDOMAINS",
+                ["www"],
             )
         )
 
@@ -109,7 +118,8 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         subdomain = None
         for base_domain in base_domains:
             subdomain = _parse_subdomain(
-                request.get_host(), base_domain,
+                request.get_host(),
+                base_domain,
             )
             if subdomain:
                 break
@@ -146,10 +156,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 "/__debug__/",
                 "/api/v1/",
             ]
-            if any(
-                request.path.startswith(p)
-                for p in public_prefixes
-            ):
+            if any(request.path.startswith(p) for p in public_prefixes):
                 set_tenant(None, None)
                 set_db_tenant(None)
                 _sync_platform_context()
@@ -174,6 +181,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         # Look up tenant
         try:
             from tenancy.models import Organization
+
             org = Organization.objects.filter(
                 slug=subdomain,
             ).first()
@@ -199,7 +207,8 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         request.tenant_slug = subdomain
 
         _sync_platform_context(
-            tenant_id=org.tenant_id, slug=subdomain,
+            tenant_id=org.tenant_id,
+            slug=subdomain,
         )
 
         return None

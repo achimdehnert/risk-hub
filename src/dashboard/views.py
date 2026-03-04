@@ -11,14 +11,15 @@ from dashboard.services import get_compliance_kpis, get_recent_activities
 def _get_active_modules(request: HttpRequest) -> set:
     """Resolve active module codes for the current user/tenant."""
     from common.context import get_context
+
     ctx = get_context()
     tenant_id = ctx.tenant_id
     if not tenant_id and request.user.is_authenticated:
         try:
             from django_tenancy.models import Membership
+
             m = (
-                Membership.objects
-                .filter(user=request.user)
+                Membership.objects.filter(user=request.user)
                 .select_related("organization")
                 .order_by("created_at")
                 .first()
@@ -31,6 +32,7 @@ def _get_active_modules(request: HttpRequest) -> set:
         return set()
     try:
         from django_tenancy.module_models import ModuleSubscription
+
         return set(
             ModuleSubscription.objects.filter(
                 tenant_id=tenant_id,
@@ -51,10 +53,14 @@ class DashboardView(LoginRequiredMixin, View):
         kpis = get_compliance_kpis(tenant_id)
         activities = get_recent_activities(tenant_id)
 
-        return render(request, self.template_name, {
-            "kpis": kpis,
-            "activities": activities,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "kpis": kpis,
+                "activities": activities,
+            },
+        )
 
 
 class DashboardKPIPartialView(LoginRequiredMixin, View):
@@ -65,10 +71,14 @@ class DashboardKPIPartialView(LoginRequiredMixin, View):
     def get(self, request: HttpRequest) -> HttpResponse:
         tenant_id = getattr(request, "tenant_id", None)
         kpis = get_compliance_kpis(tenant_id)
-        return render(request, self.template_name, {
-            "kpis": kpis,
-            "active_modules": _get_active_modules(request),
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "kpis": kpis,
+                "active_modules": _get_active_modules(request),
+            },
+        )
 
 
 class DashboardActivityPartialView(LoginRequiredMixin, View):
@@ -79,6 +89,10 @@ class DashboardActivityPartialView(LoginRequiredMixin, View):
     def get(self, request: HttpRequest) -> HttpResponse:
         tenant_id = getattr(request, "tenant_id", None)
         activities = get_recent_activities(tenant_id)
-        return render(request, self.template_name, {
-            "activities": activities,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "activities": activities,
+            },
+        )

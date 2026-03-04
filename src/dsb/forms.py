@@ -229,10 +229,7 @@ class CsvImportForm(forms.Form):
 
     csv_file = forms.FileField(
         label="CSV-Datei",
-        help_text=(
-            "Semikolon-getrennte CSV (.csv), "
-            "generell oder mandantenspezifisch"
-        ),
+        help_text=("Semikolon-getrennte CSV (.csv), generell oder mandantenspezifisch"),
         widget=forms.ClearableFileInput(
             attrs={"class": _TW_INPUT, "accept": ".csv"},
         ),

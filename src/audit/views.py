@@ -47,18 +47,22 @@ class AuditLogView(View):
             .distinct()[:50]
         )
 
-        return render(request, self.template_name, {
-            "events": events,
-            "event_types": event_types,
-            "resource_types": resource_types,
-            "filters": {
-                "event_type": event_type or "",
-                "resource_type": resource_type or "",
-                "date_from": date_from or "",
-                "date_to": date_to or "",
-                "q": search,
+        return render(
+            request,
+            self.template_name,
+            {
+                "events": events,
+                "event_types": event_types,
+                "resource_types": resource_types,
+                "filters": {
+                    "event_type": event_type or "",
+                    "resource_type": resource_type or "",
+                    "date_from": date_from or "",
+                    "date_to": date_to or "",
+                    "q": search,
+                },
             },
-        })
+        )
 
 
 class AuditLogCsvExportView(View):
@@ -86,28 +90,34 @@ class AuditLogCsvExportView(View):
 
         buf = io.StringIO()
         writer = csv.writer(buf, delimiter=";")
-        writer.writerow([
-            "Zeitpunkt", "Typ", "Ressource",
-            "Ressource-ID", "Benutzer-ID",
-            "IP-Adresse", "Details",
-        ])
+        writer.writerow(
+            [
+                "Zeitpunkt",
+                "Typ",
+                "Ressource",
+                "Ressource-ID",
+                "Benutzer-ID",
+                "IP-Adresse",
+                "Details",
+            ]
+        )
 
         for ev in events:
-            writer.writerow([
-                ev.created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                ev.event_type,
-                ev.resource_type,
-                str(ev.resource_id or ""),
-                str(ev.user_id or ""),
-                ev.ip_address or "",
-                str(ev.details)[:500],
-            ])
+            writer.writerow(
+                [
+                    ev.created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                    ev.event_type,
+                    ev.resource_type,
+                    str(ev.resource_id or ""),
+                    str(ev.user_id or ""),
+                    ev.ip_address or "",
+                    str(ev.details)[:500],
+                ]
+            )
 
         response = HttpResponse(
             buf.getvalue(),
             content_type="text/csv; charset=utf-8",
         )
-        response["Content-Disposition"] = (
-            'attachment; filename="audit_log.csv"'
-        )
+        response["Content-Disposition"] = 'attachment; filename="audit_log.csv"'
         return response

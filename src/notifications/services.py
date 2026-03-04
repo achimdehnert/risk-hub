@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # Notification CRUD
 # ------------------------------------------------------------------
 
+
 def create_notification(
     tenant_id: UUID,
     category: str,
@@ -52,9 +53,7 @@ def get_unread(
         is_read=False,
     )
     if user_id:
-        qs = qs.filter(
-            Q(recipient_id=user_id) | Q(recipient_id__isnull=True)
-        )
+        qs = qs.filter(Q(recipient_id=user_id) | Q(recipient_id__isnull=True))
     return list(qs[:limit])
 
 
@@ -68,9 +67,7 @@ def get_unread_count(
         is_read=False,
     )
     if user_id:
-        qs = qs.filter(
-            Q(recipient_id=user_id) | Q(recipient_id__isnull=True)
-        )
+        qs = qs.filter(Q(recipient_id=user_id) | Q(recipient_id__isnull=True))
     return qs.count()
 
 
@@ -84,9 +81,7 @@ def mark_all_read(
         is_read=False,
     )
     if user_id:
-        qs = qs.filter(
-            Q(recipient_id=user_id) | Q(recipient_id__isnull=True)
-        )
+        qs = qs.filter(Q(recipient_id=user_id) | Q(recipient_id__isnull=True))
     return qs.update(is_read=True, read_at=timezone.now())
 
 
@@ -166,17 +161,11 @@ def scan_inspection_deadlines(
 
         # Build notification
         if days_until < 0:
-            title = (
-                f"Prüfung überfällig: {eq.serial_number} "
-                f"(seit {abs(days_until)} Tagen)"
-            )
+            title = f"Prüfung überfällig: {eq.serial_number} (seit {abs(days_until)} Tagen)"
         elif days_until == 0:
             title = f"Prüfung heute fällig: {eq.serial_number}"
         else:
-            title = (
-                f"Prüfung in {days_until} Tagen: "
-                f"{eq.serial_number}"
-            )
+            title = f"Prüfung in {days_until} Tagen: {eq.serial_number}"
 
         msg = (
             f"Betriebsmittel: {eq.serial_number}\n"
@@ -196,7 +185,5 @@ def scan_inspection_deadlines(
         )
         stats["created"] += 1
 
-    logger.info(
-        "Inspection deadline scan complete: %s", stats
-    )
+    logger.info("Inspection deadline scan complete: %s", stats)
     return stats

@@ -46,10 +46,9 @@ def assessment_list(
         )
         return redirect("risk:assessment_list")
 
-    assessments = (
-        Assessment.objects.filter(tenant_id=request.tenant_id)
-        .order_by("-created_at")[:100]
-    )
+    assessments = Assessment.objects.filter(tenant_id=request.tenant_id).order_by("-created_at")[
+        :100
+    ]
     return render(
         request,
         "risk/assessment_list.html",

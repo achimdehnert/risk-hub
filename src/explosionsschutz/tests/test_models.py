@@ -31,6 +31,7 @@ from explosionsschutz.models import (
 # FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def fixture_tenant_id():
     """Tenant UUID für Tests"""
@@ -188,6 +189,7 @@ def fixture_zone_2(fixture_tenant_id, fixture_explosion_concept):
 # TESTS: STAMMDATEN HYBRID-ISOLATION
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestTenantScopedMasterData:
     """Tests für Hybrid-Isolation bei Stammdaten"""
@@ -248,6 +250,7 @@ class TestTenantScopedMasterData:
 # TESTS: ATEX-KENNZEICHNUNG UND ZONENZUORDNUNG
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestEquipmentTypeAtexMarking:
     """Tests für ATEX-Kennzeichnung"""
@@ -288,6 +291,7 @@ class TestEquipmentTypeAtexMarking:
 # TESTS: ZONENDEFINITION
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestZoneDefinition:
     """Tests für Zonendefinitionen"""
@@ -308,6 +312,7 @@ class TestZoneDefinition:
 # =============================================================================
 # TESTS: EQUIPMENT-ZONEN-KOMPATIBILITÄT
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestEquipmentZoneCompatibility:
@@ -343,6 +348,7 @@ class TestEquipmentZoneCompatibility:
 # =============================================================================
 # TESTS: PRÜFFRISTEN
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestInspectionSchedule:
@@ -387,13 +393,12 @@ class TestInspectionSchedule:
 # TESTS: ZÜNDQUELLENBEWERTUNG
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestIgnitionSourceAssessment:
     """Tests für Zündquellenbewertung nach EN 1127-1"""
 
-    def test_should_create_ignition_assessment(
-        self, fixture_tenant_id, fixture_zone_1
-    ):
+    def test_should_create_ignition_assessment(self, fixture_tenant_id, fixture_zone_1):
         """Zündquellenbewertung kann erstellt werden"""
         assessment = ZoneIgnitionSourceAssessment.objects.create(
             tenant_id=fixture_tenant_id,
@@ -407,9 +412,7 @@ class TestIgnitionSourceAssessment:
         assert assessment.is_present is True
         assert assessment.is_effective is False
 
-    def test_should_enforce_unique_source_per_zone(
-        self, fixture_tenant_id, fixture_zone_1
-    ):
+    def test_should_enforce_unique_source_per_zone(self, fixture_tenant_id, fixture_zone_1):
         """Eine Zündquelle kann nur einmal pro Zone bewertet werden"""
         ZoneIgnitionSourceAssessment.objects.create(
             tenant_id=fixture_tenant_id,
@@ -432,6 +435,7 @@ class TestIgnitionSourceAssessment:
 # =============================================================================
 # TESTS: KONZEPT-VOLLSTÄNDIGKEIT
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestConceptCompletion:

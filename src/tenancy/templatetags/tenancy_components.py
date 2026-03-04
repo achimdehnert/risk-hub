@@ -41,12 +41,15 @@ def org_status_badge(org):
 @register.inclusion_tag("tenancy/components/_module_subscription_card.html")
 def module_subscription_card(subscription, org):
     """Render a module subscription card with status + actions."""
-    meta = MODULE_META.get(subscription.module, {
-        "label": subscription.module.upper(),
-        "icon": "box",
-        "color": "gray",
-        "url_prefix": f"/{subscription.module}/",
-    })
+    meta = MODULE_META.get(
+        subscription.module,
+        {
+            "label": subscription.module.upper(),
+            "icon": "box",
+            "color": "gray",
+            "url_prefix": f"/{subscription.module}/",
+        },
+    )
     return {"sub": subscription, "org": org, "meta": meta}
 
 

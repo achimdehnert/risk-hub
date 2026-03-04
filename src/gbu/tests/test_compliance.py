@@ -1,6 +1,7 @@
 """
 Tests f\u00fcr GBU Phase 2E \u2014 Compliance-Service und Review-Deadline-Task.
 """
+
 import uuid
 from datetime import date, timedelta
 from unittest.mock import patch
@@ -8,6 +9,7 @@ from unittest.mock import patch
 import pytest
 
 # ── Hilfsfunktion ──────────────────────────────────────────────────────────────
+
 
 def _make_approved_activity(db, tenant_id, review_date, user_id=None):
     """Approved HazardAssessmentActivity mit gesetztem next_review_date."""
@@ -59,6 +61,7 @@ def _make_approved_activity(db, tenant_id, review_date, user_id=None):
 
 # ── list_due_reviews ────────────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 def test_should_list_activity_due_within_30_days(db):
     """list_due_reviews() soll T\u00e4tigkeiten mit Frist in 30 Tagen zur\u00fcckgeben."""
@@ -100,6 +103,7 @@ def test_should_not_list_overdue_in_due_reviews(db):
 
 # ── list_overdue_reviews ───────────────────────────────────────────────────
 
+
 @pytest.mark.django_db
 def test_should_list_overdue_activity(db):
     """list_overdue_reviews() soll T\u00e4tigkeiten mit past review date zur\u00fcckgeben."""
@@ -127,6 +131,7 @@ def test_should_not_list_future_as_overdue(db):
 
 
 # ── mark_outdated_activities ─────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_mark_overdue_as_outdated(db):
@@ -168,6 +173,7 @@ def test_should_not_mark_future_as_outdated(db):
 
 
 # ── compliance_summary ──────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_return_correct_summary_counts(db):

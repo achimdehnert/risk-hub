@@ -79,10 +79,7 @@ def api_list_assessments(
     offset: int = 0,
 ):
     try:
-        return [
-            _to_assessment_out(a)
-            for a in list_assessments(limit=limit, offset=offset)
-        ]
+        return [_to_assessment_out(a) for a in list_assessments(limit=limit, offset=offset)]
     except PermissionDenied as exc:
         raise HttpError(403, str(exc))
 

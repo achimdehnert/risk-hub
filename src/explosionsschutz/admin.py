@@ -32,14 +32,15 @@ from .models import (
 # MIXINS
 # =============================================================================
 
+
 class TenantAwareAdmin(admin.ModelAdmin):
     """
     Base Admin mit Tenant-Awareness.
-    
+
     - Filtert automatisch nach tenant_id
     - Setzt tenant_id beim Speichern
     """
-    
+
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         if request.user.is_superuser:
@@ -48,7 +49,7 @@ class TenantAwareAdmin(admin.ModelAdmin):
         if tenant_id:
             return qs.filter(tenant_id=tenant_id)
         return qs.none()
-    
+
     def save_model(self, request, obj, form, change):
         if not change and hasattr(obj, "tenant_id") and not obj.tenant_id:
             obj.tenant_id = getattr(request.user, "tenant_id", None)
@@ -57,12 +58,12 @@ class TenantAwareAdmin(admin.ModelAdmin):
 
 class ReadOnlyMixin:
     """Verhindert Bearbeitung von System-Daten"""
-    
+
     def has_change_permission(self, request, obj=None):
         if obj and getattr(obj, "is_system", False):
             return False
         return super().has_change_permission(request, obj)
-    
+
     def has_delete_permission(self, request, obj=None):
         if obj and getattr(obj, "is_system", False):
             return False
@@ -73,10 +74,11 @@ class ReadOnlyMixin:
 # STAMMDATEN ADMIN
 # =============================================================================
 
+
 @admin.register(ReferenceStandard)
 class ReferenceStandardAdmin(ReadOnlyMixin, TenantAwareAdmin):
     """Admin für Regelwerksreferenzen"""
-    
+
     list_display = [
         "code",
         "title",
@@ -88,21 +90,13 @@ class ReferenceStandardAdmin(ReadOnlyMixin, TenantAwareAdmin):
     list_filter = ["category", "is_system"]
     search_fields = ["code", "title"]
     ordering = ["code"]
-    
+
     fieldsets = [
-        (None, {
-            "fields": ["code", "title", "category"]
-        }),
-        ("Details", {
-            "fields": ["url", "valid_from", "valid_until"],
-            "classes": ["collapse"]
-        }),
-        ("System", {
-            "fields": ["is_system"],
-            "classes": ["collapse"]
-        }),
+        (None, {"fields": ["code", "title", "category"]}),
+        ("Details", {"fields": ["url", "valid_from", "valid_until"], "classes": ["collapse"]}),
+        ("System", {"fields": ["is_system"], "classes": ["collapse"]}),
     ]
-    
+
     def is_system_badge(self, obj):
         if obj.is_system:
             return format_html(
@@ -113,18 +107,19 @@ class ReferenceStandardAdmin(ReadOnlyMixin, TenantAwareAdmin):
             '<span style="background:#6c757d;color:white;'
             'padding:2px 8px;border-radius:4px">Tenant</span>'
         )
+
     is_system_badge.short_description = "Typ"
 
 
 @admin.register(MeasureCatalog)
 class MeasureCatalogAdmin(ReadOnlyMixin, TenantAwareAdmin):
     """Admin für Maßnahmenkatalog"""
-    
+
     list_display = ["code", "title", "default_type", "is_system_badge"]
     list_filter = ["default_type", "is_system"]
     search_fields = ["code", "title"]
     filter_horizontal = ["reference_standards"]
-    
+
     def is_system_badge(self, obj):
         if obj.is_system:
             return format_html(
@@ -132,13 +127,14 @@ class MeasureCatalogAdmin(ReadOnlyMixin, TenantAwareAdmin):
                 'padding:2px 8px;border-radius:4px">System</span>'
             )
         return "-"
+
     is_system_badge.short_description = "System"
 
 
 @admin.register(SafetyFunction)
 class SafetyFunctionAdmin(ReadOnlyMixin, TenantAwareAdmin):
     """Admin für MSR-Sicherheitsfunktionen"""
-    
+
     list_display = [
         "name",
         "performance_level",
@@ -149,7 +145,7 @@ class SafetyFunctionAdmin(ReadOnlyMixin, TenantAwareAdmin):
     list_filter = ["performance_level", "sil_level", "monitoring_method", "is_system"]
     search_fields = ["name", "description"]
     filter_horizontal = ["reference_standards"]
-    
+
     def is_system_badge(self, obj):
         if obj.is_system:
             return format_html(
@@ -157,13 +153,14 @@ class SafetyFunctionAdmin(ReadOnlyMixin, TenantAwareAdmin):
                 'padding:2px 8px;border-radius:4px">System</span>'
             )
         return "-"
+
     is_system_badge.short_description = "System"
 
 
 @admin.register(EquipmentType)
 class EquipmentTypeAdmin(ReadOnlyMixin, TenantAwareAdmin):
     """Admin für Betriebsmitteltypen mit ATEX-Kennzeichnung"""
-    
+
     list_display = [
         "manufacturer",
         "model",
@@ -180,46 +177,50 @@ class EquipmentTypeAdmin(ReadOnlyMixin, TenantAwareAdmin):
         "is_system",
     ]
     search_fields = ["manufacturer", "model", "certificate_number"]
-    
+
     fieldsets = [
-        ("Hersteller & Modell", {
-            "fields": ["manufacturer", "model", "description"]
-        }),
-        ("ATEX-Kennzeichnung", {
-            "fields": [
-                "atex_group",
-                "atex_category",
-                "protection_type",
-                "explosion_group",
-                "temperature_class",
-                "epl",
-            ]
-        }),
-        ("Technische Daten", {
-            "fields": [
-                "ip_rating",
-                ("ambient_temp_min", "ambient_temp_max"),
-                "default_inspection_interval_months",
-            ],
-            "classes": ["collapse"]
-        }),
-        ("Dokumentation", {
-            "fields": ["datasheet_url", "certificate_number", "notified_body"],
-            "classes": ["collapse"]
-        }),
-        ("System", {
-            "fields": ["is_system"],
-            "classes": ["collapse"]
-        }),
+        ("Hersteller & Modell", {"fields": ["manufacturer", "model", "description"]}),
+        (
+            "ATEX-Kennzeichnung",
+            {
+                "fields": [
+                    "atex_group",
+                    "atex_category",
+                    "protection_type",
+                    "explosion_group",
+                    "temperature_class",
+                    "epl",
+                ]
+            },
+        ),
+        (
+            "Technische Daten",
+            {
+                "fields": [
+                    "ip_rating",
+                    ("ambient_temp_min", "ambient_temp_max"),
+                    "default_inspection_interval_months",
+                ],
+                "classes": ["collapse"],
+            },
+        ),
+        (
+            "Dokumentation",
+            {
+                "fields": ["datasheet_url", "certificate_number", "notified_body"],
+                "classes": ["collapse"],
+            },
+        ),
+        ("System", {"fields": ["is_system"], "classes": ["collapse"]}),
     ]
-    
+
     def atex_marking_display(self, obj):
         return format_html(
-            '<code style="background:#f8f9fa;padding:2px 6px">{}</code>',
-            obj.full_atex_marking
+            '<code style="background:#f8f9fa;padding:2px 6px">{}</code>', obj.full_atex_marking
         )
+
     atex_marking_display.short_description = "ATEX"
-    
+
     def is_system_badge(self, obj):
         if obj.is_system:
             return format_html(
@@ -227,6 +228,7 @@ class EquipmentTypeAdmin(ReadOnlyMixin, TenantAwareAdmin):
                 'padding:2px 8px;border-radius:4px">System</span>'
             )
         return "-"
+
     is_system_badge.short_description = "System"
 
 
@@ -234,15 +236,16 @@ class EquipmentTypeAdmin(ReadOnlyMixin, TenantAwareAdmin):
 # CORE ADMIN
 # =============================================================================
 
+
 @admin.register(Area)
 class AreaAdmin(TenantAwareAdmin):
     """Admin für Betriebsbereiche"""
-    
+
     list_display = ["code", "name", "site_id", "has_ex_hazard_badge", "created_at"]
     list_filter = ["created_at"]
     search_fields = ["code", "name"]
     readonly_fields = ["created_at", "updated_at"]
-    
+
     def has_ex_hazard_badge(self, obj):
         if obj.has_explosion_hazard:
             return format_html(
@@ -253,11 +256,13 @@ class AreaAdmin(TenantAwareAdmin):
             '<span style="background:#28a745;color:white;'
             'padding:2px 8px;border-radius:4px">✓ Kein Ex</span>'
         )
+
     has_ex_hazard_badge.short_description = "Ex-Status"
 
 
 class ZoneDefinitionInline(admin.TabularInline):
     """Inline für Zonen im Konzept"""
+
     model = ZoneDefinition
     extra = 0
     fields = ["zone_type", "name", "reference_standard"]
@@ -267,6 +272,7 @@ class ZoneDefinitionInline(admin.TabularInline):
 
 class ProtectionMeasureInline(admin.TabularInline):
     """Inline für Maßnahmen im Konzept"""
+
     model = ProtectionMeasure
     extra = 0
     fields = ["category", "title", "status"]
@@ -276,6 +282,7 @@ class ProtectionMeasureInline(admin.TabularInline):
 
 class VerificationDocumentInline(admin.TabularInline):
     """Inline für Dokumente im Konzept"""
+
     model = VerificationDocument
     extra = 0
     fields = ["title", "document_type", "issued_at"]
@@ -286,7 +293,7 @@ class VerificationDocumentInline(admin.TabularInline):
 @admin.register(ExplosionConcept)
 class ExplosionConceptAdmin(TenantAwareAdmin):
     """Admin für Explosionsschutzkonzepte"""
-    
+
     list_display = [
         "title",
         "version",
@@ -308,26 +315,19 @@ class ExplosionConceptAdmin(TenantAwareAdmin):
         "completion_percentage",
     ]
     inlines = [ZoneDefinitionInline, ProtectionMeasureInline, VerificationDocumentInline]
-    
+
     fieldsets = [
-        (None, {
-            "fields": ["title", "area", "substance_id", "substance_name", "assessment_id"]
-        }),
-        ("Status", {
-            "fields": ["status", "version", "completion_percentage"]
-        }),
-        ("Validierung", {
-            "fields": ["is_validated", "validated_by", "validated_at"],
-            "classes": ["collapse"]
-        }),
-        ("Audit", {
-            "fields": ["created_by", "created_at", "updated_at"],
-            "classes": ["collapse"]
-        }),
+        (None, {"fields": ["title", "area", "substance_id", "substance_name", "assessment_id"]}),
+        ("Status", {"fields": ["status", "version", "completion_percentage"]}),
+        (
+            "Validierung",
+            {"fields": ["is_validated", "validated_by", "validated_at"], "classes": ["collapse"]},
+        ),
+        ("Audit", {"fields": ["created_by", "created_at", "updated_at"], "classes": ["collapse"]}),
     ]
-    
+
     actions = ["validate_concepts", "archive_concepts"]
-    
+
     def status_badge(self, obj):
         colors = {
             "draft": "#ffc107",
@@ -337,13 +337,13 @@ class ExplosionConceptAdmin(TenantAwareAdmin):
         }
         color = colors.get(obj.status, "#6c757d")
         return format_html(
-            '<span style="background:{};color:white;'
-            'padding:2px 8px;border-radius:4px">{}</span>',
+            '<span style="background:{};color:white;padding:2px 8px;border-radius:4px">{}</span>',
             color,
-            obj.get_status_display()
+            obj.get_status_display(),
         )
+
     status_badge.short_description = "Status"
-    
+
     def completion_badge(self, obj):
         pct = obj.completion_percentage
         if pct >= 100:
@@ -356,14 +356,18 @@ class ExplosionConceptAdmin(TenantAwareAdmin):
             '<div style="background:#e9ecef;border-radius:4px;width:60px">'
             '<div style="background:{};width:{}%;height:20px;border-radius:4px;'
             'text-align:center;color:white;font-size:11px;line-height:20px">'
-            '{}%</div></div>',
-            color, pct, pct
+            "{}%</div></div>",
+            color,
+            pct,
+            pct,
         )
+
     completion_badge.short_description = "Fortschritt"
-    
+
     @admin.action(description="Ausgewählte Konzepte validieren")
     def validate_concepts(self, request, queryset):
         from .services import ValidateExplosionConceptCmd, validate_explosion_concept
+
         count = 0
         for concept in queryset.filter(status="draft"):
             try:
@@ -371,23 +375,24 @@ class ExplosionConceptAdmin(TenantAwareAdmin):
                 validate_explosion_concept(
                     cmd,
                     tenant_id=concept.tenant_id,
-                    user_id=request.user.id if request.user else None
+                    user_id=request.user.id if request.user else None,
                 )
                 count += 1
             except Exception:
                 pass
         self.message_user(request, f"{count} Konzept(e) validiert.")
-    
+
     @admin.action(description="Ausgewählte Konzepte archivieren")
     def archive_concepts(self, request, queryset):
         from .services import archive_explosion_concept
+
         count = 0
         for concept in queryset.filter(status="approved"):
             try:
                 archive_explosion_concept(
                     concept_id=concept.id,
                     tenant_id=concept.tenant_id,
-                    user_id=request.user.id if request.user else None
+                    user_id=request.user.id if request.user else None,
                 )
                 count += 1
             except Exception:
@@ -397,6 +402,7 @@ class ExplosionConceptAdmin(TenantAwareAdmin):
 
 class ZoneIgnitionSourceInline(admin.TabularInline):
     """Inline für Zündquellenbewertung"""
+
     model = ZoneIgnitionSourceAssessment
     extra = 0
     fields = ["ignition_source", "is_present", "is_effective", "mitigation"]
@@ -406,7 +412,7 @@ class ZoneIgnitionSourceInline(admin.TabularInline):
 @admin.register(ZoneDefinition)
 class ZoneDefinitionAdmin(TenantAwareAdmin):
     """Admin für Zonendefinitionen"""
-    
+
     list_display = [
         "name",
         "zone_type_badge",
@@ -417,27 +423,31 @@ class ZoneDefinitionAdmin(TenantAwareAdmin):
     list_filter = ["zone_type", "concept__status"]
     search_fields = ["name", "concept__title"]
     inlines = [ZoneIgnitionSourceInline]
-    
+
     fieldsets = [
-        (None, {
-            "fields": ["concept", "zone_type", "name"]
-        }),
-        ("Ausdehnung", {
-            "fields": [
-                "extent",
-                ("extent_horizontal_m", "extent_vertical_m"),
-            ],
-            "classes": ["collapse"]
-        }),
-        ("Begründung", {
-            "fields": [
-                "justification",
-                "reference_standard",
-                "reference_section",
-            ]
-        }),
+        (None, {"fields": ["concept", "zone_type", "name"]}),
+        (
+            "Ausdehnung",
+            {
+                "fields": [
+                    "extent",
+                    ("extent_horizontal_m", "extent_vertical_m"),
+                ],
+                "classes": ["collapse"],
+            },
+        ),
+        (
+            "Begründung",
+            {
+                "fields": [
+                    "justification",
+                    "reference_standard",
+                    "reference_section",
+                ]
+            },
+        ),
     ]
-    
+
     def zone_type_badge(self, obj):
         colors = {
             "0": "#dc3545",
@@ -450,18 +460,18 @@ class ZoneDefinitionAdmin(TenantAwareAdmin):
         }
         color = colors.get(obj.zone_type, "#6c757d")
         return format_html(
-            '<span style="background:{};color:white;'
-            'padding:2px 8px;border-radius:4px">{}</span>',
+            '<span style="background:{};color:white;padding:2px 8px;border-radius:4px">{}</span>',
             color,
-            obj.get_zone_type_display()
+            obj.get_zone_type_display(),
         )
+
     zone_type_badge.short_description = "Zone"
 
 
 @admin.register(ProtectionMeasure)
 class ProtectionMeasureAdmin(TenantAwareAdmin):
     """Admin für Schutzmaßnahmen"""
-    
+
     list_display = [
         "title",
         "category_badge",
@@ -473,24 +483,23 @@ class ProtectionMeasureAdmin(TenantAwareAdmin):
     list_filter = ["category", "status", "concept__status"]
     search_fields = ["title", "description", "concept__title"]
     date_hierarchy = "due_date"
-    
+
     fieldsets = [
-        (None, {
-            "fields": ["concept", "category", "title", "description"]
-        }),
-        ("Vorlage & MSR", {
-            "fields": ["catalog_reference", "safety_function"],
-            "classes": ["collapse"]
-        }),
-        ("Status", {
-            "fields": ["status", "responsible_user", "due_date"]
-        }),
-        ("Verifizierung", {
-            "fields": ["verified_by", "verified_at", "verification_notes"],
-            "classes": ["collapse"]
-        }),
+        (None, {"fields": ["concept", "category", "title", "description"]}),
+        (
+            "Vorlage & MSR",
+            {"fields": ["catalog_reference", "safety_function"], "classes": ["collapse"]},
+        ),
+        ("Status", {"fields": ["status", "responsible_user", "due_date"]}),
+        (
+            "Verifizierung",
+            {
+                "fields": ["verified_by", "verified_at", "verification_notes"],
+                "classes": ["collapse"],
+            },
+        ),
     ]
-    
+
     def category_badge(self, obj):
         colors = {
             "primary": "#007bff",
@@ -500,13 +509,13 @@ class ProtectionMeasureAdmin(TenantAwareAdmin):
         }
         color = colors.get(obj.category, "#6c757d")
         return format_html(
-            '<span style="background:{};color:white;'
-            'padding:2px 8px;border-radius:4px">{}</span>',
+            '<span style="background:{};color:white;padding:2px 8px;border-radius:4px">{}</span>',
             color,
-            obj.get_category_display()[:20]
+            obj.get_category_display()[:20],
         )
+
     category_badge.short_description = "Kategorie"
-    
+
     def status_badge(self, obj):
         colors = {
             "open": "#dc3545",
@@ -517,16 +526,17 @@ class ProtectionMeasureAdmin(TenantAwareAdmin):
         }
         color = colors.get(obj.status, "#6c757d")
         return format_html(
-            '<span style="background:{};color:white;'
-            'padding:2px 8px;border-radius:4px">{}</span>',
+            '<span style="background:{};color:white;padding:2px 8px;border-radius:4px">{}</span>',
             color,
-            obj.get_status_display()
+            obj.get_status_display(),
         )
+
     status_badge.short_description = "Status"
 
 
 class InspectionInline(admin.TabularInline):
     """Inline für Prüfungen"""
+
     model = Inspection
     extra = 0
     fields = ["inspection_type", "inspection_date", "result", "inspector_name"]
@@ -537,7 +547,7 @@ class InspectionInline(admin.TabularInline):
 @admin.register(Equipment)
 class EquipmentAdmin(TenantAwareAdmin):
     """Admin für Betriebsmittel"""
-    
+
     list_display = [
         "equipment_type",
         "serial_number",
@@ -551,26 +561,23 @@ class EquipmentAdmin(TenantAwareAdmin):
     search_fields = ["serial_number", "asset_number", "equipment_type__model"]
     date_hierarchy = "next_inspection_date"
     inlines = [InspectionInline]
-    
+
     fieldsets = [
-        (None, {
-            "fields": ["equipment_type", "area", "zone"]
-        }),
-        ("Identifikation", {
-            "fields": ["serial_number", "asset_number", "location_detail"]
-        }),
-        ("Status", {
-            "fields": ["status", "installation_date"]
-        }),
-        ("Prüfungen", {
-            "fields": [
-                "last_inspection_date",
-                "next_inspection_date",
-                "inspection_interval_months",
-            ]
-        }),
+        (None, {"fields": ["equipment_type", "area", "zone"]}),
+        ("Identifikation", {"fields": ["serial_number", "asset_number", "location_detail"]}),
+        ("Status", {"fields": ["status", "installation_date"]}),
+        (
+            "Prüfungen",
+            {
+                "fields": [
+                    "last_inspection_date",
+                    "next_inspection_date",
+                    "inspection_interval_months",
+                ]
+            },
+        ),
     ]
-    
+
     def status_badge(self, obj):
         colors = {
             "active": "#28a745",
@@ -580,13 +587,13 @@ class EquipmentAdmin(TenantAwareAdmin):
         }
         color = colors.get(obj.status, "#6c757d")
         return format_html(
-            '<span style="background:{};color:white;'
-            'padding:2px 8px;border-radius:4px">{}</span>',
+            '<span style="background:{};color:white;padding:2px 8px;border-radius:4px">{}</span>',
             color,
-            obj.get_status_display()
+            obj.get_status_display(),
         )
+
     status_badge.short_description = "Status"
-    
+
     def inspection_status_badge(self, obj):
         if obj.is_inspection_due:
             return format_html(
@@ -599,19 +606,20 @@ class EquipmentAdmin(TenantAwareAdmin):
                 return format_html(
                     '<span style="background:#ffc107;color:black;'
                     'padding:2px 8px;border-radius:4px">⏰ {} Tage</span>',
-                    days
+                    days,
                 )
         return format_html(
             '<span style="background:#28a745;color:white;'
             'padding:2px 8px;border-radius:4px">✓ OK</span>'
         )
+
     inspection_status_badge.short_description = "Prüfstatus"
 
 
 @admin.register(Inspection)
 class InspectionAdmin(TenantAwareAdmin):
     """Admin für Prüfungen"""
-    
+
     list_display = [
         "equipment",
         "inspection_type",
@@ -628,7 +636,7 @@ class InspectionAdmin(TenantAwareAdmin):
         "certificate_number",
     ]
     date_hierarchy = "inspection_date"
-    
+
     def result_badge(self, obj):
         colors = {
             "passed": "#28a745",
@@ -638,18 +646,18 @@ class InspectionAdmin(TenantAwareAdmin):
         }
         color = colors.get(obj.result, "#6c757d")
         return format_html(
-            '<span style="background:{};color:white;'
-            'padding:2px 8px;border-radius:4px">{}</span>',
+            '<span style="background:{};color:white;padding:2px 8px;border-radius:4px">{}</span>',
             color,
-            obj.get_result_display()
+            obj.get_result_display(),
         )
+
     result_badge.short_description = "Ergebnis"
 
 
 @admin.register(VerificationDocument)
 class VerificationDocumentAdmin(TenantAwareAdmin):
     """Admin für Nachweisdokumente"""
-    
+
     list_display = [
         "title",
         "document_type",
@@ -661,7 +669,7 @@ class VerificationDocumentAdmin(TenantAwareAdmin):
     list_filter = ["document_type", "issued_at"]
     search_fields = ["title", "concept__title", "issued_by"]
     date_hierarchy = "issued_at"
-    
+
     def validity_badge(self, obj):
         if not obj.valid_until:
             return "-"
@@ -675,19 +683,20 @@ class VerificationDocumentAdmin(TenantAwareAdmin):
             return format_html(
                 '<span style="background:#ffc107;color:black;'
                 'padding:2px 8px;border-radius:4px">{} Tage</span>',
-                days
+                days,
             )
         return format_html(
             '<span style="background:#28a745;color:white;'
             'padding:2px 8px;border-radius:4px">Gültig</span>'
         )
+
     validity_badge.short_description = "Gültigkeit"
 
 
 @admin.register(ZoneIgnitionSourceAssessment)
 class ZoneIgnitionSourceAssessmentAdmin(TenantAwareAdmin):
     """Admin für Zündquellenbewertungen"""
-    
+
     list_display = [
         "zone",
         "ignition_source",
@@ -698,7 +707,7 @@ class ZoneIgnitionSourceAssessmentAdmin(TenantAwareAdmin):
     ]
     list_filter = ["ignition_source", "is_present", "is_effective"]
     search_fields = ["zone__name", "mitigation"]
-    
+
     def is_present_badge(self, obj):
         if obj.is_present:
             return format_html(
@@ -709,8 +718,9 @@ class ZoneIgnitionSourceAssessmentAdmin(TenantAwareAdmin):
             '<span style="background:#28a745;color:white;'
             'padding:2px 8px;border-radius:4px">Nein</span>'
         )
+
     is_present_badge.short_description = "Vorhanden"
-    
+
     def is_effective_badge(self, obj):
         if obj.is_effective:
             return format_html(
@@ -721,4 +731,5 @@ class ZoneIgnitionSourceAssessmentAdmin(TenantAwareAdmin):
             '<span style="background:#28a745;color:white;'
             'padding:2px 8px;border-radius:4px">Unwirksam</span>'
         )
+
     is_effective_badge.short_description = "Wirksam"

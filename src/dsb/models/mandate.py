@@ -26,7 +26,9 @@ class Mandate(models.Model):
         OTHER = "other", "Sonstige"
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     name = models.CharField(max_length=200)

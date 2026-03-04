@@ -15,7 +15,6 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ("explosionsschutz", "0003_area_dxf_fields"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
@@ -41,15 +40,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "release_rate_kg_s",
-                    models.DecimalField(
-                        max_digits=12, decimal_places=6
-                    ),
+                    models.DecimalField(max_digits=12, decimal_places=6),
                 ),
                 (
                     "ventilation_rate_m3_s",
-                    models.DecimalField(
-                        max_digits=12, decimal_places=4
-                    ),
+                    models.DecimalField(max_digits=12, decimal_places=4),
                 ),
                 (
                     "release_type",
@@ -75,15 +70,11 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "calculated_radius_m",
-                    models.DecimalField(
-                        max_digits=8, decimal_places=3
-                    ),
+                    models.DecimalField(max_digits=8, decimal_places=3),
                 ),
                 (
                     "calculated_volume_m3",
-                    models.DecimalField(
-                        max_digits=12, decimal_places=3
-                    ),
+                    models.DecimalField(max_digits=12, decimal_places=3),
                 ),
                 (
                     "basis_norm",
@@ -111,10 +102,7 @@ class Migration(migrations.Migration):
                         on_delete=django.db.models.deletion.PROTECT,
                         related_name="calculations",
                         to="explosionsschutz.zonedefinition",
-                        help_text=(
-                            "PROTECT: Zone nicht loeschbar "
-                            "solange Nachweis existiert"
-                        ),
+                        help_text=("PROTECT: Zone nicht loeschbar solange Nachweis existiert"),
                     ),
                 ),
                 (

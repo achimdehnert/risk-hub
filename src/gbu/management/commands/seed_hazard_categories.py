@@ -5,6 +5,7 @@ Idempotent: update_or_create auf natürlichem Schlüssel 'code'.
 Mehrfaches Ausführen ist sicher (CI, Post-Deploy, lokale Einrichtung).
 Quelle: TRGS 400 (Stand 2024-09)
 """
+
 import logging
 
 from django.core.management.base import BaseCommand

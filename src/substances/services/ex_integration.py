@@ -28,7 +28,7 @@ class ExSubstanceData:
 
     # Klassifikation
     temperature_class: str | None = None  # T1-T6
-    explosion_group: str | None = None    # IIA, IIB, IIC
+    explosion_group: str | None = None  # IIA, IIB, IIC
 
     # SDS-Info
     sds_revision: int | None = None
@@ -93,10 +93,7 @@ class ExIntegrationService:
     """
 
     @staticmethod
-    def get_ex_data(
-        substance_id: UUID,
-        tenant_id: UUID
-    ) -> ExSubstanceData | None:
+    def get_ex_data(substance_id: UUID, tenant_id: UUID) -> ExSubstanceData | None:
         """
         Holt Ex-Schutz-relevante Stoffdaten.
 
@@ -129,10 +126,7 @@ class ExIntegrationService:
         )
 
     @staticmethod
-    def get_ex_data_by_cas(
-        cas_number: str,
-        tenant_id: UUID
-    ) -> ExSubstanceData | None:
+    def get_ex_data_by_cas(cas_number: str, tenant_id: UUID) -> ExSubstanceData | None:
         """
         Holt Ex-Schutz-relevante Stoffdaten nach CAS-Nummer.
 
@@ -151,9 +145,7 @@ class ExIntegrationService:
 
     @staticmethod
     def search_flammable_substances(
-        query: str,
-        tenant_id: UUID,
-        limit: int = 20
+        query: str, tenant_id: UUID, limit: int = 20
     ) -> list[ExSubstanceData]:
         """
         Sucht nur entzündbare Gefahrstoffe (relevant für Ex-Schutz).
@@ -170,9 +162,7 @@ class ExIntegrationService:
 
         results = []
         for substance in substances:
-            ex_data = ExIntegrationService.get_ex_data(
-                substance.id, tenant_id
-            )
+            ex_data = ExIntegrationService.get_ex_data(substance.id, tenant_id)
             if ex_data and ex_data.is_flammable():
                 results.append(ex_data)
                 if len(results) >= limit:
@@ -182,10 +172,7 @@ class ExIntegrationService:
 
     @staticmethod
     def validate_equipment_for_substance(
-        substance_id: UUID,
-        tenant_id: UUID,
-        equipment_marking: str,
-        zone_type: str
+        substance_id: UUID, tenant_id: UUID, equipment_marking: str, zone_type: str
     ) -> dict:
         """
         Validiert ob ein Gerät für einen Stoff in einer Zone geeignet ist.
@@ -213,18 +200,17 @@ class ExIntegrationService:
         issues = []
 
         # Kategorie prüfen
-        if f" {required_category}G" not in equipment_marking and \
-           f" {required_category}D" not in equipment_marking:
+        if (
+            f" {required_category}G" not in equipment_marking
+            and f" {required_category}D" not in equipment_marking
+        ):
             # Prüfe ob höhere Kategorie vorhanden
             for cat in ["1", "2", "3"]:
                 if int(cat) < int(required_category):
-                    if f" {cat}G" in equipment_marking or \
-                       f" {cat}D" in equipment_marking:
+                    if f" {cat}G" in equipment_marking or f" {cat}D" in equipment_marking:
                         break
             else:
-                issues.append(
-                    f"Kategorie {required_category} oder höher erforderlich"
-                )
+                issues.append(f"Kategorie {required_category} oder höher erforderlich")
 
         # Temperaturklasse prüfen
         # T6 ist die niedrigste Zündtemp (<85°C), T1 die höchste (>450°C)
@@ -233,7 +219,7 @@ class ExIntegrationService:
             temp_order = ["T6", "T5", "T4", "T3", "T2", "T1"]
             req_idx = temp_order.index(required_temp_class)
             # Alle Klassen bis inkl. der erforderlichen sind akzeptabel
-            acceptable_classes = temp_order[:req_idx + 1]
+            acceptable_classes = temp_order[: req_idx + 1]
             found = any(t in equipment_marking for t in acceptable_classes)
             if not found:
                 issues.append(
@@ -247,14 +233,13 @@ class ExIntegrationService:
             if ex_data.explosion_group in group_order:
                 req_idx = group_order.index(ex_data.explosion_group)
                 found = False
-                for g in group_order[:req_idx + 1]:
+                for g in group_order[: req_idx + 1]:
                     if g in equipment_marking:
                         found = True
                         break
                 if not found:
                     issues.append(
-                        f"Explosionsgruppe {ex_data.explosion_group} oder "
-                        f"höher erforderlich"
+                        f"Explosionsgruppe {ex_data.explosion_group} oder höher erforderlich"
                     )
 
         return {

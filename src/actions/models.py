@@ -26,11 +26,13 @@ class ActionItem(models.Model):
     title = models.CharField(max_length=240)
     description = models.TextField(blank=True, default="")
     status = models.CharField(
-        max_length=20, choices=Status.choices,
+        max_length=20,
+        choices=Status.choices,
         default=Status.OPEN,
     )
     priority = models.IntegerField(
-        choices=Priority.choices, default=Priority.MEDIUM,
+        choices=Priority.choices,
+        default=Priority.MEDIUM,
     )
 
     due_date = models.DateField(null=True, blank=True)
@@ -47,7 +49,9 @@ class ActionItem(models.Model):
     class Meta:
         db_table = "actions_action_item"
         constraints = [
-            models.UniqueConstraint(fields=["tenant_id", "title"], name="uq_action_title_per_tenant"),
+            models.UniqueConstraint(
+                fields=["tenant_id", "title"], name="uq_action_title_per_tenant"
+            ),
         ]
         indexes = [
             models.Index(

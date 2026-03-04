@@ -23,24 +23,26 @@ class Assessment(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    
+
     title = models.CharField(max_length=240)
     description = models.TextField(blank=True, default="")
     category = models.CharField(
-        max_length=50, choices=Category.choices,
+        max_length=50,
+        choices=Category.choices,
         default=Category.GENERAL,
     )
     status = models.CharField(
-        max_length=20, choices=Status.choices,
+        max_length=20,
+        choices=Status.choices,
         default=Status.DRAFT,
     )
-    
+
     site_id = models.UUIDField(null=True, blank=True, db_index=True)
-    
+
     created_by_id = models.UUIDField(null=True, blank=True)
     approved_by_id = models.UUIDField(null=True, blank=True)
     approved_at = models.DateTimeField(null=True, blank=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -91,20 +93,22 @@ class Hazard(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="hazards")
-    
+
     title = models.CharField(max_length=240)
     description = models.TextField(blank=True, default="")
-    
+
     severity = models.IntegerField(
-        choices=Severity.choices, default=Severity.LOW,
+        choices=Severity.choices,
+        default=Severity.LOW,
     )
     probability = models.IntegerField(
-        choices=Probability.choices, default=Probability.UNLIKELY,
+        choices=Probability.choices,
+        default=Probability.UNLIKELY,
     )
-    
+
     mitigation = models.TextField(blank=True, default="")
     residual_risk = models.IntegerField(null=True, blank=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -119,7 +123,7 @@ class Hazard(models.Model):
 
     def __str__(self) -> str:
         return self.title
-    
+
     @property
     def risk_score(self) -> int:
         """Calculate risk score (severity * probability)."""

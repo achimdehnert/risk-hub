@@ -48,26 +48,32 @@ def has_permission(
         return False
 
     # 1. Check explicit deny
-    deny = PermissionOverride.objects.filter(
-        membership=membership,
-        permission__code=permission_code,
-        allowed=False,
-    ).filter(
-        Q(expires_at__isnull=True)
-        | Q(expires_at__gte=timezone.now()),
-    ).exists()
+    deny = (
+        PermissionOverride.objects.filter(
+            membership=membership,
+            permission__code=permission_code,
+            allowed=False,
+        )
+        .filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gte=timezone.now()),
+        )
+        .exists()
+    )
     if deny:
         return False
 
     # 2. Check explicit grant
-    grant = PermissionOverride.objects.filter(
-        membership=membership,
-        permission__code=permission_code,
-        allowed=True,
-    ).filter(
-        Q(expires_at__isnull=True)
-        | Q(expires_at__gte=timezone.now()),
-    ).exists()
+    grant = (
+        PermissionOverride.objects.filter(
+            membership=membership,
+            permission__code=permission_code,
+            allowed=True,
+        )
+        .filter(
+            Q(expires_at__isnull=True) | Q(expires_at__gte=timezone.now()),
+        )
+        .exists()
+    )
     if grant:
         return True
 

@@ -20,9 +20,9 @@ def _tenant_id(request: HttpRequest):
     if user and getattr(user, "is_authenticated", False):
         try:
             from django_tenancy.models import Membership
+
             m = (
-                Membership.objects
-                .filter(user=user)
+                Membership.objects.filter(user=user)
                 .select_related("organization")
                 .order_by("created_at")
                 .first()
@@ -53,12 +53,16 @@ def document_list(request: HttpRequest) -> HttpResponse:
     if ref_id:
         qs = qs.filter(ref_id=ref_id)
 
-    return render(request, "dsb/document_list.html", {
-        "docs": qs[:200],
-        "ref_type": ref_type,
-        "ref_id": ref_id,
-        "ref_type_choices": DsbDocument.RefType.choices,
-    })
+    return render(
+        request,
+        "dsb/document_list.html",
+        {
+            "docs": qs[:200],
+            "ref_type": ref_type,
+            "ref_id": ref_id,
+            "ref_type_choices": DsbDocument.RefType.choices,
+        },
+    )
 
 
 @login_required
@@ -72,7 +76,9 @@ def document_upload(request: HttpRequest) -> HttpResponse:
     ref_id = request.GET.get("ref_id", "")
     mandate_id = request.GET.get("mandate", "")
 
-    mandates = Mandate.objects.filter(tenant_id=tid, status="active") if tid else Mandate.objects.none()
+    mandates = (
+        Mandate.objects.filter(tenant_id=tid, status="active") if tid else Mandate.objects.none()
+    )
     selected_mandate = None
     if mandate_id:
         selected_mandate = mandates.filter(pk=mandate_id).first()
@@ -94,7 +100,11 @@ def document_upload(request: HttpRequest) -> HttpResponse:
             messages.error(request, "Bitte eine Bezeichnung eingeben.")
         else:
             try:
-                mandate = Mandate.objects.get(pk=doc_mandate_id, tenant_id=tid) if doc_mandate_id else None
+                mandate = (
+                    Mandate.objects.get(pk=doc_mandate_id, tenant_id=tid)
+                    if doc_mandate_id
+                    else None
+                )
             except Mandate.DoesNotExist:
                 mandate = None
 
@@ -113,6 +123,7 @@ def document_upload(request: HttpRequest) -> HttpResponse:
             )
             if document_date:
                 from datetime import datetime
+
                 try:
                     doc.document_date = datetime.strptime(document_date, "%Y-%m-%d").date()
                 except ValueError:
@@ -128,13 +139,17 @@ def document_upload(request: HttpRequest) -> HttpResponse:
                 return redirect(next_url)
             return redirect("dsb:document-list")
 
-    return render(request, "dsb/document_upload.html", {
-        "mandates": mandates,
-        "selected_mandate": selected_mandate,
-        "ref_type": ref_type,
-        "ref_id": ref_id,
-        "ref_type_choices": DsbDocument.RefType.choices,
-    })
+    return render(
+        request,
+        "dsb/document_upload.html",
+        {
+            "mandates": mandates,
+            "selected_mandate": selected_mandate,
+            "ref_type": ref_type,
+            "ref_id": ref_id,
+            "ref_type_choices": DsbDocument.RefType.choices,
+        },
+    )
 
 
 @login_required

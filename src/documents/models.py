@@ -19,7 +19,8 @@ class Document(models.Model):
     tenant_id = models.UUIDField(db_index=True)
     title = models.CharField(max_length=240)
     category = models.CharField(
-        max_length=50, choices=Category.choices,
+        max_length=50,
+        choices=Category.choices,
         default=Category.GENERAL,
     )
     created_at = models.DateTimeField(auto_now_add=True)

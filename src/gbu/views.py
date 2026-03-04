@@ -21,6 +21,7 @@ HTMX-Partials:
 Pattern: Views nur HTTP, keine Business-Logik → gbu_engine.py / compliance.py
 HTMX-Detection: request.headers.get("HX-Request") (kein django_htmx)
 """
+
 import logging
 import uuid
 from datetime import date
@@ -50,10 +51,10 @@ from gbu.services.gbu_engine import (
 logger = logging.getLogger(__name__)
 
 _RISK_BADGE = {
-    "low":      ("bg-green-100 text-green-800",   "Gering"),
-    "medium":   ("bg-yellow-100 text-yellow-800", "Mittel"),
-    "high":     ("bg-orange-100 text-orange-800", "Hoch"),
-    "critical": ("bg-red-100 text-red-800",       "Kritisch"),
+    "low": ("bg-green-100 text-green-800", "Gering"),
+    "medium": ("bg-yellow-100 text-yellow-800", "Mittel"),
+    "high": ("bg-orange-100 text-orange-800", "Hoch"),
+    "critical": ("bg-red-100 text-red-800", "Kritisch"),
 }
 
 
@@ -63,6 +64,7 @@ def _tenant_id(request: HttpRequest) -> UUID:
 
 # ── Aktivitätsliste ───────────────────────────────────────────────────────
 
+
 @login_required
 @require_GET
 def activity_list(request: HttpRequest) -> HttpResponse:
@@ -71,8 +73,7 @@ def activity_list(request: HttpRequest) -> HttpResponse:
     risk_filter = request.GET.get("risk", "")
 
     qs = (
-        HazardAssessmentActivity.objects
-        .filter(tenant_id=tenant_id)
+        HazardAssessmentActivity.objects.filter(tenant_id=tenant_id)
         .select_related("site", "sds_revision", "sds_revision__substance")
         .order_by("-created_at")
     )
@@ -81,17 +82,22 @@ def activity_list(request: HttpRequest) -> HttpResponse:
     if risk_filter:
         qs = qs.filter(risk_score=risk_filter)
 
-    return render(request, "gbu/activity_list.html", {
-        "activities": qs,
-        "status_choices": ActivityStatus,
-        "risk_badge": _RISK_BADGE,
-        "current_status": status_filter,
-        "current_risk": risk_filter,
-        "today": date.today(),
-    })
+    return render(
+        request,
+        "gbu/activity_list.html",
+        {
+            "activities": qs,
+            "status_choices": ActivityStatus,
+            "risk_badge": _RISK_BADGE,
+            "current_status": status_filter,
+            "current_risk": risk_filter,
+            "today": date.today(),
+        },
+    )
 
 
 # ── HTMX Partial: Aktivitätsliste (gefiltert) ─────────────────────────────
+
 
 @login_required
 @require_GET
@@ -101,8 +107,7 @@ def partial_activity_list(request: HttpRequest) -> HttpResponse:
     risk_filter = request.GET.get("risk", "")
 
     qs = (
-        HazardAssessmentActivity.objects
-        .filter(tenant_id=tenant_id)
+        HazardAssessmentActivity.objects.filter(tenant_id=tenant_id)
         .select_related("site", "sds_revision", "sds_revision__substance")
         .order_by("-created_at")
     )
@@ -111,13 +116,18 @@ def partial_activity_list(request: HttpRequest) -> HttpResponse:
     if risk_filter:
         qs = qs.filter(risk_score=risk_filter)
 
-    return render(request, "gbu/partials/_activity_rows.html", {
-        "activities": qs,
-        "today": date.today(),
-    })
+    return render(
+        request,
+        "gbu/partials/_activity_rows.html",
+        {
+            "activities": qs,
+            "today": date.today(),
+        },
+    )
 
 
 # ── Compliance-Dashboard ───────────────────────────────────────────────
+
 
 @login_required
 @require_GET
@@ -133,15 +143,20 @@ def compliance_dashboard(request: HttpRequest) -> HttpResponse:
     overdue_list = list_overdue_reviews(tenant_id)
     due_soon_list = list_due_reviews(tenant_id)
 
-    return render(request, "gbu/compliance_dashboard.html", {
-        "summary": summary,
-        "overdue_list": overdue_list,
-        "due_soon_list": due_soon_list,
-        "risk_badge": _RISK_BADGE,
-    })
+    return render(
+        request,
+        "gbu/compliance_dashboard.html",
+        {
+            "summary": summary,
+            "overdue_list": overdue_list,
+            "due_soon_list": due_soon_list,
+            "risk_badge": _RISK_BADGE,
+        },
+    )
 
 
 # ── Schritt 1: Stoff + Standort ───────────────────────────────────────────
+
 
 @login_required
 @require_GET
@@ -151,27 +166,28 @@ def wizard_step1(request: HttpRequest) -> HttpResponse:
 
     tenant_id = _tenant_id(request)
     revisions = (
-        SdsRevision.objects
-        .filter(tenant_id=tenant_id)
+        SdsRevision.objects.filter(tenant_id=tenant_id)
         .select_related("substance")
         .order_by("substance__name")
     )
     sites = Site.objects.filter(tenant_id=tenant_id).order_by("name")
-    return render(request, "gbu/wizard_step1.html", {
-        "step": 1,
-        "revisions": revisions,
-        "sites": sites,
-    })
+    return render(
+        request,
+        "gbu/wizard_step1.html",
+        {
+            "step": 1,
+            "revisions": revisions,
+            "sites": sites,
+        },
+    )
 
 
 # ── Schritt 2: Tätigkeitsdaten ───────────────────────────────────────────
 
+
 @login_required
 def wizard_step2(request: HttpRequest) -> HttpResponse:
-    sds_revision_id = (
-        request.GET.get("sds_revision_id")
-        or request.POST.get("sds_revision_id")
-    )
+    sds_revision_id = request.GET.get("sds_revision_id") or request.POST.get("sds_revision_id")
     site_id = request.GET.get("site_id") or request.POST.get("site_id")
 
     if not sds_revision_id or not site_id:
@@ -184,27 +200,31 @@ def wizard_step2(request: HttpRequest) -> HttpResponse:
                 "sds_revision_id": sds_revision_id,
                 "site_id": site_id,
                 **form.cleaned_data,
-                "substitution_checked": form.cleaned_data.get(
-                    "substitution_checked", False
-                ),
+                "substitution_checked": form.cleaned_data.get("substitution_checked", False),
             }
             return redirect("gbu:wizard-step3")
     else:
         form = WizardStep2Form()
 
     from substances.models import SdsRevision
+
     revision = get_object_or_404(SdsRevision, id=sds_revision_id)
 
-    return render(request, "gbu/wizard_step2.html", {
-        "step": 2,
-        "form": form,
-        "revision": revision,
-        "sds_revision_id": sds_revision_id,
-        "site_id": site_id,
-    })
+    return render(
+        request,
+        "gbu/wizard_step2.html",
+        {
+            "step": 2,
+            "form": form,
+            "revision": revision,
+            "sds_revision_id": sds_revision_id,
+            "site_id": site_id,
+        },
+    )
 
 
 # ── Schritt 3: Gefährdungskategorien ─────────────────────────────────────
+
 
 @login_required
 def wizard_step3(request: HttpRequest) -> HttpResponse:
@@ -224,15 +244,20 @@ def wizard_step3(request: HttpRequest) -> HttpResponse:
     else:
         form = WizardStep3Form()
 
-    return render(request, "gbu/wizard_step3.html", {
-        "step": 3,
-        "form": form,
-        "categories": categories,
-        "is_htmx": request.headers.get("HX-Request"),
-    })
+    return render(
+        request,
+        "gbu/wizard_step3.html",
+        {
+            "step": 3,
+            "form": form,
+            "categories": categories,
+            "is_htmx": request.headers.get("HX-Request"),
+        },
+    )
 
 
 # ── HTMX Partial: Gefährdungsliste ──────────────────────────────────────
+
 
 @login_required
 @require_GET
@@ -244,12 +269,17 @@ def partial_hazard_list(request: HttpRequest) -> HttpResponse:
         categories = derive_hazard_categories(UUID(sds_revision_id))
     except Exception:
         categories = []
-    return render(request, "gbu/partials/_hazard_list.html", {
-        "categories": categories,
-    })
+    return render(
+        request,
+        "gbu/partials/_hazard_list.html",
+        {
+            "categories": categories,
+        },
+    )
 
 
 # ── Schritt 4: Maßnahmen ───────────────────────────────────────────────
+
 
 @login_required
 def wizard_step4(request: HttpRequest) -> HttpResponse:
@@ -261,10 +291,11 @@ def wizard_step4(request: HttpRequest) -> HttpResponse:
     categories = derive_hazard_categories(UUID(sds_revision_id))
 
     from gbu.models.reference import MeasureTemplate
+
     category_ids = [c.id for c in categories]
-    templates = MeasureTemplate.objects.filter(
-        category_id__in=category_ids
-    ).order_by("tops_type", "sort_order")
+    templates = MeasureTemplate.objects.filter(category_id__in=category_ids).order_by(
+        "tops_type", "sort_order"
+    )
 
     if request.method == "POST":
         form = WizardStep4Form(request.POST)
@@ -276,14 +307,19 @@ def wizard_step4(request: HttpRequest) -> HttpResponse:
     else:
         form = WizardStep4Form()
 
-    return render(request, "gbu/wizard_step4.html", {
-        "step": 4,
-        "form": form,
-        "templates": templates,
-    })
+    return render(
+        request,
+        "gbu/wizard_step4.html",
+        {
+            "step": 4,
+            "form": form,
+            "templates": templates,
+        },
+    )
 
 
 # ── HTMX Partial: Maßnahmenliste ────────────────────────────────────────
+
 
 @login_required
 @require_GET
@@ -294,18 +330,24 @@ def partial_measure_list(request: HttpRequest) -> HttpResponse:
     try:
         categories = derive_hazard_categories(UUID(sds_revision_id))
         from gbu.models.reference import MeasureTemplate
+
         category_ids = [c.id for c in categories]
-        templates = MeasureTemplate.objects.filter(
-            category_id__in=category_ids
-        ).order_by("tops_type", "sort_order")
+        templates = MeasureTemplate.objects.filter(category_id__in=category_ids).order_by(
+            "tops_type", "sort_order"
+        )
     except Exception:
         templates = []
-    return render(request, "gbu/partials/_measure_list.html", {
-        "templates": templates,
-    })
+    return render(
+        request,
+        "gbu/partials/_measure_list.html",
+        {
+            "templates": templates,
+        },
+    )
 
 
 # ── Schritt 5: Freigabe ───────────────────────────────────────────────
+
 
 @login_required
 def wizard_step5(request: HttpRequest) -> HttpResponse:
@@ -327,14 +369,10 @@ def wizard_step5(request: HttpRequest) -> HttpResponse:
                     activity_frequency=wizard["activity_frequency"],
                     duration_minutes=wizard["duration_minutes"],
                     quantity_class=wizard["quantity_class"],
-                    substitution_checked=wizard.get(
-                        "substitution_checked", False
-                    ),
+                    substitution_checked=wizard.get("substitution_checked", False),
                     substitution_notes=wizard.get("substitution_notes", ""),
                 )
-                activity = create_activity(
-                    cmd=cmd, tenant_id=tenant_id, user_id=user_id
-                )
+                activity = create_activity(cmd=cmd, tenant_id=tenant_id, user_id=user_id)
                 set_risk_score(activity_id=activity.id, tenant_id=tenant_id)
 
                 approve_cmd = ApproveActivityCmd(
@@ -351,37 +389,39 @@ def wizard_step5(request: HttpRequest) -> HttpResponse:
                 request.session.pop("gbu_wizard", None)
 
                 from gbu.tasks import generate_documents_task
-                generate_documents_task.delay(
-                    str(activity.id), str(tenant_id)
-                )
+
+                generate_documents_task.delay(str(activity.id), str(tenant_id))
 
                 return redirect("gbu:activity-detail", pk=activity.id)
 
             except Exception as exc:
                 logger.exception("[GBU Wizard] Fehler bei Freigabe: %s", exc)
-                form.add_error(
-                    None, "Fehler bei der Freigabe. Bitte erneut versuchen."
-                )
+                form.add_error(None, "Fehler bei der Freigabe. Bitte erneut versuchen.")
     else:
         form = WizardStep5Form()
 
-    return render(request, "gbu/wizard_step5.html", {
-        "step": 5,
-        "form": form,
-        "wizard": wizard,
-    })
+    return render(
+        request,
+        "gbu/wizard_step5.html",
+        {
+            "step": 5,
+            "form": form,
+            "wizard": wizard,
+        },
+    )
 
 
 # ── Detail-Ansicht ─────────────────────────────────────────────────────
+
 
 @login_required
 @require_GET
 def activity_detail(request: HttpRequest, pk: UUID) -> HttpResponse:
     tenant_id = _tenant_id(request)
     activity = get_object_or_404(
-        HazardAssessmentActivity.objects.select_related(
-            "site", "sds_revision"
-        ).prefetch_related("measures", "derived_hazard_categories"),
+        HazardAssessmentActivity.objects.select_related("site", "sds_revision").prefetch_related(
+            "measures", "derived_hazard_categories"
+        ),
         id=pk,
         tenant_id=tenant_id,
     )
@@ -390,19 +430,20 @@ def activity_detail(request: HttpRequest, pk: UUID) -> HttpResponse:
         ("bg-gray-100 text-gray-800", activity.risk_score),
     )
     is_htmx = request.headers.get("HX-Request")
-    template = (
-        "gbu/partials/_activity_detail.html"
-        if is_htmx
-        else "gbu/activity_detail.html"
+    template = "gbu/partials/_activity_detail.html" if is_htmx else "gbu/activity_detail.html"
+    return render(
+        request,
+        template,
+        {
+            "activity": activity,
+            "badge_css": badge_css,
+            "badge_label": badge_label,
+        },
     )
-    return render(request, template, {
-        "activity": activity,
-        "badge_css": badge_css,
-        "badge_label": badge_label,
-    })
 
 
 # ── PDF-Download ─────────────────────────────────────────────────────────
+
 
 @login_required
 @require_GET
@@ -460,6 +501,7 @@ def download_ba_pdf(request: HttpRequest, pk: UUID) -> HttpResponse:
 
 # ── HTMX Partial: Risiko-Badge ──────────────────────────────────────────
 
+
 @login_required
 @require_GET
 def partial_risk_badge(request: HttpRequest) -> HttpResponse:
@@ -471,13 +513,16 @@ def partial_risk_badge(request: HttpRequest) -> HttpResponse:
         return HttpResponse("")
 
     from gbu.services.gbu_engine import calculate_risk_score
-    score = calculate_risk_score(quantity_class, activity_frequency, has_cmr)
-    badge_css, badge_label = _RISK_BADGE.get(
-        score, ("bg-gray-100 text-gray-800", score)
-    )
 
-    return render(request, "gbu/partials/_risk_badge.html", {
-        "score": score,
-        "badge_css": badge_css,
-        "badge_label": badge_label,
-    })
+    score = calculate_risk_score(quantity_class, activity_frequency, has_cmr)
+    badge_css, badge_label = _RISK_BADGE.get(score, ("bg-gray-100 text-gray-800", score))
+
+    return render(
+        request,
+        "gbu/partials/_risk_badge.html",
+        {
+            "score": score,
+            "badge_css": badge_css,
+            "badge_label": badge_label,
+        },
+    )

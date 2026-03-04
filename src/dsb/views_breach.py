@@ -18,9 +18,9 @@ def _tenant_id(request: HttpRequest):
     if user and getattr(user, "is_authenticated", False):
         try:
             from django_tenancy.models import Membership
+
             m = (
-                Membership.objects
-                .filter(user=user)
+                Membership.objects.filter(user=user)
                 .select_related("organization")
                 .order_by("created_at")
                 .first()
@@ -43,15 +43,21 @@ def breach_list(request: HttpRequest) -> HttpResponse:
     """Liste aller Datenpannen mit Workflow-Status."""
     tid = _tenant_id(request)
     qs = Breach.objects.filter(tenant_id=tid).select_related("mandate")
-    open_count = qs.filter(is_open=True).count() if False else qs.exclude(
-        workflow_status=BreachStatus.CLOSED
-    ).count()
+    open_count = (
+        qs.filter(is_open=True).count()
+        if False
+        else qs.exclude(workflow_status=BreachStatus.CLOSED).count()
+    )
     overdue_count = sum(1 for b in qs if b.is_overdue)
-    return render(request, "dsb/breach_list.html", {
-        "rows": qs[:200],
-        "open_count": open_count,
-        "overdue_count": overdue_count,
-    })
+    return render(
+        request,
+        "dsb/breach_list.html",
+        {
+            "rows": qs[:200],
+            "open_count": open_count,
+            "overdue_count": overdue_count,
+        },
+    )
 
 
 @login_required
@@ -59,6 +65,7 @@ def breach_list(request: HttpRequest) -> HttpResponse:
 def breach_create(request: HttpRequest) -> HttpResponse:
     """Neue Datenpanne erfassen."""
     from dsb.forms_breach import BreachCreateForm
+
     tid = _tenant_id(request)
     if request.method == "POST":
         form = BreachCreateForm(request.POST, tenant_id=tid)
@@ -73,15 +80,23 @@ def breach_create(request: HttpRequest) -> HttpResponse:
             messages.success(
                 request,
                 "Datenpanne erfasst. "
-                + (f"Bestätigungs-E-Mail an {obj.reported_by_email} gesendet." if obj.reported_by_email else "")
+                + (
+                    f"Bestätigungs-E-Mail an {obj.reported_by_email} gesendet."
+                    if obj.reported_by_email
+                    else ""
+                ),
             )
             return redirect("dsb:breach-detail", pk=obj.pk)
     else:
         form = BreachCreateForm(tenant_id=tid)
-    return render(request, "dsb/breach_form.html", {
-        "form": form,
-        "title": "Datenpanne erfassen (Art. 33 DSGVO)",
-    })
+    return render(
+        request,
+        "dsb/breach_form.html",
+        {
+            "form": form,
+            "title": "Datenpanne erfassen (Art. 33 DSGVO)",
+        },
+    )
 
 
 @login_required
@@ -91,17 +106,23 @@ def breach_detail(request: HttpRequest, pk) -> HttpResponse:
     tid = _tenant_id(request)
     obj = get_object_or_404(
         Breach.objects.select_related("mandate").prefetch_related("affected_categories"),
-        pk=pk, tenant_id=tid,
+        pk=pk,
+        tenant_id=tid,
     )
     from dsb.models.document import DsbDocument
+
     next_steps = BREACH_TRANSITIONS.get(obj.workflow_status, [])
     docs = DsbDocument.objects.filter(tenant_id=tid, ref_type="breach", ref_id=obj.pk)
-    return render(request, "dsb/breach_detail.html", {
-        "obj": obj,
-        "next_steps": next_steps,
-        "status_choices": BreachStatus,
-        "docs": docs,
-    })
+    return render(
+        request,
+        "dsb/breach_detail.html",
+        {
+            "obj": obj,
+            "next_steps": next_steps,
+            "status_choices": BreachStatus,
+            "docs": docs,
+        },
+    )
 
 
 @login_required
@@ -126,7 +147,8 @@ def breach_advance(request: HttpRequest, pk) -> HttpResponse:
         return redirect("dsb:breach-detail", pk=pk)
 
     advance_breach_workflow(
-        obj, new_status,
+        obj,
+        new_status,
         notes=notes,
         authority_name=authority_name,
         authority_reference=authority_reference,

@@ -35,7 +35,9 @@ class Breach(models.Model):
     """Datenpanne gemäß Art. 33 DSGVO."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
 
@@ -54,11 +56,14 @@ class Breach(models.Model):
 
     # Behörde
     authority_name = models.CharField(
-        max_length=200, blank=True,
+        max_length=200,
+        blank=True,
         verbose_name="Aufsichtsbehörde",
         help_text="z.B. LfDI Baden-Württemberg",
     )
-    authority_reference = models.CharField(max_length=100, blank=True, verbose_name="Aktenzeichen Behörde")
+    authority_reference = models.CharField(
+        max_length=100, blank=True, verbose_name="Aktenzeichen Behörde"
+    )
 
     # Zeitstempel Workflow-Schritte
     dsb_notified_at = models.DateTimeField(null=True, blank=True)
@@ -127,10 +132,7 @@ class Breach(models.Model):
         ]
 
     def __str__(self) -> str:
-        return (
-            f"Datenpanne {self.discovered_at:%Y-%m-%d}"
-            f" ({self.get_severity_display()})"
-        )
+        return f"Datenpanne {self.discovered_at:%Y-%m-%d} ({self.get_severity_display()})"
 
     @property
     def deadline_72h(self):
@@ -140,10 +142,7 @@ class Breach(models.Model):
     @property
     def is_overdue(self) -> bool:
         """Prüft ob 72h-Frist überschritten und noch nicht gemeldet."""
-        return (
-            self.reported_to_authority_at is None
-            and timezone.now() > self.deadline_72h
-        )
+        return self.reported_to_authority_at is None and timezone.now() > self.deadline_72h
 
     @property
     def is_open(self) -> bool:

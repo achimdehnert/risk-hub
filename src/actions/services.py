@@ -30,8 +30,9 @@ def list_actions(
     require_permission("actions.read")
 
     return list(
-        ActionItem.objects.filter(tenant_id=ctx.tenant_id)
-        .order_by("-created_at")[offset: offset + limit]
+        ActionItem.objects.filter(tenant_id=ctx.tenant_id).order_by("-created_at")[
+            offset : offset + limit
+        ]
     )
 
 

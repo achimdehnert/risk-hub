@@ -59,21 +59,29 @@ class TestApprovalStep:
 
     def test_should_enforce_unique_order(self, fixture_workflow):
         ApprovalStep.objects.create(
-            workflow=fixture_workflow, order=1, name="Step 1",
+            workflow=fixture_workflow,
+            order=1,
+            name="Step 1",
         )
         from django.db import IntegrityError
 
         with pytest.raises(IntegrityError):
             ApprovalStep.objects.create(
-                workflow=fixture_workflow, order=1, name="Dup",
+                workflow=fixture_workflow,
+                order=1,
+                name="Dup",
             )
 
     def test_should_order_by_step_number(self, fixture_workflow):
         ApprovalStep.objects.create(
-            workflow=fixture_workflow, order=2, name="B",
+            workflow=fixture_workflow,
+            order=2,
+            name="B",
         )
         ApprovalStep.objects.create(
-            workflow=fixture_workflow, order=1, name="A",
+            workflow=fixture_workflow,
+            order=1,
+            name="A",
         )
         steps = list(fixture_workflow.steps.all())
         assert steps[0].name == "A"
@@ -124,7 +132,9 @@ class TestApprovalDecision:
             name="WF",
         )
         step = ApprovalStep.objects.create(
-            workflow=wf, order=1, name="Step 1",
+            workflow=wf,
+            order=1,
+            name="Step 1",
         )
         req = ApprovalRequest.objects.create(
             tenant_id=TENANT_ID,

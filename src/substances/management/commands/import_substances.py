@@ -22,10 +22,7 @@ from substances.services.substance_import import (
 class Command(BaseCommand):
     """Importiert reale Gefahrstoffe in die Datenbank."""
 
-    help = (
-        "Importiert Gefahrstoffe aus JSON-Datendateien "
-        "für einen bestimmten Tenant"
-    )
+    help = "Importiert Gefahrstoffe aus JSON-Datendateien für einen bestimmten Tenant"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -37,8 +34,7 @@ class Command(BaseCommand):
             "--file",
             type=str,
             default=None,
-            help="Pfad zur JSON-Datendatei (Standard: "
-                 "eingebaute common_substances.json)",
+            help="Pfad zur JSON-Datendatei (Standard: eingebaute common_substances.json)",
         )
         parser.add_argument(
             "--dry-run",
@@ -48,8 +44,7 @@ class Command(BaseCommand):
         parser.add_argument(
             "--with-ghs",
             action="store_true",
-            help="Vorher GHS-Referenzdaten laden "
-                 "(load_ghs_data)",
+            help="Vorher GHS-Referenzdaten laden (load_ghs_data)",
         )
         parser.add_argument(
             "--user",
@@ -66,26 +61,18 @@ class Command(BaseCommand):
         try:
             org = Organization.objects.get(slug=slug)
         except Organization.DoesNotExist:
-            raise CommandError(
-                f"Tenant '{slug}' nicht gefunden"
-            )
+            raise CommandError(f"Tenant '{slug}' nicht gefunden")
 
         user_id = None
         if options["user"]:
             try:
-                user = User.objects.get(
-                    username=options["user"]
-                )
+                user = User.objects.get(username=options["user"])
                 user_id = user.id
             except User.DoesNotExist:
-                raise CommandError(
-                    f"User '{options['user']}' nicht gefunden"
-                )
+                raise CommandError(f"User '{options['user']}' nicht gefunden")
 
         if options["with_ghs"]:
-            self.stdout.write(
-                "Lade GHS-Referenzdaten..."
-            )
+            self.stdout.write("Lade GHS-Referenzdaten...")
             call_command("load_ghs_data")
             self.stdout.write("")
 
@@ -93,19 +80,14 @@ class Command(BaseCommand):
         if options["file"]:
             file_path = Path(options["file"])
             if not file_path.exists():
-                raise CommandError(
-                    f"Datei nicht gefunden: {file_path}"
-                )
+                raise CommandError(f"Datei nicht gefunden: {file_path}")
 
         dry_run = options["dry_run"]
         if dry_run:
-            self.stdout.write(self.style.WARNING(
-                "DRY-RUN: Keine Daten werden geschrieben"
-            ))
+            self.stdout.write(self.style.WARNING("DRY-RUN: Keine Daten werden geschrieben"))
 
         self.stdout.write(
-            f"Importiere Gefahrstoffe für Tenant "
-            f"'{org.name}' (tenant_id={org.tenant_id})..."
+            f"Importiere Gefahrstoffe für Tenant '{org.name}' (tenant_id={org.tenant_id})..."
         )
 
         service = SubstanceImportService(
@@ -113,19 +95,18 @@ class Command(BaseCommand):
             user_id=user_id,
         )
         stats = service.import_from_file(
-            path=file_path, dry_run=dry_run,
+            path=file_path,
+            dry_run=dry_run,
         )
 
         self.stdout.write("")
         self.stdout.write(stats.summary())
 
         if stats.errors:
-            self.stdout.write(self.style.WARNING(
-                f"\n⚠ {len(stats.errors)} Fehler aufgetreten"
-            ))
+            self.stdout.write(self.style.WARNING(f"\n⚠ {len(stats.errors)} Fehler aufgetreten"))
         else:
-            self.stdout.write(self.style.SUCCESS(
-                f"\n✓ Import abgeschlossen: "
-                f"{stats.created} neu, "
-                f"{stats.updated} aktualisiert"
-            ))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"\n✓ Import abgeschlossen: {stats.created} neu, {stats.updated} aktualisiert"
+                )
+            )

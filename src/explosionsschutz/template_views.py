@@ -36,10 +36,14 @@ class HomeView(View):
         stats = self._get_stats(tenant_id)
         recent_activities = self._get_recent_activities(tenant_id)
 
-        return render(request, self.template_name, {
-            "stats": stats,
-            "recent_activities": recent_activities,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "stats": stats,
+                "recent_activities": recent_activities,
+            },
+        )
 
     def _get_stats(self, tenant_id):
         """Berechnet Dashboard-Statistiken"""
@@ -65,9 +69,7 @@ class HomeView(View):
             "concepts_approved": concepts.filter(status="approved").count(),
             "zones": zones,
             "equipment": equipment.count(),
-            "inspections_due": equipment.filter(
-                next_inspection_date__isnull=False
-            ).count(),
+            "inspections_due": equipment.filter(next_inspection_date__isnull=False).count(),
             "standards": standards,
             "measures": measures,
         }
@@ -86,9 +88,7 @@ class AreaListView(View):
         tenant_id = getattr(request, "tenant_id", None)
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
 
-        areas = Area.objects.filter(base_filter).prefetch_related(
-            "explosion_concepts", "equipment"
-        )
+        areas = Area.objects.filter(base_filter).prefetch_related("explosion_concepts", "equipment")
 
         search = request.GET.get("search", "")
         if search:
@@ -100,20 +100,20 @@ class AreaListView(View):
                 explosion_concepts__status__in=["approved", "in_review"]
             ).distinct()
         elif hazard == "0":
-            areas = areas.exclude(
-                explosion_concepts__status__in=["approved", "in_review"]
-            )
+            areas = areas.exclude(explosion_concepts__status__in=["approved", "in_review"])
 
         areas_list = []
         for area in areas:
-            areas_list.append({
-                "id": area.id,
-                "code": area.code,
-                "name": area.name,
-                "has_explosion_hazard": area.has_explosion_hazard,
-                "concepts_count": area.explosion_concepts.count(),
-                "equipment_count": area.equipment.count(),
-            })
+            areas_list.append(
+                {
+                    "id": area.id,
+                    "code": area.code,
+                    "name": area.name,
+                    "has_explosion_hazard": area.has_explosion_hazard,
+                    "concepts_count": area.explosion_concepts.count(),
+                    "equipment_count": area.equipment.count(),
+                }
+            )
 
         return render(request, self.template_name, {"areas": areas_list})
 
@@ -133,12 +133,16 @@ class AreaDetailView(View):
 
         zones_count = sum(c.zones.count() for c in concepts)
 
-        return render(request, self.template_name, {
-            "area": area,
-            "concepts": concepts,
-            "equipment": equipment,
-            "zones_count": zones_count,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "area": area,
+                "concepts": concepts,
+                "equipment": equipment,
+                "zones_count": zones_count,
+            },
+        )
 
 
 class ConceptListView(View):
@@ -150,9 +154,11 @@ class ConceptListView(View):
         tenant_id = getattr(request, "tenant_id", None)
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
 
-        concepts = ExplosionConcept.objects.filter(base_filter).select_related(
-            "area"
-        ).prefetch_related("zones")
+        concepts = (
+            ExplosionConcept.objects.filter(base_filter)
+            .select_related("area")
+            .prefetch_related("zones")
+        )
 
         search = request.GET.get("search", "")
         if search:
@@ -177,19 +183,22 @@ class ConceptDetailView(View):
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
 
         concept = get_object_or_404(
-            ExplosionConcept.objects.filter(base_filter).select_related("area"),
-            pk=pk
+            ExplosionConcept.objects.filter(base_filter).select_related("area"), pk=pk
         )
         zones = concept.zones.all()
         measures = concept.measures.all()
         documents = concept.documents.all()
 
-        return render(request, self.template_name, {
-            "concept": concept,
-            "zones": zones,
-            "measures": measures,
-            "documents": documents,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "concept": concept,
+                "zones": zones,
+                "measures": measures,
+                "documents": documents,
+            },
+        )
 
 
 class EquipmentListView(View):
@@ -228,22 +237,25 @@ class EquipmentDetailView(View):
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
 
         equipment = get_object_or_404(
-            Equipment.objects.filter(base_filter).select_related(
-                "equipment_type", "area", "zone"
-            ),
-            pk=pk
+            Equipment.objects.filter(base_filter).select_related("equipment_type", "area", "zone"),
+            pk=pk,
         )
         inspections = equipment.inspections.order_by("-inspection_date")
 
-        return render(request, self.template_name, {
-            "equipment": equipment,
-            "inspections": inspections,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "equipment": equipment,
+                "inspections": inspections,
+            },
+        )
 
 
 # =============================================================================
 # FORM VIEWS (Create/Edit)
 # =============================================================================
+
 
 class AreaCreateView(View):
     """Bereich erstellen"""
@@ -252,10 +264,14 @@ class AreaCreateView(View):
 
     def get(self, request):
         form = AreaForm()
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neuer Bereich",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neuer Bereich",
+            },
+        )
 
     def post(self, request):
         tenant_id = getattr(request, "tenant_id", None)
@@ -266,10 +282,14 @@ class AreaCreateView(View):
             area.site_id = tenant_id  # Use tenant as site for now
             area.save()
             return redirect("explosionsschutz:area-detail-html", pk=area.pk)
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neuer Bereich",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neuer Bereich",
+            },
+        )
 
 
 class AreaEditView(View):
@@ -282,11 +302,15 @@ class AreaEditView(View):
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
         area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
         form = AreaForm(instance=area)
-        return render(request, self.template_name, {
-            "form": form,
-            "title": f"Bereich bearbeiten: {area.code}",
-            "area": area,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": f"Bereich bearbeiten: {area.code}",
+                "area": area,
+            },
+        )
 
     def post(self, request, pk):
         tenant_id = getattr(request, "tenant_id", None)
@@ -296,11 +320,15 @@ class AreaEditView(View):
         if form.is_valid():
             form.save()
             return redirect("explosionsschutz:area-detail-html", pk=area.pk)
-        return render(request, self.template_name, {
-            "form": form,
-            "title": f"Bereich bearbeiten: {area.code}",
-            "area": area,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": f"Bereich bearbeiten: {area.code}",
+                "area": area,
+            },
+        )
 
 
 class ConceptCreateView(View):
@@ -311,10 +339,14 @@ class ConceptCreateView(View):
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         form = ExplosionConceptForm(tenant_id=tenant_id)
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neues Konzept",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neues Konzept",
+            },
+        )
 
     def post(self, request):
         tenant_id = getattr(request, "tenant_id", None)
@@ -324,10 +356,14 @@ class ConceptCreateView(View):
             concept.tenant_id = tenant_id
             concept.save()
             return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neues Konzept",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neues Konzept",
+            },
+        )
 
 
 class EquipmentCreateView(View):
@@ -338,10 +374,14 @@ class EquipmentCreateView(View):
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         form = EquipmentForm(tenant_id=tenant_id)
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neues Betriebsmittel",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neues Betriebsmittel",
+            },
+        )
 
     def post(self, request):
         tenant_id = getattr(request, "tenant_id", None)
@@ -350,13 +390,15 @@ class EquipmentCreateView(View):
             equipment = form.save(commit=False)
             equipment.tenant_id = tenant_id
             equipment.save()
-            return redirect(
-                "explosionsschutz:equipment-detail-html", pk=equipment.pk
-            )
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neues Betriebsmittel",
-        })
+            return redirect("explosionsschutz:equipment-detail-html", pk=equipment.pk)
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neues Betriebsmittel",
+            },
+        )
 
 
 class ToolsView(View):
@@ -366,10 +408,14 @@ class ToolsView(View):
 
     def get(self, request):
         substances = list_substances()
-        return render(request, self.template_name, {
-            "substances": substances,
-            "substance_count": len(substances),
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "substances": substances,
+                "substance_count": len(substances),
+            },
+        )
 
 
 class AreaDxfUploadView(View):
@@ -396,26 +442,38 @@ class AreaDxfUploadView(View):
 
         dxf_file = request.FILES.get("dxf_file")
         if not dxf_file:
-            return render(request, self.template_name, {
-                "area": area,
-                "error": "Keine DXF-Datei hochgeladen.",
-            })
+            return render(
+                request,
+                self.template_name,
+                {
+                    "area": area,
+                    "error": "Keine DXF-Datei hochgeladen.",
+                },
+            )
 
         if not dxf_file.name.lower().endswith(".dxf"):
-            return render(request, self.template_name, {
-                "area": area,
-                "error": "Nur .dxf Dateien sind erlaubt.",
-            })
+            return render(
+                request,
+                self.template_name,
+                {
+                    "area": area,
+                    "error": "Nur .dxf Dateien sind erlaubt.",
+                },
+            )
 
         try:
             parser = DXFParser()
             dxf_model = parser.parse_bytes(dxf_file.read(), dxf_file.name)
         except Exception as exc:
             logger.warning("[AreaDxfUpload] Parse-Fehler %s: %s", area.code, exc)
-            return render(request, self.template_name, {
-                "area": area,
-                "error": f"DXF konnte nicht gelesen werden: {exc}",
-            })
+            return render(
+                request,
+                self.template_name,
+                {
+                    "area": area,
+                    "error": f"DXF konnte nicht gelesen werden: {exc}",
+                },
+            )
 
         calc = DIN277Calculator()
         rooms_input = [
@@ -474,6 +532,7 @@ class ZoneCalculateView(View):
 
     def get(self, request, zone_pk):
         import logging
+
         logger = logging.getLogger(__name__)
         tenant_id = getattr(request, "tenant_id", None)
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
@@ -484,11 +543,15 @@ class ZoneCalculateView(View):
         form = ZoneCalculationForm(initial={"zone_id": zone.pk})
         history = zone.calculations.order_by("-calculated_at")[:5]
         logger.debug("[ZoneCalculate] GET zone=%s", zone_pk)
-        return render(request, self.template_name, {
-            "zone": zone,
-            "form": form,
-            "history": history,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "zone": zone,
+                "form": form,
+                "history": history,
+            },
+        )
 
     def post(self, request, zone_pk):
         import logging
@@ -509,13 +572,26 @@ class ZoneCalculateView(View):
 
         if not form.is_valid():
             if is_htmx:
-                return render(request, self.partial_template, {
-                    "form": form, "zone": zone, "error": None, "result": None,
-                })
+                return render(
+                    request,
+                    self.partial_template,
+                    {
+                        "form": form,
+                        "zone": zone,
+                        "error": None,
+                        "result": None,
+                    },
+                )
             history = zone.calculations.order_by("-calculated_at")[:5]
-            return render(request, self.template_name, {
-                "zone": zone, "form": form, "history": history,
-            })
+            return render(
+                request,
+                self.template_name,
+                {
+                    "zone": zone,
+                    "form": form,
+                    "history": history,
+                },
+            )
 
         cmd = CalculateZoneCmd(
             zone_id=zone.pk,
@@ -532,30 +608,47 @@ class ZoneCalculateView(View):
             )
             logger.info(
                 "[ZoneCalculate] Zone %s: %s r=%.3fm",
-                zone_pk, calc.calculated_zone_type, calc.calculated_radius_m,
+                zone_pk,
+                calc.calculated_zone_type,
+                calc.calculated_radius_m,
             )
         except DjangoValidationError as exc:
             error_msg = " ".join(exc.messages)
             if is_htmx:
-                return render(request, self.partial_template, {
-                    "form": form, "zone": zone, "error": error_msg, "result": None,
-                })
+                return render(
+                    request,
+                    self.partial_template,
+                    {
+                        "form": form,
+                        "zone": zone,
+                        "error": error_msg,
+                        "result": None,
+                    },
+                )
             history = zone.calculations.order_by("-calculated_at")[:5]
-            return render(request, self.template_name, {
-                "zone": zone, "form": form,
-                "history": history, "error": error_msg,
-            })
+            return render(
+                request,
+                self.template_name,
+                {
+                    "zone": zone,
+                    "form": form,
+                    "history": history,
+                    "error": error_msg,
+                },
+            )
 
         if is_htmx:
-            return render(request, self.partial_template, {
-                "form": ZoneCalculationForm(initial={"zone_id": zone.pk}),
-                "zone": zone,
-                "result": calc,
-                "error": None,
-            })
-        return redirect(
-            "explosionsschutz:concept-detail-html", pk=zone.concept_id
-        )
+            return render(
+                request,
+                self.partial_template,
+                {
+                    "form": ZoneCalculationForm(initial={"zone_id": zone.pk}),
+                    "zone": zone,
+                    "result": calc,
+                    "error": None,
+                },
+            )
+        return redirect("explosionsschutz:concept-detail-html", pk=zone.concept_id)
 
 
 class ConceptDxfImportView(View):
@@ -572,13 +665,15 @@ class ConceptDxfImportView(View):
     def get(self, request, pk):
         tenant_id = getattr(request, "tenant_id", None)
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-        concept = get_object_or_404(
-            ExplosionConcept.objects.filter(base_filter), pk=pk
+        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
+        return render(
+            request,
+            self.template_name,
+            {
+                "concept": concept,
+                "form": ConceptDxfImportForm(),
+            },
         )
-        return render(request, self.template_name, {
-            "concept": concept,
-            "form": ConceptDxfImportForm(),
-        })
 
     def post(self, request, pk):
         import logging
@@ -590,21 +685,31 @@ class ConceptDxfImportView(View):
         logger = logging.getLogger(__name__)
         tenant_id = getattr(request, "tenant_id", None)
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-        concept = get_object_or_404(
-            ExplosionConcept.objects.filter(base_filter), pk=pk
-        )
+        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
         form = ConceptDxfImportForm(request.POST, request.FILES)
         is_htmx = request.headers.get("HX-Request") == "true"
 
         if not form.is_valid():
             if is_htmx:
-                return render(request, self.partial_template, {
-                    "concept": concept, "form": form,
-                    "error": None, "count": None, "zones": [],
-                })
-            return render(request, self.template_name, {
-                "concept": concept, "form": form,
-            })
+                return render(
+                    request,
+                    self.partial_template,
+                    {
+                        "concept": concept,
+                        "form": form,
+                        "error": None,
+                        "count": None,
+                        "zones": [],
+                    },
+                )
+            return render(
+                request,
+                self.template_name,
+                {
+                    "concept": concept,
+                    "form": form,
+                },
+            )
 
         dxf_bytes = form.cleaned_data["dxf_file"].read()
         try:
@@ -614,29 +719,45 @@ class ConceptDxfImportView(View):
                 tenant_id=tenant_id,
                 user_id=getattr(request.user, "id", None),
             )
-            logger.info(
-                "[DxfImport] Concept %s: %d Zonen importiert", pk, count
-            )
+            logger.info("[DxfImport] Concept %s: %d Zonen importiert", pk, count)
         except DjangoValidationError as exc:
             error_msg = " ".join(exc.messages)
             if is_htmx:
-                return render(request, self.partial_template, {
-                    "concept": concept, "form": form,
-                    "error": error_msg, "count": None, "zones": [],
-                })
-            return render(request, self.template_name, {
-                "concept": concept, "form": form, "error": error_msg,
-            })
+                return render(
+                    request,
+                    self.partial_template,
+                    {
+                        "concept": concept,
+                        "form": form,
+                        "error": error_msg,
+                        "count": None,
+                        "zones": [],
+                    },
+                )
+            return render(
+                request,
+                self.template_name,
+                {
+                    "concept": concept,
+                    "form": form,
+                    "error": error_msg,
+                },
+            )
 
         new_zones = concept.zones.order_by("-created_at")[:count]
         if is_htmx:
-            return render(request, self.partial_template, {
-                "concept": concept, "form": ConceptDxfImportForm(),
-                "error": None, "count": count, "zones": new_zones,
-            })
-        return redirect(
-            "explosionsschutz:concept-detail-html", pk=concept.pk
-        )
+            return render(
+                request,
+                self.partial_template,
+                {
+                    "concept": concept,
+                    "form": ConceptDxfImportForm(),
+                    "error": None,
+                    "count": count,
+                    "zones": new_zones,
+                },
+            )
+        return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
 
 
 class AreaBrandschutzView(View):
@@ -650,11 +771,15 @@ class AreaBrandschutzView(View):
         area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
 
         analyse = area.brandschutz_analysis_json
-        return render(request, self.template_name, {
-            "area": area,
-            "analyse": analyse,
-            "has_dxf": bool(area.dxf_file),
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "area": area,
+                "analyse": analyse,
+                "has_dxf": bool(area.dxf_file),
+            },
+        )
 
     def post(self, request, pk):
         import logging
@@ -668,14 +793,19 @@ class AreaBrandschutzView(View):
         area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
 
         if not area.dxf_file:
-            return render(request, self.template_name, {
-                "area": area,
-                "error": "Kein DXF hochgeladen. Bitte zuerst DXF hochladen.",
-                "has_dxf": False,
-            })
+            return render(
+                request,
+                self.template_name,
+                {
+                    "area": area,
+                    "error": "Kein DXF hochgeladen. Bitte zuerst DXF hochladen.",
+                    "has_dxf": False,
+                },
+            )
 
         try:
             import ezdxf
+
             with tempfile.NamedTemporaryFile(suffix=".dxf", delete=False) as tmp:
                 for chunk in area.dxf_file.chunks():
                     tmp.write(chunk)
@@ -683,11 +813,15 @@ class AreaBrandschutzView(View):
             doc = ezdxf.readfile(tmp_path)
         except Exception as exc:
             logger.warning("[AreaBrandschutz] DXF-Lesefehler %s: %s", pk, exc)
-            return render(request, self.template_name, {
-                "area": area,
-                "error": f"DXF konnte nicht gelesen werden: {exc}",
-                "has_dxf": True,
-            })
+            return render(
+                request,
+                self.template_name,
+                {
+                    "area": area,
+                    "error": f"DXF konnte nicht gelesen werden: {exc}",
+                    "has_dxf": True,
+                },
+            )
 
         analyzer = BrandschutzAnalyzer()
         result = analyzer.analyze_dxf(doc, etage=area.code or "EG")

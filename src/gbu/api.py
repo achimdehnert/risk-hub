@@ -11,6 +11,7 @@ Endpoints:
 Auth: ApiKeyAuth (Bearer-Token) via config.api_auth
 Tenant: wird aus ApiKey-Kontext gesetzt (common.context)
 """
+
 import datetime
 from uuid import UUID
 
@@ -23,6 +24,7 @@ router = Router(tags=["gbu"])
 
 
 # ── Schemas ─────────────────────────────────────────────────────────────
+
 
 class ActivityOut(Schema):
     id: UUID
@@ -72,6 +74,7 @@ class ComplianceOut(Schema):
 
 # ── Helpers ────────────────────────────────────────────────────────────
 
+
 def _to_out(a) -> ActivityOut:
     return ActivityOut(
         id=a.id,
@@ -97,6 +100,7 @@ def _to_out(a) -> ActivityOut:
 
 def _tenant_id_from_context() -> UUID:
     from common.context import get_context
+
     ctx = get_context()
     if ctx.tenant_id is None:
         raise HttpError(403, "Tenant-Kontext fehlt")
@@ -105,10 +109,12 @@ def _tenant_id_from_context() -> UUID:
 
 def _user_id_from_context() -> UUID | None:
     from common.context import get_context
+
     return get_context().user_id
 
 
 # ── Endpoints ───────────────────────────────────────────────────────────
+
 
 @router.get("/activities", response=list[ActivityOut])
 def api_list_activities(
@@ -131,15 +137,11 @@ def api_list_activities(
     except PermissionDenied as exc:
         raise HttpError(403, str(exc))
 
-    qs = (
-        HazardAssessmentActivity.objects
-        .filter(tenant_id=tenant_id)
-        .order_by("-created_at")
-    )
+    qs = HazardAssessmentActivity.objects.filter(tenant_id=tenant_id).order_by("-created_at")
     if status:
         qs = qs.filter(status=status)
 
-    return [_to_out(a) for a in qs[offset: offset + limit]]
+    return [_to_out(a) for a in qs[offset : offset + limit]]
 
 
 @router.post("/activities", response=ActivityOut)
@@ -195,9 +197,7 @@ def api_get_activity(request, activity_id: UUID):
         raise HttpError(403, str(exc))
 
     try:
-        activity = HazardAssessmentActivity.objects.get(
-            id=activity_id, tenant_id=tenant_id
-        )
+        activity = HazardAssessmentActivity.objects.get(id=activity_id, tenant_id=tenant_id)
         return _to_out(activity)
     except HazardAssessmentActivity.DoesNotExist:
         raise HttpError(404, "GBU-Tätigkeit nicht gefunden")

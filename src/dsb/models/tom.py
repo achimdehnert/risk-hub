@@ -13,7 +13,9 @@ class TechnicalMeasure(models.Model):
     """Technische Maßnahme gemäß Art. 32 DSGVO."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
@@ -77,7 +79,9 @@ class OrganizationalMeasure(models.Model):
     """Organisatorische Maßnahme gemäß Art. 32 DSGVO."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(

@@ -83,6 +83,7 @@ def get_dsb_kpis(tenant_id: UUID) -> DsbKPI:
     vvt_dsfa = vvt.filter(dsfa_required=True).count()
 
     from dsb.models import ThirdCountryTransfer
+
     transfers = ThirdCountryTransfer.objects.filter(tf).count()
 
     # --- TOM (Art. 32) ---

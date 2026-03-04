@@ -32,39 +32,55 @@ class BreachCreateForm(forms.ModelForm):
         ]
         widgets = {
             "mandate": forms.Select(attrs={"class": _TW_SELECT}),
-            "title": forms.TextInput(attrs={
-                "class": _TW_INPUT,
-                "placeholder": "Kurzbeschreibung der Datenpanne",
-            }),
-            "reported_by_name": forms.TextInput(attrs={
-                "class": _TW_INPUT,
-                "placeholder": "Name des Meldenden (Firma / Ansprechpartner)",
-            }),
-            "reported_by_email": forms.EmailInput(attrs={
-                "class": _TW_INPUT,
-                "placeholder": "E-Mail für Benachrichtigungen",
-            }),
-            "discovered_at": forms.DateTimeInput(attrs={
-                "class": _TW_INPUT,
-                "type": "datetime-local",
-            }),
+            "title": forms.TextInput(
+                attrs={
+                    "class": _TW_INPUT,
+                    "placeholder": "Kurzbeschreibung der Datenpanne",
+                }
+            ),
+            "reported_by_name": forms.TextInput(
+                attrs={
+                    "class": _TW_INPUT,
+                    "placeholder": "Name des Meldenden (Firma / Ansprechpartner)",
+                }
+            ),
+            "reported_by_email": forms.EmailInput(
+                attrs={
+                    "class": _TW_INPUT,
+                    "placeholder": "E-Mail für Benachrichtigungen",
+                }
+            ),
+            "discovered_at": forms.DateTimeInput(
+                attrs={
+                    "class": _TW_INPUT,
+                    "type": "datetime-local",
+                }
+            ),
             "severity": forms.Select(attrs={"class": _TW_SELECT}),
-            "affected_count": forms.NumberInput(attrs={
-                "class": _TW_INPUT,
-                "placeholder": "Ungefähre Anzahl betroffener Personen",
-            }),
-            "root_cause": forms.Textarea(attrs={
-                "class": _TW_TEXTAREA,
-                "placeholder": "Ursache der Datenpanne (soweit bekannt)",
-            }),
-            "measures_taken": forms.Textarea(attrs={
-                "class": _TW_TEXTAREA,
-                "placeholder": "Bereits ergriffene Sofortmaßnahmen",
-            }),
-            "authority_name": forms.TextInput(attrs={
-                "class": _TW_INPUT,
-                "placeholder": "z.B. LfDI Baden-Württemberg",
-            }),
+            "affected_count": forms.NumberInput(
+                attrs={
+                    "class": _TW_INPUT,
+                    "placeholder": "Ungefähre Anzahl betroffener Personen",
+                }
+            ),
+            "root_cause": forms.Textarea(
+                attrs={
+                    "class": _TW_TEXTAREA,
+                    "placeholder": "Ursache der Datenpanne (soweit bekannt)",
+                }
+            ),
+            "measures_taken": forms.Textarea(
+                attrs={
+                    "class": _TW_TEXTAREA,
+                    "placeholder": "Bereits ergriffene Sofortmaßnahmen",
+                }
+            ),
+            "authority_name": forms.TextInput(
+                attrs={
+                    "class": _TW_INPUT,
+                    "placeholder": "z.B. LfDI Baden-Württemberg",
+                }
+            ),
         }
 
     def __init__(self, *args, tenant_id=None, **kwargs):

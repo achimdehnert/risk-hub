@@ -9,7 +9,9 @@ class Category(models.Model):
     """Datenkategorie (Art. 9 DSGVO). Global, nicht tenant-spezifisch."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     key = models.CharField(max_length=50, unique=True)
     label = models.CharField(max_length=200)
@@ -32,7 +34,9 @@ class SubjectGroup(models.Model):
     """Lookup: Betroffenengruppe (z.B. Besch\u00e4ftigte, Kunden, Patienten)."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     key = models.CharField(max_length=50, unique=True)
     label = models.CharField(max_length=200)
@@ -51,7 +55,9 @@ class Recipient(models.Model):
     """Lookup: Empf\u00e4ngerkategorie (Art. 30 Abs. 1 lit. d DSGVO)."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     key = models.CharField(max_length=50, unique=True)
     label = models.CharField(max_length=200)
@@ -70,7 +76,9 @@ class Purpose(models.Model):
     """Lookup: Verarbeitungszweck (Art. 30 Abs. 1 lit. b DSGVO)."""
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     key = models.CharField(max_length=80, unique=True)
     label = models.CharField(max_length=300)
@@ -98,7 +106,9 @@ class TomCategory(models.Model):
         AVV = "avv", "Auftragsverarbeitung (AVV)"
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     key = models.CharField(max_length=80, unique=True)
     label = models.CharField(max_length=300)
@@ -131,7 +141,9 @@ class StandardRetentionPeriod(models.Model):
     """
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     key = models.CharField(max_length=80, unique=True)
     label = models.CharField(max_length=300)

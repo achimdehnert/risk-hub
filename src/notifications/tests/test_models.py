@@ -110,6 +110,7 @@ class TestNotificationPreference:
             category=Notification.Category.SYSTEM,
         )
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             NotificationPreference.objects.create(
                 tenant_id=TENANT_ID,

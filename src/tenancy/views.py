@@ -80,10 +80,14 @@ def org_create(request: HttpRequest) -> HttpResponse:
             return redirect("tenancy:org-detail", pk=org.pk)
     else:
         form = OrganizationForm()
-    return render(request, "tenancy/org_form.html", {
-        "form": form,
-        "title": "Neuen Mandanten anlegen",
-    })
+    return render(
+        request,
+        "tenancy/org_form.html",
+        {
+            "form": form,
+            "title": "Neuen Mandanten anlegen",
+        },
+    )
 
 
 @login_required
@@ -100,11 +104,15 @@ def org_edit(request: HttpRequest, pk) -> HttpResponse:
             return redirect("tenancy:org-detail", pk=org.pk)
     else:
         form = OrganizationForm(instance=org)
-    return render(request, "tenancy/org_form.html", {
-        "form": form,
-        "title": f"Mandant bearbeiten: {org.name}",
-        "object": org,
-    })
+    return render(
+        request,
+        "tenancy/org_form.html",
+        {
+            "form": form,
+            "title": f"Mandant bearbeiten: {org.name}",
+            "object": org,
+        },
+    )
 
 
 @login_required
@@ -123,21 +131,22 @@ def org_detail(request: HttpRequest, pk) -> HttpResponse:
         tenant_id__in=[org.tenant_id, None],
     ).order_by("-is_system", "name")
     sites = org.sites.all().order_by("name")
-    subscriptions = (
-        ModuleSubscription.objects.filter(tenant_id=org.tenant_id)
-        .order_by("module")
-    )
+    subscriptions = ModuleSubscription.objects.filter(tenant_id=org.tenant_id).order_by("module")
     subscribed_modules = {s.module for s in subscriptions}
     missing_modules = [m for m in _ALL_MODULES if m not in subscribed_modules]
 
-    return render(request, "tenancy/org_detail.html", {
-        "org": org,
-        "memberships": memberships,
-        "roles": roles,
-        "sites": sites,
-        "subscriptions": subscriptions,
-        "missing_modules": missing_modules,
-    })
+    return render(
+        request,
+        "tenancy/org_detail.html",
+        {
+            "org": org,
+            "memberships": memberships,
+            "roles": roles,
+            "sites": sites,
+            "subscriptions": subscriptions,
+            "missing_modules": missing_modules,
+        },
+    )
 
 
 @login_required
@@ -152,9 +161,13 @@ def org_delete(request: HttpRequest, pk) -> HttpResponse:
         org.deleted_at = timezone.now()
         org.save()
         return redirect("tenancy:org-list")
-    return render(request, "tenancy/org_confirm_delete.html", {
-        "org": org,
-    })
+    return render(
+        request,
+        "tenancy/org_confirm_delete.html",
+        {
+            "org": org,
+        },
+    )
 
 
 # -----------------------------------------------------------------------
@@ -190,16 +203,22 @@ def member_invite(request: HttpRequest, org_pk) -> HttpResponse:
                 accepted_at=timezone.now(),
             )
             _ensure_role_assignment(
-                user, org, form.cleaned_data["role"],
+                user,
+                org,
+                form.cleaned_data["role"],
             )
             return redirect("tenancy:org-detail", pk=org.pk)
     else:
         form = InviteUserForm()
-    return render(request, "tenancy/member_invite.html", {
-        "form": form,
-        "org": org,
-        "title": f"Benutzer einladen — {org.name}",
-    })
+    return render(
+        request,
+        "tenancy/member_invite.html",
+        {
+            "form": form,
+            "org": org,
+            "title": f"Benutzer einladen — {org.name}",
+        },
+    )
 
 
 @login_required
@@ -210,7 +229,9 @@ def member_role(request: HttpRequest, org_pk, membership_pk) -> HttpResponse:
 
     org = get_object_or_404(Organization, pk=org_pk)
     membership = get_object_or_404(
-        Membership, pk=membership_pk, tenant_id=org.tenant_id,
+        Membership,
+        pk=membership_pk,
+        tenant_id=org.tenant_id,
     )
     if request.method == "POST":
         form = MembershipRoleForm(request.POST)
@@ -218,17 +239,23 @@ def member_role(request: HttpRequest, org_pk, membership_pk) -> HttpResponse:
             membership.role = form.cleaned_data["role"]
             membership.save()
             _ensure_role_assignment(
-                membership.user, org, membership.role,
+                membership.user,
+                org,
+                membership.role,
             )
             return redirect("tenancy:org-detail", pk=org.pk)
     else:
         form = MembershipRoleForm(initial={"role": membership.role})
-    return render(request, "tenancy/member_role.html", {
-        "form": form,
-        "org": org,
-        "membership": membership,
-        "title": f"Rolle ändern — {membership.user.username}",
-    })
+    return render(
+        request,
+        "tenancy/member_role.html",
+        {
+            "form": form,
+            "org": org,
+            "membership": membership,
+            "title": f"Rolle ändern — {membership.user.username}",
+        },
+    )
 
 
 @login_required
@@ -239,7 +266,9 @@ def member_remove(request: HttpRequest, org_pk, membership_pk) -> HttpResponse:
 
     org = get_object_or_404(Organization, pk=org_pk)
     membership = get_object_or_404(
-        Membership, pk=membership_pk, tenant_id=org.tenant_id,
+        Membership,
+        pk=membership_pk,
+        tenant_id=org.tenant_id,
     )
     if request.method == "POST":
         Assignment.objects.filter(
@@ -248,10 +277,14 @@ def member_remove(request: HttpRequest, org_pk, membership_pk) -> HttpResponse:
         ).delete()
         membership.delete()
         return redirect("tenancy:org-detail", pk=org.pk)
-    return render(request, "tenancy/member_confirm_remove.html", {
-        "org": org,
-        "membership": membership,
-    })
+    return render(
+        request,
+        "tenancy/member_confirm_remove.html",
+        {
+            "org": org,
+            "membership": membership,
+        },
+    )
 
 
 # -----------------------------------------------------------------------
@@ -261,7 +294,9 @@ def member_remove(request: HttpRequest, org_pk, membership_pk) -> HttpResponse:
 
 @login_required
 def module_subscription_toggle(
-    request: HttpRequest, org_pk, module: str,
+    request: HttpRequest,
+    org_pk,
+    module: str,
 ) -> HttpResponse:
     """Activate or suspend a module subscription (POST only)."""
     if not _require_staff(request):
@@ -271,7 +306,9 @@ def module_subscription_toggle(
 
     org = get_object_or_404(Organization, pk=org_pk)
     sub = get_object_or_404(
-        ModuleSubscription, tenant_id=org.tenant_id, module=module,
+        ModuleSubscription,
+        tenant_id=org.tenant_id,
+        module=module,
     )
     action = request.POST.get("action", "")
     if action == "activate":
@@ -285,7 +322,9 @@ def module_subscription_toggle(
 
 @login_required
 def module_subscription_add(
-    request: HttpRequest, org_pk, module: str,
+    request: HttpRequest,
+    org_pk,
+    module: str,
 ) -> HttpResponse:
     """Add a new module subscription to an organization."""
     if not _require_staff(request):
@@ -293,7 +332,8 @@ def module_subscription_add(
 
     org = get_object_or_404(Organization, pk=org_pk)
     if ModuleSubscription.objects.filter(
-        tenant_id=org.tenant_id, module=module,
+        tenant_id=org.tenant_id,
+        module=module,
     ).exists():
         return redirect("tenancy:org-detail", pk=org.pk)
 
@@ -309,7 +349,9 @@ def module_subscription_add(
 
 @login_required
 def module_subscription_edit(
-    request: HttpRequest, org_pk, module: str,
+    request: HttpRequest,
+    org_pk,
+    module: str,
 ) -> HttpResponse:
     """Edit module subscription details (status, plan, dates)."""
     if not _require_staff(request):
@@ -317,7 +359,9 @@ def module_subscription_edit(
 
     org = get_object_or_404(Organization, pk=org_pk)
     sub = get_object_or_404(
-        ModuleSubscription, tenant_id=org.tenant_id, module=module,
+        ModuleSubscription,
+        tenant_id=org.tenant_id,
+        module=module,
     )
     if request.method == "POST":
         form = ModuleSubscriptionForm(request.POST, instance=sub)
@@ -326,12 +370,16 @@ def module_subscription_edit(
             return redirect("tenancy:org-detail", pk=org.pk)
     else:
         form = ModuleSubscriptionForm(instance=sub)
-    return render(request, "tenancy/module_subscription_edit.html", {
-        "form": form,
-        "org": org,
-        "sub": sub,
-        "module": module,
-    })
+    return render(
+        request,
+        "tenancy/module_subscription_edit.html",
+        {
+            "form": form,
+            "org": org,
+            "sub": sub,
+            "module": module,
+        },
+    )
 
 
 # -----------------------------------------------------------------------
@@ -341,7 +389,9 @@ def module_subscription_edit(
 
 @login_required
 def module_membership_manage(
-    request: HttpRequest, org_pk, module: str,
+    request: HttpRequest,
+    org_pk,
+    module: str,
 ) -> HttpResponse:
     """List + grant module memberships for a specific module."""
     if not _require_staff(request):
@@ -349,17 +399,23 @@ def module_membership_manage(
 
     org = get_object_or_404(Organization, pk=org_pk)
     sub = get_object_or_404(
-        ModuleSubscription, tenant_id=org.tenant_id, module=module,
+        ModuleSubscription,
+        tenant_id=org.tenant_id,
+        module=module,
     )
     memberships = (
         ModuleMembership.objects.filter(
-            tenant_id=org.tenant_id, module=module,
-        ).select_related("user", "granted_by")
+            tenant_id=org.tenant_id,
+            module=module,
+        )
+        .select_related("user", "granted_by")
         .order_by("role", "user__username")
     )
     if request.method == "POST":
         form = ModuleMembershipGrantForm(
-            request.POST, org=org, module=module,
+            request.POST,
+            org=org,
+            module=module,
         )
         if form.is_valid():
             ModuleMembership.objects.create(
@@ -371,23 +427,32 @@ def module_membership_manage(
                 expires_at=form.cleaned_data.get("expires_at"),
             )
             return redirect(
-                "tenancy:module-membership-manage", org_pk=org.pk, module=module,
+                "tenancy:module-membership-manage",
+                org_pk=org.pk,
+                module=module,
             )
     else:
         form = ModuleMembershipGrantForm(org=org, module=module)
 
-    return render(request, "tenancy/module_membership_manage.html", {
-        "org": org,
-        "sub": sub,
-        "module": module,
-        "memberships": memberships,
-        "form": form,
-    })
+    return render(
+        request,
+        "tenancy/module_membership_manage.html",
+        {
+            "org": org,
+            "sub": sub,
+            "module": module,
+            "memberships": memberships,
+            "form": form,
+        },
+    )
 
 
 @login_required
 def module_membership_role(
-    request: HttpRequest, org_pk, module: str, membership_pk,
+    request: HttpRequest,
+    org_pk,
+    module: str,
+    membership_pk,
 ) -> HttpResponse:
     """Change a user's role within a module."""
     if not _require_staff(request):
@@ -406,21 +471,30 @@ def module_membership_role(
             mm.role = form.cleaned_data["role"]
             mm.save()
             return redirect(
-                "tenancy:module-membership-manage", org_pk=org.pk, module=module,
+                "tenancy:module-membership-manage",
+                org_pk=org.pk,
+                module=module,
             )
     else:
         form = ModuleMembershipRoleForm(initial={"role": mm.role})
-    return render(request, "tenancy/module_membership_role.html", {
-        "form": form,
-        "org": org,
-        "mm": mm,
-        "module": module,
-    })
+    return render(
+        request,
+        "tenancy/module_membership_role.html",
+        {
+            "form": form,
+            "org": org,
+            "mm": mm,
+            "module": module,
+        },
+    )
 
 
 @login_required
 def module_membership_revoke(
-    request: HttpRequest, org_pk, module: str, membership_pk,
+    request: HttpRequest,
+    org_pk,
+    module: str,
+    membership_pk,
 ) -> HttpResponse:
     """Revoke a user's module membership (POST only)."""
     if not _require_staff(request):
@@ -437,7 +511,9 @@ def module_membership_revoke(
     )
     mm.delete()
     return redirect(
-        "tenancy:module-membership-manage", org_pk=org.pk, module=module,
+        "tenancy:module-membership-manage",
+        org_pk=org.pk,
+        module=module,
     )
 
 
@@ -447,7 +523,9 @@ def module_membership_revoke(
 
 
 def _ensure_role_assignment(
-    user: User, org: Organization, membership_role: str,
+    user: User,
+    org: Organization,
+    membership_role: str,
 ) -> None:
     """Map membership role to permissions.Role assignment."""
     role_map = {
@@ -459,7 +537,8 @@ def _ensure_role_assignment(
     }
     system_role_name = role_map.get(membership_role, "viewer")
     role = Role.objects.filter(
-        name=system_role_name, is_system=True,
+        name=system_role_name,
+        is_system=True,
     ).first()
     if not role:
         return

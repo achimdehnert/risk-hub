@@ -4,6 +4,7 @@ RLS-Policies für tenant-scoped GBU-Tabellen.
 Idempotent: CREATE POLICY IF NOT EXISTS.
 Rollback: DROP POLICY + DISABLE ROW LEVEL SECURITY.
 """
+
 from django.db import migrations
 
 RLS_SQL = """

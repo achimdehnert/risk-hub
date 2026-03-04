@@ -7,6 +7,7 @@ mit der HazardAssessmentActivity.
 Strategie: lokal via Django DEFAULT_FILE_STORAGE
 (FileSystemStorage in dev, S3 in prod via django-storages).
 """
+
 import hashlib
 import logging
 from uuid import UUID
@@ -69,7 +70,9 @@ def store_gbu_pdf(
 
     logger.info(
         "[GBU] GBU-PDF gespeichert: %s v%d (%d bytes)",
-        activity_id, next_v, len(pdf_bytes),
+        activity_id,
+        next_v,
+        len(pdf_bytes),
     )
     return version
 
@@ -124,7 +127,9 @@ def store_ba_pdf(
 
     logger.info(
         "[GBU] BA-PDF gespeichert: %s v%d (%d bytes)",
-        activity_id, next_v, len(pdf_bytes),
+        activity_id,
+        next_v,
+        len(pdf_bytes),
     )
     return version
 

@@ -56,36 +56,42 @@ def render_description(value: str) -> str:
     rows_html = []
     for key, val in structured:
         if key == "__prose__":
-            rows_html.append(format_html(
-                '<p class="text-sm text-gray-700 col-span-2 mt-1">{}</p>',
-                val,
-            ))
+            rows_html.append(
+                format_html(
+                    '<p class="text-sm text-gray-700 col-span-2 mt-1">{}</p>',
+                    val,
+                )
+            )
         else:
             # Split comma-separated values into badges
             parts = [p.strip() for p in val.split(",") if p.strip()]
             if len(parts) > 1:
-                badges = mark_safe("".join(
-                    format_html(
-                        '<span class="inline-block bg-gray-100 text-gray-700 '
-                        'text-xs px-2 py-0.5 rounded mr-1 mb-1">{}</span>',
-                        p,
+                badges = mark_safe(
+                    "".join(
+                        format_html(
+                            '<span class="inline-block bg-gray-100 text-gray-700 '
+                            'text-xs px-2 py-0.5 rounded mr-1 mb-1">{}</span>',
+                            p,
+                        )
+                        for p in parts
                     )
-                    for p in parts
-                ))
+                )
                 val_html = format_html('<div class="mt-0.5">{}</div>', badges)
             else:
                 val_html = format_html(
                     '<span class="text-sm font-medium text-gray-900">{}</span>',
                     val or "—",
                 )
-            rows_html.append(format_html(
-                '<div class="flex flex-col">'
-                '<dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{}</dt>'
-                '<dd class="mt-0.5">{}</dd>'
-                '</div>',
-                key,
-                val_html,
-            ))
+            rows_html.append(
+                format_html(
+                    '<div class="flex flex-col">'
+                    '<dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">{}</dt>'
+                    '<dd class="mt-0.5">{}</dd>'
+                    "</div>",
+                    key,
+                    val_html,
+                )
+            )
 
     inner = mark_safe("".join(rows_html))
     return format_html(

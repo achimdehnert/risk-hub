@@ -22,9 +22,9 @@ def _tenant_id(request: HttpRequest):
     if user and getattr(user, "is_authenticated", False):
         try:
             from django_tenancy.models import Membership
+
             m = (
-                Membership.objects
-                .filter(user=user)
+                Membership.objects.filter(user=user)
                 .select_related("organization")
                 .order_by("created_at")
                 .first()
@@ -57,10 +57,14 @@ def deletion_request_list(request: HttpRequest) -> HttpResponse:
             DeletionRequestStatus.NOTIFIED,
         ]
     ).count()
-    return render(request, "dsb/deletion_request_list.html", {
-        "rows": qs[:200],
-        "open_count": open_count,
-    })
+    return render(
+        request,
+        "dsb/deletion_request_list.html",
+        {
+            "rows": qs[:200],
+            "open_count": open_count,
+        },
+    )
 
 
 @login_required
@@ -68,6 +72,7 @@ def deletion_request_list(request: HttpRequest) -> HttpResponse:
 def deletion_request_create(request: HttpRequest) -> HttpResponse:
     """Neuen Löschantrag anlegen."""
     from dsb.forms_deletion import DeletionRequestForm
+
     tid = _tenant_id(request)
     if request.method == "POST":
         form = DeletionRequestForm(request.POST, tenant_id=tid)
@@ -79,14 +84,21 @@ def deletion_request_create(request: HttpRequest) -> HttpResponse:
             obj.status = DeletionRequestStatus.PENDING
             obj.save()
             send_initial_confirmation(obj)
-            messages.success(request, f"Löschantrag für {obj.subject_name} angelegt. Bestätigungs-E-Mail wurde versendet.")
+            messages.success(
+                request,
+                f"Löschantrag für {obj.subject_name} angelegt. Bestätigungs-E-Mail wurde versendet.",
+            )
             return redirect("dsb:deletion-request-detail", pk=obj.pk)
     else:
         form = DeletionRequestForm(tenant_id=tid)
-    return render(request, "dsb/deletion_request_form.html", {
-        "form": form,
-        "title": "Neuer Löschantrag (Art. 17 DSGVO)",
-    })
+    return render(
+        request,
+        "dsb/deletion_request_form.html",
+        {
+            "form": form,
+            "title": "Neuer Löschantrag (Art. 17 DSGVO)",
+        },
+    )
 
 
 @login_required
@@ -96,17 +108,23 @@ def deletion_request_detail(request: HttpRequest, pk) -> HttpResponse:
     tid = _tenant_id(request)
     obj = get_object_or_404(
         DeletionRequest.objects.select_related("mandate"),
-        pk=pk, tenant_id=tid,
+        pk=pk,
+        tenant_id=tid,
     )
     from dsb.models.document import DsbDocument
+
     next_steps = WORKFLOW_TRANSITIONS.get(obj.status, [])
     docs = DsbDocument.objects.filter(tenant_id=tid, ref_type="deletion", ref_id=obj.pk)
-    return render(request, "dsb/deletion_request_detail.html", {
-        "obj": obj,
-        "next_steps": next_steps,
-        "status_choices": DeletionRequestStatus,
-        "docs": docs,
-    })
+    return render(
+        request,
+        "dsb/deletion_request_detail.html",
+        {
+            "obj": obj,
+            "next_steps": next_steps,
+            "status_choices": DeletionRequestStatus,
+            "docs": docs,
+        },
+    )
 
 
 @login_required

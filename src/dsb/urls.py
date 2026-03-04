@@ -49,13 +49,27 @@ urlpatterns = [
     # Dokumente (PDF-Archiv)
     path("dokumente/", views_documents.document_list, name="document-list"),
     path("dokumente/upload/", views_documents.document_upload, name="document-upload"),
-    path("dokumente/<uuid:pk>/download/", views_documents.document_download, name="document-download"),
+    path(
+        "dokumente/<uuid:pk>/download/", views_documents.document_download, name="document-download"
+    ),
     path("dokumente/<uuid:pk>/delete/", views_documents.document_delete, name="document-delete"),
     # Löschprotokolle (alt)
     path("deletions/", views.deletion_list, name="deletion-list"),
     # Löschungsworkflow (Art. 17 DSGVO)
     path("loeschantraege/", views_deletion.deletion_request_list, name="deletion-request-list"),
-    path("loeschantraege/neu/", views_deletion.deletion_request_create, name="deletion-request-create"),
-    path("loeschantraege/<uuid:pk>/", views_deletion.deletion_request_detail, name="deletion-request-detail"),
-    path("loeschantraege/<uuid:pk>/advance/", views_deletion.deletion_request_advance, name="deletion-request-advance"),
+    path(
+        "loeschantraege/neu/",
+        views_deletion.deletion_request_create,
+        name="deletion-request-create",
+    ),
+    path(
+        "loeschantraege/<uuid:pk>/",
+        views_deletion.deletion_request_detail,
+        name="deletion-request-detail",
+    ),
+    path(
+        "loeschantraege/<uuid:pk>/advance/",
+        views_deletion.deletion_request_advance,
+        name="deletion-request-advance",
+    ),
 ]

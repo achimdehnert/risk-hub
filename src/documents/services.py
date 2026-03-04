@@ -36,9 +36,7 @@ def get_document(document_id: UUID) -> Document:
 
     require_permission("documents.read")
 
-    return Document.objects.prefetch_related(
-        "versions"
-    ).get(
+    return Document.objects.prefetch_related("versions").get(
         id=document_id,
         tenant_id=ctx.tenant_id,
     )
@@ -71,9 +69,7 @@ def upload_document(
         doc.save(update_fields=["category"])
 
     # Determine next version number
-    last_version = (
-        doc.versions.order_by("-version").first()
-    )
+    last_version = doc.versions.order_by("-version").first()
     next_version = (last_version.version + 1) if last_version else 1
 
     # Read file content and compute hash
@@ -81,10 +77,7 @@ def upload_document(
     sha256 = hashlib.sha256(content).hexdigest()
 
     # Build S3 key
-    s3_key = (
-        f"tenants/{tenant_id}/documents/"
-        f"{doc.id}/v{next_version}/{file.name}"
-    )
+    s3_key = f"tenants/{tenant_id}/documents/{doc.id}/v{next_version}/{file.name}"
 
     # Upload to S3
     _upload_to_s3(s3_key, content, file.content_type)

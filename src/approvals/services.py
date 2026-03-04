@@ -40,10 +40,7 @@ def submit_for_approval(
     ).first()
 
     if not workflow:
-        raise ValueError(
-            f"Kein aktiver Workflow für {entity_type}. "
-            "Bitte Workflow konfigurieren."
-        )
+        raise ValueError(f"Kein aktiver Workflow für {entity_type}. Bitte Workflow konfigurieren.")
 
     # Check if there's already a pending request
     existing = ApprovalRequest.objects.filter(
@@ -57,9 +54,7 @@ def submit_for_approval(
     ).first()
 
     if existing:
-        raise ValueError(
-            "Es läuft bereits ein Freigabeprozess für dieses Objekt."
-        )
+        raise ValueError("Es läuft bereits ein Freigabeprozess für dieses Objekt.")
 
     request = ApprovalRequest.objects.create(
         tenant_id=tenant_id,
@@ -86,7 +81,9 @@ def submit_for_approval(
 
     logger.info(
         "Approval submitted: %s %s (workflow=%s)",
-        entity_type, entity_id, workflow.name,
+        entity_type,
+        entity_id,
+        workflow.name,
     )
     return request
 
@@ -106,9 +103,7 @@ def decide(
     If approved and last step, marks request as approved.
     If rejected, marks request as rejected.
     """
-    request = ApprovalRequest.objects.select_related(
-        "workflow"
-    ).get(
+    request = ApprovalRequest.objects.select_related("workflow").get(
         id=request_id,
         tenant_id=tenant_id,
     )
@@ -117,9 +112,7 @@ def decide(
         ApprovalRequest.Status.PENDING,
         ApprovalRequest.Status.IN_REVIEW,
     ):
-        raise ValueError(
-            f"Freigabe nicht möglich: Status ist {request.get_status_display()}"
-        )
+        raise ValueError(f"Freigabe nicht möglich: Status ist {request.get_status_display()}")
 
     # Get the current step
     step = ApprovalStep.objects.get(
@@ -151,10 +144,14 @@ def decide(
         _notify_rejection(request, decision)
     elif outcome == ApprovalDecision.Outcome.APPROVED:
         # Check if there are more steps
-        next_step = ApprovalStep.objects.filter(
-            workflow=request.workflow,
-            order__gt=request.current_step,
-        ).order_by("order").first()
+        next_step = (
+            ApprovalStep.objects.filter(
+                workflow=request.workflow,
+                order__gt=request.current_step,
+            )
+            .order_by("order")
+            .first()
+        )
 
         if next_step:
             request.current_step = next_step.order
@@ -194,7 +191,8 @@ def get_pending_approvals(
         ApprovalRequest.objects.filter(
             tenant_id=tenant_id,
             status=ApprovalRequest.Status.IN_REVIEW,
-        ).select_related("workflow", "requested_by")
+        )
+        .select_related("workflow", "requested_by")
         .order_by("-requested_at")
     )
 
@@ -210,7 +208,8 @@ def get_approval_history(
             tenant_id=tenant_id,
             entity_type=entity_type,
             entity_id=entity_id,
-        ).prefetch_related("decisions__step", "decisions__decided_by")
+        )
+        .prefetch_related("decisions__step", "decisions__decided_by")
         .order_by("-requested_at")
     )
 
@@ -218,6 +217,7 @@ def get_approval_history(
 # ------------------------------------------------------------------
 # Internal helpers
 # ------------------------------------------------------------------
+
 
 def _entity_to_workflow_type(entity_type: str) -> str:
     """Map entity_type string to workflow type."""
@@ -245,15 +245,9 @@ def _notify_rejection(
             tenant_id=request.tenant_id,
             category=Notification.Category.APPROVAL_REQUIRED,
             title=f"Freigabe abgelehnt: {request.entity_type}",
-            message=(
-                f"Stufe: {decision.step.name}\n"
-                f"Grund: {decision.comment or 'Kein Kommentar'}"
-            ),
+            message=(f"Stufe: {decision.step.name}\nGrund: {decision.comment or 'Kein Kommentar'}"),
             severity=Notification.Severity.WARNING,
-            recipient_id=(
-                request.requested_by.id
-                if request.requested_by else None
-            ),
+            recipient_id=(request.requested_by.id if request.requested_by else None),
             entity_type=request.entity_type,
             entity_id=request.entity_id,
         )
@@ -270,6 +264,7 @@ def _on_fully_approved(request: ApprovalRequest) -> None:
     try:
         if request.entity_type == "explosionsschutz.ExplosionConcept":
             from explosionsschutz.models import ExplosionConcept
+
             ExplosionConcept.objects.filter(
                 id=request.entity_id,
                 tenant_id=request.tenant_id,
@@ -277,6 +272,7 @@ def _on_fully_approved(request: ApprovalRequest) -> None:
 
         elif request.entity_type == "risk.Assessment":
             from risk.models import Assessment
+
             Assessment.objects.filter(
                 id=request.entity_id,
                 tenant_id=request.tenant_id,
@@ -284,9 +280,8 @@ def _on_fully_approved(request: ApprovalRequest) -> None:
 
         logger.info(
             "Entity approved: %s %s",
-            request.entity_type, request.entity_id,
+            request.entity_type,
+            request.entity_id,
         )
     except Exception:
-        logger.exception(
-            "Failed to update entity status after approval"
-        )
+        logger.exception("Failed to update entity status after approval")

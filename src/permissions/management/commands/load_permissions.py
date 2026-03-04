@@ -22,10 +22,25 @@ DEFAULT_PERMISSIONS: list[dict[str, str]] = [
     {"code": "site.delete", "module": "site", "resource": "site", "action": "delete"},
     # Risk Assessment
     {"code": "risk.assessment.read", "module": "risk", "resource": "assessment", "action": "view"},
-    {"code": "risk.assessment.write", "module": "risk", "resource": "assessment", "action": "create"},
+    {
+        "code": "risk.assessment.write",
+        "module": "risk",
+        "resource": "assessment",
+        "action": "create",
+    },
     {"code": "risk.assessment.edit", "module": "risk", "resource": "assessment", "action": "edit"},
-    {"code": "risk.assessment.approve", "module": "risk", "resource": "assessment", "action": "approve"},
-    {"code": "risk.assessment.delete", "module": "risk", "resource": "assessment", "action": "delete"},
+    {
+        "code": "risk.assessment.approve",
+        "module": "risk",
+        "resource": "assessment",
+        "action": "approve",
+    },
+    {
+        "code": "risk.assessment.delete",
+        "module": "risk",
+        "resource": "assessment",
+        "action": "delete",
+    },
     # Explosionsschutz
     {"code": "ex_area.view", "module": "ex", "resource": "area", "action": "view"},
     {"code": "ex_area.create", "module": "ex", "resource": "area", "action": "create"},
@@ -40,9 +55,19 @@ DEFAULT_PERMISSIONS: list[dict[str, str]] = [
     {"code": "ex_inspection.create", "module": "ex", "resource": "inspection", "action": "create"},
     # Substances
     {"code": "substance.view", "module": "substance", "resource": "substance", "action": "view"},
-    {"code": "substance.create", "module": "substance", "resource": "substance", "action": "create"},
+    {
+        "code": "substance.create",
+        "module": "substance",
+        "resource": "substance",
+        "action": "create",
+    },
     {"code": "substance.edit", "module": "substance", "resource": "substance", "action": "edit"},
-    {"code": "substance.delete", "module": "substance", "resource": "substance", "action": "delete"},
+    {
+        "code": "substance.delete",
+        "module": "substance",
+        "resource": "substance",
+        "action": "delete",
+    },
     # Documents (services use documents.read / documents.create)
     {"code": "documents.read", "module": "document", "resource": "document", "action": "view"},
     {"code": "documents.create", "module": "document", "resource": "document", "action": "create"},
@@ -62,17 +87,12 @@ DEFAULT_PERMISSIONS: list[dict[str, str]] = [
 SYSTEM_ROLES: dict[str, list[str]] = {
     "admin": [p["code"] for p in DEFAULT_PERMISSIONS],
     "manager": [
-        p["code"] for p in DEFAULT_PERMISSIONS
+        p["code"]
+        for p in DEFAULT_PERMISSIONS
         if p["action"] in ("view", "create", "edit", "export", "approve")
     ],
-    "member": [
-        p["code"] for p in DEFAULT_PERMISSIONS
-        if p["action"] in ("view", "create", "edit")
-    ],
-    "viewer": [
-        p["code"] for p in DEFAULT_PERMISSIONS
-        if p["action"] == "view"
-    ],
+    "member": [p["code"] for p in DEFAULT_PERMISSIONS if p["action"] in ("view", "create", "edit")],
+    "viewer": [p["code"] for p in DEFAULT_PERMISSIONS if p["action"] == "view"],
 }
 
 
@@ -81,7 +101,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--clear", action="store_true",
+            "--clear",
+            action="store_true",
             help="Delete existing permissions before loading",
         )
 
@@ -108,8 +129,7 @@ class Command(BaseCommand):
                 created += 1
 
         self.stdout.write(
-            f"Permissions: {created} created, "
-            f"{len(DEFAULT_PERMISSIONS) - created} updated."
+            f"Permissions: {created} created, {len(DEFAULT_PERMISSIONS) - created} updated."
         )
 
         roles_created = 0
@@ -127,8 +147,7 @@ class Command(BaseCommand):
 
             perms = Permission.objects.filter(code__in=perm_codes)
             existing = set(
-                RolePermission.objects.filter(role=role)
-                .values_list("permission__code", flat=True)
+                RolePermission.objects.filter(role=role).values_list("permission__code", flat=True)
             )
             new_perms = [p for p in perms if p.code not in existing]
             RolePermission.objects.bulk_create(

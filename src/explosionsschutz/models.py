@@ -23,30 +23,28 @@ User = get_user_model()
 # HYBRID TENANT-ISOLATION INFRASTRUCTURE
 # =============================================================================
 
+
 class TenantScopedMasterDataManager(models.Manager):
     """
     Custom Manager für Stammdaten mit Hybrid-Tenant-Isolation.
-    
+
     Liefert:
     - Globale Daten (tenant_id=NULL) UND
     - Tenant-spezifische Daten für den aktuellen Tenant
     """
-    
+
     def for_tenant(self, tenant_id: uuid.UUID):
         """
         Gibt alle für einen Tenant sichtbaren Einträge zurück:
         - Globale Einträge (tenant_id IS NULL)
         - Eigene Einträge (tenant_id = tenant_id)
         """
-        return self.filter(
-            models.Q(tenant_id__isnull=True) | 
-            models.Q(tenant_id=tenant_id)
-        )
-    
+        return self.filter(models.Q(tenant_id__isnull=True) | models.Q(tenant_id=tenant_id))
+
     def global_only(self):
         """Nur globale System-Einträge"""
         return self.filter(tenant_id__isnull=True, is_system=True)
-    
+
     def tenant_only(self, tenant_id: uuid.UUID):
         """Nur tenant-spezifische Einträge"""
         return self.filter(tenant_id=tenant_id)
@@ -55,39 +53,39 @@ class TenantScopedMasterDataManager(models.Manager):
 class TenantScopedMasterData(models.Model):
     """
     Abstrakte Basisklasse für Stammdaten mit Hybrid-Tenant-Isolation.
-    
+
     tenant_id = NULL + is_system = True  → Globale System-Daten (nicht editierbar)
     tenant_id = UUID + is_system = False → Tenant-spezifische Daten
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    
+
     tenant_id = models.UUIDField(
-        null=True, 
-        blank=True, 
+        null=True,
+        blank=True,
         db_index=True,
-        help_text="NULL = global/system, UUID = tenant-spezifisch"
+        help_text="NULL = global/system, UUID = tenant-spezifisch",
     )
-    
+
     is_system = models.BooleanField(
-        default=False,
-        help_text="System-Daten sind global und nicht editierbar"
+        default=False, help_text="System-Daten sind global und nicht editierbar"
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     objects = TenantScopedMasterDataManager()
-    
+
     class Meta:
         abstract = True
-    
+
     def clean(self):
         """Validierung: System-Daten müssen global sein"""
         if self.is_system and self.tenant_id is not None:
             raise ValidationError(
                 "System-Daten (is_system=True) müssen global sein (tenant_id=NULL)"
             )
-    
+
     def save(self, *args, **kwargs):
         self.clean()
         super().save(*args, **kwargs)
@@ -97,18 +95,19 @@ class TenantScopedMasterData(models.Model):
 # REFERENZDATEN (Stammdaten)
 # =============================================================================
 
+
 class ReferenceStandard(TenantScopedMasterData):
     """
     Normative Referenzen (TRGS, IEC, EN, etc.)
-    
+
     Beispiele (global):
     - TRGS 720: Gefährliche explosionsfähige Atmosphäre - Allgemeines
     - IEC 60079-10-1: Klassifizierung von Bereichen
-    
+
     Beispiele (tenant-spezifisch):
     - Interne Richtlinie XY-001
     """
-    
+
     class Category(models.TextChoices):
         TRGS = "TRGS", "Technische Regeln für Gefahrstoffe"
         IEC = "IEC", "IEC Normen"
@@ -116,21 +115,14 @@ class ReferenceStandard(TenantScopedMasterData):
         DIN = "DIN", "DIN Normen"
         VDSI = "VDSI", "VDSI Richtlinien"
         INTERNAL = "INTERNAL", "Interne Richtlinien"
-    
-    code = models.CharField(
-        max_length=50,
-        help_text="z.B. 'TRGS 720', 'IEC 60079-10-1'"
-    )
+
+    code = models.CharField(max_length=50, help_text="z.B. 'TRGS 720', 'IEC 60079-10-1'")
     title = models.CharField(max_length=500)
-    category = models.CharField(
-        max_length=20,
-        choices=Category.choices,
-        default=Category.TRGS
-    )
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.TRGS)
     url = models.URLField(blank=True, default="", help_text="Link zur offiziellen Quelle")
     valid_from = models.DateField(null=True, blank=True)
     valid_until = models.DateField(null=True, blank=True)
-    
+
     class Meta:
         db_table = "ex_reference_standard"
         verbose_name = "Regelwerksreferenz"
@@ -138,13 +130,12 @@ class ReferenceStandard(TenantScopedMasterData):
         ordering = ["code"]
         constraints = [
             models.UniqueConstraint(
-                fields=["tenant_id", "code"],
-                name="uq_reference_standard_tenant_code"
+                fields=["tenant_id", "code"], name="uq_reference_standard_tenant_code"
             ),
             models.UniqueConstraint(
                 fields=["code"],
                 condition=models.Q(tenant_id__isnull=True),
-                name="uq_reference_standard_global_code"
+                name="uq_reference_standard_global_code",
             ),
         ]
         indexes = [
@@ -153,7 +144,7 @@ class ReferenceStandard(TenantScopedMasterData):
                 name="idx_refstd_tenant_category",
             ),
         ]
-    
+
     def __str__(self) -> str:
         return f"{self.code}: {self.title}"
 
@@ -161,52 +152,42 @@ class ReferenceStandard(TenantScopedMasterData):
 class MeasureCatalog(TenantScopedMasterData):
     """
     Katalog wiederverwendbarer Schutzmaßnahmen-Vorlagen.
-    
+
     Beispiele (global):
     - "Erdung aller leitfähigen Teile"
     - "Technische Lüftung nach DIN EN 60079-10-1"
-    
+
     Beispiele (tenant-spezifisch):
     - "Interne Prozedur ABC-123"
     """
-    
+
     class DefaultType(models.TextChoices):
         PRIMARY = "primary", "Primäre Maßnahme (Vermeidung)"
         SECONDARY = "secondary", "Sekundäre Maßnahme (Zündquellenvermeidung)"
         TERTIARY = "tertiary", "Tertiäre Maßnahme (Auswirkungsbegrenzung)"
         ORGANIZATIONAL = "organizational", "Organisatorische Maßnahme"
-    
+
     code = models.CharField(
-        max_length=50,
-        blank=True,
-        default="",
-        help_text="Optionaler Kurzcode, z.B. 'M-ERD-001'"
+        max_length=50, blank=True, default="", help_text="Optionaler Kurzcode, z.B. 'M-ERD-001'"
     )
     title = models.CharField(max_length=300)
     default_type = models.CharField(
-        max_length=20,
-        choices=DefaultType.choices,
-        default=DefaultType.SECONDARY
+        max_length=20, choices=DefaultType.choices, default=DefaultType.SECONDARY
     )
     description_template = models.TextField(
-        blank=True,
-        default="",
-        help_text="Vorlage für Beschreibung, kann Platzhalter enthalten"
+        blank=True, default="", help_text="Vorlage für Beschreibung, kann Platzhalter enthalten"
     )
     reference_standards = models.ManyToManyField(
-        ReferenceStandard,
-        blank=True,
-        related_name="measure_catalog_entries"
+        ReferenceStandard, blank=True, related_name="measure_catalog_entries"
     )
-    
+
     class Meta:
         db_table = "ex_measure_catalog"
         verbose_name = "Maßnahmenkatalog"
         verbose_name_plural = "Maßnahmenkataloge"
         constraints = [
             models.UniqueConstraint(
-                fields=["tenant_id", "title"],
-                name="uq_measure_catalog_tenant_title"
+                fields=["tenant_id", "title"], name="uq_measure_catalog_tenant_title"
             ),
         ]
         indexes = [
@@ -215,7 +196,7 @@ class MeasureCatalog(TenantScopedMasterData):
                 name="idx_meascat_tenant_type",
             ),
         ]
-    
+
     def __str__(self) -> str:
         prefix = f"[{self.code}] " if self.code else ""
         return f"{prefix}{self.title}"
@@ -224,85 +205,75 @@ class MeasureCatalog(TenantScopedMasterData):
 class SafetyFunction(TenantScopedMasterData):
     """
     MSR-Sicherheitsfunktion nach IEC 62061 / ISO 13849.
-    
+
     Wird verwendet für komplexe Schutzmaßnahmen mit:
     - Performance Level (PLr) nach ISO 13849
     - Safety Integrity Level (SIL) nach IEC 62061
     - Überwachungsanforderungen
     """
-    
+
     class PerformanceLevel(models.TextChoices):
         PL_A = "a", "PL a"
         PL_B = "b", "PL b"
         PL_C = "c", "PL c"
         PL_D = "d", "PL d"
         PL_E = "e", "PL e"
-    
+
     class SILLevel(models.TextChoices):
         SIL_1 = "1", "SIL 1"
         SIL_2 = "2", "SIL 2"
         SIL_3 = "3", "SIL 3"
-    
+
     class MonitoringMethod(models.TextChoices):
         CONTINUOUS = "continuous", "Kontinuierlich"
         PERIODIC = "periodic", "Periodisch"
         DEMAND = "demand", "Bei Anforderung"
-    
+
     name = models.CharField(
-        max_length=100,
-        help_text="Eindeutiger Name, z.B. 'GW-001' für Gaswarnanlage 001"
+        max_length=100, help_text="Eindeutiger Name, z.B. 'GW-001' für Gaswarnanlage 001"
     )
     description = models.TextField(blank=True, default="")
-    
+
     performance_level = models.CharField(
         max_length=5,
         choices=PerformanceLevel.choices,
         blank=True,
         default="",
-        help_text="Required Performance Level nach ISO 13849"
+        help_text="Required Performance Level nach ISO 13849",
     )
     sil_level = models.CharField(
         max_digits=5,
         choices=SILLevel.choices,
         blank=True,
         default="",
-        help_text="Safety Integrity Level nach IEC 62061"
+        help_text="Safety Integrity Level nach IEC 62061",
     )
     monitoring_method = models.CharField(
-        max_length=20,
-        choices=MonitoringMethod.choices,
-        default=MonitoringMethod.CONTINUOUS
+        max_length=20, choices=MonitoringMethod.choices, default=MonitoringMethod.CONTINUOUS
     )
-    
+
     # Technische Details
     response_time_ms = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Ansprechzeit in Millisekunden"
+        null=True, blank=True, help_text="Ansprechzeit in Millisekunden"
     )
     proof_test_interval_months = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Proof-Test-Intervall in Monaten"
+        null=True, blank=True, help_text="Proof-Test-Intervall in Monaten"
     )
-    
+
     reference_standards = models.ManyToManyField(
-        ReferenceStandard,
-        blank=True,
-        related_name="safety_functions"
+        ReferenceStandard, blank=True, related_name="safety_functions"
     )
-    
+
     class Meta:
         db_table = "ex_safety_function"
         verbose_name = "Sicherheitsfunktion"
         verbose_name_plural = "Sicherheitsfunktionen"
         constraints = [
             models.UniqueConstraint(
-                fields=["tenant_id", "name"],
-                name="uq_safety_function_tenant_name"
+                fields=["tenant_id", "name"], name="uq_safety_function_tenant_name"
             ),
         ]
-    
+
     def __str__(self) -> str:
         levels = []
         if self.performance_level:
@@ -317,19 +288,17 @@ class SafetyFunction(TenantScopedMasterData):
 # ANLAGENSTRUKTUR
 # =============================================================================
 
+
 class Area(models.Model):
     """Betriebsbereich / Anlage innerhalb eines Standorts"""
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     site_id = models.UUIDField(db_index=True, help_text="FK zu tenancy.Site")
-    
+
     name = models.CharField(max_length=200)
     code = models.CharField(
-        max_length=50,
-        blank=True,
-        default="",
-        help_text="Anlagenkennzeichen (z.B. 'E2-50.01')"
+        max_length=50, blank=True, default="", help_text="Anlagenkennzeichen (z.B. 'E2-50.01')"
     )
     description = models.TextField(blank=True, default="")
 
@@ -337,22 +306,22 @@ class Area(models.Model):
         upload_to="areas/dxf/",
         null=True,
         blank=True,
-        help_text="Grundriss-DXF für Zonengeometrie und Brandschutz-Analyse"
+        help_text="Grundriss-DXF für Zonengeometrie und Brandschutz-Analyse",
     )
     dxf_analysis_json = models.JSONField(
         null=True,
         blank=True,
-        help_text="Ergebnis der nl2cad-core/areas DXF-Analyse (Räume, Flächen)"
+        help_text="Ergebnis der nl2cad-core/areas DXF-Analyse (Räume, Flächen)",
     )
     brandschutz_analysis_json = models.JSONField(
         null=True,
         blank=True,
-        help_text="Ergebnis der nl2cad-brandschutz Analyse (Fluchtwege, Mängel)"
+        help_text="Ergebnis der nl2cad-brandschutz Analyse (Fluchtwege, Mängel)",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = "ex_area"
         verbose_name = "Betriebsbereich"
@@ -361,88 +330,67 @@ class Area(models.Model):
             models.UniqueConstraint(
                 fields=["tenant_id", "site_id", "code"],
                 name="uq_area_code_per_site",
-                condition=models.Q(code__gt="")
+                condition=models.Q(code__gt=""),
             )
         ]
-    
+
     def __str__(self) -> str:
         return f"{self.code} - {self.name}" if self.code else self.name
-    
+
     @property
     def has_explosion_hazard(self) -> bool:
         """Prüft ob Ex-relevante Konzepte im Bereich existieren"""
-        return self.explosion_concepts.filter(
-            status__in=["approved", "in_review"]
-        ).exists()
+        return self.explosion_concepts.filter(status__in=["approved", "in_review"]).exists()
 
 
 # =============================================================================
 # EXPLOSIONSSCHUTZKONZEPT
 # =============================================================================
 
+
 class ExplosionConcept(models.Model):
     """Explosionsschutzkonzept nach TRGS 720ff"""
-    
+
     class Status(models.TextChoices):
         DRAFT = "draft", "Entwurf"
         IN_REVIEW = "in_review", "In Prüfung"
         APPROVED = "approved", "Freigegeben"
         ARCHIVED = "archived", "Archiviert"
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    
+
     # Beziehungen
-    area = models.ForeignKey(
-        Area, 
-        on_delete=models.CASCADE,
-        related_name="explosion_concepts"
-    )
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name="explosion_concepts")
     assessment_id = models.UUIDField(
-        null=True, 
-        blank=True,
-        db_index=True,
-        help_text="FK zu risk.Assessment (optional)"
+        null=True, blank=True, db_index=True, help_text="FK zu risk.Assessment (optional)"
     )
-    substance_id = models.UUIDField(
-        db_index=True,
-        help_text="FK zu substances.Substance (UUID)"
-    )
+    substance_id = models.UUIDField(db_index=True, help_text="FK zu substances.Substance (UUID)")
     substance_name = models.CharField(
-        max_length=255,
-        blank=True,
-        default="",
-        help_text="Cached Stoffname für Anzeige"
+        max_length=255, blank=True, default="", help_text="Cached Stoffname für Anzeige"
     )
-    
+
     # Metadaten
     title = models.CharField(max_length=255)
     version = models.PositiveIntegerField(default=1)
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.DRAFT
-    )
-    
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+
     # Validierung
     is_validated = models.BooleanField(default=False)
     validated_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="validated_concepts"
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="validated_concepts"
     )
     validated_at = models.DateTimeField(null=True, blank=True)
-    
+
     # Audit
     created_by = models.UUIDField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         help_text="User-ID des Erstellers",
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = "ex_concept"
         verbose_name = "Explosionsschutzkonzept"
@@ -454,10 +402,10 @@ class ExplosionConcept(models.Model):
                 name="idx_concept_tenant_status",
             ),
         ]
-    
+
     def __str__(self) -> str:
         return f"{self.title} (v{self.version})"
-    
+
     @property
     def sds_data(self) -> dict:
         """Ex-relevante Daten aus aktuellem SDS (read-only)"""
@@ -466,13 +414,13 @@ class ExplosionConcept(models.Model):
             "substance_id": str(self.substance_id),
             "substance_name": self.substance_name,
         }
-    
+
     @property
     def completion_percentage(self) -> int:
         """Fortschritt des Konzepts (für UI)"""
         total = 4
         completed = 0
-        
+
         if self.zones.exists():
             completed += 1
         if self.measures.filter(category="primary").exists():
@@ -481,7 +429,7 @@ class ExplosionConcept(models.Model):
             completed += 1
         if self.is_validated:
             completed += 1
-        
+
         return int((completed / total) * 100)
 
 
@@ -489,9 +437,10 @@ class ExplosionConcept(models.Model):
 # ZONENEINTEILUNG
 # =============================================================================
 
+
 class ZoneDefinition(models.Model):
     """Zoneneinteilung nach ATEX"""
-    
+
     class ZoneType(models.TextChoices):
         ZONE_0 = "0", "Zone 0 (Gas/Dampf, ständig)"
         ZONE_1 = "1", "Zone 1 (Gas/Dampf, gelegentlich)"
@@ -500,86 +449,74 @@ class ZoneDefinition(models.Model):
         ZONE_21 = "21", "Zone 21 (Staub, gelegentlich)"
         ZONE_22 = "22", "Zone 22 (Staub, selten)"
         NON_EX = "non_ex", "Nicht Ex-Bereich"
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    
-    concept = models.ForeignKey(
-        ExplosionConcept,
-        on_delete=models.CASCADE,
-        related_name="zones"
-    )
-    
-    zone_type = models.CharField(
-        max_length=10,
-        choices=ZoneType.choices,
-        default=ZoneType.ZONE_2
-    )
+
+    concept = models.ForeignKey(ExplosionConcept, on_delete=models.CASCADE, related_name="zones")
+
+    zone_type = models.CharField(max_length=10, choices=ZoneType.choices, default=ZoneType.ZONE_2)
     name = models.CharField(
-        max_length=200,
-        help_text="Bezeichnung der Zone (z.B. 'Abfüllbereich Tank 1')"
+        max_length=200, help_text="Bezeichnung der Zone (z.B. 'Abfüllbereich Tank 1')"
     )
     description = models.TextField(blank=True, default="")
     justification = models.TextField(
-        blank=True,
-        default="",
-        help_text="Begründung für Zoneneinteilung"
+        blank=True, default="", help_text="Begründung für Zoneneinteilung"
     )
-    
+
     # Ausdehnung (GeoJSON-kompatibel)
     extent = models.JSONField(
-        null=True,
-        blank=True,
-        help_text="Geometrie als GeoJSON (Point, Polygon, etc.)"
+        null=True, blank=True, help_text="Geometrie als GeoJSON (Point, Polygon, etc.)"
     )
     extent_horizontal_m = models.DecimalField(
         max_digits=8,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Horizontale Ausdehnung in Metern"
+        help_text="Horizontale Ausdehnung in Metern",
     )
     extent_vertical_m = models.DecimalField(
         max_digits=8,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text="Vertikale Ausdehnung in Metern"
+        help_text="Vertikale Ausdehnung in Metern",
     )
-    
+
     # Regelwerksreferenz
     reference_standard = models.ForeignKey(
         ReferenceStandard,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        related_name="zone_definitions"
+        related_name="zone_definitions",
     )
     reference_section = models.CharField(
-        max_length=50,
-        blank=True,
-        default="",
-        help_text="Abschnitt im Regelwerk (z.B. '4.2.1')"
+        max_length=50, blank=True, default="", help_text="Abschnitt im Regelwerk (z.B. '4.2.1')"
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = "ex_zone_definition"
         verbose_name = "Zonendefinition"
         verbose_name_plural = "Zonendefinitionen"
-    
+
     def __str__(self) -> str:
         return f"{self.get_zone_type_display()} - {self.name}"
-    
+
     @property
     def required_equipment_category(self) -> str:
         """Erforderliche Gerätekategorie für diese Zone"""
         mapping = {
-            "0": "1G", "1": "2G", "2": "3G",
-            "20": "1D", "21": "2D", "22": "3D",
-            "non_ex": "non_ex"
+            "0": "1G",
+            "1": "2G",
+            "2": "3G",
+            "20": "1D",
+            "21": "2D",
+            "22": "3D",
+            "non_ex": "non_ex",
         }
         return mapping.get(self.zone_type, "unknown")
 
@@ -588,97 +525,74 @@ class ZoneDefinition(models.Model):
 # SCHUTZMASSNAHMEN
 # =============================================================================
 
+
 class ProtectionMeasure(models.Model):
     """Schutzmaßnahme (primär, sekundär, tertiär, organisatorisch)"""
-    
+
     class Category(models.TextChoices):
         PRIMARY = "primary", "Primäre Maßnahme (Vermeidung)"
         SECONDARY = "secondary", "Sekundäre Maßnahme (Zündquellenvermeidung)"
         TERTIARY = "tertiary", "Tertiäre Maßnahme (Auswirkungsbegrenzung)"
         ORGANIZATIONAL = "organizational", "Organisatorische Maßnahme"
-    
+
     class Status(models.TextChoices):
         OPEN = "open", "Offen"
         IN_PROGRESS = "in_progress", "In Bearbeitung"
         DONE = "done", "Umgesetzt"
         VERIFIED = "verified", "Verifiziert"
         OBSOLETE = "obsolete", "Obsolet"
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    
-    concept = models.ForeignKey(
-        ExplosionConcept,
-        on_delete=models.CASCADE,
-        related_name="measures"
-    )
-    
+
+    concept = models.ForeignKey(ExplosionConcept, on_delete=models.CASCADE, related_name="measures")
+
     # Klassifikation
-    category = models.CharField(
-        max_length=20,
-        choices=Category.choices,
-        default=Category.SECONDARY
-    )
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.SECONDARY)
     catalog_reference = models.ForeignKey(
         MeasureCatalog,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        help_text="Vorlage aus Maßnahmenkatalog"
+        help_text="Vorlage aus Maßnahmenkatalog",
     )
-    
+
     # Inhalt
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True, default="")
-    
+
     # MSR-Bewertung (optional)
     safety_function = models.ForeignKey(
-        SafetyFunction,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="measures"
+        SafetyFunction, on_delete=models.SET_NULL, null=True, blank=True, related_name="measures"
     )
-    
+
     # Status & Verantwortung
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.OPEN
-    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.OPEN)
     responsible_user = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="responsible_measures"
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="responsible_measures"
     )
     due_date = models.DateField(null=True, blank=True)
-    
+
     # Verifizierung
     verified_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="verified_measures"
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="verified_measures"
     )
     verified_at = models.DateTimeField(null=True, blank=True)
     verification_notes = models.TextField(blank=True, default="")
-    
+
     # Audit
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = "ex_protection_measure"
         verbose_name = "Schutzmaßnahme"
         verbose_name_plural = "Schutzmaßnahmen"
         ordering = ["category", "title"]
-    
+
     def __str__(self) -> str:
         return f"[{self.get_category_display()}] {self.title}"
-    
+
     @property
     def is_safety_device(self) -> bool:
         """Prüft ob Maßnahme eine MSR-Sicherheitsfunktion ist"""
@@ -689,15 +603,16 @@ class ProtectionMeasure(models.Model):
 # BETRIEBSMITTEL
 # =============================================================================
 
+
 class EquipmentType(TenantScopedMasterData):
     """
     Stammdaten für Betriebsmittel-Typen mit strukturierter ATEX-Kennzeichnung.
     """
-    
+
     class AtexGroup(models.TextChoices):
         GROUP_I = "I", "Gruppe I (Bergbau)"
         GROUP_II = "II", "Gruppe II (Industrie)"
-    
+
     class AtexCategory(models.TextChoices):
         CAT_1G = "1G", "Kategorie 1G (Zone 0)"
         CAT_2G = "2G", "Kategorie 2G (Zone 0, 1)"
@@ -705,7 +620,7 @@ class EquipmentType(TenantScopedMasterData):
         CAT_1D = "1D", "Kategorie 1D (Zone 20)"
         CAT_2D = "2D", "Kategorie 2D (Zone 20, 21)"
         CAT_3D = "3D", "Kategorie 3D (Zone 20, 21, 22)"
-    
+
     class ProtectionType(models.TextChoices):
         EX_D = "Ex d", "Druckfeste Kapselung"
         EX_E = "Ex e", "Erhöhte Sicherheit"
@@ -716,7 +631,7 @@ class EquipmentType(TenantScopedMasterData):
         EX_Q = "Ex q", "Sandkapselung"
         EX_N = "Ex n", "Nicht-funkend"
         EX_T = "Ex t", "Schutz durch Gehäuse (Staub)"
-    
+
     class ExplosionGroup(models.TextChoices):
         IIA = "IIA", "IIA (Propan)"
         IIB = "IIB", "IIB (Ethylen)"
@@ -724,7 +639,7 @@ class EquipmentType(TenantScopedMasterData):
         IIIA = "IIIA", "IIIA (brennbare Flusen)"
         IIIB = "IIIB", "IIIB (nicht leitfähiger Staub)"
         IIIC = "IIIC", "IIIC (leitfähiger Staub)"
-    
+
     class TemperatureClass(models.TextChoices):
         T1 = "T1", "T1 (≤450°C)"
         T2 = "T2", "T2 (≤300°C)"
@@ -732,85 +647,59 @@ class EquipmentType(TenantScopedMasterData):
         T4 = "T4", "T4 (≤135°C)"
         T5 = "T5", "T5 (≤100°C)"
         T6 = "T6", "T6 (≤85°C)"
-    
+
     class EPL(models.TextChoices):
         """Equipment Protection Level"""
+
         GA = "Ga", "Ga (sehr hohes Schutzniveau)"
         GB = "Gb", "Gb (hohes Schutzniveau)"
         GC = "Gc", "Gc (erhöhtes Schutzniveau)"
         DA = "Da", "Da (sehr hohes Schutzniveau - Staub)"
         DB = "Db", "Db (hohes Schutzniveau - Staub)"
         DC = "Dc", "Dc (erhöhtes Schutzniveau - Staub)"
-    
+
     manufacturer = models.CharField(max_length=200)
     model = models.CharField(max_length=200)
     description = models.TextField(blank=True, default="")
-    
+
     atex_group = models.CharField(
-        max_length=5,
-        choices=AtexGroup.choices,
-        default=AtexGroup.GROUP_II
+        max_length=5, choices=AtexGroup.choices, default=AtexGroup.GROUP_II
     )
     atex_category = models.CharField(
-        max_length=5,
-        choices=AtexCategory.choices,
-        blank=True,
-        default=""
+        max_length=5, choices=AtexCategory.choices, blank=True, default=""
     )
     protection_type = models.CharField(
-        max_length=10,
-        choices=ProtectionType.choices,
-        blank=True,
-        default=""
+        max_length=10, choices=ProtectionType.choices, blank=True, default=""
     )
     explosion_group = models.CharField(
-        max_length=10,
-        choices=ExplosionGroup.choices,
-        blank=True,
-        default=""
+        max_length=10, choices=ExplosionGroup.choices, blank=True, default=""
     )
     temperature_class = models.CharField(
-        max_length=5,
-        choices=TemperatureClass.choices,
-        blank=True,
-        default=""
+        max_length=5, choices=TemperatureClass.choices, blank=True, default=""
     )
     epl = models.CharField(
         max_length=5,
         choices=EPL.choices,
         blank=True,
         default="",
-        help_text="Equipment Protection Level"
+        help_text="Equipment Protection Level",
     )
-    ip_rating = models.CharField(
-        max_length=10,
-        blank=True,
-        default="",
-        help_text="z.B. IP65, IP66"
-    )
+    ip_rating = models.CharField(max_length=10, blank=True, default="", help_text="z.B. IP65, IP66")
     ambient_temp_min = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Min. Umgebungstemperatur in °C"
+        null=True, blank=True, help_text="Min. Umgebungstemperatur in °C"
     )
     ambient_temp_max = models.IntegerField(
-        null=True,
-        blank=True,
-        help_text="Max. Umgebungstemperatur in °C"
+        null=True, blank=True, help_text="Max. Umgebungstemperatur in °C"
     )
     datasheet_url = models.URLField(blank=True, default="")
     certificate_number = models.CharField(max_length=100, blank=True, default="")
     notified_body = models.CharField(
-        max_length=100,
-        blank=True,
-        default="",
-        help_text="z.B. 'PTB', 'DEKRA', 'TÜV'"
+        max_length=100, blank=True, default="", help_text="z.B. 'PTB', 'DEKRA', 'TÜV'"
     )
     default_inspection_interval_months = models.PositiveIntegerField(
-        default=12,
-        help_text="Standard-Prüfintervall in Monaten"
+        default=12, help_text="Standard-Prüfintervall in Monaten"
     )
-    
+
     class Meta:
         db_table = "ex_equipment_type"
         verbose_name = "Betriebsmitteltyp"
@@ -818,7 +707,7 @@ class EquipmentType(TenantScopedMasterData):
         constraints = [
             models.UniqueConstraint(
                 fields=["tenant_id", "manufacturer", "model"],
-                name="uq_equipment_type_tenant_mfr_model"
+                name="uq_equipment_type_tenant_mfr_model",
             ),
         ]
         indexes = [
@@ -831,10 +720,10 @@ class EquipmentType(TenantScopedMasterData):
                 name="idx_eqtype_tenant_mfr",
             ),
         ]
-    
+
     def __str__(self) -> str:
         return f"{self.manufacturer} {self.model} ({self.full_atex_marking})"
-    
+
     @property
     def full_atex_marking(self) -> str:
         """Vollständige ATEX-Kennzeichnung aus Einzelfeldern"""
@@ -850,7 +739,7 @@ class EquipmentType(TenantScopedMasterData):
         if self.epl:
             parts.append(self.epl)
         return " ".join(parts) if len(parts) > 1 else "N/A"
-    
+
     @property
     def allowed_zones(self) -> list:
         """Liste der Zonen, in denen dieses Gerät eingesetzt werden darf"""
@@ -867,66 +756,47 @@ class EquipmentType(TenantScopedMasterData):
 
 class Equipment(models.Model):
     """Konkretes Ex-geschütztes Betriebsmittel"""
-    
+
     class Status(models.TextChoices):
         ACTIVE = "active", "In Betrieb"
         INACTIVE = "inactive", "Außer Betrieb"
         MAINTENANCE = "maintenance", "In Wartung"
         DECOMMISSIONED = "decommissioned", "Stillgelegt"
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    
+
     equipment_type = models.ForeignKey(
-        EquipmentType,
-        on_delete=models.PROTECT,
-        related_name="instances"
+        EquipmentType, on_delete=models.PROTECT, related_name="instances"
     )
-    area = models.ForeignKey(
-        Area,
-        on_delete=models.CASCADE,
-        related_name="equipment"
-    )
+    area = models.ForeignKey(Area, on_delete=models.CASCADE, related_name="equipment")
     zone = models.ForeignKey(
-        ZoneDefinition,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="equipment"
+        ZoneDefinition, on_delete=models.SET_NULL, null=True, blank=True, related_name="equipment"
     )
-    
+
     serial_number = models.CharField(max_length=100, blank=True, default="")
     asset_number = models.CharField(
-        max_length=100,
-        blank=True,
-        default="",
-        help_text="Interne Anlagennummer"
+        max_length=100, blank=True, default="", help_text="Interne Anlagennummer"
     )
     location_detail = models.CharField(
         max_length=255,
         blank=True,
         default="",
-        help_text="Genauer Standort (z.B. 'Halle 3, Ebene 2')"
+        help_text="Genauer Standort (z.B. 'Halle 3, Ebene 2')",
     )
-    
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.ACTIVE
-    )
+
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     installation_date = models.DateField(null=True, blank=True)
-    
+
     last_inspection_date = models.DateField(null=True, blank=True)
     next_inspection_date = models.DateField(null=True, blank=True)
     inspection_interval_months = models.PositiveIntegerField(
-        null=True,
-        blank=True,
-        help_text="Überschreibt Standard-Intervall des Typs"
+        null=True, blank=True, help_text="Überschreibt Standard-Intervall des Typs"
     )
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         db_table = "ex_equipment"
         verbose_name = "Betriebsmittel"
@@ -937,32 +807,33 @@ class Equipment(models.Model):
                 name="idx_equip_tenant_inspect",
             ),
         ]
-    
+
     def __str__(self) -> str:
         return f"{self.equipment_type} ({self.asset_number or self.serial_number or 'N/A'})"
-    
+
     @property
     def is_inspection_due(self) -> bool:
         """Prüft ob Inspektion fällig"""
         from django.utils import timezone
+
         if not self.next_inspection_date:
             return False
         return self.next_inspection_date <= timezone.now().date()
-    
+
     @property
     def is_suitable_for_zone(self) -> bool:
         """Prüft ob Gerätekategorie zur Zone passt"""
         if not self.zone:
             return True
-        
+
         required = self.zone.required_equipment_category
         actual = self.equipment_type.atex_category
-        
+
         if required == "non_ex":
             return True
         if not actual:
             return False
-        
+
         # Höhere Kategorie ist immer zulässig
         category_order = {"1G": 1, "2G": 2, "3G": 3, "1D": 1, "2D": 2, "3D": 3}
         return category_order.get(actual, 99) <= category_order.get(required, 0)
@@ -972,78 +843,55 @@ class Equipment(models.Model):
 # PRÜFUNGEN
 # =============================================================================
 
+
 class Inspection(models.Model):
     """Prüfung eines Betriebsmittels nach BetrSichV"""
-    
+
     class InspectionType(models.TextChoices):
         INITIAL = "initial", "Erstprüfung"
         PERIODIC = "periodic", "Wiederkehrende Prüfung"
         SPECIAL = "special", "Sonderprüfung"
         REPAIR = "repair", "Prüfung nach Instandsetzung"
-    
+
     class Result(models.TextChoices):
         PASSED = "passed", "Bestanden"
         PASSED_WITH_NOTES = "passed_notes", "Bestanden mit Hinweisen"
         FAILED = "failed", "Nicht bestanden"
         PENDING = "pending", "Ausstehend"
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    
-    equipment = models.ForeignKey(
-        Equipment,
-        on_delete=models.CASCADE,
-        related_name="inspections"
-    )
-    
+
+    equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE, related_name="inspections")
+
     inspection_type = models.CharField(
-        max_length=20,
-        choices=InspectionType.choices,
-        default=InspectionType.PERIODIC
+        max_length=20, choices=InspectionType.choices, default=InspectionType.PERIODIC
     )
     inspection_date = models.DateField()
     inspector_name = models.CharField(max_length=200)
     inspector_organization = models.CharField(
-        max_length=200,
-        blank=True,
-        default="",
-        help_text="z.B. ZÜS, befähigte Person"
+        max_length=200, blank=True, default="", help_text="z.B. ZÜS, befähigte Person"
     )
-    
-    result = models.CharField(
-        max_length=20,
-        choices=Result.choices,
-        default=Result.PENDING
-    )
+
+    result = models.CharField(max_length=20, choices=Result.choices, default=Result.PENDING)
     findings = models.TextField(blank=True, default="")
     recommendations = models.TextField(blank=True, default="")
-    
+
     certificate_number = models.CharField(max_length=100, blank=True, default="")
-    document_id = models.UUIDField(
-        null=True,
-        blank=True,
-        help_text="FK zu documents.Document"
-    )
-    
+    document_id = models.UUIDField(null=True, blank=True, help_text="FK zu documents.Document")
+
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True
-    )
-    
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
     class Meta:
         db_table = "ex_inspection"
         verbose_name = "Prüfung"
         verbose_name_plural = "Prüfungen"
         ordering = ["-inspection_date"]
-    
+
     def __str__(self) -> str:
-        return (
-            f"{self.get_inspection_type_display()} - "
-            f"{self.equipment} ({self.inspection_date})"
-        )
-    
+        return f"{self.get_inspection_type_display()} - {self.equipment} ({self.inspection_date})"
+
     # NOTE: Equipment inspection date updates are handled in
     # explosionsschutz.services.create_inspection() to keep
     # the model free of hidden side-effects (F-07).
@@ -1053,8 +901,10 @@ class Inspection(models.Model):
 # ZÜNDQUELLEN-BEWERTUNG (EN 1127-1)
 # =============================================================================
 
+
 class IgnitionSource(models.TextChoices):
     """13 Zündquellen nach EN 1127-1"""
+
     S1_HOT_SURFACES = "S1", "Heiße Oberflächen"
     S2_FLAMES = "S2", "Flammen und heiße Gase"
     S3_MECHANICAL_SPARKS = "S3", "Mechanisch erzeugte Funken"
@@ -1074,69 +924,55 @@ class ZoneIgnitionSourceAssessment(models.Model):
     """
     Bewertung der 13 Zündquellen pro Zone nach EN 1127-1.
     """
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    
+
     zone = models.ForeignKey(
-        ZoneDefinition,
-        on_delete=models.CASCADE,
-        related_name="ignition_assessments"
+        ZoneDefinition, on_delete=models.CASCADE, related_name="ignition_assessments"
     )
-    ignition_source = models.CharField(
-        max_length=10,
-        choices=IgnitionSource.choices
-    )
-    
+    ignition_source = models.CharField(max_length=10, choices=IgnitionSource.choices)
+
     is_present = models.BooleanField(
-        default=False,
-        help_text="Ist diese Zündquelle im Bereich vorhanden?"
+        default=False, help_text="Ist diese Zündquelle im Bereich vorhanden?"
     )
     is_effective = models.BooleanField(
-        default=False,
-        help_text="Kann diese Zündquelle wirksam werden (Energie ausreichend)?"
+        default=False, help_text="Kann diese Zündquelle wirksam werden (Energie ausreichend)?"
     )
     mitigation = models.TextField(
-        blank=True,
-        default="",
-        help_text="Beschreibung der Schutzmaßnahmen gegen diese Zündquelle"
+        blank=True, default="", help_text="Beschreibung der Schutzmaßnahmen gegen diese Zündquelle"
     )
-    
-    assessed_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True
-    )
+
+    assessed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     assessed_at = models.DateTimeField(null=True, blank=True)
-    
+
     class Meta:
         db_table = "ex_zone_ignition_assessment"
         verbose_name = "Zündquellen-Bewertung"
         verbose_name_plural = "Zündquellen-Bewertungen"
         constraints = [
             models.UniqueConstraint(
-                fields=["zone", "ignition_source"],
-                name="uq_zone_ignition_source"
+                fields=["zone", "ignition_source"], name="uq_zone_ignition_source"
             ),
         ]
-    
+
     def __str__(self) -> str:
-        status = "wirksam" if self.is_effective else (
-            "vorhanden" if self.is_present else "nicht vorhanden"
+        status = (
+            "wirksam"
+            if self.is_effective
+            else ("vorhanden" if self.is_present else "nicht vorhanden")
         )
-        return (
-            f"{self.zone.name} - "
-            f"{self.get_ignition_source_display()}: {status}"
-        )
+        return f"{self.zone.name} - {self.get_ignition_source_display()}: {status}"
 
 
 # =============================================================================
 # NACHWEISDOKUMENTE
 # =============================================================================
 
+
 class VerificationDocument(models.Model):
     """Nachweis- und Prüfdokumente zum Ex-Konzept"""
-    
+
     class DocumentType(models.TextChoices):
         CERTIFICATE = "certificate", "Prüfbescheinigung"
         REPORT = "report", "Prüfbericht"
@@ -1145,46 +981,32 @@ class VerificationDocument(models.Model):
         DRAWING = "drawing", "Zeichnung/Plan"
         APPROVAL = "approval", "Genehmigung"
         OTHER = "other", "Sonstige"
-    
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    
+
     concept = models.ForeignKey(
-        ExplosionConcept,
-        on_delete=models.CASCADE,
-        related_name="documents"
+        ExplosionConcept, on_delete=models.CASCADE, related_name="documents"
     )
-    
+
     title = models.CharField(max_length=255)
     document_type = models.CharField(
-        max_length=20,
-        choices=DocumentType.choices,
-        default=DocumentType.OTHER
+        max_length=20, choices=DocumentType.choices, default=DocumentType.OTHER
     )
     description = models.TextField(blank=True, default="")
-    
-    file = models.FileField(
-        upload_to="exschutz/docs/%Y/%m/",
-        null=True,
-        blank=True
-    )
+
+    file = models.FileField(upload_to="exschutz/docs/%Y/%m/", null=True, blank=True)
     document_version_id = models.UUIDField(
-        null=True,
-        blank=True,
-        help_text="FK zu documents.DocumentVersion"
+        null=True, blank=True, help_text="FK zu documents.DocumentVersion"
     )
-    
+
     issued_at = models.DateField(null=True, blank=True)
     issued_by = models.CharField(max_length=200, blank=True, default="")
     valid_until = models.DateField(null=True, blank=True)
-    
+
     created_at = models.DateTimeField(auto_now_add=True)
-    uploaded_by = models.ForeignKey(
-        User,
-        on_delete=models.SET_NULL,
-        null=True
-    )
-    
+    uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
     class Meta:
         db_table = "ex_verification_document"
         verbose_name = "Nachweisdokument"
@@ -1198,6 +1020,7 @@ class VerificationDocument(models.Model):
 # =============================================================================
 # ZONENBERECHNUNGS-NACHWEIS (BetrSichV §§ 14-17)
 # =============================================================================
+
 
 class ZoneCalculationResult(models.Model):
     """
@@ -1220,9 +1043,7 @@ class ZoneCalculationResult(models.Model):
     )
     substance_name = models.CharField(max_length=200)
     release_rate_kg_s = models.DecimalField(max_digits=12, decimal_places=6)
-    ventilation_rate_m3_s = models.DecimalField(
-        max_digits=12, decimal_places=4
-    )
+    ventilation_rate_m3_s = models.DecimalField(max_digits=12, decimal_places=4)
     release_type = models.CharField(
         max_length=20,
         choices=[("jet", "Strahl"), ("pool", "Lache"), ("diffuse", "Diffus")],
@@ -1272,6 +1093,7 @@ class ZoneCalculationResult(models.Model):
 # =============================================================================
 # ATEX-EIGNUNGSPRÜFUNGS-NACHWEIS
 # =============================================================================
+
 
 class EquipmentATEXCheck(models.Model):
     """

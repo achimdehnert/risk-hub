@@ -60,7 +60,8 @@ class TestAuditEvent:
             resource_type="Risk",
         )
         creates = AuditEvent.objects.filter(
-            tenant_id=TENANT_ID, event_type="create",
+            tenant_id=TENANT_ID,
+            event_type="create",
         )
         assert creates.count() == 1
 

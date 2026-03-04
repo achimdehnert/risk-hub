@@ -54,7 +54,8 @@ def get_context(
 ) -> dict[str, Any]:
     """Single source of truth for alert banner context."""
     colors = SEVERITY_MAP.get(
-        severity, SEVERITY_MAP["warning"],
+        severity,
+        SEVERITY_MAP["warning"],
     )
     return {
         "severity": severity,

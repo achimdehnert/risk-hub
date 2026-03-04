@@ -67,9 +67,7 @@ def document_upload(request: HttpRequest) -> HttpResponse:
         file = request.FILES.get("file")
 
         if not title or not file:
-            messages.error(
-                request, "Titel und Datei sind erforderlich."
-            )
+            messages.error(request, "Titel und Datei sind erforderlich.")
             return render(
                 request,
                 "documents/upload.html",

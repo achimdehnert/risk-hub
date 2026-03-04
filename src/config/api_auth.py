@@ -21,11 +21,15 @@ class ApiKeyAuth(HttpBearer):
         key_prefix = token[:16]
         key_hash = hashlib.sha256(token.encode("utf-8")).hexdigest()
 
-        api_key = ApiKey.objects.filter(
-            key_prefix=key_prefix,
-            key_hash=key_hash,
-            revoked_at__isnull=True,
-        ).select_related("user").first()
+        api_key = (
+            ApiKey.objects.filter(
+                key_prefix=key_prefix,
+                key_hash=key_hash,
+                revoked_at__isnull=True,
+            )
+            .select_related("user")
+            .first()
+        )
 
         if api_key is None:
             return None

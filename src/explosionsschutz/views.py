@@ -68,8 +68,10 @@ from .services import (
 # STAMMDATEN VIEWSETS
 # =============================================================================
 
+
 class ReferenceStandardViewSet(ReadOnlyMasterDataViewSet):
     """API für Regelwerksreferenzen"""
+
     queryset = ReferenceStandard.objects.all()
     serializer_class = ReferenceStandardSerializer
     filterset_fields = ["category", "is_system"]
@@ -79,6 +81,7 @@ class ReferenceStandardViewSet(ReadOnlyMasterDataViewSet):
 
 class MeasureCatalogViewSet(ReadOnlyMasterDataViewSet):
     """API für Maßnahmenkatalog"""
+
     queryset = MeasureCatalog.objects.prefetch_related("reference_standards")
     serializer_class = MeasureCatalogSerializer
     filterset_fields = ["default_type", "is_system"]
@@ -88,6 +91,7 @@ class MeasureCatalogViewSet(ReadOnlyMasterDataViewSet):
 
 class SafetyFunctionViewSet(ReadOnlyMasterDataViewSet):
     """API für MSR-Sicherheitsfunktionen"""
+
     queryset = SafetyFunction.objects.prefetch_related("reference_standards")
     serializer_class = SafetyFunctionSerializer
     filterset_fields = ["performance_level", "sil_level", "is_system"]
@@ -97,6 +101,7 @@ class SafetyFunctionViewSet(ReadOnlyMasterDataViewSet):
 
 class EquipmentTypeViewSet(ReadOnlyMasterDataViewSet):
     """API für Betriebsmitteltypen"""
+
     queryset = EquipmentType.objects.all()
     serializer_class = EquipmentTypeSerializer
     filterset_fields = [
@@ -114,18 +119,20 @@ class EquipmentTypeViewSet(ReadOnlyMasterDataViewSet):
 # CORE VIEWSETS
 # =============================================================================
 
+
 class AreaViewSet(TenantAwareViewSet):
     """API für Betriebsbereiche"""
+
     queryset = Area.objects.all()
     filterset_fields = ["site_id"]
     search_fields = ["code", "name"]
     ordering = ["code"]
-    
+
     def get_serializer_class(self):
         if self.action == "retrieve":
             return AreaDetailSerializer
         return AreaSerializer
-    
+
     def get_queryset(self):
         qs = super().get_queryset()
         if self.action == "retrieve":
@@ -138,16 +145,17 @@ class AreaViewSet(TenantAwareViewSet):
 
 class ExplosionConceptViewSet(TenantAwareViewSet):
     """API für Explosionsschutzkonzepte"""
+
     queryset = ExplosionConcept.objects.select_related("area")
     filterset_fields = ["status", "is_validated", "area_id"]
     search_fields = ["title", "area__name"]
     ordering = ["-created_at"]
-    
+
     def get_serializer_class(self):
         if self.action == "retrieve":
             return ExplosionConceptDetailSerializer
         return ExplosionConceptSerializer
-    
+
     def get_queryset(self):
         qs = super().get_queryset()
         if self.action == "retrieve":
@@ -158,71 +166,59 @@ class ExplosionConceptViewSet(TenantAwareViewSet):
                 "documents",
             )
         return qs
-    
+
     def perform_create(self, serializer):
         """Verwendet Service Layer für Erstellung"""
         tenant_id = self.get_tenant_id()
         user_id = self.request.user.id if self.request.user else None
-        
+
         cmd = CreateExplosionConceptCmd(
             area_id=serializer.validated_data["area"].id,
             substance_id=serializer.validated_data["substance"].id,
             title=serializer.validated_data["title"],
             assessment_id=serializer.validated_data.get("assessment_id"),
         )
-        
+
         concept = create_explosion_concept(cmd, tenant_id, user_id)
         serializer.instance = concept
-    
+
     @action(detail=True, methods=["post"])
     def validate(self, request, pk=None):
         """Validiert ein Ex-Konzept"""
         concept = self.get_object()
         tenant_id = self.get_tenant_id()
         user_id = request.user.id if request.user else None
-        
+
         try:
             cmd = ValidateExplosionConceptCmd(
                 concept_id=concept.id,
                 notes=request.data.get("notes"),
             )
             validated = validate_explosion_concept(cmd, tenant_id, user_id)
-            return Response(
-                ExplosionConceptSerializer(validated).data,
-                status=status.HTTP_200_OK
-            )
+            return Response(ExplosionConceptSerializer(validated).data, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=["post"])
     def archive(self, request, pk=None):
         """Archiviert ein Ex-Konzept"""
         concept = self.get_object()
         tenant_id = self.get_tenant_id()
         user_id = request.user.id if request.user else None
-        
+
         try:
             archived = archive_explosion_concept(concept.id, tenant_id, user_id)
-            return Response(
-                ExplosionConceptSerializer(archived).data,
-                status=status.HTTP_200_OK
-            )
+            return Response(ExplosionConceptSerializer(archived).data, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-    
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     @action(detail=True, methods=["get"])
     def export_pdf(self, request, pk=None):
         """Exportiert Ex-Konzept als PDF"""
         concept = self.get_object()
         return Response(
             {"message": "PDF export not yet implemented", "concept_id": str(concept.id)},
-            status=status.HTTP_501_NOT_IMPLEMENTED
+            status=status.HTTP_501_NOT_IMPLEMENTED,
         )
 
     @action(detail=True, methods=["get"])
@@ -243,14 +239,13 @@ class ExplosionConceptViewSet(TenantAwareViewSet):
             response = HttpResponse(
                 buffer.getvalue(),
                 content_type="application/vnd.openxmlformats-officedocument"
-                             ".wordprocessingml.document"
+                ".wordprocessingml.document",
             )
             response["Content-Disposition"] = f'attachment; filename="{filename}"'
             return response
         except ImportError:
             return Response(
-                {"error": "python-docx nicht installiert"},
-                status=status.HTTP_501_NOT_IMPLEMENTED
+                {"error": "python-docx nicht installiert"}, status=status.HTTP_501_NOT_IMPLEMENTED
             )
 
     @action(detail=True, methods=["get"])
@@ -269,12 +264,13 @@ class ExplosionConceptViewSet(TenantAwareViewSet):
 
 class ZoneDefinitionViewSet(TenantAwareViewSet):
     """API für Zonendefinitionen"""
+
     queryset = ZoneDefinition.objects.select_related("concept", "reference_standard")
     serializer_class = ZoneDefinitionSerializer
     filterset_fields = ["zone_type", "concept_id"]
     search_fields = ["name"]
     ordering = ["concept_id", "zone_type"]
-    
+
     def get_queryset(self):
         qs = super().get_queryset()
         return qs.prefetch_related("ignition_assessments")
@@ -282,10 +278,9 @@ class ZoneDefinitionViewSet(TenantAwareViewSet):
 
 class ProtectionMeasureViewSet(TenantAwareViewSet):
     """API für Schutzmaßnahmen"""
+
     queryset = ProtectionMeasure.objects.select_related(
-        "concept",
-        "catalog_reference",
-        "safety_function"
+        "concept", "catalog_reference", "safety_function"
     )
     serializer_class = ProtectionMeasureSerializer
     filterset_fields = ["category", "status", "concept_id"]
@@ -295,28 +290,29 @@ class ProtectionMeasureViewSet(TenantAwareViewSet):
 
 class EquipmentViewSet(TenantAwareViewSet):
     """API für Betriebsmittel"""
+
     queryset = Equipment.objects.select_related("equipment_type", "area", "zone")
     filterset_fields = ["status", "area_id", "zone_id", "equipment_type_id"]
     search_fields = ["serial_number", "asset_number"]
     ordering = ["-created_at"]
-    
+
     def get_serializer_class(self):
         if self.action == "retrieve":
             return EquipmentDetailSerializer
         return EquipmentSerializer
-    
+
     def get_queryset(self):
         qs = super().get_queryset()
         if self.action == "retrieve":
             return qs.prefetch_related("inspections")
         return qs
-    
+
     @action(detail=False, methods=["get"])
     def due_for_inspection(self, request):
         """Listet Betriebsmittel mit fälliger Prüfung"""
         qs = self.get_queryset().filter(
-            Q(next_inspection_date__lte=timezone.now().date()) |
-            Q(next_inspection_date__isnull=True, status="active")
+            Q(next_inspection_date__lte=timezone.now().date())
+            | Q(next_inspection_date__isnull=True, status="active")
         )
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
@@ -324,6 +320,7 @@ class EquipmentViewSet(TenantAwareViewSet):
 
 class InspectionViewSet(TenantAwareViewSet):
     """API für Prüfungen"""
+
     queryset = Inspection.objects.select_related("equipment", "equipment__equipment_type")
     serializer_class = InspectionSerializer
     filterset_fields = ["inspection_type", "result", "equipment_id"]
@@ -333,6 +330,7 @@ class InspectionViewSet(TenantAwareViewSet):
 
 class VerificationDocumentViewSet(TenantAwareViewSet):
     """API für Nachweisdokumente"""
+
     queryset = VerificationDocument.objects.select_related("concept")
     serializer_class = VerificationDocumentSerializer
     filterset_fields = ["document_type", "concept_id"]
@@ -344,121 +342,121 @@ class VerificationDocumentViewSet(TenantAwareViewSet):
 # REPORTS & DASHBOARD
 # =============================================================================
 
+
 class DashboardView(APIView):
     """Dashboard-Übersicht für Explosionsschutz"""
-    
+
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get(self, request):
         tenant_id = getattr(request.user, "tenant_id", None)
         if not tenant_id:
             return Response({"error": "Tenant erforderlich"}, status=400)
-        
+
         today = timezone.now().date()
-        
+
         # Statistiken
         concepts = ExplosionConcept.objects.filter(tenant_id=tenant_id)
         equipment = Equipment.objects.filter(tenant_id=tenant_id)
-        
-        return Response({
-            "concepts": {
-                "total": concepts.count(),
-                "draft": concepts.filter(status="draft").count(),
-                "approved": concepts.filter(status="approved").count(),
-                "archived": concepts.filter(status="archived").count(),
-            },
-            "equipment": {
-                "total": equipment.count(),
-                "active": equipment.filter(status="active").count(),
-                "inspection_due": equipment.filter(
-                    next_inspection_date__lte=today
-                ).count(),
-                "inspection_soon": equipment.filter(
-                    next_inspection_date__gt=today,
-                    next_inspection_date__lte=today + timezone.timedelta(days=30)
-                ).count(),
-            },
-            "zones": {
-                "by_type": list(
-                    ZoneDefinition.objects.filter(tenant_id=tenant_id)
-                    .values("zone_type")
-                    .annotate(count=Count("id"))
-                    .order_by("zone_type")
-                ),
-            },
-            "measures": {
-                "open": ProtectionMeasure.objects.filter(
-                    tenant_id=tenant_id, status="open"
-                ).count(),
-                "overdue": ProtectionMeasure.objects.filter(
-                    tenant_id=tenant_id,
-                    status__in=["open", "in_progress"],
-                    due_date__lt=today
-                ).count(),
-            },
-        })
+
+        return Response(
+            {
+                "concepts": {
+                    "total": concepts.count(),
+                    "draft": concepts.filter(status="draft").count(),
+                    "approved": concepts.filter(status="approved").count(),
+                    "archived": concepts.filter(status="archived").count(),
+                },
+                "equipment": {
+                    "total": equipment.count(),
+                    "active": equipment.filter(status="active").count(),
+                    "inspection_due": equipment.filter(next_inspection_date__lte=today).count(),
+                    "inspection_soon": equipment.filter(
+                        next_inspection_date__gt=today,
+                        next_inspection_date__lte=today + timezone.timedelta(days=30),
+                    ).count(),
+                },
+                "zones": {
+                    "by_type": list(
+                        ZoneDefinition.objects.filter(tenant_id=tenant_id)
+                        .values("zone_type")
+                        .annotate(count=Count("id"))
+                        .order_by("zone_type")
+                    ),
+                },
+                "measures": {
+                    "open": ProtectionMeasure.objects.filter(
+                        tenant_id=tenant_id, status="open"
+                    ).count(),
+                    "overdue": ProtectionMeasure.objects.filter(
+                        tenant_id=tenant_id, status__in=["open", "in_progress"], due_date__lt=today
+                    ).count(),
+                },
+            }
+        )
 
 
 class InspectionsDueReportView(APIView):
     """Report: Fällige und bald fällige Prüfungen"""
-    
+
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get(self, request):
         tenant_id = getattr(request.user, "tenant_id", None)
         if not tenant_id:
             return Response({"error": "Tenant erforderlich"}, status=400)
-        
+
         days = int(request.query_params.get("days", 30))
         today = timezone.now().date()
-        
-        equipment = Equipment.objects.filter(
-            tenant_id=tenant_id,
-            status="active"
-        ).select_related("equipment_type", "area", "zone")
-        
+
+        equipment = Equipment.objects.filter(tenant_id=tenant_id, status="active").select_related(
+            "equipment_type", "area", "zone"
+        )
+
         overdue = equipment.filter(next_inspection_date__lt=today)
         due_soon = equipment.filter(
             next_inspection_date__gte=today,
-            next_inspection_date__lte=today + timezone.timedelta(days=days)
+            next_inspection_date__lte=today + timezone.timedelta(days=days),
         )
-        
-        return Response({
-            "overdue": EquipmentSerializer(overdue, many=True).data,
-            "due_within_days": EquipmentSerializer(due_soon, many=True).data,
-            "days": days,
-        })
+
+        return Response(
+            {
+                "overdue": EquipmentSerializer(overdue, many=True).data,
+                "due_within_days": EquipmentSerializer(due_soon, many=True).data,
+                "days": days,
+            }
+        )
 
 
 class ZoneSummaryReportView(APIView):
     """Report: Zonenübersicht nach Bereich"""
-    
+
     permission_classes = [permissions.IsAuthenticated]
-    
+
     def get(self, request):
         tenant_id = getattr(request.user, "tenant_id", None)
         if not tenant_id:
             return Response({"error": "Tenant erforderlich"}, status=400)
-        
-        areas = Area.objects.filter(tenant_id=tenant_id).prefetch_related(
-            "concepts__zones"
-        )
-        
+
+        areas = Area.objects.filter(tenant_id=tenant_id).prefetch_related("concepts__zones")
+
         result = []
         for area in areas:
             zones_by_type = {}
             for concept in area.concepts.filter(status="approved"):
                 for zone in concept.zones.all():
                     zones_by_type[zone.zone_type] = zones_by_type.get(zone.zone_type, 0) + 1
-            
-            result.append({
-                "area_id": str(area.id),
-                "area_code": area.code,
-                "area_name": area.name,
-                "zones": zones_by_type,
-                "has_ex_hazard": area.has_explosion_hazard,
-            })
-        
+
+            result.append(
+                {
+                    "area_id": str(area.id),
+                    "area_code": area.code,
+                    "area_name": area.name,
+                    "zones": zones_by_type,
+                    "has_ex_hazard": area.has_explosion_hazard,
+                }
+            )
+
         return Response(result)
 
 
@@ -469,22 +467,24 @@ class ZoneSummaryReportView(APIView):
 
 class SubstanceListView(APIView):
     """Liste aller verfügbaren Stoffe in der Datenbank."""
-    
+
     permission_classes = [permissions.AllowAny]
-    
+
     def get(self, request):
-        return Response({
-            "success": True,
-            "substances": list_substances(),
-            "count": len(list_substances()),
-        })
+        return Response(
+            {
+                "success": True,
+                "substances": list_substances(),
+                "count": len(list_substances()),
+            }
+        )
 
 
 class SubstanceDetailView(APIView):
     """Stoffeigenschaften für einen bestimmten Stoff."""
-    
+
     permission_classes = [permissions.AllowAny]
-    
+
     def get(self, request, name: str):
         result = get_substance_properties(name)
         if result.get("success"):
@@ -495,7 +495,7 @@ class SubstanceDetailView(APIView):
 class ZoneCalculateView(APIView):
     """
     Zonenberechnung nach TRGS 721.
-    
+
     POST: {
         "release_rate_kg_s": 0.001,
         "ventilation_rate_m3_s": 0.5,
@@ -504,18 +504,20 @@ class ZoneCalculateView(APIView):
         "release_type": "jet"        // jet, pool, diffuse
     }
     """
-    
+
     permission_classes = [permissions.AllowAny]
-    
+
     def post(self, request):
         data = request.data
-        
+
         try:
             result = calculate_zone_extent(
                 release_rate_kg_s=float(data.get("release_rate_kg_s", 0.001)),
                 ventilation_rate_m3_s=float(data.get("ventilation_rate_m3_s", 0.5)),
                 substance_name=data.get("substance_name"),
-                room_volume_m3=float(data["room_volume_m3"]) if data.get("room_volume_m3") else None,
+                room_volume_m3=float(data["room_volume_m3"])
+                if data.get("room_volume_m3")
+                else None,
                 release_type=data.get("release_type", "jet"),
             )
             return Response(result)
@@ -526,27 +528,24 @@ class ZoneCalculateView(APIView):
 class EquipmentCheckView(APIView):
     """
     Equipment-Eignungsprüfung nach ATEX.
-    
+
     POST: {
         "ex_marking": "II 2G Ex d IIB T4",
         "zone": "1"
     }
     """
-    
+
     permission_classes = [permissions.AllowAny]
-    
+
     def post(self, request):
         data = request.data
-        
+
         ex_marking = data.get("ex_marking", "")
         zone = data.get("zone", "1")
-        
+
         if not ex_marking:
-            return Response({
-                "success": False,
-                "error": "ex_marking ist erforderlich"
-            }, status=400)
-        
+            return Response({"success": False, "error": "ex_marking ist erforderlich"}, status=400)
+
         result = check_equipment_suitability(ex_marking, zone)
         return Response(result)
 
@@ -554,19 +553,19 @@ class EquipmentCheckView(APIView):
 class VentilationAnalyzeView(APIView):
     """
     Lüftungseffektivität nach TRGS 722.
-    
+
     POST: {
         "room_volume_m3": 100,
         "air_flow_m3_h": 1000,
         "ventilation_type": "technisch"  // technisch, natürlich, keine
     }
     """
-    
+
     permission_classes = [permissions.AllowAny]
-    
+
     def post(self, request):
         data = request.data
-        
+
         try:
             result = analyze_ventilation_effectiveness(
                 room_volume_m3=float(data.get("room_volume_m3", 100)),

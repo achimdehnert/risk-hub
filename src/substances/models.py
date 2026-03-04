@@ -19,14 +19,12 @@ from django.db import models
 # BASE CLASS (Tenant-Scoped)
 # =============================================================================
 
+
 class TenantScopedModel(models.Model):
     """Abstrakte Basisklasse für tenant-isolierte Models."""
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    tenant_id = models.UUIDField(
-        db_index=True,
-        help_text="Tenant-ID für Mandantentrennung"
-    )
+    tenant_id = models.UUIDField(db_index=True, help_text="Tenant-ID für Mandantentrennung")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.UUIDField(null=True, blank=True)
@@ -39,6 +37,7 @@ class TenantScopedModel(models.Model):
 # PARTY (Hersteller / Lieferant)
 # =============================================================================
 
+
 class Party(TenantScopedModel):
     """Hersteller oder Lieferant von Gefahrstoffen."""
 
@@ -48,9 +47,7 @@ class Party(TenantScopedModel):
 
     name = models.CharField(max_length=240, help_text="Firmenname")
     party_type = models.CharField(
-        max_length=20,
-        choices=PartyType.choices,
-        help_text="Typ der Partei"
+        max_length=20, choices=PartyType.choices, help_text="Typ der Partei"
     )
     email = models.EmailField(blank=True, default="")
     phone = models.CharField(max_length=50, blank=True, default="")
@@ -64,15 +61,11 @@ class Party(TenantScopedModel):
         ordering = ["name"]
         constraints = [
             models.UniqueConstraint(
-                fields=["tenant_id", "party_type", "name"],
-                name="uq_party_tenant_type_name"
+                fields=["tenant_id", "party_type", "name"], name="uq_party_tenant_type_name"
             ),
         ]
         indexes = [
-            models.Index(
-                fields=["tenant_id", "party_type"],
-                name="ix_party_tenant_type"
-            ),
+            models.Index(fields=["tenant_id", "party_type"], name="ix_party_tenant_type"),
         ]
 
     def __str__(self):
@@ -82,6 +75,7 @@ class Party(TenantScopedModel):
 # =============================================================================
 # SUBSTANCE (Gefahrstoff)
 # =============================================================================
+
 
 class Substance(TenantScopedModel):
     """Gefahrstoff / Chemisches Produkt."""
@@ -93,6 +87,7 @@ class Substance(TenantScopedModel):
 
     class StorageClass(models.TextChoices):
         """Lagerklassen nach TRGS 510."""
+
         SC_1 = "1", "1 - Explosive Stoffe"
         SC_2A = "2A", "2A - Verdichtete Gase"
         SC_2B = "2B", "2B - Druckgaspackungen"
@@ -119,38 +114,23 @@ class Substance(TenantScopedModel):
         SC_13 = "13", "13 - Nicht brennbare Feststoffe"
 
     # Stammdaten
-    name = models.CharField(
-        max_length=240,
-        help_text="Stoffname / Produktbezeichnung"
-    )
-    trade_name = models.CharField(
-        max_length=240,
-        blank=True,
-        default="",
-        help_text="Handelsname"
-    )
+    name = models.CharField(max_length=240, help_text="Stoffname / Produktbezeichnung")
+    trade_name = models.CharField(max_length=240, blank=True, default="", help_text="Handelsname")
     description = models.TextField(
-        blank=True,
-        default="",
-        help_text="Beschreibung / Verwendungszweck"
+        blank=True, default="", help_text="Beschreibung / Verwendungszweck"
     )
 
     # Klassifikation
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.ACTIVE
-    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     storage_class = models.CharField(
         max_length=10,
         choices=StorageClass.choices,
         blank=True,
         default="",
-        help_text="Lagerklasse nach TRGS 510"
+        help_text="Lagerklasse nach TRGS 510",
     )
     is_cmr = models.BooleanField(
-        default=False,
-        help_text="CMR-Stoff (karzinogen, mutagen, reproduktionstoxisch)"
+        default=False, help_text="CMR-Stoff (karzinogen, mutagen, reproduktionstoxisch)"
     )
 
     # Beziehungen
@@ -160,7 +140,7 @@ class Substance(TenantScopedModel):
         null=True,
         blank=True,
         related_name="manufactured_substances",
-        limit_choices_to={"party_type": "manufacturer"}
+        limit_choices_to={"party_type": "manufacturer"},
     )
     supplier = models.ForeignKey(
         Party,
@@ -168,47 +148,27 @@ class Substance(TenantScopedModel):
         null=True,
         blank=True,
         related_name="supplied_substances",
-        limit_choices_to={"party_type": "supplier"}
+        limit_choices_to={"party_type": "supplier"},
     )
 
     # Ex-Schutz-relevante Daten (aus SDS extrahiert)
-    flash_point_c = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="Flammpunkt in °C"
-    )
+    flash_point_c = models.FloatField(null=True, blank=True, help_text="Flammpunkt in °C")
     ignition_temperature_c = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="Zündtemperatur in °C"
+        null=True, blank=True, help_text="Zündtemperatur in °C"
     )
     lower_explosion_limit = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="Untere Explosionsgrenze (UEG) in Vol.%"
+        null=True, blank=True, help_text="Untere Explosionsgrenze (UEG) in Vol.%"
     )
     upper_explosion_limit = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="Obere Explosionsgrenze (OEG) in Vol.%"
+        null=True, blank=True, help_text="Obere Explosionsgrenze (OEG) in Vol.%"
     )
     temperature_class = models.CharField(
-        max_length=10,
-        blank=True,
-        default="",
-        help_text="Temperaturklasse (T1-T6)"
+        max_length=10, blank=True, default="", help_text="Temperaturklasse (T1-T6)"
     )
     explosion_group = models.CharField(
-        max_length=10,
-        blank=True,
-        default="",
-        help_text="Explosionsgruppe (IIA, IIB, IIC)"
+        max_length=10, blank=True, default="", help_text="Explosionsgruppe (IIA, IIB, IIC)"
     )
-    vapor_density = models.FloatField(
-        null=True,
-        blank=True,
-        help_text="Dampfdichte (Luft = 1)"
-    )
+    vapor_density = models.FloatField(null=True, blank=True, help_text="Dampfdichte (Luft = 1)")
 
     class Meta:
         db_table = "substances_substance"
@@ -216,20 +176,11 @@ class Substance(TenantScopedModel):
         verbose_name_plural = "Gefahrstoffe"
         ordering = ["name"]
         constraints = [
-            models.UniqueConstraint(
-                fields=["tenant_id", "name"],
-                name="uq_substance_tenant_name"
-            ),
+            models.UniqueConstraint(fields=["tenant_id", "name"], name="uq_substance_tenant_name"),
         ]
         indexes = [
-            models.Index(
-                fields=["tenant_id", "status"],
-                name="ix_substance_tenant_status"
-            ),
-            models.Index(
-                fields=["tenant_id", "is_cmr"],
-                name="ix_substance_tenant_cmr"
-            ),
+            models.Index(fields=["tenant_id", "status"], name="ix_substance_tenant_status"),
+            models.Index(fields=["tenant_id", "is_cmr"], name="ix_substance_tenant_cmr"),
             models.Index(fields=["name"], name="ix_substance_name"),
         ]
 
@@ -239,22 +190,23 @@ class Substance(TenantScopedModel):
     @property
     def current_sds(self):
         """Aktuell gültige SDS-Revision (approved, neueste)."""
-        return self.sds_revisions.filter(
-            status=SdsRevision.Status.APPROVED
-        ).order_by("-revision_number").first()
+        return (
+            self.sds_revisions.filter(status=SdsRevision.Status.APPROVED)
+            .order_by("-revision_number")
+            .first()
+        )
 
     @property
     def cas_number(self):
         """CAS-Nummer (falls vorhanden)."""
-        identifier = self.identifiers.filter(
-            id_type=Identifier.IdType.CAS
-        ).first()
+        identifier = self.identifiers.filter(id_type=Identifier.IdType.CAS).first()
         return identifier.id_value if identifier else None
 
 
 # =============================================================================
 # IDENTIFIER (Stoffkennungen)
 # =============================================================================
+
 
 class Identifier(TenantScopedModel):
     """Stoffkennungen (CAS, EC, UFI, intern)."""
@@ -268,11 +220,7 @@ class Identifier(TenantScopedModel):
         INDEX = "index", "Index-Nummer"
         REACH = "reach", "REACH-Registrierungsnr."
 
-    substance = models.ForeignKey(
-        Substance,
-        on_delete=models.CASCADE,
-        related_name="identifiers"
-    )
+    substance = models.ForeignKey(Substance, on_delete=models.CASCADE, related_name="identifiers")
     id_type = models.CharField(max_length=20, choices=IdType.choices)
     id_value = models.CharField(max_length=100)
 
@@ -282,8 +230,7 @@ class Identifier(TenantScopedModel):
         verbose_name_plural = "Stoffkennungen"
         constraints = [
             models.UniqueConstraint(
-                fields=["tenant_id", "substance", "id_type"],
-                name="uq_identifier_substance_type"
+                fields=["tenant_id", "substance", "id_type"], name="uq_identifier_substance_type"
             ),
         ]
 
@@ -294,6 +241,7 @@ class Identifier(TenantScopedModel):
 # =============================================================================
 # SDS REVISION (Sicherheitsdatenblatt)
 # =============================================================================
+
 
 class SdsRevision(TenantScopedModel):
     """Sicherheitsdatenblatt-Revision."""
@@ -309,11 +257,7 @@ class SdsRevision(TenantScopedModel):
         WARNING = "warning", "Achtung"
         NONE = "none", "Kein Signalwort"
 
-    substance = models.ForeignKey(
-        Substance,
-        on_delete=models.CASCADE,
-        related_name="sds_revisions"
-    )
+    substance = models.ForeignKey(Substance, on_delete=models.CASCADE, related_name="sds_revisions")
 
     # Versionierung
     revision_number = models.PositiveIntegerField(default=1)
@@ -325,37 +269,23 @@ class SdsRevision(TenantScopedModel):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        help_text="Verknüpftes PDF-Dokument"
+        help_text="Verknüpftes PDF-Dokument",
     )
 
     # Klassifikation
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.DRAFT
-    )
+    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     signal_word = models.CharField(
-        max_length=20,
-        choices=SignalWord.choices,
-        default=SignalWord.NONE
+        max_length=20, choices=SignalWord.choices, default=SignalWord.NONE
     )
 
     # H-/P-Sätze (ManyToMany zu Referenztabellen)
     hazard_statements = models.ManyToManyField(
-        "HazardStatementRef",
-        blank=True,
-        related_name="sds_revisions"
+        "HazardStatementRef", blank=True, related_name="sds_revisions"
     )
     precautionary_statements = models.ManyToManyField(
-        "PrecautionaryStatementRef",
-        blank=True,
-        related_name="sds_revisions"
+        "PrecautionaryStatementRef", blank=True, related_name="sds_revisions"
     )
-    pictograms = models.ManyToManyField(
-        "PictogramRef",
-        blank=True,
-        related_name="sds_revisions"
-    )
+    pictograms = models.ManyToManyField("PictogramRef", blank=True, related_name="sds_revisions")
 
     # Freigabe
     approved_by = models.UUIDField(null=True, blank=True)
@@ -369,8 +299,7 @@ class SdsRevision(TenantScopedModel):
         ordering = ["-revision_date", "-revision_number"]
         constraints = [
             models.UniqueConstraint(
-                fields=["substance", "revision_number"],
-                name="uq_sds_substance_revision"
+                fields=["substance", "revision_number"], name="uq_sds_substance_revision"
             ),
         ]
 
@@ -382,6 +311,7 @@ class SdsRevision(TenantScopedModel):
 # SITE INVENTORY (Standort-Inventar)
 # =============================================================================
 
+
 class SiteInventoryItem(TenantScopedModel):
     """Standort-Inventar: Welcher Stoff wo und wieviel."""
 
@@ -391,43 +321,21 @@ class SiteInventoryItem(TenantScopedModel):
         GAS = "gas", "Gasförmig"
 
     substance = models.ForeignKey(
-        Substance,
-        on_delete=models.CASCADE,
-        related_name="inventory_items"
+        Substance, on_delete=models.CASCADE, related_name="inventory_items"
     )
     site = models.ForeignKey(
-        "tenancy.Site",
-        on_delete=models.CASCADE,
-        related_name="substance_inventory"
+        "tenancy.Site", on_delete=models.CASCADE, related_name="substance_inventory"
     )
 
-    quantity = models.DecimalField(
-        max_digits=12,
-        decimal_places=3,
-        help_text="Menge"
-    )
-    unit = models.CharField(
-        max_length=20,
-        default="kg",
-        help_text="Einheit (kg, l, m³)"
-    )
+    quantity = models.DecimalField(max_digits=12, decimal_places=3, help_text="Menge")
+    unit = models.CharField(max_length=20, default="kg", help_text="Einheit (kg, l, m³)")
     state = models.CharField(
-        max_length=20,
-        choices=State.choices,
-        default=State.LIQUID,
-        help_text="Aggregatzustand"
+        max_length=20, choices=State.choices, default=State.LIQUID, help_text="Aggregatzustand"
     )
     storage_location = models.CharField(
-        max_length=200,
-        blank=True,
-        default="",
-        help_text="Lagerort (z.B. Gefahrstofflager A)"
+        max_length=200, blank=True, default="", help_text="Lagerort (z.B. Gefahrstofflager A)"
     )
-    responsible_user = models.UUIDField(
-        null=True,
-        blank=True,
-        help_text="Verantwortliche Person"
-    )
+    responsible_user = models.UUIDField(null=True, blank=True, help_text="Verantwortliche Person")
 
     class Meta:
         db_table = "substances_site_inventory"
@@ -436,7 +344,7 @@ class SiteInventoryItem(TenantScopedModel):
         constraints = [
             models.UniqueConstraint(
                 fields=["tenant_id", "site", "substance", "storage_location"],
-                name="uq_inventory_site_substance_location"
+                name="uq_inventory_site_substance_location",
             ),
         ]
 
@@ -448,21 +356,18 @@ class SiteInventoryItem(TenantScopedModel):
 # REFERENZTABELLEN (Global, nicht tenant-spezifisch)
 # =============================================================================
 
+
 class HazardStatementRef(models.Model):
     """H-Sätze Referenztabelle (GHS)."""
 
-    code = models.CharField(
-        max_length=10,
-        primary_key=True,
-        help_text="H-Code (z.B. H225)"
-    )
+    code = models.CharField(max_length=10, primary_key=True, help_text="H-Code (z.B. H225)")
     text_de = models.TextField(help_text="Deutscher Text")
     text_en = models.TextField(blank=True, default="", help_text="English text")
     category = models.CharField(
         max_length=50,
         blank=True,
         default="",
-        help_text="Kategorie (physikalisch, Gesundheit, Umwelt)"
+        help_text="Kategorie (physikalisch, Gesundheit, Umwelt)",
     )
 
     class Meta:
@@ -479,9 +384,7 @@ class PrecautionaryStatementRef(models.Model):
     """P-Sätze Referenztabelle (GHS)."""
 
     code = models.CharField(
-        max_length=20,
-        primary_key=True,
-        help_text="P-Code (z.B. P210, P210+P233)"
+        max_length=20, primary_key=True, help_text="P-Code (z.B. P210, P210+P233)"
     )
     text_de = models.TextField(help_text="Deutscher Text")
     text_en = models.TextField(blank=True, default="", help_text="English text")
@@ -489,7 +392,7 @@ class PrecautionaryStatementRef(models.Model):
         max_length=50,
         blank=True,
         default="",
-        help_text="Kategorie (Prävention, Reaktion, Lagerung, Entsorgung)"
+        help_text="Kategorie (Prävention, Reaktion, Lagerung, Entsorgung)",
     )
 
     class Meta:
@@ -505,29 +408,13 @@ class PrecautionaryStatementRef(models.Model):
 class PictogramRef(models.Model):
     """GHS-Piktogramme Referenztabelle."""
 
-    code = models.CharField(
-        max_length=10,
-        primary_key=True,
-        help_text="GHS-Code (z.B. GHS01)"
-    )
+    code = models.CharField(max_length=10, primary_key=True, help_text="GHS-Code (z.B. GHS01)")
     name_de = models.CharField(max_length=100, help_text="Deutscher Name")
-    name_en = models.CharField(
-        max_length=100,
-        blank=True,
-        default="",
-        help_text="English name"
-    )
+    name_en = models.CharField(max_length=100, blank=True, default="", help_text="English name")
     svg_path = models.CharField(
-        max_length=200,
-        blank=True,
-        default="",
-        help_text="Pfad zur SVG-Datei"
+        max_length=200, blank=True, default="", help_text="Pfad zur SVG-Datei"
     )
-    description = models.TextField(
-        blank=True,
-        default="",
-        help_text="Beschreibung der Gefahr"
-    )
+    description = models.TextField(blank=True, default="", help_text="Beschreibung der Gefahr")
 
     class Meta:
         db_table = "substances_ref_pictogram"
@@ -576,16 +463,22 @@ class LocationSubstanceEntry(TenantScopedModel):
         help_text="Denormalisierter Stoffname",
     )
     cas_number = models.CharField(
-        max_length=30, blank=True, default="",
+        max_length=30,
+        blank=True,
+        default="",
     )
 
     # Quantities
     max_quantity_kg = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0,
+        max_digits=12,
+        decimal_places=2,
+        default=0,
         help_text="Maximale Lagermenge in kg",
     )
     current_quantity_kg = models.DecimalField(
-        max_digits=12, decimal_places=2, default=0,
+        max_digits=12,
+        decimal_places=2,
+        default=0,
         help_text="Aktuelle Lagermenge in kg",
     )
 
@@ -593,7 +486,8 @@ class LocationSubstanceEntry(TenantScopedModel):
     storage_class = models.CharField(
         max_length=10,
         choices=Substance.StorageClass.choices,
-        blank=True, default="",
+        blank=True,
+        default="",
         db_index=True,
     )
 
@@ -605,27 +499,35 @@ class LocationSubstanceEntry(TenantScopedModel):
         db_index=True,
     )
     seveso_threshold_lower_t = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        null=True, blank=True,
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
         help_text="Untere Mengenschwelle (Tonnen)",
     )
     seveso_threshold_upper_t = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        null=True, blank=True,
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
         help_text="Obere Mengenschwelle (Tonnen)",
     )
 
     # GHS
     h_statements = models.TextField(
-        blank=True, default="",
+        blank=True,
+        default="",
     )
     ghs_pictograms = models.CharField(
-        max_length=200, blank=True, default="",
+        max_length=200,
+        blank=True,
+        default="",
     )
 
     notes = models.TextField(blank=True, default="")
     last_inventory_date = models.DateField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
     )
 
     class Meta:
@@ -639,10 +541,7 @@ class LocationSubstanceEntry(TenantScopedModel):
         ]
 
     def __str__(self):
-        return (
-            f"{self.substance_name}"
-            f" ({self.current_quantity_kg} kg)"
-        )
+        return f"{self.substance_name} ({self.current_quantity_kg} kg)"
 
     @property
     def seveso_utilization_pct(self) -> float | None:

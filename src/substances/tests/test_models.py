@@ -76,7 +76,7 @@ def p_statement():
     return PrecautionaryStatementRef.objects.create(
         code="P210",
         text_de="Von Hitze, heißen Oberflächen, Funken, offenen Flammen "
-                "sowie anderen Zündquellen fernhalten. Nicht rauchen",
+        "sowie anderen Zündquellen fernhalten. Nicht rauchen",
         category="prevention",
     )
 
@@ -150,9 +150,7 @@ class TestSubstance:
         """Test: CAS-Nummer None wenn nicht vorhanden."""
         assert substance.cas_number is None
 
-    def test_current_sds_property(
-        self, substance, tenant_id, user_id, h_statement
-    ):
+    def test_current_sds_property(self, substance, tenant_id, user_id, h_statement):
         """Test: Aktuelle SDS-Revision Property."""
         # Erste Revision (Draft)
         SdsRevision.objects.create(
@@ -224,9 +222,7 @@ class TestIdentifier:
 class TestSdsRevision:
     """Tests für SdsRevision Model."""
 
-    def test_create_sds_revision(
-        self, substance, tenant_id, user_id, h_statement, pictogram
-    ):
+    def test_create_sds_revision(self, substance, tenant_id, user_id, h_statement, pictogram):
         """Test: SDS-Revision erstellen."""
         sds = SdsRevision.objects.create(
             tenant_id=tenant_id,

@@ -6,59 +6,87 @@ from django.db import migrations, models
 
 
 class Migration(migrations.Migration):
-
     initial = True
 
     dependencies = [
-        ('approvals', '0001_initial'),
+        ("approvals", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='approvaldecision',
-            name='decided_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL),
+            model_name="approvaldecision",
+            name="decided_by",
+            field=models.ForeignKey(
+                null=True, on_delete=django.db.models.deletion.SET_NULL, to=settings.AUTH_USER_MODEL
+            ),
         ),
         migrations.AddField(
-            model_name='approvalrequest',
-            name='requested_by',
-            field=models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='approval_requests', to=settings.AUTH_USER_MODEL),
+            model_name="approvalrequest",
+            name="requested_by",
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name="approval_requests",
+                to=settings.AUTH_USER_MODEL,
+            ),
         ),
         migrations.AddField(
-            model_name='approvaldecision',
-            name='request',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='decisions', to='approvals.approvalrequest'),
+            model_name="approvaldecision",
+            name="request",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="decisions",
+                to="approvals.approvalrequest",
+            ),
         ),
         migrations.AddField(
-            model_name='approvaldecision',
-            name='step',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='decisions', to='approvals.approvalstep'),
+            model_name="approvaldecision",
+            name="step",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="decisions",
+                to="approvals.approvalstep",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='approvalworkflow',
-            constraint=models.UniqueConstraint(condition=models.Q(('is_active', True)), fields=('tenant_id', 'workflow_type'), name='uq_active_workflow_per_type'),
+            model_name="approvalworkflow",
+            constraint=models.UniqueConstraint(
+                condition=models.Q(("is_active", True)),
+                fields=("tenant_id", "workflow_type"),
+                name="uq_active_workflow_per_type",
+            ),
         ),
         migrations.AddField(
-            model_name='approvalstep',
-            name='workflow',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='steps', to='approvals.approvalworkflow'),
+            model_name="approvalstep",
+            name="workflow",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.CASCADE,
+                related_name="steps",
+                to="approvals.approvalworkflow",
+            ),
         ),
         migrations.AddField(
-            model_name='approvalrequest',
-            name='workflow',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='requests', to='approvals.approvalworkflow'),
+            model_name="approvalrequest",
+            name="workflow",
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name="requests",
+                to="approvals.approvalworkflow",
+            ),
         ),
         migrations.AddConstraint(
-            model_name='approvalstep',
-            constraint=models.UniqueConstraint(fields=('workflow', 'order'), name='uq_step_order'),
+            model_name="approvalstep",
+            constraint=models.UniqueConstraint(fields=("workflow", "order"), name="uq_step_order"),
         ),
         migrations.AddIndex(
-            model_name='approvalrequest',
-            index=models.Index(fields=['tenant_id', 'status', '-requested_at'], name='approval_req_status_idx'),
+            model_name="approvalrequest",
+            index=models.Index(
+                fields=["tenant_id", "status", "-requested_at"], name="approval_req_status_idx"
+            ),
         ),
         migrations.AddIndex(
-            model_name='approvalrequest',
-            index=models.Index(fields=['entity_type', 'entity_id'], name='approval_req_entity_idx'),
+            model_name="approvalrequest",
+            index=models.Index(fields=["entity_type", "entity_id"], name="approval_req_entity_idx"),
         ),
     ]

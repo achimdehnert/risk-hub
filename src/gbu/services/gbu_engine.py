@@ -4,6 +4,7 @@ GBU-Engine Service Layer.
 Phase 2A: Command DTOs + Service-Stubs mit Audit-Events
 Phase 2B: EMKG-Risikobewertung (calculate_risk_score), approve_activity, set_risk_score
 """
+
 import datetime
 import logging
 from dataclasses import dataclass
@@ -48,9 +49,7 @@ def derive_hazard_categories(sds_revision_id: UUID) -> list:
     from gbu.models.reference import HazardCategoryRef
     from substances.models import SdsRevision
 
-    revision = SdsRevision.objects.prefetch_related("hazard_statements").get(
-        id=sds_revision_id
-    )
+    revision = SdsRevision.objects.prefetch_related("hazard_statements").get(id=sds_revision_id)
 
     h_codes = list(revision.hazard_statements.values_list("code", flat=True))
     if not h_codes:
@@ -73,13 +72,11 @@ def propose_measures(activity_id: UUID) -> list:
     from gbu.models.activity import HazardAssessmentActivity
     from gbu.models.reference import MeasureTemplate
 
-    activity = HazardAssessmentActivity.objects.prefetch_related(
-        "derived_hazard_categories"
-    ).get(id=activity_id)
-
-    category_ids = list(
-        activity.derived_hazard_categories.values_list("id", flat=True)
+    activity = HazardAssessmentActivity.objects.prefetch_related("derived_hazard_categories").get(
+        id=activity_id
     )
+
+    category_ids = list(activity.derived_hazard_categories.values_list("id", flat=True))
     if not category_ids:
         return []
 
@@ -132,9 +129,7 @@ def create_activity(
         user_id=user_id,
     )
 
-    logger.info(
-        "[GBUEngine] Tätigkeit erstellt: %s (tenant=%s)", activity.id, tenant_id
-    )
+    logger.info("[GBUEngine] Tätigkeit erstellt: %s (tenant=%s)", activity.id, tenant_id)
     return activity
 
 
@@ -195,8 +190,7 @@ def approve_activity(
 
     if activity.status not in (ActivityStatus.DRAFT, ActivityStatus.REVIEW):
         raise ValueError(
-            f"Status '{activity.status}' kann nicht freigegeben werden "
-            f"(nur draft/review zulässig)"
+            f"Status '{activity.status}' kann nicht freigegeben werden (nur draft/review zulässig)"
         )
 
     activity.status = ActivityStatus.APPROVED
@@ -204,14 +198,16 @@ def approve_activity(
     activity.approved_by_name = approved_by_name
     activity.approved_at = timezone.now()
     activity.next_review_date = cmd.next_review_date
-    activity.save(update_fields=[
-        "status",
-        "approved_by_id",
-        "approved_by_name",
-        "approved_at",
-        "next_review_date",
-        "updated_at",
-    ])
+    activity.save(
+        update_fields=[
+            "status",
+            "approved_by_id",
+            "approved_by_name",
+            "approved_at",
+            "next_review_date",
+            "updated_at",
+        ]
+    )
 
     emit_audit_event(
         tenant_id=tenant_id,
@@ -250,8 +246,7 @@ def set_risk_score(
     from gbu.models.reference import HazardCategoryType
 
     activity = (
-        HazardAssessmentActivity.objects
-        .prefetch_related("derived_hazard_categories")
+        HazardAssessmentActivity.objects.prefetch_related("derived_hazard_categories")
         .select_for_update()
         .get(id=activity_id, tenant_id=tenant_id)
     )

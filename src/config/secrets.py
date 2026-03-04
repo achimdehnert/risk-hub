@@ -49,12 +49,7 @@ def read_secret(
     if value:
         return value
 
-    if required and os.environ.get(
-        "DJANGO_SETTINGS_MODULE", ""
-    ).endswith("production"):
-        raise ValueError(
-            f"Required secret {key!r} not found in "
-            f"{SECRETS_DIR} or environment"
-        )
+    if required and os.environ.get("DJANGO_SETTINGS_MODULE", "").endswith("production"):
+        raise ValueError(f"Required secret {key!r} not found in {SECRETS_DIR} or environment")
 
     return default

@@ -17,9 +17,9 @@ def _tenant_id(request: HttpRequest):
     if user and getattr(user, "is_authenticated", False):
         try:
             from django_tenancy.models import Membership
+
             m = (
-                Membership.objects
-                .filter(user=user)
+                Membership.objects.filter(user=user)
                 .select_related("organization")
                 .order_by("created_at")
                 .first()
@@ -65,11 +65,15 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             .order_by("created_at")[:10]
         )
 
-    return render(request, "dsb/dashboard.html", {
-        "kpis": kpis,
-        "open_breaches": open_breaches,
-        "open_deletions": open_deletions,
-    })
+    return render(
+        request,
+        "dsb/dashboard.html",
+        {
+            "kpis": kpis,
+            "open_breaches": open_breaches,
+            "open_deletions": open_deletions,
+        },
+    )
 
 
 @login_required
@@ -79,16 +83,24 @@ def vvt_list(request: HttpRequest) -> HttpResponse:
     from dsb.models import ProcessingActivity
 
     tid = _tenant_id(request)
-    qs = ProcessingActivity.objects.filter(
-        tenant_id=tid,
-    ).select_related("mandate").order_by("mandate", "number")
+    qs = (
+        ProcessingActivity.objects.filter(
+            tenant_id=tid,
+        )
+        .select_related("mandate")
+        .order_by("mandate", "number")
+    )
     high_risk = qs.filter(
         risk_level__in=["high", "very_high"],
     ).count()
-    return render(request, "dsb/vvt_list.html", {
-        "rows": qs[:200],
-        "high_risk_count": high_risk,
-    })
+    return render(
+        request,
+        "dsb/vvt_list.html",
+        {
+            "rows": qs[:200],
+            "high_risk_count": high_risk,
+        },
+    )
 
 
 @login_required
@@ -99,21 +111,33 @@ def tom_list(request: HttpRequest) -> HttpResponse:
     from dsb.models.choices import MeasureStatus
 
     tid = _tenant_id(request)
-    tech = TechnicalMeasure.objects.filter(
-        tenant_id=tid,
-    ).select_related("category").order_by("title")
-    org = OrganizationalMeasure.objects.filter(
-        tenant_id=tid,
-    ).select_related("category").order_by("title")
+    tech = (
+        TechnicalMeasure.objects.filter(
+            tenant_id=tid,
+        )
+        .select_related("category")
+        .order_by("title")
+    )
+    org = (
+        OrganizationalMeasure.objects.filter(
+            tenant_id=tid,
+        )
+        .select_related("category")
+        .order_by("title")
+    )
     planned = (
         tech.filter(status=MeasureStatus.PLANNED).count()
         + org.filter(status=MeasureStatus.PLANNED).count()
     )
-    return render(request, "dsb/tom_list.html", {
-        "tech_rows": tech[:200],
-        "org_rows": org[:200],
-        "planned_count": planned,
-    })
+    return render(
+        request,
+        "dsb/tom_list.html",
+        {
+            "tech_rows": tech[:200],
+            "org_rows": org[:200],
+            "planned_count": planned,
+        },
+    )
 
 
 @login_required
@@ -123,14 +147,22 @@ def dpa_list(request: HttpRequest) -> HttpResponse:
     from dsb.models import DataProcessingAgreement
 
     tid = _tenant_id(request)
-    qs = DataProcessingAgreement.objects.filter(
-        tenant_id=tid,
-    ).select_related("mandate").order_by("-effective_date")
+    qs = (
+        DataProcessingAgreement.objects.filter(
+            tenant_id=tid,
+        )
+        .select_related("mandate")
+        .order_by("-effective_date")
+    )
     expired = qs.filter(status="expired").count()
-    return render(request, "dsb/dpa_list.html", {
-        "rows": qs[:200],
-        "expired_count": expired,
-    })
+    return render(
+        request,
+        "dsb/dpa_list.html",
+        {
+            "rows": qs[:200],
+            "expired_count": expired,
+        },
+    )
 
 
 @login_required
@@ -142,18 +174,26 @@ def audit_list(request: HttpRequest) -> HttpResponse:
     from dsb.models.choices import SeverityLevel
 
     tid = _tenant_id(request)
-    qs = PrivacyAudit.objects.filter(
-        tenant_id=tid,
-    ).select_related("mandate").prefetch_related("findings")
+    qs = (
+        PrivacyAudit.objects.filter(
+            tenant_id=tid,
+        )
+        .select_related("mandate")
+        .prefetch_related("findings")
+    )
     critical = AuditFinding.objects.filter(
         tenant_id=tid,
         severity=SeverityLevel.CRITICAL,
         status="open",
     ).count()
-    return render(request, "dsb/audit_list.html", {
-        "rows": qs[:200],
-        "critical_findings": critical,
-    })
+    return render(
+        request,
+        "dsb/audit_list.html",
+        {
+            "rows": qs[:200],
+            "critical_findings": critical,
+        },
+    )
 
 
 @login_required
@@ -167,10 +207,14 @@ def deletion_list(request: HttpRequest) -> HttpResponse:
         tenant_id=tid,
     ).select_related("mandate", "data_category")
     pending = qs.filter(executed_at__isnull=True).count()
-    return render(request, "dsb/deletion_list.html", {
-        "rows": qs[:200],
-        "pending_count": pending,
-    })
+    return render(
+        request,
+        "dsb/deletion_list.html",
+        {
+            "rows": qs[:200],
+            "pending_count": pending,
+        },
+    )
 
 
 @login_required
@@ -180,14 +224,22 @@ def breach_list(request: HttpRequest) -> HttpResponse:
     from dsb.models import Breach
 
     tid = _tenant_id(request)
-    qs = Breach.objects.filter(
-        tenant_id=tid,
-    ).select_related("mandate").order_by("-discovered_at")
+    qs = (
+        Breach.objects.filter(
+            tenant_id=tid,
+        )
+        .select_related("mandate")
+        .order_by("-discovered_at")
+    )
     overdue = sum(1 for b in qs if b.is_overdue)
-    return render(request, "dsb/breach_list.html", {
-        "rows": qs[:200],
-        "overdue_count": overdue,
-    })
+    return render(
+        request,
+        "dsb/breach_list.html",
+        {
+            "rows": qs[:200],
+            "overdue_count": overdue,
+        },
+    )
 
 
 # -----------------------------------------------------------------------
@@ -203,10 +255,14 @@ def mandate_list(request: HttpRequest) -> HttpResponse:
     tid = _tenant_id(request)
     qs = Mandate.objects.filter(tenant_id=tid).order_by("name")
     active = qs.filter(status="active").count()
-    return render(request, "dsb/mandate_list.html", {
-        "rows": qs[:200],
-        "active_count": active,
-    })
+    return render(
+        request,
+        "dsb/mandate_list.html",
+        {
+            "rows": qs[:200],
+            "active_count": active,
+        },
+    )
 
 
 @login_required
@@ -225,10 +281,14 @@ def mandate_create(request: HttpRequest) -> HttpResponse:
             return redirect("dsb:mandate-list")
     else:
         form = MandateForm()
-    return render(request, "dsb/mandate_form.html", {
-        "form": form,
-        "title": "Neues Mandat anlegen",
-    })
+    return render(
+        request,
+        "dsb/mandate_form.html",
+        {
+            "form": form,
+            "title": "Neues Mandat anlegen",
+        },
+    )
 
 
 @login_required
@@ -248,11 +308,15 @@ def mandate_edit(request: HttpRequest, pk) -> HttpResponse:
             return redirect("dsb:mandate-list")
     else:
         form = MandateForm(instance=obj)
-    return render(request, "dsb/mandate_form.html", {
-        "form": form,
-        "title": f"Mandat bearbeiten: {obj.name}",
-        "object": obj,
-    })
+    return render(
+        request,
+        "dsb/mandate_form.html",
+        {
+            "form": form,
+            "title": f"Mandat bearbeiten: {obj.name}",
+            "object": obj,
+        },
+    )
 
 
 @login_required
@@ -265,11 +329,15 @@ def mandate_delete(request: HttpRequest, pk) -> HttpResponse:
     if request.method == "POST":
         obj.delete()
         return redirect("dsb:mandate-list")
-    return render(request, "dsb/confirm_delete.html", {
-        "object": obj,
-        "cancel_url": "dsb:mandate-list",
-        "type_label": "Mandat",
-    })
+    return render(
+        request,
+        "dsb/confirm_delete.html",
+        {
+            "object": obj,
+            "cancel_url": "dsb:mandate-list",
+            "type_label": "Mandat",
+        },
+    )
 
 
 # -----------------------------------------------------------------------
@@ -309,10 +377,14 @@ def vvt_create(request: HttpRequest) -> HttpResponse:
             return redirect("dsb:vvt-list")
     else:
         form = ProcessingActivityForm(tenant_id=tid)
-    return render(request, "dsb/vvt_form.html", {
-        "form": form,
-        "title": "Neue Verarbeitungstätigkeit",
-    })
+    return render(
+        request,
+        "dsb/vvt_form.html",
+        {
+            "form": form,
+            "title": "Neue Verarbeitungstätigkeit",
+        },
+    )
 
 
 @login_required
@@ -325,7 +397,9 @@ def vvt_edit(request: HttpRequest, pk) -> HttpResponse:
     obj = get_object_or_404(ProcessingActivity, pk=pk, tenant_id=tid)
     if request.method == "POST":
         form = ProcessingActivityForm(
-            request.POST, instance=obj, tenant_id=tid,
+            request.POST,
+            instance=obj,
+            tenant_id=tid,
         )
         if form.is_valid():
             obj = form.save(commit=False)
@@ -335,11 +409,15 @@ def vvt_edit(request: HttpRequest, pk) -> HttpResponse:
             return redirect("dsb:vvt-list")
     else:
         form = ProcessingActivityForm(instance=obj, tenant_id=tid)
-    return render(request, "dsb/vvt_form.html", {
-        "form": form,
-        "title": f"VVT bearbeiten: {obj.name}",
-        "object": obj,
-    })
+    return render(
+        request,
+        "dsb/vvt_form.html",
+        {
+            "form": form,
+            "title": f"VVT bearbeiten: {obj.name}",
+            "object": obj,
+        },
+    )
 
 
 # -----------------------------------------------------------------------
@@ -357,11 +435,7 @@ def tom_create(request: HttpRequest) -> HttpResponse:
 
     tid = _tenant_id(request)
     measure_type = request.GET.get("type", "tech")
-    FormClass = (
-        TechnicalMeasureForm
-        if measure_type == "tech"
-        else OrganizationalMeasureForm
-    )
+    FormClass = TechnicalMeasureForm if measure_type == "tech" else OrganizationalMeasureForm
     if request.method == "POST":
         form = FormClass(request.POST, tenant_id=tid)
         if form.is_valid():
@@ -372,15 +446,16 @@ def tom_create(request: HttpRequest) -> HttpResponse:
             return redirect("dsb:tom-list")
     else:
         form = FormClass(tenant_id=tid)
-    label = (
-        "Technische" if measure_type == "tech"
-        else "Organisatorische"
+    label = "Technische" if measure_type == "tech" else "Organisatorische"
+    return render(
+        request,
+        "dsb/tom_form.html",
+        {
+            "form": form,
+            "title": f"Neue {label} Maßnahme",
+            "measure_type": measure_type,
+        },
     )
-    return render(request, "dsb/tom_form.html", {
-        "form": form,
-        "title": f"Neue {label} Maßnahme",
-        "measure_type": measure_type,
-    })
 
 
 @login_required
@@ -403,7 +478,9 @@ def tom_edit(request: HttpRequest, pk) -> HttpResponse:
     obj = get_object_or_404(Model, pk=pk, tenant_id=tid)
     if request.method == "POST":
         form = FormClass(
-            request.POST, instance=obj, tenant_id=tid,
+            request.POST,
+            instance=obj,
+            tenant_id=tid,
         )
         if form.is_valid():
             obj = form.save(commit=False)
@@ -412,16 +489,17 @@ def tom_edit(request: HttpRequest, pk) -> HttpResponse:
             return redirect("dsb:tom-list")
     else:
         form = FormClass(instance=obj, tenant_id=tid)
-    label = (
-        "Technische" if measure_type == "tech"
-        else "Organisatorische"
+    label = "Technische" if measure_type == "tech" else "Organisatorische"
+    return render(
+        request,
+        "dsb/tom_form.html",
+        {
+            "form": form,
+            "title": f"{label} Maßnahme bearbeiten: {obj.title}",
+            "object": obj,
+            "measure_type": measure_type,
+        },
     )
-    return render(request, "dsb/tom_form.html", {
-        "form": form,
-        "title": f"{label} Maßnahme bearbeiten: {obj.title}",
-        "object": obj,
-        "measure_type": measure_type,
-    })
 
 
 # -----------------------------------------------------------------------
@@ -437,15 +515,21 @@ def dpa_detail(request: HttpRequest, pk) -> HttpResponse:
 
     tid = _tenant_id(request)
     obj = get_object_or_404(
-        DataProcessingAgreement.objects.select_related("mandate")
-        .prefetch_related("data_categories", "data_subjects", "processing_activities"),
-        pk=pk, tenant_id=tid,
+        DataProcessingAgreement.objects.select_related("mandate").prefetch_related(
+            "data_categories", "data_subjects", "processing_activities"
+        ),
+        pk=pk,
+        tenant_id=tid,
     )
     docs = DsbDocument.objects.filter(tenant_id=tid, ref_type="dpa", ref_id=obj.pk)
-    return render(request, "dsb/dpa_detail.html", {
-        "obj": obj,
-        "docs": docs,
-    })
+    return render(
+        request,
+        "dsb/dpa_detail.html",
+        {
+            "obj": obj,
+            "docs": docs,
+        },
+    )
 
 
 @login_required
@@ -456,7 +540,8 @@ def dpa_create(request: HttpRequest) -> HttpResponse:
     tid = _tenant_id(request)
     if request.method == "POST":
         form = DataProcessingAgreementForm(
-            request.POST, tenant_id=tid,
+            request.POST,
+            tenant_id=tid,
         )
         if form.is_valid():
             obj = form.save(commit=False)
@@ -466,10 +551,14 @@ def dpa_create(request: HttpRequest) -> HttpResponse:
             return redirect("dsb:dpa-list")
     else:
         form = DataProcessingAgreementForm(tenant_id=tid)
-    return render(request, "dsb/dpa_form.html", {
-        "form": form,
-        "title": "Neuer Auftragsverarbeitungsvertrag",
-    })
+    return render(
+        request,
+        "dsb/dpa_form.html",
+        {
+            "form": form,
+            "title": "Neuer Auftragsverarbeitungsvertrag",
+        },
+    )
 
 
 @login_required
@@ -480,11 +569,15 @@ def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
 
     tid = _tenant_id(request)
     obj = get_object_or_404(
-        DataProcessingAgreement, pk=pk, tenant_id=tid,
+        DataProcessingAgreement,
+        pk=pk,
+        tenant_id=tid,
     )
     if request.method == "POST":
         form = DataProcessingAgreementForm(
-            request.POST, instance=obj, tenant_id=tid,
+            request.POST,
+            instance=obj,
+            tenant_id=tid,
         )
         if form.is_valid():
             obj = form.save(commit=False)
@@ -493,13 +586,18 @@ def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
             return redirect("dsb:dpa-list")
     else:
         form = DataProcessingAgreementForm(
-            instance=obj, tenant_id=tid,
+            instance=obj,
+            tenant_id=tid,
         )
-    return render(request, "dsb/dpa_form.html", {
-        "form": form,
-        "title": f"AVV bearbeiten: {obj.partner_name}",
-        "object": obj,
-    })
+    return render(
+        request,
+        "dsb/dpa_form.html",
+        {
+            "form": form,
+            "title": f"AVV bearbeiten: {obj.partner_name}",
+            "object": obj,
+        },
+    )
 
 
 # -----------------------------------------------------------------------
@@ -525,7 +623,9 @@ def avv_import(request: HttpRequest) -> HttpResponse:
         return resp
 
     result = None
-    mandates = Mandate.objects.filter(tenant_id=tid, status="active") if tid else Mandate.objects.none()
+    mandates = (
+        Mandate.objects.filter(tenant_id=tid, status="active") if tid else Mandate.objects.none()
+    )
 
     if request.method == "POST":
         mandate_id = request.POST.get("mandate")
@@ -537,26 +637,33 @@ def avv_import(request: HttpRequest) -> HttpResponse:
                 result = import_avv(content, mandate, tid, uid)
                 if result.avv_created:
                     from django.contrib import messages
+
                     messages.success(
                         request,
                         f"{result.avv_created} AVV importiert, {result.skipped} übersprungen.",
                     )
             except Mandate.DoesNotExist:
                 from django.contrib import messages
+
                 messages.error(request, "Mandat nicht gefunden.")
             except Exception as exc:
                 from django.contrib import messages
+
                 messages.error(request, f"Import-Fehler: {exc}")
 
     selected_mandate = None
     if tid and mandates.count() == 1:
         selected_mandate = mandates.first()
 
-    return render(request, "dsb/avv_import.html", {
-        "mandates": mandates,
-        "selected_mandate": selected_mandate,
-        "result": result,
-    })
+    return render(
+        request,
+        "dsb/avv_import.html",
+        {
+            "mandates": mandates,
+            "selected_mandate": selected_mandate,
+            "result": result,
+        },
+    )
 
 
 @login_required
@@ -574,13 +681,19 @@ def csv_import(request: HttpRequest) -> HttpResponse:
     tid = _tenant_id(request)
     uid = _user_id(request)
     result = None
-    mandate_count = Mandate.objects.filter(
-        tenant_id=tid,
-    ).count() if tid else 0
+    mandate_count = (
+        Mandate.objects.filter(
+            tenant_id=tid,
+        ).count()
+        if tid
+        else 0
+    )
 
     if request.method == "POST":
         form = CsvImportForm(
-            request.POST, request.FILES, tenant_id=tid,
+            request.POST,
+            request.FILES,
+            tenant_id=tid,
         )
         if form.is_valid():
             csv_file = form.cleaned_data["csv_file"]
@@ -590,22 +703,35 @@ def csv_import(request: HttpRequest) -> HttpResponse:
 
             if csv_type == "vvt":
                 result = import_vvt(
-                    content, mandate, tid, uid,
+                    content,
+                    mandate,
+                    tid,
+                    uid,
                 )
             elif csv_type == "tom":
                 result = import_tom(
-                    content, mandate, tid, uid,
+                    content,
+                    mandate,
+                    tid,
+                    uid,
                 )
             else:
                 result = import_csv(
-                    content, mandate, tid, uid,
+                    content,
+                    mandate,
+                    tid,
+                    uid,
                 )
     else:
         form = CsvImportForm(tenant_id=tid)
 
-    return render(request, "dsb/import_upload.html", {
-        "form": form,
-        "result": result,
-        "no_mandates": mandate_count == 0,
-        "tenant_id": tid,
-    })
+    return render(
+        request,
+        "dsb/import_upload.html",
+        {
+            "form": form,
+            "result": result,
+            "no_mandates": mandate_count == 0,
+            "tenant_id": tid,
+        },
+    )

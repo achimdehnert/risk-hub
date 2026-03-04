@@ -42,6 +42,7 @@ from explosionsschutz.services import (
 # FIXTURES
 # =============================================================================
 
+
 @pytest.fixture
 def fixture_tenant_id():
     return uuid.uuid4()
@@ -123,6 +124,7 @@ def fixture_zone_1(fixture_tenant_id, fixture_concept_draft):
 # TESTS: CREATE EXPLOSION CONCEPT
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestCreateExplosionConcept:
     """Tests für create_explosion_concept Service"""
@@ -149,9 +151,7 @@ class TestCreateExplosionConcept:
             title="Test Konzept",
         )
 
-        concept = create_explosion_concept(
-            cmd, fixture_tenant_id, fixture_user_id
-        )
+        concept = create_explosion_concept(cmd, fixture_tenant_id, fixture_user_id)
 
         assert concept.version == 1
         assert concept.status == "draft"
@@ -224,6 +224,7 @@ class TestCreateExplosionConcept:
 # TESTS: UPDATE EXPLOSION CONCEPT
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestUpdateExplosionConcept:
     """Tests für update_explosion_concept Service"""
@@ -264,6 +265,7 @@ class TestUpdateExplosionConcept:
 # TESTS: VALIDATE EXPLOSION CONCEPT
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestValidateExplosionConcept:
     """Tests für validate_explosion_concept Service"""
@@ -296,9 +298,7 @@ class TestValidateExplosionConcept:
             notes="Validierung OK",
         )
 
-        validated = validate_explosion_concept(
-            cmd, fixture_tenant_id, fixture_user_id
-        )
+        validated = validate_explosion_concept(cmd, fixture_tenant_id, fixture_user_id)
 
         assert validated.status == "approved"
         assert validated.is_validated is True
@@ -308,6 +308,7 @@ class TestValidateExplosionConcept:
 # =============================================================================
 # TESTS: CREATE ZONE DEFINITION
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestCreateZoneDefinition:
@@ -368,6 +369,7 @@ class TestCreateZoneDefinition:
 # =============================================================================
 # TESTS: CREATE EQUIPMENT
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestCreateEquipment:
@@ -434,6 +436,7 @@ class TestCreateEquipment:
 # TESTS: ASSESS IGNITION SOURCE
 # =============================================================================
 
+
 @pytest.mark.django_db
 class TestAssessIgnitionSource:
     """Tests für assess_ignition_source Service"""
@@ -455,9 +458,7 @@ class TestAssessIgnitionSource:
             mitigation="Temperaturüberwachung",
         )
 
-        assessment = assess_ignition_source(
-            cmd, fixture_tenant_id, fixture_user_id
-        )
+        assessment = assess_ignition_source(cmd, fixture_tenant_id, fixture_user_id)
 
         assert assessment.is_present is True
         assert assessment.is_effective is False
@@ -495,6 +496,7 @@ class TestAssessIgnitionSource:
 # =============================================================================
 # TESTS: ARCHIVE EXPLOSION CONCEPT
 # =============================================================================
+
 
 @pytest.mark.django_db
 class TestArchiveExplosionConcept:

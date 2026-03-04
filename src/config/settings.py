@@ -88,17 +88,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-DATABASES = {
-    "default": dj_database_url.config(default=read_secret("DATABASE_URL"))
-}
+DATABASES = {"default": dj_database_url.config(default=read_secret("DATABASE_URL"))}
 
 AUTH_USER_MODEL = "identity.User"
 
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-STATICFILES_STORAGE = (
-    "whitenoise.storage.CompressedManifestStaticFilesStorage"
-)
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
@@ -109,14 +105,10 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Tenancy
 TENANT_BASE_DOMAINS = [
-    d.strip()
-    for d in os.getenv("TENANT_BASE_DOMAINS", "").split(",")
-    if d.strip()
+    d.strip() for d in os.getenv("TENANT_BASE_DOMAINS", "").split(",") if d.strip()
 ]
 TENANT_BASE_DOMAIN = (
-    TENANT_BASE_DOMAINS[0]
-    if TENANT_BASE_DOMAINS
-    else os.getenv("TENANT_BASE_DOMAIN", "localhost")
+    TENANT_BASE_DOMAINS[0] if TENANT_BASE_DOMAINS else os.getenv("TENANT_BASE_DOMAIN", "localhost")
 )
 TENANT_ALLOW_LOCALHOST = os.getenv("TENANT_ALLOW_LOCALHOST", "1") == "1"
 TENANT_RESERVED_SUBDOMAINS = [
@@ -141,11 +133,7 @@ MODULE_URL_MAP = {
 }
 
 # CSRF
-CSRF_TRUSTED_ORIGINS = [
-    o
-    for o in read_secret("CSRF_TRUSTED_ORIGINS", default="").split(",")
-    if o
-]
+CSRF_TRUSTED_ORIGINS = [o for o in read_secret("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -200,6 +188,4 @@ EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = read_secret("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
-DEFAULT_FROM_EMAIL = os.getenv(
-    "DEFAULT_FROM_EMAIL", "noreply@schutztat.de"
-)
+DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@schutztat.de")

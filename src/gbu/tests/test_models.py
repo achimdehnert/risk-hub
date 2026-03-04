@@ -1,4 +1,5 @@
 """Unit-Tests für GBU-Models (Phase 2A)."""
+
 import pytest
 
 from gbu.models.activity import (
@@ -18,6 +19,7 @@ from gbu.models.reference import (
 )
 
 # ── StrEnum-Tests ──────────────────────────────────────────────────────────────
+
 
 def test_should_hazard_category_type_be_str_compatible():
     assert HazardCategoryType.FIRE_EXPLOSION == "fire_explosion"
@@ -51,6 +53,7 @@ def test_should_activity_frequency_be_str_compatible():
 
 # ── Model-Meta-Tests ──────────────────────────────────────────────────────────
 
+
 def test_should_activity_have_no_delete_permission():
     perms = HazardAssessmentActivity._meta.default_permissions
     assert "delete" not in perms
@@ -78,7 +81,8 @@ def test_should_activity_not_have_approved_by_fk():
     assert "approved_by_id" in field_names
     assert "approved_by_name" in field_names
     fk_to_user = [
-        f for f in HazardAssessmentActivity._meta.get_fields()
+        f
+        for f in HazardAssessmentActivity._meta.get_fields()
         if hasattr(f, "related_model")
         and f.related_model is not None
         and "user" in str(f.related_model).lower()
@@ -88,6 +92,7 @@ def test_should_activity_not_have_approved_by_fk():
 
 
 # ── DB-Tests ──────────────────────────────────────────────────────────────────
+
 
 @pytest.mark.django_db
 def test_should_create_hazard_category_ref():
@@ -104,7 +109,8 @@ def test_should_create_hazard_category_ref():
 @pytest.mark.django_db
 def test_should_create_h_code_mapping():
     cat = HazardCategoryRef.objects.create(
-        code="TEST-CMR", name="CMR Test",
+        code="TEST-CMR",
+        name="CMR Test",
         category_type=HazardCategoryType.CMR,
     )
     m = HCodeCategoryMapping.objects.create(
@@ -116,8 +122,10 @@ def test_should_create_h_code_mapping():
 @pytest.mark.django_db
 def test_should_enforce_unique_h_code_per_category():
     from django.db import IntegrityError
+
     cat = HazardCategoryRef.objects.create(
-        code="TEST-U", name="Unique Test",
+        code="TEST-U",
+        name="Unique Test",
         category_type=HazardCategoryType.ACUTE_TOXIC,
     )
     HCodeCategoryMapping.objects.create(h_code="H300", category=cat)
@@ -128,7 +136,8 @@ def test_should_enforce_unique_h_code_per_category():
 @pytest.mark.django_db
 def test_should_create_measure_template():
     cat = HazardCategoryRef.objects.create(
-        code="TEST-PSA", name="PSA Test",
+        code="TEST-PSA",
+        name="PSA Test",
         category_type=HazardCategoryType.SKIN_CORROSION,
     )
     t = MeasureTemplate.objects.create(

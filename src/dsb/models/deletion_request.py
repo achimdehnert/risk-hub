@@ -69,7 +69,8 @@ class DeletionRequest(models.Model):
     subject_name = models.CharField(max_length=200, verbose_name="Name der betroffenen Person")
     subject_email = models.EmailField(verbose_name="E-Mail der betroffenen Person")
     subject_reference = models.CharField(
-        max_length=100, blank=True,
+        max_length=100,
+        blank=True,
         verbose_name="Referenz / Kundennummer",
         help_text="Interne Referenz zur Identifikation",
     )
@@ -152,10 +153,14 @@ class DeletionRequest(models.Model):
     def deadline_days(self) -> int | None:
         """Art. 17: 1 Monat Frist ab Antragsdatum."""
         from datetime import date
+
         if self.request_date:
-            delta = (self.request_date.replace(
-                month=self.request_date.month % 12 + 1,
-                year=self.request_date.year + (1 if self.request_date.month == 12 else 0),
-            ) - date.today()).days
+            delta = (
+                self.request_date.replace(
+                    month=self.request_date.month % 12 + 1,
+                    year=self.request_date.year + (1 if self.request_date.month == 12 else 0),
+                )
+                - date.today()
+            ).days
             return delta
         return None

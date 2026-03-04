@@ -23,8 +23,7 @@ class ConceptExportDocxView(View):
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
 
         concept = get_object_or_404(
-            ExplosionConcept.objects.filter(base_filter)
-            .select_related("area"),
+            ExplosionConcept.objects.filter(base_filter).select_related("area"),
             pk=pk,
         )
 
@@ -38,8 +37,7 @@ class ConceptExportDocxView(View):
             as_attachment=True,
             filename=filename,
             content_type=(
-                "application/vnd.openxmlformats-"
-                "officedocument.wordprocessingml.document"
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             ),
         )
 
@@ -52,8 +50,7 @@ class ConceptExportPdfView(View):
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
 
         concept = get_object_or_404(
-            ExplosionConcept.objects.filter(base_filter)
-            .select_related("area"),
+            ExplosionConcept.objects.filter(base_filter).select_related("area"),
             pk=pk,
         )
 
@@ -96,8 +93,7 @@ class ConceptPreviewView(View):
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
 
         concept = get_object_or_404(
-            ExplosionConcept.objects.filter(base_filter)
-            .select_related("area"),
+            ExplosionConcept.objects.filter(base_filter).select_related("area"),
             pk=pk,
         )
 
@@ -122,8 +118,7 @@ class ZoneMapView(View):
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
 
         concept = get_object_or_404(
-            ExplosionConcept.objects.filter(base_filter)
-            .select_related("area"),
+            ExplosionConcept.objects.filter(base_filter).select_related("area"),
             pk=pk,
         )
 
@@ -151,18 +146,10 @@ class ConceptExportGAEBView(View):
     """GAEB X84 Export der Schutzmaßnahmen eines Explosionsschutzkonzepts."""
 
     _CATEGORY_MAP = {
-        ProtectionMeasure.Category.PRIMARY: (
-            "01", "Primäre Maßnahmen (Vermeidung)"
-        ),
-        ProtectionMeasure.Category.SECONDARY: (
-            "02", "Sekundäre Maßnahmen (Zündquellenvermeidung)"
-        ),
-        ProtectionMeasure.Category.TERTIARY: (
-            "03", "Tertiäre Maßnahmen (Auswirkungsbegrenzung)"
-        ),
-        ProtectionMeasure.Category.ORGANIZATIONAL: (
-            "04", "Organisatorische Maßnahmen"
-        ),
+        ProtectionMeasure.Category.PRIMARY: ("01", "Primäre Maßnahmen (Vermeidung)"),
+        ProtectionMeasure.Category.SECONDARY: ("02", "Sekundäre Maßnahmen (Zündquellenvermeidung)"),
+        ProtectionMeasure.Category.TERTIARY: ("03", "Tertiäre Maßnahmen (Auswirkungsbegrenzung)"),
+        ProtectionMeasure.Category.ORGANIZATIONAL: ("04", "Organisatorische Maßnahmen"),
     }
 
     def get(self, request: HttpRequest, pk) -> HttpResponse:
@@ -178,25 +165,20 @@ class ConceptExportGAEBView(View):
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
 
         concept = get_object_or_404(
-            ExplosionConcept.objects.filter(base_filter)
-            .select_related("area"),
+            ExplosionConcept.objects.filter(base_filter).select_related("area"),
             pk=pk,
         )
 
         format_type = request.GET.get("format", "excel")
 
         lv = Leistungsverzeichnis(
-            projekt_name=(
-                f"Ex-Schutz: {concept.title} — {concept.area.name}"
-            ),
+            projekt_name=(f"Ex-Schutz: {concept.title} — {concept.area.name}"),
             projekt_nummer=str(concept.pk)[:8],
             phase=GAEBPhase.X84,
         )
 
-        measures_qs = (
-            ProtectionMeasure.objects
-            .filter(base_filter, concept=concept)
-            .order_by("category", "title")
+        measures_qs = ProtectionMeasure.objects.filter(base_filter, concept=concept).order_by(
+            "category", "title"
         )
 
         # Gruppiere Maßnahmen nach Kategorie in Lose
@@ -235,16 +217,11 @@ class ConceptExportGAEBView(View):
             filename = f"LV_{safe_name}_v{concept.version}.x84"
         else:
             output = generator.generate_excel(lv)
-            content_type = (
-                "application/vnd.openxmlformats-officedocument"
-                ".spreadsheetml.sheet"
-            )
+            content_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             filename = f"LV_{safe_name}_v{concept.version}.xlsx"
 
         response = HttpResponse(output.read(), content_type=content_type)
-        response["Content-Disposition"] = (
-            f'attachment; filename="{filename}"'
-        )
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
         return response
 
 

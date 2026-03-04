@@ -33,13 +33,9 @@ class Command(BaseCommand):
         ]
         providers = {}
         for data in providers_data:
-            p, created = LLMProvider.objects.update_or_create(
-                name=data["name"], defaults=data
-            )
+            p, created = LLMProvider.objects.update_or_create(name=data["name"], defaults=data)
             providers[data["name"]] = p
-            self.stdout.write(
-                f"  {'Created' if created else 'Updated'}: {p.display_name}"
-            )
+            self.stdout.write(f"  {'Created' if created else 'Updated'}: {p.display_name}")
 
         models_data = [
             {
@@ -68,9 +64,7 @@ class Command(BaseCommand):
                 provider=provider, name=data["name"], defaults=data
             )
             models[data["name"]] = m
-            self.stdout.write(
-                f"  {'Created' if created else 'Updated'}: {m}"
-            )
+            self.stdout.write(f"  {'Created' if created else 'Updated'}: {m}")
 
         default_model = models["gpt-4o-mini"]
         fallback_model = models["claude-3-5-haiku-20241022"]
@@ -104,13 +98,13 @@ class Command(BaseCommand):
                     "is_active": True,
                 },
             )
-            self.stdout.write(
-                f"  {'Created' if created else 'Updated'}: {a.code}"
-            )
+            self.stdout.write(f"  {'Created' if created else 'Updated'}: {a.code}")
 
-        self.stdout.write(self.style.SUCCESS(
-            f"\n\u2705 risk-hub aifw seeded: "
-            f"{LLMProvider.objects.count()} providers, "
-            f"{LLMModel.objects.count()} models, "
-            f"{AIActionType.objects.count()} actions"
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"\n\u2705 risk-hub aifw seeded: "
+                f"{LLMProvider.objects.count()} providers, "
+                f"{LLMModel.objects.count()} models, "
+                f"{AIActionType.objects.count()} actions"
+            )
+        )

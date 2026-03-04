@@ -1,6 +1,5 @@
 """Seed demo data for development."""
 
-
 from django.core.management.base import BaseCommand
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 
@@ -15,32 +14,32 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         self.stdout.write("Seeding demo data...")
-        
+
         # Create demo organization
         org, created = Organization.objects.get_or_create(
             slug="demo",
             defaults={
                 "name": "Demo GmbH",
-            }
+            },
         )
         if created:
             self.stdout.write(f"  Created organization: {org.name}")
-        
+
         tenant_id = org.tenant_id
-        
+
         # Create sites
         site1, _ = Site.objects.get_or_create(
             tenant_id=tenant_id,
             name="Hauptstandort",
-            defaults={"organization": org, "address": "Musterstraße 1, 12345 Berlin"}
+            defaults={"organization": org, "address": "Musterstraße 1, 12345 Berlin"},
         )
         site2, _ = Site.objects.get_or_create(
             tenant_id=tenant_id,
             name="Lager Nord",
-            defaults={"organization": org, "address": "Industrieweg 5, 22222 Hamburg"}
+            defaults={"organization": org, "address": "Industrieweg 5, 22222 Hamburg"},
         )
         self.stdout.write(f"  Sites: {Site.objects.filter(tenant_id=tenant_id).count()}")
-        
+
         # Create demo user
         user, created = User.objects.get_or_create(
             username="demo",
@@ -48,13 +47,13 @@ class Command(BaseCommand):
                 "email": "demo@example.com",
                 "tenant_id": tenant_id,
                 "is_staff": True,
-            }
+            },
         )
         if created:
             user.set_password("demo")
             user.save()
             self.stdout.write("  Created user: demo (password: demo)")
-        
+
         # Create permissions
         permissions_data = [
             ("risk.assessment.read", "Gefährdungsbeurteilungen lesen"),
@@ -68,23 +67,17 @@ class Command(BaseCommand):
         for code, desc in permissions_data:
             Permission.objects.get_or_create(code=code, defaults={"description": desc})
         self.stdout.write(f"  Permissions: {Permission.objects.count()}")
-        
+
         # Create roles
         admin_role, _ = Role.objects.get_or_create(
-            tenant_id=tenant_id,
-            name="Administrator",
-            defaults={"is_system": True}
+            tenant_id=tenant_id, name="Administrator", defaults={"is_system": True}
         )
         admin_role.permissions.set(Permission.objects.all())
-        
+
         reader_role, _ = Role.objects.get_or_create(
-            tenant_id=tenant_id,
-            name="Leser",
-            defaults={"is_system": True}
+            tenant_id=tenant_id, name="Leser", defaults={"is_system": True}
         )
-        reader_role.permissions.set(
-            Permission.objects.filter(code__endswith=".read")
-        )
+        reader_role.permissions.set(Permission.objects.filter(code__endswith=".read"))
         self.stdout.write(f"  Roles: {Role.objects.filter(tenant_id=tenant_id).count()}")
 
         # Create module subscriptions
@@ -98,13 +91,13 @@ class Command(BaseCommand):
                     "plan_code": "free",
                 },
             )
-        self.stdout.write(f"  Module subscriptions: {ModuleSubscription.objects.filter(tenant_id=tenant_id).count()}")
+        self.stdout.write(
+            f"  Module subscriptions: {ModuleSubscription.objects.filter(tenant_id=tenant_id).count()}"
+        )
 
         # Create scope and assignment
         tenant_scope, _ = Scope.objects.get_or_create(
-            tenant_id=tenant_id,
-            scope_type=Scope.SCOPE_TENANT,
-            defaults={}
+            tenant_id=tenant_id, scope_type=Scope.SCOPE_TENANT, defaults={}
         )
         Assignment.objects.get_or_create(
             tenant_id=tenant_id,
@@ -121,7 +114,9 @@ class Command(BaseCommand):
                 module=module,
                 defaults={"role": ModuleMembership.Role.ADMIN},
             )
-        self.stdout.write(f"  Module memberships: {ModuleMembership.objects.filter(tenant_id=tenant_id).count()}")
+        self.stdout.write(
+            f"  Module memberships: {ModuleMembership.objects.filter(tenant_id=tenant_id).count()}"
+        )
 
         # Create sample assessments
         assessment1, _ = Assessment.objects.get_or_create(
@@ -132,9 +127,9 @@ class Command(BaseCommand):
                 "description": "Gefährdungsbeurteilung für das Hauptgebäude",
                 "site_id": site1.id,
                 "created_by_id": user.id,
-            }
+            },
         )
-        
+
         assessment2, _ = Assessment.objects.get_or_create(
             tenant_id=tenant_id,
             title="Arbeitssicherheit Lager",
@@ -143,10 +138,12 @@ class Command(BaseCommand):
                 "description": "Gefährdungsbeurteilung für Lagertätigkeiten",
                 "site_id": site2.id,
                 "created_by_id": user.id,
-            }
+            },
         )
-        self.stdout.write(f"  Assessments: {Assessment.objects.filter(tenant_id=tenant_id).count()}")
-        
+        self.stdout.write(
+            f"  Assessments: {Assessment.objects.filter(tenant_id=tenant_id).count()}"
+        )
+
         # Create sample hazards
         Hazard.objects.get_or_create(
             tenant_id=tenant_id,
@@ -157,9 +154,9 @@ class Command(BaseCommand):
                 "severity": 3,
                 "probability": 2,
                 "mitigation": "Installation von Rauchmeldern in allen Räumen",
-            }
+            },
         )
-        
+
         Hazard.objects.get_or_create(
             tenant_id=tenant_id,
             assessment=assessment2,
@@ -169,10 +166,10 @@ class Command(BaseCommand):
                 "severity": 2,
                 "probability": 4,
                 "mitigation": "Kabelkanäle installieren",
-            }
+            },
         )
         self.stdout.write(f"  Hazards: {Hazard.objects.filter(tenant_id=tenant_id).count()}")
-        
+
         self.stdout.write(self.style.SUCCESS("Demo data seeded successfully!"))
         self.stdout.write("\nAccess: http://demo.localhost:8080/risk/assessments/")
         self.stdout.write("Login: demo / demo")

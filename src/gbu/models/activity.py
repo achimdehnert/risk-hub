@@ -4,6 +4,7 @@ Tätigkeitsbezogene GBU-Daten (tenant-gebunden).
 HazardAssessmentActivity — Kern-Entity (GBU-Tätigkeit), erbt TenantScopedModel
 ActivityMeasure           — Konkrete Schutzmaßnahme, tenant_id denormalisiert
 """
+
 import uuid
 from enum import StrEnum
 

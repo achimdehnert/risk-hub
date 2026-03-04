@@ -24,6 +24,7 @@ from .models import (
 # STAMMDATEN SERIALIZERS
 # =============================================================================
 
+
 class ReferenceStandardSerializer(serializers.ModelSerializer):
     """Serializer für Regelwerksreferenzen"""
 
@@ -47,9 +48,7 @@ class MeasureCatalogSerializer(serializers.ModelSerializer):
 
     reference_standards = ReferenceStandardSerializer(many=True, read_only=True)
     reference_standard_ids = serializers.ListField(
-        child=serializers.UUIDField(),
-        write_only=True,
-        required=False
+        child=serializers.UUIDField(), write_only=True, required=False
     )
 
     class Meta:
@@ -125,6 +124,7 @@ class EquipmentTypeSerializer(serializers.ModelSerializer):
 # CORE SERIALIZERS
 # =============================================================================
 
+
 class AreaSerializer(serializers.ModelSerializer):
     """Serializer für Betriebsbereiche"""
 
@@ -166,8 +166,7 @@ class ZoneIgnitionSourceAssessmentSerializer(serializers.ModelSerializer):
     """Serializer für Zündquellenbewertung"""
 
     ignition_source_display = serializers.CharField(
-        source="get_ignition_source_display",
-        read_only=True
+        source="get_ignition_source_display", read_only=True
     )
 
     class Meta:
@@ -188,16 +187,10 @@ class ZoneIgnitionSourceAssessmentSerializer(serializers.ModelSerializer):
 class ZoneDefinitionSerializer(serializers.ModelSerializer):
     """Serializer für Zonendefinitionen"""
 
-    zone_type_display = serializers.CharField(
-        source="get_zone_type_display",
-        read_only=True
-    )
+    zone_type_display = serializers.CharField(source="get_zone_type_display", read_only=True)
     reference_standard = ReferenceStandardSerializer(read_only=True)
     reference_standard_id = serializers.UUIDField(write_only=True, required=False)
-    ignition_assessments = ZoneIgnitionSourceAssessmentSerializer(
-        many=True,
-        read_only=True
-    )
+    ignition_assessments = ZoneIgnitionSourceAssessmentSerializer(many=True, read_only=True)
     required_equipment_category = serializers.ReadOnlyField()
 
     class Meta:
@@ -224,14 +217,8 @@ class ZoneDefinitionSerializer(serializers.ModelSerializer):
 class ProtectionMeasureSerializer(serializers.ModelSerializer):
     """Serializer für Schutzmaßnahmen"""
 
-    category_display = serializers.CharField(
-        source="get_category_display",
-        read_only=True
-    )
-    status_display = serializers.CharField(
-        source="get_status_display",
-        read_only=True
-    )
+    category_display = serializers.CharField(source="get_category_display", read_only=True)
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
     catalog_reference = MeasureCatalogSerializer(read_only=True)
     catalog_reference_id = serializers.UUIDField(write_only=True, required=False)
     safety_function = SafetyFunctionSerializer(read_only=True)
@@ -266,8 +253,7 @@ class VerificationDocumentSerializer(serializers.ModelSerializer):
     """Serializer für Nachweisdokumente"""
 
     document_type_display = serializers.CharField(
-        source="get_document_type_display",
-        read_only=True
+        source="get_document_type_display", read_only=True
     )
 
     class Meta:
@@ -290,10 +276,7 @@ class VerificationDocumentSerializer(serializers.ModelSerializer):
 class ExplosionConceptSerializer(serializers.ModelSerializer):
     """Serializer für Explosionsschutzkonzepte"""
 
-    status_display = serializers.CharField(
-        source="get_status_display",
-        read_only=True
-    )
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
     area_name = serializers.CharField(source="area.name", read_only=True)
     substance_name = serializers.CharField(source="substance.name", read_only=True)
     completion_percentage = serializers.ReadOnlyField()
@@ -350,21 +333,11 @@ class InspectionSerializer(serializers.ModelSerializer):
     """Serializer für Prüfungen"""
 
     inspection_type_display = serializers.CharField(
-        source="get_inspection_type_display",
-        read_only=True
+        source="get_inspection_type_display", read_only=True
     )
-    result_display = serializers.CharField(
-        source="get_result_display",
-        read_only=True
-    )
-    equipment_serial = serializers.CharField(
-        source="equipment.serial_number",
-        read_only=True
-    )
-    equipment_type = serializers.CharField(
-        source="equipment.equipment_type.model",
-        read_only=True
-    )
+    result_display = serializers.CharField(source="get_result_display", read_only=True)
+    equipment_serial = serializers.CharField(source="equipment.serial_number", read_only=True)
+    equipment_type = serializers.CharField(source="equipment.equipment_type.model", read_only=True)
 
     class Meta:
         model = Inspection
@@ -393,14 +366,8 @@ class InspectionSerializer(serializers.ModelSerializer):
 class EquipmentSerializer(serializers.ModelSerializer):
     """Serializer für Betriebsmittel"""
 
-    status_display = serializers.CharField(
-        source="get_status_display",
-        read_only=True
-    )
-    equipment_type_detail = EquipmentTypeSerializer(
-        source="equipment_type",
-        read_only=True
-    )
+    status_display = serializers.CharField(source="get_status_display", read_only=True)
+    equipment_type_detail = EquipmentTypeSerializer(source="equipment_type", read_only=True)
     zone_type = serializers.CharField(source="zone.zone_type", read_only=True)
     is_inspection_due = serializers.ReadOnlyField()
 

@@ -27,10 +27,14 @@ class NotificationListView(View):
 
         unread_count = get_unread_count(tenant_id, user_id)
 
-        return render(request, self.template_name, {
-            "notifications": notifications,
-            "unread_count": unread_count,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "notifications": notifications,
+                "unread_count": unread_count,
+            },
+        )
 
 
 class NotificationDropdownView(View):
@@ -45,10 +49,14 @@ class NotificationDropdownView(View):
         notifications = get_unread(tenant_id, user_id, limit=10)
         unread_count = get_unread_count(tenant_id, user_id)
 
-        return render(request, self.template_name, {
-            "notifications": notifications,
-            "unread_count": unread_count,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "notifications": notifications,
+                "unread_count": unread_count,
+            },
+        )
 
 
 class NotificationBadgeView(View):
@@ -60,9 +68,13 @@ class NotificationBadgeView(View):
         tenant_id = getattr(request, "tenant_id", None)
         user_id = getattr(request.user, "id", None)
         count = get_unread_count(tenant_id, user_id)
-        return render(request, self.template_name, {
-            "unread_count": count,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "unread_count": count,
+            },
+        )
 
 
 class NotificationMarkReadView(View):

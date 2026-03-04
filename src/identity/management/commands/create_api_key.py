@@ -32,10 +32,7 @@ class Command(BaseCommand):
             tenant_id = getattr(user, "tenant_id", None)
 
         if tenant_id is None:
-            raise CommandError(
-                "tenant_id required (user has no tenant_id and "
-                "--tenant-id not set)"
-            )
+            raise CommandError("tenant_id required (user has no tenant_id and --tenant-id not set)")
 
         token = secrets.token_urlsafe(32)
         key_prefix = token[:16]
@@ -51,6 +48,4 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("API key created"))
         self.stdout.write(f"Token: {token}")
-        self.stdout.write(
-            "Store this token securely. It will not be shown again."
-        )
+        self.stdout.write("Store this token securely. It will not be shown again.")

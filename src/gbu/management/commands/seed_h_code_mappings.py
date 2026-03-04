@@ -6,6 +6,7 @@ Bestehende Mappings werden nicht überschrieben (Admin-Pflege bleibt erhalten).
 --force: Annotationen bestehender Einträge aktualisieren.
 Quelle: GHS/CLP-VO (EG 1272/2008), TRGS 400 (Stand 2024-09)
 """
+
 import logging
 
 from django.core.management.base import BaseCommand, CommandParser
@@ -136,9 +137,7 @@ class Command(BaseCommand):
 
         if error_count > 0:
             self.stderr.write(
-                self.style.ERROR(
-                    f"FEHLER: {error_count} Mappings konnten nicht angelegt werden."
-                )
+                self.style.ERROR(f"FEHLER: {error_count} Mappings konnten nicht angelegt werden.")
             )
             raise SystemExit(1)
 

@@ -1,6 +1,7 @@
 """
 Risk Hub - Test Settings (ADR-057)
 """
+
 from .settings import *  # noqa: F401,F403
 
 DEBUG = False

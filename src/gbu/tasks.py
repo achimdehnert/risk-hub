@@ -4,6 +4,7 @@ GBU Celery-Tasks (Phase 2D + 2E).
 generate_documents_task  — erzeugt GBU-PDF + BA-PDF nach Freigabe
 check_gbu_review_deadlines — t\u00e4glicher Beat: mark_outdated + Log
 """
+
 import logging
 from uuid import UUID
 
@@ -72,9 +73,7 @@ def check_gbu_review_deadlines() -> dict:
     from gbu.services.compliance import mark_outdated_activities
     from tenancy.models import Organization
 
-    orgs = Organization.objects.filter(is_active=True).values_list(
-        "tenant_id", flat=True
-    )
+    orgs = Organization.objects.filter(is_active=True).values_list("tenant_id", flat=True)
 
     total = 0
     for tenant_id in orgs:

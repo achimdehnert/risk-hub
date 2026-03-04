@@ -17,10 +17,11 @@ from typing import Any
 # STOFFDATEN (Pydantic-kompatibel)
 # =============================================================================
 
+
 @dataclass
 class SubstanceProperties:
     """Stoffeigenschaften für Explosionsschutz."""
-    
+
     name: str
     cas_number: str = ""
     lower_explosion_limit: float = 0.0  # UEG in Vol-%
@@ -31,7 +32,7 @@ class SubstanceProperties:
     explosion_group: str = ""  # IIA, IIB, IIC
     vapor_density: float = 1.0  # rel. zu Luft
     molar_mass: float = 0.0  # g/mol
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Konvertiert zu Dictionary."""
         return {
@@ -64,7 +65,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T1",
         explosion_group="IIA",
         vapor_density=2.0,
-        molar_mass=58.08
+        molar_mass=58.08,
     ),
     "ethanol": SubstanceProperties(
         name="Ethanol",
@@ -76,7 +77,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T2",
         explosion_group="IIB",
         vapor_density=1.6,
-        molar_mass=46.07
+        molar_mass=46.07,
     ),
     "methanol": SubstanceProperties(
         name="Methanol",
@@ -88,7 +89,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T2",
         explosion_group="IIA",
         vapor_density=1.1,
-        molar_mass=32.04
+        molar_mass=32.04,
     ),
     "toluol": SubstanceProperties(
         name="Toluol",
@@ -100,7 +101,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T1",
         explosion_group="IIA",
         vapor_density=3.2,
-        molar_mass=92.14
+        molar_mass=92.14,
     ),
     "xylol": SubstanceProperties(
         name="Xylol",
@@ -112,7 +113,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T1",
         explosion_group="IIA",
         vapor_density=3.7,
-        molar_mass=106.17
+        molar_mass=106.17,
     ),
     "benzin": SubstanceProperties(
         name="Benzin (Ottokraftstoff)",
@@ -124,7 +125,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T3",
         explosion_group="IIA",
         vapor_density=3.5,
-        molar_mass=100.0
+        molar_mass=100.0,
     ),
     "diesel": SubstanceProperties(
         name="Dieselkraftstoff",
@@ -136,7 +137,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T3",
         explosion_group="IIA",
         vapor_density=4.5,
-        molar_mass=200.0
+        molar_mass=200.0,
     ),
     "wasserstoff": SubstanceProperties(
         name="Wasserstoff",
@@ -148,7 +149,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T1",
         explosion_group="IIC",
         vapor_density=0.07,
-        molar_mass=2.02
+        molar_mass=2.02,
     ),
     "methan": SubstanceProperties(
         name="Methan (Erdgas)",
@@ -160,7 +161,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T1",
         explosion_group="IIA",
         vapor_density=0.55,
-        molar_mass=16.04
+        molar_mass=16.04,
     ),
     "propan": SubstanceProperties(
         name="Propan",
@@ -172,7 +173,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T1",
         explosion_group="IIA",
         vapor_density=1.56,
-        molar_mass=44.10
+        molar_mass=44.10,
     ),
     "isopropanol": SubstanceProperties(
         name="Isopropanol (2-Propanol)",
@@ -184,7 +185,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T2",
         explosion_group="IIA",
         vapor_density=2.1,
-        molar_mass=60.10
+        molar_mass=60.10,
     ),
     "butanol": SubstanceProperties(
         name="n-Butanol",
@@ -196,7 +197,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T2",
         explosion_group="IIA",
         vapor_density=2.6,
-        molar_mass=74.12
+        molar_mass=74.12,
     ),
     "ethylacetat": SubstanceProperties(
         name="Ethylacetat",
@@ -208,7 +209,7 @@ SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
         temperature_class="T1",
         explosion_group="IIA",
         vapor_density=3.0,
-        molar_mass=88.11
+        molar_mass=88.11,
     ),
 }
 
@@ -234,26 +235,22 @@ SUBSTANCE_ALIASES: dict[str, str] = {
 def get_substance_properties(substance_name: str) -> dict[str, Any]:
     """
     Holt Stoffeigenschaften aus der Datenbank.
-    
+
     Args:
         substance_name: Name des Stoffes (deutsch oder englisch)
-        
+
     Returns:
         Dict mit Stoffeigenschaften oder Fehlermeldung
     """
     key = substance_name.lower().strip()
-    
+
     if key in SUBSTANCE_ALIASES:
         key = SUBSTANCE_ALIASES[key]
-    
+
     if key in SUBSTANCE_DATABASE:
         substance = SUBSTANCE_DATABASE[key]
-        return {
-            "success": True,
-            "substance": substance.to_dict(),
-            "source": "GESTIS-basiert"
-        }
-    
+        return {"success": True, "substance": substance.to_dict(), "source": "GESTIS-basiert"}
+
     # Fuzzy search
     matches = [k for k in SUBSTANCE_DATABASE.keys() if key in k or k in key]
     if matches:
@@ -262,25 +259,23 @@ def get_substance_properties(substance_name: str) -> dict[str, Any]:
             "error": f"Stoff '{substance_name}' nicht gefunden",
             "suggestions": matches,
         }
-    
+
     return {
         "success": False,
         "error": f"Stoff '{substance_name}' nicht in Datenbank",
-        "available_substances": list(SUBSTANCE_DATABASE.keys())
+        "available_substances": list(SUBSTANCE_DATABASE.keys()),
     }
 
 
 def list_substances() -> list[dict[str, Any]]:
     """Listet alle verfügbaren Stoffe."""
-    return [
-        {"key": key, **substance.to_dict()}
-        for key, substance in SUBSTANCE_DATABASE.items()
-    ]
+    return [{"key": key, **substance.to_dict()} for key, substance in SUBSTANCE_DATABASE.items()]
 
 
 # =============================================================================
 # ZONENBERECHNUNG (TRGS 721)
 # =============================================================================
+
 
 def calculate_zone_extent(
     release_rate_kg_s: float,
@@ -288,11 +283,11 @@ def calculate_zone_extent(
     lel_percent: float = 1.5,
     substance_name: str | None = None,
     room_volume_m3: float | None = None,
-    release_type: str = "jet"
+    release_type: str = "jet",
 ) -> dict[str, Any]:
     """
     Berechnet die Zonenausdehnung nach TRGS 721.
-    
+
     Args:
         release_rate_kg_s: Freisetzungsrate in kg/s
         ventilation_rate_m3_s: Luftvolumenstrom in m³/s
@@ -300,7 +295,7 @@ def calculate_zone_extent(
         substance_name: Optional - Stoffname für automatische LEL
         room_volume_m3: Optional - Raumvolumen für Verdünnungsberechnung
         release_type: "jet" (Strahl), "pool" (Pfütze), "diffuse" (diffus)
-        
+
     Returns:
         Dict mit berechneter Zonenausdehnung und Klassifizierung
     """
@@ -309,21 +304,17 @@ def calculate_zone_extent(
         substance_data = get_substance_properties(substance_name)
         if substance_data.get("success"):
             lel_percent = substance_data["substance"]["lower_explosion_limit"]
-    
+
     # Sicherheitsfaktoren nach TRGS 721
-    SAFETY_FACTORS = {
-        "jet": 5.0,
-        "pool": 3.0,
-        "diffuse": 10.0
-    }
+    SAFETY_FACTORS = {"jet": 5.0, "pool": 3.0, "diffuse": 10.0}
     safety_factor = SAFETY_FACTORS.get(release_type, 5.0)
-    
+
     if ventilation_rate_m3_s > 0:
         dilution_factor = ventilation_rate_m3_s / (release_rate_kg_s + 0.0001)
         lel_fraction = lel_percent / 100.0
         zone_volume_m3 = (release_rate_kg_s / lel_fraction) * safety_factor
-        zone_radius_m = (zone_volume_m3 * 3 / (4 * math.pi)) ** (1/3)
-        
+        zone_radius_m = (zone_volume_m3 * 3 / (4 * math.pi)) ** (1 / 3)
+
         if dilution_factor >= 1000:
             zone_type = "2"
             zone_description = "Zone 2: Selten und nur kurzzeitig g.e.A."
@@ -334,12 +325,12 @@ def calculate_zone_extent(
             zone_type = "0"
             zone_description = "Zone 0: Ständig oder langzeitig g.e.A."
     else:
-        zone_volume_m3 = room_volume_m3 if room_volume_m3 else float('inf')
-        zone_radius_m = float('inf')
+        zone_volume_m3 = room_volume_m3 if room_volume_m3 else float("inf")
+        zone_radius_m = float("inf")
         dilution_factor = 0
         zone_type = "0"
         zone_description = "Zone 0: Keine Lüftung - gesamter Raum"
-    
+
     # Luftwechselrate
     if room_volume_m3 and ventilation_rate_m3_s > 0:
         air_changes = (ventilation_rate_m3_s * 3600) / room_volume_m3
@@ -352,24 +343,24 @@ def calculate_zone_extent(
     else:
         air_changes = 0
         ventilation_class = "keine"
-    
+
     return {
         "success": True,
-        "zone_volume_m3": round(zone_volume_m3, 2) if zone_volume_m3 != float('inf') else None,
-        "zone_radius_m": round(zone_radius_m, 2) if zone_radius_m != float('inf') else None,
+        "zone_volume_m3": round(zone_volume_m3, 2) if zone_volume_m3 != float("inf") else None,
+        "zone_radius_m": round(zone_radius_m, 2) if zone_radius_m != float("inf") else None,
         "dilution_factor": round(dilution_factor, 2),
         "zone_type": zone_type,
         "zone_description": zone_description,
         "ventilation": {
             "air_changes_per_hour": round(air_changes, 1),
-            "classification": ventilation_class
+            "classification": ventilation_class,
         },
         "input_parameters": {
             "release_rate_kg_s": release_rate_kg_s,
             "ventilation_rate_m3_s": ventilation_rate_m3_s,
             "lel_percent": lel_percent,
             "release_type": release_type,
-            "safety_factor": safety_factor
+            "safety_factor": safety_factor,
         },
         "calculation_basis": "TRGS 721 Anhang 1",
     }
@@ -379,26 +370,27 @@ def calculate_zone_extent(
 # LÜFTUNGSANALYSE (TRGS 722)
 # =============================================================================
 
+
 def analyze_ventilation_effectiveness(
     room_volume_m3: float,
     air_flow_m3_h: float,
     ventilation_type: str = "technisch",
-    has_ex_zone: bool = True
+    has_ex_zone: bool = True,
 ) -> dict[str, Any]:
     """
     Analysiert die Lüftungseffektivität nach TRGS 722.
-    
+
     Args:
         room_volume_m3: Raumvolumen in m³
         air_flow_m3_h: Luftvolumenstrom in m³/h
         ventilation_type: "technisch", "natürlich", "keine"
         has_ex_zone: Ob Ex-Zone vorhanden ist
-        
+
     Returns:
         Dict mit Lüftungsanalyse
     """
     air_changes = air_flow_m3_h / room_volume_m3 if room_volume_m3 > 0 else 0
-    
+
     if ventilation_type == "technisch":
         if air_changes >= 12:
             effectiveness = "hoch"
@@ -420,7 +412,7 @@ def analyze_ventilation_effectiveness(
         effectiveness = "keine"
         can_reduce_zone = False
         recommendation = "Technische Lüftung erforderlich"
-    
+
     return {
         "success": True,
         "room_volume_m3": room_volume_m3,
@@ -430,7 +422,7 @@ def analyze_ventilation_effectiveness(
         "effectiveness": effectiveness,
         "can_reduce_zone": can_reduce_zone,
         "recommendation": recommendation,
-        "reference": "TRGS 722"
+        "reference": "TRGS 722",
     }
 
 
@@ -438,23 +430,21 @@ def analyze_ventilation_effectiveness(
 # EQUIPMENT-EIGNUNGSPRÜFUNG (ATEX)
 # =============================================================================
 
-def check_equipment_suitability(
-    ex_marking: str,
-    zone: str
-) -> dict[str, Any]:
+
+def check_equipment_suitability(ex_marking: str, zone: str) -> dict[str, Any]:
     """
     Prüft ob ein Gerät für eine Ex-Zone geeignet ist.
-    
+
     Args:
         ex_marking: Ex-Kennzeichnung (z.B. "II 2G Ex d IIB T4")
         zone: Zielzone (z.B. "1", "Zone 1", "21")
-        
+
     Returns:
         Dict mit Eignungsprüfung
     """
     # Zone normalisieren
     zone_normalized = zone.strip().lower().replace("zone", "").strip()
-    
+
     # Kategorie-Mapping nach ATEX
     zone_requirements = {
         "0": {"min_category": "1G", "allowed": ["1G"]},
@@ -464,57 +454,57 @@ def check_equipment_suitability(
         "21": {"min_category": "2D", "allowed": ["1D", "2D"]},
         "22": {"min_category": "3D", "allowed": ["1D", "2D", "3D"]},
     }
-    
+
     if zone_normalized not in zone_requirements:
         return {
             "success": False,
             "error": f"Unbekannte Zone: {zone}",
-            "valid_zones": list(zone_requirements.keys())
+            "valid_zones": list(zone_requirements.keys()),
         }
-    
+
     requirements = zone_requirements[zone_normalized]
     marking_upper = ex_marking.upper()
-    
+
     # Kategorie extrahieren
     detected_category = None
     for cat in ["1G", "2G", "3G", "1D", "2D", "3D"]:
         if cat in marking_upper:
             detected_category = cat
             break
-    
+
     # Temperaturklasse extrahieren
     temp_class = None
     for tc in ["T6", "T5", "T4", "T3", "T2", "T1"]:
         if tc in marking_upper:
             temp_class = tc
             break
-    
+
     # Explosionsgruppe extrahieren
     exp_group = None
     for eg in ["IIC", "IIB", "IIA"]:
         if eg in marking_upper:
             exp_group = eg
             break
-    
+
     # Eignung prüfen
     is_suitable = detected_category in requirements["allowed"] if detected_category else False
-    
+
     issues = []
     recommendations = []
-    
+
     if not detected_category:
         issues.append("Keine Gerätekategorie erkannt")
         recommendations.append(f"Erforderlich: {requirements['allowed']}")
     elif not is_suitable:
         issues.append(f"Kategorie {detected_category} nicht für Zone {zone_normalized} geeignet")
         recommendations.append(f"Min. Kategorie {requirements['min_category']} erforderlich")
-    
+
     if not temp_class:
         issues.append("Keine Temperaturklasse erkannt")
-    
+
     if not exp_group:
         issues.append("Keine Explosionsgruppe erkannt")
-    
+
     return {
         "success": True,
         "equipment_marking": ex_marking,
@@ -522,11 +512,11 @@ def check_equipment_suitability(
         "detected": {
             "category": detected_category,
             "temperature_class": temp_class,
-            "explosion_group": exp_group
+            "explosion_group": exp_group,
         },
         "requirements": requirements,
         "is_suitable": is_suitable and len(issues) == 0,
         "issues": issues,
         "recommendations": recommendations,
-        "reference": "ATEX 2014/34/EU"
+        "reference": "ATEX 2014/34/EU",
     }

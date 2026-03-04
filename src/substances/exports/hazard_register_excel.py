@@ -11,15 +11,13 @@ from uuid import UUID
 try:
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
+
     OPENPYXL_AVAILABLE = True
 except ImportError:
     OPENPYXL_AVAILABLE = False
 
 
-def generate_hazard_register_excel(
-    tenant_id: UUID,
-    site_id: UUID | None = None
-) -> io.BytesIO:
+def generate_hazard_register_excel(tenant_id: UUID, site_id: UUID | None = None) -> io.BytesIO:
     """
     Generiert Gefahrstoffverzeichnis nach GefStoffV §6 als Excel.
 
@@ -31,10 +29,7 @@ def generate_hazard_register_excel(
         BytesIO Buffer mit Excel-Datei
     """
     if not OPENPYXL_AVAILABLE:
-        raise ImportError(
-            "openpyxl ist nicht installiert. "
-            "Bitte 'pip install openpyxl' ausführen."
-        )
+        raise ImportError("openpyxl ist nicht installiert. Bitte 'pip install openpyxl' ausführen.")
 
     from django.db.models import Q
 
@@ -51,7 +46,7 @@ def generate_hazard_register_excel(
         left=Side(style="thin"),
         right=Side(style="thin"),
         top=Side(style="thin"),
-        bottom=Side(style="thin")
+        bottom=Side(style="thin"),
     )
     cmr_fill = PatternFill(start_color="FFCCCC", fill_type="solid")
 
@@ -71,7 +66,7 @@ def generate_hazard_register_excel(
         "P-Sätze",
         "Piktogramme",
         "SDS-Datum",
-        "SDS-Status"
+        "SDS-Status",
     ]
 
     for col, header in enumerate(headers, 1):
@@ -85,29 +80,29 @@ def generate_hazard_register_excel(
     query = Q(tenant_id=tenant_id, status="active")
 
     if site_id:
-        substances = Substance.objects.filter(
-            query,
-            inventory_items__site_id=site_id
-        ).distinct().select_related(
-            "manufacturer"
-        ).prefetch_related(
-            "identifiers",
-            "sds_revisions__hazard_statements",
-            "sds_revisions__precautionary_statements",
-            "sds_revisions__pictograms",
-            "inventory_items",
+        substances = (
+            Substance.objects.filter(query, inventory_items__site_id=site_id)
+            .distinct()
+            .select_related("manufacturer")
+            .prefetch_related(
+                "identifiers",
+                "sds_revisions__hazard_statements",
+                "sds_revisions__precautionary_statements",
+                "sds_revisions__pictograms",
+                "inventory_items",
+            )
         )
     else:
-        substances = Substance.objects.filter(
-            query
-        ).select_related(
-            "manufacturer"
-        ).prefetch_related(
-            "identifiers",
-            "sds_revisions__hazard_statements",
-            "sds_revisions__precautionary_statements",
-            "sds_revisions__pictograms",
-            "inventory_items",
+        substances = (
+            Substance.objects.filter(query)
+            .select_related("manufacturer")
+            .prefetch_related(
+                "identifiers",
+                "sds_revisions__hazard_statements",
+                "sds_revisions__precautionary_statements",
+                "sds_revisions__pictograms",
+                "inventory_items",
+            )
         )
 
     # Zeilen schreiben
@@ -154,15 +149,9 @@ def generate_hazard_register_excel(
 
         # H-Sätze, P-Sätze, Piktogramme, SDS-Datum, SDS-Status
         if current_sds:
-            h_codes = ", ".join(
-                h.code for h in current_sds.hazard_statements.all()
-            )
-            p_codes = ", ".join(
-                p.code for p in current_sds.precautionary_statements.all()
-            )
-            pictogram_codes = ", ".join(
-                p.code for p in current_sds.pictograms.all()
-            )
+            h_codes = ", ".join(h.code for h in current_sds.hazard_statements.all())
+            p_codes = ", ".join(p.code for p in current_sds.precautionary_statements.all())
+            pictogram_codes = ", ".join(p.code for p in current_sds.pictograms.all())
             sds_date = current_sds.revision_date.strftime("%d.%m.%Y")
             sds_status = current_sds.get_status_display()
         else:
@@ -184,15 +173,15 @@ def generate_hazard_register_excel(
 
     # Spaltenbreiten anpassen
     column_widths = [
-        5,   # Nr.
+        5,  # Nr.
         30,  # Stoffname
         15,  # CAS-Nr.
         25,  # Handelsname
         20,  # Hersteller
         10,  # Lagerklasse
-        6,   # CMR
+        6,  # CMR
         10,  # Menge
-        8,   # Einheit
+        8,  # Einheit
         20,  # Lagerort
         30,  # H-Sätze
         40,  # P-Sätze
