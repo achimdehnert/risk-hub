@@ -53,27 +53,7 @@ INSTALLED_APPS = [
 ]
 
 MIGRATION_MODULES = {
-    "django_tenancy": None,
-    "tenancy": None,
-    "identity": None,
-    "permissions": None,
-    "audit": None,
-    "outbox": None,
-    "risk": None,
-    "actions": None,
-    "documents": None,
-    "reporting": None,
-    "explosionsschutz": None,
-    "substances": None,
-    "notifications": None,
-    "dashboard": None,
-    "approvals": None,
-    "ai_analysis": None,
-    "dsb": None,
-    "gbu": None,
-    "common": None,
-    "platform_context": None,
-    "aifw": None,
+    "django_tenancy": "config.test_migrations.django_tenancy",
 }
 
 MIDDLEWARE = [
