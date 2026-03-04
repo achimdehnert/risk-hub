@@ -1,14 +1,36 @@
 """
 Risk Hub - Test Settings (ADR-057)
 
-Uses PostgreSQL (via DATABASE_URL) — inherited from settings.py via
-dj_database_url. CI sets DATABASE_URL=postgresql://test:test@localhost:5432/test_risk_hub.
+Uses PostgreSQL (via DATABASE_URL) because django-tenancy requires
+PostgreSQL-specific features (SET enable_... statements).
+In CI: DATABASE_URL=postgresql://test:test@localhost:5432/risk_hub_ci
+Django will create 'test_risk_hub_ci' automatically (test_ prefix).
 """
+
+import os
+from urllib.parse import urlparse
 
 from .settings import *  # noqa: F401,F403
 
 DEBUG = False
 
+_db = urlparse(
+    os.environ.get(
+        "DATABASE_URL",
+        "postgresql://test:test@localhost:5432/risk_hub_ci",
+    )
+)
+
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": _db.path.lstrip("/"),
+        "USER": _db.username,
+        "PASSWORD": _db.password,
+        "HOST": _db.hostname,
+        "PORT": str(_db.port or 5432),
+    }
+}
 
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
@@ -49,6 +71,10 @@ INSTALLED_APPS = [
     "gbu",
 ]
 
+MIGRATION_MODULES = {
+    "django_tenancy": "config.test_migrations.django_tenancy",
+}
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -74,7 +100,6 @@ LOGGING = {
 }
 
 # Silence security warnings that only apply to production (SSL, HSTS, cookies).
-# These are configured via env vars in .env.prod, not relevant for CI.
 SILENCED_SYSTEM_CHECKS = [
     "security.W004",  # SECURE_HSTS_SECONDS
     "security.W008",  # SECURE_SSL_REDIRECT
