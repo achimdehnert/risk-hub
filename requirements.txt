@@ -28,7 +28,6 @@ platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory
 iil-aifw>=0.5.0,<1
 iil-promptfw>=0.5.1,<1
 iil-authoringfw>=0.3.0,<1
-iil-nl2cad>=0.1.0,<1
 # Safety Framework
 riskfw==0.1.0
 # CAD / BIM
