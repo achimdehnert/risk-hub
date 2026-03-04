@@ -34,10 +34,22 @@ ALTER TABLE gbu_activity_measure DISABLE ROW LEVEL SECURITY;
 """
 
 
+def apply_rls(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    schema_editor.execute(RLS_SQL)
+
+
+def reverse_rls(apps, schema_editor):
+    if schema_editor.connection.vendor != "postgresql":
+        return
+    schema_editor.execute(ROLLBACK_SQL)
+
+
 class Migration(migrations.Migration):
     dependencies = [
         ("gbu", "0001_initial"),
     ]
     operations = [
-        migrations.RunSQL(sql=RLS_SQL, reverse_sql=ROLLBACK_SQL),
+        migrations.RunPython(apply_rls, reverse_rls),
     ]

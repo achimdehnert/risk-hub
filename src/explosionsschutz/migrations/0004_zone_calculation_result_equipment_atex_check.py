@@ -164,41 +164,4 @@ class Migration(migrations.Migration):
                 "default_permissions": ("add", "view"),
             },
         ),
-        # PostgreSQL RLS: Verhindert DELETE auf DB-Ebene (BetrSichV §§ 14-17)
-        migrations.RunSQL(
-            sql="""
-                ALTER TABLE ex_zone_calculation_result
-                    ENABLE ROW LEVEL SECURITY;
-
-                DROP POLICY IF EXISTS no_delete_zone_calc
-                    ON ex_zone_calculation_result;
-
-                CREATE POLICY no_delete_zone_calc
-                    ON ex_zone_calculation_result
-                    FOR DELETE
-                    USING (FALSE);
-
-                ALTER TABLE ex_equipment_atex_check
-                    ENABLE ROW LEVEL SECURITY;
-
-                DROP POLICY IF EXISTS no_delete_atex_check
-                    ON ex_equipment_atex_check;
-
-                CREATE POLICY no_delete_atex_check
-                    ON ex_equipment_atex_check
-                    FOR DELETE
-                    USING (FALSE);
-            """,
-            reverse_sql="""
-                DROP POLICY IF EXISTS no_delete_zone_calc
-                    ON ex_zone_calculation_result;
-                ALTER TABLE ex_zone_calculation_result
-                    DISABLE ROW LEVEL SECURITY;
-
-                DROP POLICY IF EXISTS no_delete_atex_check
-                    ON ex_equipment_atex_check;
-                ALTER TABLE ex_equipment_atex_check
-                    DISABLE ROW LEVEL SECURITY;
-            """,
-        ),
     ]
