@@ -1,5 +1,6 @@
 # src/tests/conftest.py — ADR-058 §Confirmation
 import uuid
+
 import pytest
 
 # Shared platform fixtures (platform-context[testing])
@@ -7,6 +8,7 @@ from platform_context.testing.fixtures import (  # noqa: F401
     admin_client,
     htmx_client,
 )
+
 
 # Repo-specific fixtures (risk-hub uses UserFactory + tenant_id)
 @pytest.fixture

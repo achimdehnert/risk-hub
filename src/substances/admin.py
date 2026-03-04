@@ -2,15 +2,16 @@
 """Admin-Konfiguration für Substances Module."""
 
 from django.contrib import admin
+
 from .models import (
-    Party,
-    Substance,
+    HazardStatementRef,
     Identifier,
+    Party,
+    PictogramRef,
+    PrecautionaryStatementRef,
     SdsRevision,
     SiteInventoryItem,
-    HazardStatementRef,
-    PrecautionaryStatementRef,
-    PictogramRef,
+    Substance,
 )
 
 

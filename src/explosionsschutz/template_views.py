@@ -7,21 +7,21 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
+from .calculations import list_substances
 from .forms import (
     AreaForm,
     ConceptDxfImportForm,
-    ExplosionConceptForm,
     EquipmentForm,
+    ExplosionConceptForm,
     ZoneCalculationForm,
 )
-from .calculations import list_substances
 from .models import (
     Area,
-    ExplosionConcept,
-    ZoneDefinition,
     Equipment,
-    ReferenceStandard,
+    ExplosionConcept,
     MeasureCatalog,
+    ReferenceStandard,
+    ZoneDefinition,
 )
 
 
@@ -385,8 +385,9 @@ class AreaDxfUploadView(View):
 
     def post(self, request, pk):
         import logging
-        from nl2cad.core.parsers.dxf_parser import DXFParser
+
         from nl2cad.areas.din277 import DIN277Calculator
+        from nl2cad.core.parsers.dxf_parser import DXFParser
 
         logger = logging.getLogger(__name__)
         tenant_id = getattr(request, "tenant_id", None)
@@ -491,7 +492,9 @@ class ZoneCalculateView(View):
 
     def post(self, request, zone_pk):
         import logging
+
         from django.core.exceptions import ValidationError as DjangoValidationError
+
         from .services import CalculateZoneCmd, calculate_and_store_zone
 
         logger = logging.getLogger(__name__)
@@ -579,7 +582,9 @@ class ConceptDxfImportView(View):
 
     def post(self, request, pk):
         import logging
+
         from django.core.exceptions import ValidationError as DjangoValidationError
+
         from .services import import_zones_from_dxf
 
         logger = logging.getLogger(__name__)
@@ -654,6 +659,7 @@ class AreaBrandschutzView(View):
     def post(self, request, pk):
         import logging
         import tempfile
+
         from nl2cad.brandschutz.analyzer import BrandschutzAnalyzer
 
         logger = logging.getLogger(__name__)

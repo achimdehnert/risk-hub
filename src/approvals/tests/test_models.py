@@ -11,7 +11,6 @@ from approvals.models import (
     ApprovalWorkflow,
 )
 
-
 TENANT_ID = uuid.uuid4()
 
 

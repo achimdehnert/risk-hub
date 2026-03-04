@@ -2,15 +2,16 @@
 """DRF Serializers für Substances Module."""
 
 from rest_framework import serializers
+
 from .models import (
-    Party,
-    Substance,
+    HazardStatementRef,
     Identifier,
+    Party,
+    PictogramRef,
+    PrecautionaryStatementRef,
     SdsRevision,
     SiteInventoryItem,
-    HazardStatementRef,
-    PrecautionaryStatementRef,
-    PictogramRef,
+    Substance,
 )
 
 

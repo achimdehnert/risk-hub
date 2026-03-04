@@ -7,7 +7,6 @@ import pytest
 from gbu.models.reference import ExposureRiskMatrix
 from gbu.services.gbu_engine import calculate_risk_score
 
-
 # ── ExposureRiskMatrix Model-Tests ────────────────────────────────────────────
 
 def test_should_exposure_risk_matrix_str_contain_risk_score():

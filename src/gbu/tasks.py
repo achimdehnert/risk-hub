@@ -69,9 +69,8 @@ def check_gbu_review_deadlines() -> dict:
     Iteriert alle aktiven Tenants und ruft mark_outdated_activities() auf.
     Gibt Statistik zur\u00fcck.
     """
-    from tenancy.models import Organization
-
     from gbu.services.compliance import mark_outdated_activities
+    from tenancy.models import Organization
 
     orgs = Organization.objects.filter(is_active=True).values_list(
         "tenant_id", flat=True

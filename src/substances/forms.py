@@ -4,7 +4,7 @@
 from django import forms
 from django.db.models import Q
 
-from .models import Party, Substance, SdsRevision
+from .models import Party, Substance
 
 
 class SubstanceForm(forms.ModelForm):

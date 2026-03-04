@@ -6,7 +6,6 @@ import pytest
 
 from audit.models import AuditEvent
 
-
 TENANT_ID = uuid.uuid4()
 
 

@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+
+{% block title %}Brandschutz-Analyse — {{ area.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <nav class="text-sm text-gray-500 mb-2">
+                <a href="{% url 'explosionsschutz:area-list-html' %}" class="hover:text-gray-700">Bereiche</a>
+                <span class="mx-2">/</span>
+                <a href="{% url 'explosionsschutz:area-detail-html' area.id %}" class="hover:text-gray-700">{{ area.name }}</a>
+                <span class="mx-2">/</span>
+                <span>Brandschutz</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900">Brandschutz-Analyse</h1>
+            <p class="text-sm text-gray-500 mt-1">ASR A2.3 · DIN 4102 · ATEX/BetrSichV</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'explosionsschutz:area-dxf-upload' area.id %}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                DXF neu hochladen
+            </a>
+            {% if has_dxf %}
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm"
+                        hx-indicator="#analyse-spinner">
+                    <i data-lucide="refresh-cw" class="w-4 h-4 mr-2"></i>
+                    Neu analysieren
+                    <span id="analyse-spinner" class="htmx-indicator ml-2">
+                        <i data-lucide="loader" class="w-4 h-4 animate-spin"></i>
+                    </span>
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center gap-2 text-red-800">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+            <p class="text-sm font-medium">{{ error }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not has_dxf %}
+    {% include "components/_empty_state.html" with icon="file-plus" title="Kein DXF hochgeladen" message="Lade zuerst einen Grundriss hoch um die Brandschutz-Analyse zu starten." action_url=area.id|stringformat:"s" action_label="DXF hochladen" %}
+    {% elif not analyse %}
+    {% include "components/_empty_state.html" with icon="shield" title="Noch keine Analyse" message="Klicke auf 'Neu analysieren' um die Brandschutz-Analyse zu starten." %}
+    {% else %}
+
+    <!-- Summary KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {% include "components/_stat_card.html" with icon="route" value=analyse.fluchtwege_count label="Fluchtwege" color="blue" %}
+        {% include "components/_stat_card.html" with icon="shield" value=analyse.brandabschnitte_count label="Brandabschnitte" color="orange" %}
+        {% include "components/_stat_card.html" with icon="flame" value=analyse.einrichtungen_count label="Brandschutzeinrichtungen" color="purple" %}
+        {% include "components/_stat_card.html" with icon="alert-triangle" value=analyse.maengel_count label="Mängel gesamt" color=analyse.hat_kritische_maengel|yesno:"red,green" badge_text=analyse.kritische_maengel_count|stringformat:"s"|add:" kritisch" badge_color="red" %}
+    </div>
+
+    <!-- Kritische Mängel Alert -->
+    {% if analyse.hat_kritische_maengel %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-red-800 mb-2 flex items-center gap-2">
+            <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+            {{ analyse.kritische_maengel_count }} kritische{{ analyse.kritische_maengel_count|pluralize:"r Mangel,e Mängel" }}
+        </h3>
+        <ul class="space-y-2">
+            {% for m in analyse.maengel %}
+            {% if m.schwere == "kritisch" %}
+            <li class="text-sm text-red-700 flex items-start gap-2">
+                <i data-lucide="x-circle" class="w-4 h-4 shrink-0 mt-0.5"></i>
+                <div>
+                    <span class="font-medium">{{ m.beschreibung }}</span>
+                    {% if m.regelwerk %}<span class="text-red-500 ml-1">[{{ m.regelwerk }}]</span>{% endif %}
+                    {% if m.empfehlung %}<p class="text-xs text-red-600 mt-0.5">→ {{ m.empfehlung }}</p>{% endif %}
+                </div>
+            </li>
+            {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Fluchtwege -->
+    {% if analyse.fluchtwege %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+            <i data-lucide="route" class="w-5 h-5 text-blue-500"></i>
+            <h2 class="text-lg font-semibold text-gray-900">Fluchtwege</h2>
+            <span class="text-sm text-gray-400">({{ analyse.fluchtwege_count }})</span>
+        </div>
+        <div class="divide-y divide-gray-100">
+            {% for fw in analyse.fluchtwege %}
+            <div class="px-6 py-3 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    {% if fw.hat_notausgang %}
+                    <span class="w-2 h-2 rounded-full bg-green-500 shrink-0"></span>
+                    {% else %}
+                    <span class="w-2 h-2 rounded-full bg-blue-400 shrink-0"></span>
+                    {% endif %}
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">{{ fw.name }}</p>
+                        {% if fw.hat_notausgang %}
+                        <p class="text-xs text-green-600">Notausgang</p>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="text-right text-sm text-gray-500 space-x-4">
+                    {% if fw.laenge_m %}
+                    <span>{{ fw.laenge_m|floatformat:1 }} m</span>
+                    {% endif %}
+                    {% if fw.laenge_ok is not None %}
+                    {% if fw.laenge_ok %}
+                    <span class="text-green-600 text-xs">✓ Länge OK</span>
+                    {% else %}
+                    <span class="text-red-600 text-xs font-medium">✗ Zu lang</span>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Alle Mängel -->
+    {% if analyse.maengel %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+            <i data-lucide="clipboard-list" class="w-5 h-5 text-yellow-500"></i>
+            <h2 class="text-lg font-semibold text-gray-900">Alle Prüfergebnisse</h2>
+        </div>
+        <div class="divide-y divide-gray-100">
+            {% for m in analyse.maengel %}
+            <div class="px-6 py-3 flex items-start gap-3">
+                {% if m.schwere == "kritisch" %}
+                <i data-lucide="x-circle" class="w-4 h-4 text-red-500 shrink-0 mt-0.5"></i>
+                {% elif m.schwere == "warnung" %}
+                <i data-lucide="alert-triangle" class="w-4 h-4 text-yellow-500 shrink-0 mt-0.5"></i>
+                {% else %}
+                <i data-lucide="info" class="w-4 h-4 text-blue-400 shrink-0 mt-0.5"></i>
+                {% endif %}
+                <div class="flex-1">
+                    <p class="text-sm text-gray-900">{{ m.beschreibung }}</p>
+                    {% if m.regelwerk %}
+                    <p class="text-xs text-gray-400 mt-0.5">{{ m.regelwerk }}</p>
+                    {% endif %}
+                    {% if m.empfehlung %}
+                    <p class="text-xs text-gray-600 mt-1 italic">→ {{ m.empfehlung }}</p>
+                    {% endif %}
+                </div>
+                <span class="text-xs px-2 py-0.5 rounded-full shrink-0
+                    {% if m.schwere == 'kritisch' %}bg-red-100 text-red-700
+                    {% elif m.schwere == 'warnung' %}bg-yellow-100 text-yellow-700
+                    {% else %}bg-blue-100 text-blue-700{% endif %}">
+                    {{ m.schwere }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Warnungen -->
+    {% if analyse.warnungen %}
+    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-yellow-800 mb-2">Hinweise</h3>
+        <ul class="space-y-1">
+            {% for w in analyse.warnungen %}
+            <li class="text-sm text-yellow-700">{{ w }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% endif %}{# end if not analyse #}
+</div>
+{% endblock %}

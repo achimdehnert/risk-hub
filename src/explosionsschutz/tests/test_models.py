@@ -14,25 +14,18 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 import pytest
-from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
 from explosionsschutz.models import (
-    ReferenceStandard,
-    MeasureCatalog,
-    SafetyFunction,
-    EquipmentType,
     Area,
-    ExplosionConcept,
-    ZoneDefinition,
-    ProtectionMeasure,
     Equipment,
-    Inspection,
-    VerificationDocument,
-    ZoneIgnitionSourceAssessment,
+    EquipmentType,
+    ExplosionConcept,
     IgnitionSource,
+    ReferenceStandard,
+    ZoneDefinition,
+    ZoneIgnitionSourceAssessment,
 )
-
 
 # =============================================================================
 # FIXTURES

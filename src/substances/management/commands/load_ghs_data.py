@@ -8,12 +8,12 @@ Usage:
 """
 
 from django.core.management.base import BaseCommand
+
 from substances.models import (
     HazardStatementRef,
-    PrecautionaryStatementRef,
     PictogramRef,
+    PrecautionaryStatementRef,
 )
-
 
 # GHS Piktogramme
 PICTOGRAMS = [

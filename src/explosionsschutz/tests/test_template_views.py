@@ -16,10 +16,10 @@ from django.test import Client
 
 from explosionsschutz.models import (
     Area,
-    ExplosionConcept,
-    ZoneDefinition,
     Equipment,
     EquipmentType,
+    ExplosionConcept,
+    ZoneDefinition,
 )
 
 User = get_user_model()
@@ -211,7 +211,7 @@ class TestTenantIsolation:
     ):
         """Fremder Bereich wird nicht angezeigt"""
         other_tenant = uuid.uuid4()
-        other_area = Area.objects.create(
+        _other_area = Area.objects.create(
             tenant_id=other_tenant,
             site_id=uuid.uuid4(),
             code="OTHER-01",

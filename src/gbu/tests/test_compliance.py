@@ -7,7 +7,6 @@ from unittest.mock import patch
 
 import pytest
 
-
 # ── Hilfsfunktion ──────────────────────────────────────────────────────────────
 
 def _make_approved_activity(db, tenant_id, review_date, user_id=None):

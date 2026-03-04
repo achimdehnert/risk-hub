@@ -4,7 +4,6 @@ from django import forms
 
 from dsb.models import Mandate
 from dsb.models.breach import Breach
-from dsb.models.choices import SeverityLevel
 
 _TW_INPUT = (
     "block w-full rounded-md border-gray-300 shadow-sm "

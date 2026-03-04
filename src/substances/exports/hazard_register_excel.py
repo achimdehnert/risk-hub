@@ -6,12 +6,11 @@ Erfüllt die Anforderungen nach GefStoffV §6.
 """
 
 import io
-from typing import Optional
 from uuid import UUID
 
 try:
     from openpyxl import Workbook
-    from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+    from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
     OPENPYXL_AVAILABLE = True
 except ImportError:
     OPENPYXL_AVAILABLE = False
@@ -19,7 +18,7 @@ except ImportError:
 
 def generate_hazard_register_excel(
     tenant_id: UUID,
-    site_id: Optional[UUID] = None
+    site_id: UUID | None = None
 ) -> io.BytesIO:
     """
     Generiert Gefahrstoffverzeichnis nach GefStoffV §6 als Excel.
@@ -38,6 +37,7 @@ def generate_hazard_register_excel(
         )
 
     from django.db.models import Q
+
     from substances.models import Substance
 
     wb = Workbook()

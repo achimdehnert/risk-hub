@@ -2,8 +2,8 @@
 
 from django import forms
 from django.utils.text import slugify
-
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
+
 from identity.models import User
 from tenancy.models import Membership, Organization
 

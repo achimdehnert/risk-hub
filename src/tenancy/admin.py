@@ -1,6 +1,7 @@
 from django.contrib import admin
-from tenancy.models import Organization, Site
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
+
+from tenancy.models import Organization, Site
 
 
 @admin.register(Organization)

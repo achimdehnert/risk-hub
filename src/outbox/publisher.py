@@ -6,12 +6,13 @@ import time
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 import django
+
 django.setup()
 
-from django.db import transaction
-from django.utils import timezone
+from django.db import transaction  # noqa: E402
+from django.utils import timezone  # noqa: E402
 
-from outbox.models import OutboxMessage
+from outbox.models import OutboxMessage  # noqa: E402
 
 POLL_SECONDS = 2
 

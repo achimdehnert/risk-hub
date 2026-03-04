@@ -1,7 +1,6 @@
 # src/substances/tests/test_sds_parser.py
 """Tests für SDS-Parser Service."""
 
-import pytest
 
 from substances.services.sds_parser import SdsParserService, parse_sds_text
 

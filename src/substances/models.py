@@ -12,8 +12,8 @@ Enthält:
 """
 
 import uuid
-from django.db import models
 
+from django.db import models
 
 # =============================================================================
 # BASE CLASS (Tenant-Scoped)

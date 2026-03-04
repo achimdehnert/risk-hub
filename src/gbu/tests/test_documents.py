@@ -12,7 +12,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-
 # ── Hilfsfunktionen ────────────────────────────────────────────────────────────
 
 def _make_activity(db, tenant_id, user_id):
@@ -39,8 +38,9 @@ def _make_activity(db, tenant_id, user_id):
         revision_number=1,
         defaults={"language": "de"},
     )
-    from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
     from django.utils import timezone
+
+    from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
 
     activity = HazardAssessmentActivity.objects.create(
         tenant_id=tenant_id,
@@ -70,7 +70,6 @@ def test_should_render_gbu_html_template(settings):
     from gbu.services.pdf_service import render_gbu_pdf
 
     tenant_id = uuid.uuid4()
-    user_id = uuid.uuid4()
 
     with pytest.raises(Exception):
         # Ohne DB-Daten soll DoesNotExist kommen, nicht ImportError
@@ -141,7 +140,6 @@ def test_should_store_gbu_pdf_creates_document_version(db):
     store_gbu_pdf() soll DocumentVersion erzeugen und
     activity.gbu_document setzen.
     """
-    from gbu.models.activity import HazardAssessmentActivity
     from gbu.services.document_store import store_gbu_pdf
 
     tenant_id = uuid.uuid4()
@@ -167,7 +165,6 @@ def test_should_store_ba_pdf_creates_document_version(db):
     store_ba_pdf() soll DocumentVersion erzeugen und
     activity.ba_document setzen.
     """
-    from gbu.models.activity import HazardAssessmentActivity
     from gbu.services.document_store import store_ba_pdf
 
     tenant_id = uuid.uuid4()

@@ -5,8 +5,8 @@ from django.db.models import Count
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
+
 from identity.models import User
 from permissions.models import Assignment, Role, Scope
 from tenancy.forms import (

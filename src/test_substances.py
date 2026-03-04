@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 """Test substances views."""
 import os
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 os.environ["DJANGO_DEBUG"] = "1"
 
 import django
+
 django.setup()
 
-from django.test import Client, override_settings
+from django.test import Client, override_settings  # noqa: E402
 
 with override_settings(ALLOWED_HOSTS=["*"]):
     c = Client()

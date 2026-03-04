@@ -6,7 +6,6 @@ import pytest
 
 from notifications.models import Notification, NotificationPreference
 
-
 TENANT_ID = uuid.uuid4()
 USER_ID = uuid.uuid4()
 

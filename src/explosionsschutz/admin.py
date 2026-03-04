@@ -10,25 +10,23 @@ Features:
 """
 
 from django.contrib import admin
-from django.utils.html import format_html
 from django.utils import timezone
-from django.db.models import Count
+from django.utils.html import format_html
 
 from .models import (
-    ReferenceStandard,
-    MeasureCatalog,
-    SafetyFunction,
-    EquipmentType,
     Area,
-    ExplosionConcept,
-    ZoneDefinition,
-    ProtectionMeasure,
     Equipment,
+    EquipmentType,
+    ExplosionConcept,
     Inspection,
+    MeasureCatalog,
+    ProtectionMeasure,
+    ReferenceStandard,
+    SafetyFunction,
     VerificationDocument,
+    ZoneDefinition,
     ZoneIgnitionSourceAssessment,
 )
-
 
 # =============================================================================
 # MIXINS
@@ -365,7 +363,7 @@ class ExplosionConceptAdmin(TenantAwareAdmin):
     
     @admin.action(description="Ausgewählte Konzepte validieren")
     def validate_concepts(self, request, queryset):
-        from .services import validate_explosion_concept, ValidateExplosionConceptCmd
+        from .services import ValidateExplosionConceptCmd, validate_explosion_concept
         count = 0
         for concept in queryset.filter(status="draft"):
             try:

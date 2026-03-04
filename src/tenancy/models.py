@@ -10,7 +10,6 @@ from __future__ import annotations
 import uuid
 
 from django.db import models
-
 from django_tenancy.models import Membership, Organization
 
 __all__ = ["Membership", "Organization", "Site"]

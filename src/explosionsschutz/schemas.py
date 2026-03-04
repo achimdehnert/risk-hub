@@ -6,9 +6,10 @@ Pydantic Schemas für Explosionsschutz-Modul (v5)
 - Command DTOs für Service Layer
 """
 
-from typing import Literal, Optional
-from pydantic import BaseModel, Field, model_validator
 import math
+from typing import Literal
+
+from pydantic import BaseModel, Field, model_validator
 
 
 class ZoneExtent(BaseModel):
@@ -25,41 +26,41 @@ class ZoneExtent(BaseModel):
     shape: Literal["sphere", "cylinder", "box", "custom"]
     
     # Für sphere
-    radius_m: Optional[float] = Field(
+    radius_m: float | None = Field(
         None, ge=0, description="Radius in Metern"
     )
     
     # Für cylinder
-    diameter_m: Optional[float] = Field(
+    diameter_m: float | None = Field(
         None, ge=0, description="Durchmesser in Metern"
     )
-    height_m: Optional[float] = Field(
+    height_m: float | None = Field(
         None, ge=0, description="Höhe in Metern"
     )
     
     # Für box
-    length_m: Optional[float] = Field(
+    length_m: float | None = Field(
         None, ge=0, description="Länge in Metern"
     )
-    width_m: Optional[float] = Field(
+    width_m: float | None = Field(
         None, ge=0, description="Breite in Metern"
     )
-    depth_m: Optional[float] = Field(
+    depth_m: float | None = Field(
         None, ge=0, description="Tiefe in Metern"
     )
     
     # Für alle
-    origin_description: Optional[str] = Field(
+    origin_description: str | None = Field(
         None,
         description="Beschreibung des Ursprungspunkts"
     )
-    reference_drawing: Optional[str] = Field(
+    reference_drawing: str | None = Field(
         None,
         description="Referenz auf technische Zeichnung"
     )
     
     # Für custom
-    custom_description: Optional[str] = Field(
+    custom_description: str | None = Field(
         None,
         description="Freitextbeschreibung für komplexe Geometrien"
     )
@@ -88,7 +89,7 @@ class ZoneExtent(BaseModel):
         return self
     
     @property
-    def volume_m3(self) -> Optional[float]:
+    def volume_m3(self) -> float | None:
         """Berechnet das Volumen der Zone in m³"""
         if self.shape == "sphere" and self.radius_m:
             return (4 / 3) * math.pi * (self.radius_m ** 3)

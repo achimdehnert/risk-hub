@@ -1,12 +1,13 @@
 """Seed demo data for development."""
 
+
 from django.core.management.base import BaseCommand
-from tenancy.models import Organization, Site
-from identity.models import User
-from risk.models import Assessment, Hazard
-from permissions.models import Permission, Role, Scope, Assignment
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
-import uuid
+
+from identity.models import User
+from permissions.models import Assignment, Permission, Role, Scope
+from risk.models import Assessment, Hazard
+from tenancy.models import Organization, Site
 
 
 class Command(BaseCommand):
@@ -52,7 +53,7 @@ class Command(BaseCommand):
         if created:
             user.set_password("demo")
             user.save()
-            self.stdout.write(f"  Created user: demo (password: demo)")
+            self.stdout.write("  Created user: demo (password: demo)")
         
         # Create permissions
         permissions_data = [
@@ -173,5 +174,5 @@ class Command(BaseCommand):
         self.stdout.write(f"  Hazards: {Hazard.objects.filter(tenant_id=tenant_id).count()}")
         
         self.stdout.write(self.style.SUCCESS("Demo data seeded successfully!"))
-        self.stdout.write(f"\nAccess: http://demo.localhost:8080/risk/assessments/")
-        self.stdout.write(f"Login: demo / demo")
+        self.stdout.write("\nAccess: http://demo.localhost:8080/risk/assessments/")
+        self.stdout.write("Login: demo / demo")

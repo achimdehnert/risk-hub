@@ -11,19 +11,18 @@ Generiert Word-Dokumente aus ExplosionConcept-Daten mit:
 
 import io
 from datetime import datetime
-from typing import Optional
 
 try:
     from docx import Document
-    from docx.shared import Pt
     from docx.enum.text import WD_ALIGN_PARAGRAPH
-    from docx.oxml.ns import qn
     from docx.oxml import OxmlElement
+    from docx.oxml.ns import qn
+    from docx.shared import Pt
     DOCX_AVAILABLE = True
 except ImportError:
     DOCX_AVAILABLE = False
 
-from .models import ExplosionConcept, Equipment
+from .models import Equipment, ExplosionConcept
 
 # Substances Integration
 try:
@@ -51,7 +50,7 @@ class ExSchutzDocumentGenerator:
                 self.concept.tenant_id
             )
 
-    def create_document(self, template_path: Optional[str] = None) -> "Document":
+    def create_document(self, template_path: str | None = None) -> "Document":
         """
         Erstellt das Word-Dokument.
 

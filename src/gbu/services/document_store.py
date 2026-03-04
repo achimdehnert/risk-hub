@@ -9,7 +9,6 @@ Strategie: lokal via Django DEFAULT_FILE_STORAGE
 """
 import hashlib
 import logging
-from io import BytesIO
 from uuid import UUID
 
 from django.core.files.base import ContentFile
@@ -25,7 +24,7 @@ def store_gbu_pdf(
     activity_id: UUID,
     tenant_id: UUID,
     pdf_bytes: bytes,
-) -> "DocumentVersion":
+) -> "DocumentVersion":  # noqa: F821
     """
     PDF-Bytes als DocumentVersion persistieren und in
     HazardAssessmentActivity.gbu_document verknüpfen.
@@ -80,7 +79,7 @@ def store_ba_pdf(
     activity_id: UUID,
     tenant_id: UUID,
     pdf_bytes: bytes,
-) -> "DocumentVersion":
+) -> "DocumentVersion":  # noqa: F821
     """
     Betriebsanweisung-PDF als DocumentVersion persistieren und
     in HazardAssessmentActivity.ba_document verknüpfen.

@@ -1,4 +1,5 @@
 from django.contrib import admin
+
 from risk.models import Assessment, Hazard
 
 

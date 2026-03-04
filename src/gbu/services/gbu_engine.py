@@ -177,7 +177,7 @@ def approve_activity(
     tenant_id: UUID,
     user_id: UUID,
     approved_by_name: str = "",
-) -> "HazardAssessmentActivity":
+) -> "HazardAssessmentActivity":  # noqa: F821
     """
     GBU-Tätigkeit freigeben.
 
@@ -240,7 +240,7 @@ def approve_activity(
 def set_risk_score(
     activity_id: UUID,
     tenant_id: UUID,
-) -> "HazardAssessmentActivity":
+) -> "HazardAssessmentActivity":  # noqa: F821
     """
     EMKG-Risikoscore für eine Tätigkeit berechnen und speichern.
 

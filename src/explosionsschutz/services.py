@@ -10,33 +10,30 @@ Alle Mutationen laufen über diesen Service Layer:
 """
 
 from dataclasses import dataclass
-from typing import Optional
 from uuid import UUID
 
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.db import transaction
-from django.core.exceptions import ValidationError, PermissionDenied
 from django.utils import timezone
 
 from permissions.authz import require_permission
 
 from .models import (
     Area,
-    EquipmentATEXCheck,
-    ExplosionConcept,
-    ZoneDefinition,
-    ZoneCalculationResult,
-    ProtectionMeasure,
     Equipment,
+    EquipmentATEXCheck,
     EquipmentType,
-    Inspection,
-    VerificationDocument,
-    MeasureCatalog,
-    SafetyFunction,
-    ReferenceStandard,
-    ZoneIgnitionSourceAssessment,
+    ExplosionConcept,
     IgnitionSource,
+    Inspection,
+    MeasureCatalog,
+    ProtectionMeasure,
+    ReferenceStandard,
+    SafetyFunction,
+    ZoneCalculationResult,
+    ZoneDefinition,
+    ZoneIgnitionSourceAssessment,
 )
-
 
 # =============================================================================
 # COMMAND DTOs (Data Transfer Objects)
@@ -48,22 +45,22 @@ class CreateExplosionConceptCmd:
     area_id: UUID
     substance_id: UUID
     title: str
-    assessment_id: Optional[UUID] = None
+    assessment_id: UUID | None = None
 
 
 @dataclass(frozen=True)
 class UpdateExplosionConceptCmd:
     """Command für Aktualisierung eines Ex-Konzepts"""
     concept_id: UUID
-    title: Optional[str] = None
-    substance_id: Optional[UUID] = None
+    title: str | None = None
+    substance_id: UUID | None = None
 
 
 @dataclass(frozen=True)
 class ValidateExplosionConceptCmd:
     """Command für Validierung/Freigabe eines Ex-Konzepts"""
     concept_id: UUID
-    notes: Optional[str] = None
+    notes: str | None = None
 
 
 @dataclass(frozen=True)
@@ -72,9 +69,9 @@ class CreateZoneDefinitionCmd:
     concept_id: UUID
     zone_type: str
     name: str
-    extent: Optional[dict] = None
-    reference_standard_id: Optional[UUID] = None
-    justification: Optional[str] = None
+    extent: dict | None = None
+    reference_standard_id: UUID | None = None
+    justification: str | None = None
 
 
 @dataclass(frozen=True)
@@ -83,10 +80,10 @@ class CreateProtectionMeasureCmd:
     concept_id: UUID
     category: str
     title: str
-    description: Optional[str] = None
-    catalog_reference_id: Optional[UUID] = None
-    safety_function_id: Optional[UUID] = None
-    due_date: Optional[str] = None
+    description: str | None = None
+    catalog_reference_id: UUID | None = None
+    safety_function_id: UUID | None = None
+    due_date: str | None = None
 
 
 @dataclass(frozen=True)
@@ -94,11 +91,11 @@ class CreateEquipmentCmd:
     """Command für Registrierung eines Betriebsmittels"""
     area_id: UUID
     equipment_type_id: UUID
-    zone_id: Optional[UUID] = None
-    serial_number: Optional[str] = None
-    asset_number: Optional[str] = None
-    location_detail: Optional[str] = None
-    installation_date: Optional[str] = None
+    zone_id: UUID | None = None
+    serial_number: str | None = None
+    asset_number: str | None = None
+    location_detail: str | None = None
+    installation_date: str | None = None
 
 
 @dataclass(frozen=True)
@@ -109,9 +106,9 @@ class CreateInspectionCmd:
     inspection_date: str
     inspector_name: str
     result: str
-    findings: Optional[str] = None
-    recommendations: Optional[str] = None
-    certificate_number: Optional[str] = None
+    findings: str | None = None
+    recommendations: str | None = None
+    certificate_number: str | None = None
 
 
 @dataclass(frozen=True)
@@ -121,7 +118,7 @@ class AssessIgnitionSourceCmd:
     ignition_source: str
     is_present: bool
     is_effective: bool
-    mitigation: Optional[str] = None
+    mitigation: str | None = None
 
 
 # =============================================================================
@@ -161,7 +158,7 @@ def emit_audit_event(
     entity_type: str,
     entity_id: UUID,
     payload: dict,
-    user_id: Optional[UUID] = None,
+    user_id: UUID | None = None,
 ):
     """
     Emittiert ein Audit-Event via common.context.
@@ -200,7 +197,7 @@ def create_outbox_message(
 def create_explosion_concept(
     cmd: CreateExplosionConceptCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 ) -> ExplosionConcept:
     """
     Erstellt ein neues Explosionsschutzkonzept.
@@ -270,7 +267,7 @@ def create_explosion_concept(
 def update_explosion_concept(
     cmd: UpdateExplosionConceptCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 ) -> ExplosionConcept:
     """
     Aktualisiert ein bestehendes Ex-Konzept.
@@ -328,7 +325,7 @@ def update_explosion_concept(
 def validate_explosion_concept(
     cmd: ValidateExplosionConceptCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 ) -> ExplosionConcept:
     """
     Validiert/gibt ein Ex-Konzept frei.
@@ -387,7 +384,7 @@ def validate_explosion_concept(
 def create_zone_definition(
     cmd: CreateZoneDefinitionCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 ) -> ZoneDefinition:
     """
     Erstellt eine Zonendefinition für ein Ex-Konzept.
@@ -448,7 +445,7 @@ def create_zone_definition(
 def create_protection_measure(
     cmd: CreateProtectionMeasureCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 ) -> ProtectionMeasure:
     """
     Erstellt eine Schutzmaßnahme für ein Ex-Konzept.
@@ -509,7 +506,7 @@ def create_protection_measure(
 def create_equipment(
     cmd: CreateEquipmentCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 ) -> Equipment:
     """
     Registriert ein Betriebsmittel.
@@ -577,7 +574,7 @@ def create_equipment(
 def create_inspection(
     cmd: CreateInspectionCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 ) -> Inspection:
     """
     Erfasst eine Prüfung nach BetrSichV.
@@ -669,7 +666,7 @@ def create_inspection(
 def assess_ignition_source(
     cmd: AssessIgnitionSourceCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 ) -> ZoneIgnitionSourceAssessment:
     """
     Bewertet eine Zündquelle für eine Zone nach EN 1127-1.
@@ -725,7 +722,7 @@ def assess_ignition_source(
 def archive_explosion_concept(
     concept_id: UUID,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None
+    user_id: UUID | None = None
 ) -> ExplosionConcept:
     """
     Archiviert ein Ex-Konzept (Soft Delete).
@@ -803,16 +800,17 @@ class CalculateZoneCmd:
 def calculate_and_store_zone(
     cmd: CalculateZoneCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None,
+    user_id: UUID | None = None,
 ) -> "ZoneCalculationResult":
     """
     Delegiert TRGS 721 Berechnung an riskfw, archiviert Ergebnis.
     Audit: explosionsschutz.zone.calculated
     """
     import dataclasses as _dc
+
     import riskfw
-    from riskfw.zones import calculate_zone_extent
     from riskfw.exceptions import SubstanceNotFoundError
+    from riskfw.zones import calculate_zone_extent
 
     try:
         zone = ZoneDefinition.objects.select_related(
@@ -884,13 +882,14 @@ def import_zones_from_dxf(
     concept_id: UUID,
     dxf_bytes: bytes,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None,
+    user_id: UUID | None = None,
 ) -> int:
     """
     DXF -> nl2cad-brandschutz -> ExBereich-Liste -> ZoneDefinition-Records.
     Audit: explosionsschutz.zone.imported
     """
     import io
+
     import ezdxf
     from ezdxf.lldxf.const import DXFError
     from nl2cad.brandschutz.analyzer import BrandschutzAnalyzer
@@ -950,18 +949,18 @@ def import_zones_from_dxf(
 class CreateEquipmentWithATEXCmd:
     area_id: UUID
     equipment_type_id: UUID
-    zone_id: Optional[UUID] = None
-    serial_number: Optional[str] = None
-    asset_number: Optional[str] = None
-    location_detail: Optional[str] = None
-    installation_date: Optional[str] = None
+    zone_id: UUID | None = None
+    serial_number: str | None = None
+    asset_number: str | None = None
+    location_detail: str | None = None
+    installation_date: str | None = None
 
 
 @transaction.atomic
 def create_equipment_with_atex_check(
     cmd: CreateEquipmentWithATEXCmd,
     tenant_id: UUID,
-    user_id: Optional[UUID] = None,
+    user_id: UUID | None = None,
 ) -> Equipment:
     """
     Erstellt Betriebsmittel + ATEX-Check explizit im Service.
@@ -969,6 +968,7 @@ def create_equipment_with_atex_check(
     Audit: explosionsschutz.equipment.created
     """
     import dataclasses as _dc
+
     import riskfw
     from riskfw.equipment import check_equipment_suitability
     from riskfw.exceptions import ATEXCheckError

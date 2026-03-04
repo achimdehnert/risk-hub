@@ -3,33 +3,31 @@
 
 from django.http import HttpResponse
 from rest_framework import status
-from rest_framework.views import APIView
-from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from common.views import TenantAwareViewSet, ReadOnlyRefViewSet
+from common.views import ReadOnlyRefViewSet, TenantAwareViewSet
 
 from .models import (
+    HazardStatementRef,
     Party,
-    Substance,
-    Identifier,
+    PictogramRef,
+    PrecautionaryStatementRef,
     SdsRevision,
     SiteInventoryItem,
-    HazardStatementRef,
-    PrecautionaryStatementRef,
-    PictogramRef,
+    Substance,
 )
 from .serializers import (
+    HazardStatementRefSerializer,
     PartySerializer,
-    SubstanceSerializer,
-    SubstanceDetailSerializer,
+    PictogramRefSerializer,
+    PrecautionaryStatementRefSerializer,
     SdsRevisionSerializer,
     SiteInventoryItemSerializer,
-    HazardStatementRefSerializer,
-    PrecautionaryStatementRefSerializer,
-    PictogramRefSerializer,
+    SubstanceDetailSerializer,
+    SubstanceSerializer,
 )
-
 
 # =============================================================================
 # PARTY

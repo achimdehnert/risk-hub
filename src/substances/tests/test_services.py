@@ -7,16 +7,16 @@ from datetime import date
 import pytest
 
 from substances.models import (
-    Substance,
+    HazardStatementRef,
     Identifier,
     SdsRevision,
-    HazardStatementRef,
+    Substance,
 )
-from substances.services.substance_service import SubstanceService
 from substances.services.ex_integration import (
     ExIntegrationService,
     ExSubstanceData,
 )
+from substances.services.substance_service import SubstanceService
 
 
 @pytest.fixture

@@ -2,8 +2,9 @@
 # The DB tables (tenancy_organization, tenancy_membership) are identical —
 # django_tenancy.0001_initial creates them. This migration only owns Site.
 
-import django.db.models.deletion
 import uuid
+
+import django.db.models.deletion
 from django.db import migrations, models
 
 

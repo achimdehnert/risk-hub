@@ -5,11 +5,9 @@ Integration Service für Explosionsschutz-Modul.
 Stellt Ex-Schutz-relevante Stoffdaten für das Explosionsschutz-Modul bereit.
 """
 
-from typing import Optional
-from uuid import UUID
 from dataclasses import dataclass
+from uuid import UUID
 
-from substances.models import Substance
 from substances.services.substance_service import SubstanceService
 
 
@@ -19,22 +17,22 @@ class ExSubstanceData:
 
     substance_id: UUID
     substance_name: str
-    cas_number: Optional[str] = None
+    cas_number: str | None = None
 
     # Physikalische Eigenschaften
-    flash_point_c: Optional[float] = None
-    ignition_temperature_c: Optional[float] = None
-    lower_explosion_limit: Optional[float] = None  # Vol.%
-    upper_explosion_limit: Optional[float] = None  # Vol.%
-    vapor_density: Optional[float] = None  # Luft = 1
+    flash_point_c: float | None = None
+    ignition_temperature_c: float | None = None
+    lower_explosion_limit: float | None = None  # Vol.%
+    upper_explosion_limit: float | None = None  # Vol.%
+    vapor_density: float | None = None  # Luft = 1
 
     # Klassifikation
-    temperature_class: Optional[str] = None  # T1-T6
-    explosion_group: Optional[str] = None    # IIA, IIB, IIC
+    temperature_class: str | None = None  # T1-T6
+    explosion_group: str | None = None    # IIA, IIB, IIC
 
     # SDS-Info
-    sds_revision: Optional[int] = None
-    sds_date: Optional[str] = None
+    sds_revision: int | None = None
+    sds_date: str | None = None
 
     def get_required_equipment_category(self, zone_type: str) -> str:
         """
@@ -55,7 +53,7 @@ class ExSubstanceData:
             return dust_zones[zone_type]
         return "3"  # Default für non-ex
 
-    def get_required_temperature_class(self) -> Optional[str]:
+    def get_required_temperature_class(self) -> str | None:
         """
         Bestimmt die erforderliche Temperaturklasse basierend auf
         der Zündtemperatur.
@@ -98,7 +96,7 @@ class ExIntegrationService:
     def get_ex_data(
         substance_id: UUID,
         tenant_id: UUID
-    ) -> Optional[ExSubstanceData]:
+    ) -> ExSubstanceData | None:
         """
         Holt Ex-Schutz-relevante Stoffdaten.
 
@@ -134,7 +132,7 @@ class ExIntegrationService:
     def get_ex_data_by_cas(
         cas_number: str,
         tenant_id: UUID
-    ) -> Optional[ExSubstanceData]:
+    ) -> ExSubstanceData | None:
         """
         Holt Ex-Schutz-relevante Stoffdaten nach CAS-Nummer.
 

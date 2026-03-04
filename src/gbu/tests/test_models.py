@@ -17,7 +17,6 @@ from gbu.models.reference import (
     TOPSType,
 )
 
-
 # ── StrEnum-Tests ──────────────────────────────────────────────────────────────
 
 def test_should_hazard_category_type_be_str_compatible():

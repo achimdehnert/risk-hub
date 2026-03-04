@@ -12,7 +12,6 @@ from substances.models import (
     Substance,
 )
 
-
 TENANT_ID = uuid.uuid4()
 
 

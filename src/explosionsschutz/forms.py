@@ -7,10 +7,10 @@ from django import forms
 
 from .models import (
     Area,
-    ExplosionConcept,
-    ZoneDefinition,
     Equipment,
     EquipmentType,
+    ExplosionConcept,
+    ZoneDefinition,
 )
 
 

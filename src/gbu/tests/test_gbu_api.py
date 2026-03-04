@@ -20,7 +20,6 @@ from unittest.mock import patch
 import pytest
 from django.test import Client
 
-
 # ── Fixtures ───────────────────────────────────────────────────────────────
 
 @pytest.fixture
@@ -51,10 +50,10 @@ def gbu_client(api_context):
 @pytest.fixture
 def activity(db, tenant_id, user_id):
     """Approved HazardAssessmentActivity für Tests."""
-    from django.utils import timezone
+
+    from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
     from substances.models import SdsRevision, Substance
     from tenancy.models import Organization, Site
-    from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
 
     org, _ = Organization.objects.get_or_create(
         tenant_id=tenant_id,
@@ -140,6 +139,7 @@ def test_should_get_activity_detail(db, api_context, activity):
 def test_should_raise_404_for_unknown_activity(db, api_context):
     """api_get_activity soll 404 werfen für unbekannte ID."""
     from ninja.errors import HttpError
+
     from gbu.api import api_get_activity
 
     class FakeRequest:

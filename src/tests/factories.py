@@ -1,5 +1,6 @@
 # tests/factories.py — ADR-057 §2.5
 import uuid
+
 import factory
 from django.contrib.auth.models import User
 

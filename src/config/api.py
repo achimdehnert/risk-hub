@@ -9,7 +9,6 @@ from documents.api import router as documents_router
 from gbu.api import router as gbu_router
 from risk.api import router as risk_router
 
-
 api = NinjaAPI(
     title="risk-hub API",
     version="1.0.0",

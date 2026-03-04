@@ -5,17 +5,15 @@ import uuid
 from datetime import date
 
 import pytest
-from django.core.exceptions import ValidationError
 
 from substances.models import (
-    Party,
-    Substance,
-    Identifier,
-    SdsRevision,
-    SiteInventoryItem,
     HazardStatementRef,
-    PrecautionaryStatementRef,
+    Identifier,
+    Party,
     PictogramRef,
+    PrecautionaryStatementRef,
+    SdsRevision,
+    Substance,
 )
 
 

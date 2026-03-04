@@ -3,8 +3,8 @@
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-
 from django_tenancy.module_access import require_module
+
 from dsb.services import get_dsb_kpis
 
 
@@ -512,7 +512,8 @@ def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
 def avv_import(request: HttpRequest) -> HttpResponse:
     """Dedizierter AVV-Import aus CSV-Datei."""
     from django.http import HttpResponse as DjangoResponse
-    from dsb.import_csv import import_avv, AVV_CSV_TEMPLATE
+
+    from dsb.import_csv import AVV_CSV_TEMPLATE, import_avv
     from dsb.models import Mandate
 
     tid = _tenant_id(request)

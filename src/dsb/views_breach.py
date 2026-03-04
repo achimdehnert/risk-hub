@@ -4,11 +4,10 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-
 from django_tenancy.module_access import require_module
 
 from dsb.breach_workflow import advance_breach_workflow, send_initial_breach_confirmation
-from dsb.models.breach import Breach, BreachStatus, BREACH_TRANSITIONS
+from dsb.models.breach import BREACH_TRANSITIONS, Breach, BreachStatus
 
 
 def _tenant_id(request: HttpRequest):
@@ -73,7 +72,7 @@ def breach_create(request: HttpRequest) -> HttpResponse:
             send_initial_breach_confirmation(obj)
             messages.success(
                 request,
-                f"Datenpanne erfasst. "
+                "Datenpanne erfasst. "
                 + (f"Bestätigungs-E-Mail an {obj.reported_by_email} gesendet." if obj.reported_by_email else "")
             )
             return redirect("dsb:breach-detail", pk=obj.pk)

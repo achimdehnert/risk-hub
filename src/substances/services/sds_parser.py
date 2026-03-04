@@ -10,19 +10,17 @@ Extrahiert relevante Informationen aus Sicherheitsdatenblättern:
 """
 
 import re
-import io
-from typing import Optional
 from dataclasses import dataclass, field
 
 # PDF-Bibliotheken (optional)
 try:
-    import PyPDF2
+    import PyPDF2  # noqa: F401
     PYPDF2_AVAILABLE = True
 except ImportError:
     PYPDF2_AVAILABLE = False
 
 try:
-    import pdfplumber
+    import pdfplumber  # noqa: F401
     PDFPLUMBER_AVAILABLE = True
 except ImportError:
     PDFPLUMBER_AVAILABLE = False
@@ -36,13 +34,13 @@ class SdsParseResult:
     h_statements: list[str] = field(default_factory=list)
     p_statements: list[str] = field(default_factory=list)
     pictograms: list[str] = field(default_factory=list)
-    flash_point_c: Optional[float] = None
-    ignition_temperature_c: Optional[float] = None
-    lower_explosion_limit: Optional[float] = None
-    upper_explosion_limit: Optional[float] = None
-    boiling_point_c: Optional[float] = None
-    vapor_pressure_hpa: Optional[float] = None
-    density_g_cm3: Optional[float] = None
+    flash_point_c: float | None = None
+    ignition_temperature_c: float | None = None
+    lower_explosion_limit: float | None = None
+    upper_explosion_limit: float | None = None
+    boiling_point_c: float | None = None
+    vapor_pressure_hpa: float | None = None
+    density_g_cm3: float | None = None
     raw_text: str = ""
 
 
@@ -210,7 +208,7 @@ class SdsParserService:
         self,
         pattern: re.Pattern,
         text: str
-    ) -> Optional[float]:
+    ) -> float | None:
         """Extrahiert eine Zahl aus Text mittels Regex."""
         match = pattern.search(text)
         if match:

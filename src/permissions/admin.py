@@ -1,5 +1,6 @@
 from django.contrib import admin
-from permissions.models import Permission, Role, Scope, Assignment
+
+from permissions.models import Assignment, Permission, Role, Scope
 
 
 @admin.register(Permission)

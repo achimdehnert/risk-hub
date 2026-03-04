@@ -6,20 +6,19 @@ Django REST Framework Serializers für Explosionsschutz-Modul
 from rest_framework import serializers
 
 from .models import (
-    ReferenceStandard,
-    MeasureCatalog,
-    SafetyFunction,
-    EquipmentType,
     Area,
-    ExplosionConcept,
-    ZoneDefinition,
-    ProtectionMeasure,
     Equipment,
+    EquipmentType,
+    ExplosionConcept,
     Inspection,
+    MeasureCatalog,
+    ProtectionMeasure,
+    ReferenceStandard,
+    SafetyFunction,
     VerificationDocument,
+    ZoneDefinition,
     ZoneIgnitionSourceAssessment,
 )
-
 
 # =============================================================================
 # STAMMDATEN SERIALIZERS

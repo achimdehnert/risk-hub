@@ -2,7 +2,6 @@
 
 import logging
 from datetime import date, timedelta
-from typing import Optional
 from uuid import UUID
 
 from django.db.models import Q
@@ -23,9 +22,9 @@ def create_notification(
     title: str,
     message: str = "",
     severity: str = Notification.Severity.INFO,
-    recipient_id: Optional[UUID] = None,
+    recipient_id: UUID | None = None,
     entity_type: str = "",
-    entity_id: Optional[UUID] = None,
+    entity_id: UUID | None = None,
     action_url: str = "",
 ) -> Notification:
     """Create and persist a notification."""
@@ -44,7 +43,7 @@ def create_notification(
 
 def get_unread(
     tenant_id: UUID,
-    user_id: Optional[UUID] = None,
+    user_id: UUID | None = None,
     limit: int = 20,
 ) -> list[Notification]:
     """Return unread notifications for a tenant (optionally per user)."""
@@ -61,7 +60,7 @@ def get_unread(
 
 def get_unread_count(
     tenant_id: UUID,
-    user_id: Optional[UUID] = None,
+    user_id: UUID | None = None,
 ) -> int:
     """Return count of unread notifications."""
     qs = Notification.objects.filter(
@@ -77,7 +76,7 @@ def get_unread_count(
 
 def mark_all_read(
     tenant_id: UUID,
-    user_id: Optional[UUID] = None,
+    user_id: UUID | None = None,
 ) -> int:
     """Mark all unread notifications as read. Returns count."""
     qs = Notification.objects.filter(

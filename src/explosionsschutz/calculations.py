@@ -11,9 +11,7 @@ Implementiert Berechnungen nach:
 
 import math
 from dataclasses import dataclass
-from typing import Optional, Dict, Any, List
-from decimal import Decimal
-
+from typing import Any
 
 # =============================================================================
 # STOFFDATEN (Pydantic-kompatibel)
@@ -27,14 +25,14 @@ class SubstanceProperties:
     cas_number: str = ""
     lower_explosion_limit: float = 0.0  # UEG in Vol-%
     upper_explosion_limit: float = 0.0  # OEG in Vol-%
-    flash_point_c: Optional[float] = None
-    ignition_temperature_c: Optional[float] = None
+    flash_point_c: float | None = None
+    ignition_temperature_c: float | None = None
     temperature_class: str = ""  # T1-T6
     explosion_group: str = ""  # IIA, IIB, IIC
     vapor_density: float = 1.0  # rel. zu Luft
     molar_mass: float = 0.0  # g/mol
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Konvertiert zu Dictionary."""
         return {
             "name": self.name,
@@ -54,7 +52,7 @@ class SubstanceProperties:
 # STOFFDATENBANK (GESTIS-basiert)
 # =============================================================================
 
-SUBSTANCE_DATABASE: Dict[str, SubstanceProperties] = {
+SUBSTANCE_DATABASE: dict[str, SubstanceProperties] = {
     # Lösungsmittel
     "aceton": SubstanceProperties(
         name="Aceton",
@@ -215,7 +213,7 @@ SUBSTANCE_DATABASE: Dict[str, SubstanceProperties] = {
 }
 
 # Aliase für Stoffsuche
-SUBSTANCE_ALIASES: Dict[str, str] = {
+SUBSTANCE_ALIASES: dict[str, str] = {
     "acetone": "aceton",
     "toluene": "toluol",
     "xylene": "xylol",
@@ -233,7 +231,7 @@ SUBSTANCE_ALIASES: Dict[str, str] = {
 }
 
 
-def get_substance_properties(substance_name: str) -> Dict[str, Any]:
+def get_substance_properties(substance_name: str) -> dict[str, Any]:
     """
     Holt Stoffeigenschaften aus der Datenbank.
     
@@ -272,7 +270,7 @@ def get_substance_properties(substance_name: str) -> Dict[str, Any]:
     }
 
 
-def list_substances() -> List[Dict[str, Any]]:
+def list_substances() -> list[dict[str, Any]]:
     """Listet alle verfügbaren Stoffe."""
     return [
         {"key": key, **substance.to_dict()}
@@ -288,10 +286,10 @@ def calculate_zone_extent(
     release_rate_kg_s: float,
     ventilation_rate_m3_s: float,
     lel_percent: float = 1.5,
-    substance_name: Optional[str] = None,
-    room_volume_m3: Optional[float] = None,
+    substance_name: str | None = None,
+    room_volume_m3: float | None = None,
     release_type: str = "jet"
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Berechnet die Zonenausdehnung nach TRGS 721.
     
@@ -386,7 +384,7 @@ def analyze_ventilation_effectiveness(
     air_flow_m3_h: float,
     ventilation_type: str = "technisch",
     has_ex_zone: bool = True
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Analysiert die Lüftungseffektivität nach TRGS 722.
     
@@ -443,7 +441,7 @@ def analyze_ventilation_effectiveness(
 def check_equipment_suitability(
     ex_marking: str,
     zone: str
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Prüft ob ein Gerät für eine Ex-Zone geeignet ist.
     

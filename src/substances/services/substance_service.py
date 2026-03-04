@@ -1,16 +1,15 @@
 # substances/services/substance_service.py
 """Service für Gefahrstoff-Operationen."""
 
-from typing import Optional
 from uuid import UUID
 
 from django.db import transaction
 
 from permissions.authz import require_permission
 from substances.models import (
-    Substance,
-    SdsRevision,
     Identifier,
+    SdsRevision,
+    Substance,
 )
 
 
@@ -21,7 +20,7 @@ class SubstanceService:
     def get_by_id(
         substance_id: UUID,
         tenant_id: UUID
-    ) -> Optional[Substance]:
+    ) -> Substance | None:
         """Holt Gefahrstoff nach ID."""
         require_permission("substance.view")
         try:
@@ -37,7 +36,7 @@ class SubstanceService:
     def get_by_cas(
         cas_number: str,
         tenant_id: UUID
-    ) -> Optional[Substance]:
+    ) -> Substance | None:
         """Holt Gefahrstoff nach CAS-Nummer."""
         require_permission("substance.view")
         try:

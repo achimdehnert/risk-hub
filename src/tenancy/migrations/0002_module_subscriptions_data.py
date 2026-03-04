@@ -11,7 +11,6 @@ For every existing Organization:
 
 from django.db import migrations
 
-
 MODULES = ["risk", "dsb", "ex"]
 
 ROLE_MAP = {

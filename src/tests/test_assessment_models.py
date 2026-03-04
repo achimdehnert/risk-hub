@@ -1,9 +1,10 @@
 # tests/test_assessment_models.py — ADR-057 Phase 2: Model Tests
 import uuid
+
 import pytest
 
-from tests.factories import AssessmentFactory, HazardFactory
 from risk.models import Assessment, Hazard
+from tests.factories import AssessmentFactory, HazardFactory
 
 
 @pytest.mark.django_db

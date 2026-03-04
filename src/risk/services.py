@@ -3,10 +3,10 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from common.context import emit_audit_event, emit_outbox_event, get_context
 from django.db import transaction
 from django.utils import timezone
 
+from common.context import emit_audit_event, emit_outbox_event, get_context
 from permissions.authz import require_permission
 from risk.models import Assessment, Hazard
 

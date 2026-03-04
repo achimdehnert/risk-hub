@@ -1,0 +1,46 @@
+{# Shared stat card component
+   Usage: {% include "components/_stat_card.html" with icon="map-pin" value=42 label="Bereiche" color="blue" %}
+   color: blue | orange | red | green | purple | gray
+   Optional: url (makes card clickable), badge_text, badge_color, sub_badges
+#}
+{% with color|default:"blue" as c %}
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6{% if url %} hover:shadow-md transition-shadow{% endif %}"
+     data-testid="stat-card-{{ label|slugify }}">
+    <div class="flex items-center justify-between">
+        <div>
+            <p class="text-sm text-gray-500">{{ label }}</p>
+            <p class="text-3xl font-bold text-gray-900">{{ value }}</p>
+        </div>
+        <div class="flex flex-col items-end gap-1">
+            {% if url %}
+            <a href="{{ url }}" class="text-xs text-gray-400 hover:text-gray-600">
+                <i data-lucide="arrow-right" class="w-4 h-4"></i>
+            </a>
+            {% endif %}
+            <div class="w-12 h-12 rounded-lg flex items-center justify-center
+                {% if c == 'blue' %}bg-blue-100{% elif c == 'orange' %}bg-orange-100{% elif c == 'red' %}bg-red-100{% elif c == 'green' %}bg-green-100{% elif c == 'purple' %}bg-purple-100{% else %}bg-gray-100{% endif %}">
+                <i data-lucide="{{ icon }}" class="w-6 h-6
+                    {% if c == 'blue' %}text-blue-600{% elif c == 'orange' %}text-orange-600{% elif c == 'red' %}text-red-600{% elif c == 'green' %}text-green-600{% elif c == 'purple' %}text-purple-600{% else %}text-gray-600{% endif %}"></i>
+            </div>
+        </div>
+    </div>
+    {% if badge_text %}
+    <div class="mt-2">
+        <span class="px-2 py-1 rounded text-xs
+            {% if badge_color == 'red' %}bg-red-100 text-red-700{% elif badge_color == 'yellow' %}bg-yellow-100 text-yellow-700{% elif badge_color == 'green' %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+            {{ badge_text }}
+        </span>
+    </div>
+    {% endif %}
+    {% if sub_badges %}
+    <div class="mt-2 flex space-x-2 text-xs">
+        {% for b in sub_badges %}
+        <span class="px-2 py-1 rounded
+            {% if b.color == 'yellow' %}bg-yellow-100 text-yellow-700{% elif b.color == 'green' %}bg-green-100 text-green-700{% else %}bg-gray-100 text-gray-700{% endif %}">
+            {{ b.text }}
+        </span>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endwith %}

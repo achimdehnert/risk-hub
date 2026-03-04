@@ -7,7 +7,7 @@ from .audit import AuditFinding, PrivacyAudit
 from .breach import Breach
 from .choices import MeasureStatus, SeverityLevel
 from .deletion import DeletionLog
-from .deletion_request import DeletionRequest, DeletionRequestStatus, WORKFLOW_TRANSITIONS
+from .deletion_request import WORKFLOW_TRANSITIONS, DeletionRequest, DeletionRequestStatus
 from .document import DsbDocument
 from .dpa import DataProcessingAgreement
 from .lookups import (

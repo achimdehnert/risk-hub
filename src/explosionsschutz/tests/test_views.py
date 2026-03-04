@@ -9,23 +9,20 @@ Tests nach ADR v5:
 """
 
 import uuid
-from datetime import date
 
 import pytest
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from django.contrib.auth import get_user_model
-
 from explosionsschutz.models import (
-    ReferenceStandard,
-    MeasureCatalog,
-    EquipmentType,
     Area,
+    EquipmentType,
     ExplosionConcept,
+    MeasureCatalog,
+    ReferenceStandard,
     ZoneDefinition,
-    Equipment,
 )
 
 User = get_user_model()

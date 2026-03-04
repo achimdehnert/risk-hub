@@ -1,5 +1,6 @@
 from django.contrib import admin
-from reporting.models import RetentionPolicy, ExportJob
+
+from reporting.models import ExportJob, RetentionPolicy
 
 
 @admin.register(RetentionPolicy)

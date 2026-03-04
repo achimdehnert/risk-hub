@@ -3,25 +3,24 @@
 Template-basierte Views für Gefahrstoff-Management (HTML-Seiten mit HTMX)
 """
 
-from django.db.models import Q, Count
-from django.shortcuts import get_object_or_404, redirect, render
-from django.views import View
-from django.http import JsonResponse
 from django.contrib import messages
+from django.db.models import Count, Q
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.views import View
 
+from .forms import SdsUploadForm, SubstanceForm
 from .models import (
-    Party,
-    Substance,
+    HazardStatementRef,
     Identifier,
+    Party,
+    PictogramRef,
+    PrecautionaryStatementRef,
     SdsRevision,
     SiteInventoryItem,
-    HazardStatementRef,
-    PrecautionaryStatementRef,
-    PictogramRef,
+    Substance,
 )
-from .forms import SubstanceForm, SdsUploadForm, PartyForm
-from .services import SubstanceService, ExIntegrationService
+from .services import ExIntegrationService, SubstanceService
 
 
 class SubstanceHomeView(View):

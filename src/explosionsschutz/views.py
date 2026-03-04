@@ -10,62 +10,59 @@ Features:
 
 from django.db.models import Count, Q
 from django.utils import timezone
-from rest_framework import status, permissions
+from rest_framework import permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from common.views import (
-    TenantAwareViewSet,
     ReadOnlyMasterDataViewSet,
+    TenantAwareViewSet,
 )
 
-from .models import (
-    ReferenceStandard,
-    MeasureCatalog,
-    SafetyFunction,
-    EquipmentType,
-    Area,
-    ExplosionConcept,
-    ZoneDefinition,
-    ProtectionMeasure,
-    Equipment,
-    Inspection,
-    VerificationDocument,
-    ZoneIgnitionSourceAssessment,
-)
-from .serializers import (
-    ReferenceStandardSerializer,
-    MeasureCatalogSerializer,
-    SafetyFunctionSerializer,
-    EquipmentTypeSerializer,
-    AreaSerializer,
-    AreaDetailSerializer,
-    ExplosionConceptSerializer,
-    ExplosionConceptDetailSerializer,
-    ZoneDefinitionSerializer,
-    ProtectionMeasureSerializer,
-    EquipmentSerializer,
-    EquipmentDetailSerializer,
-    InspectionSerializer,
-    VerificationDocumentSerializer,
-    ZoneIgnitionSourceAssessmentSerializer,
-)
-from .services import (
-    create_explosion_concept,
-    validate_explosion_concept,
-    archive_explosion_concept,
-    CreateExplosionConceptCmd,
-    ValidateExplosionConceptCmd,
-)
 from .calculations import (
+    analyze_ventilation_effectiveness,
+    calculate_zone_extent,
+    check_equipment_suitability,
     get_substance_properties,
     list_substances,
-    calculate_zone_extent,
-    analyze_ventilation_effectiveness,
-    check_equipment_suitability,
 )
-
+from .models import (
+    Area,
+    Equipment,
+    EquipmentType,
+    ExplosionConcept,
+    Inspection,
+    MeasureCatalog,
+    ProtectionMeasure,
+    ReferenceStandard,
+    SafetyFunction,
+    VerificationDocument,
+    ZoneDefinition,
+)
+from .serializers import (
+    AreaDetailSerializer,
+    AreaSerializer,
+    EquipmentDetailSerializer,
+    EquipmentSerializer,
+    EquipmentTypeSerializer,
+    ExplosionConceptDetailSerializer,
+    ExplosionConceptSerializer,
+    InspectionSerializer,
+    MeasureCatalogSerializer,
+    ProtectionMeasureSerializer,
+    ReferenceStandardSerializer,
+    SafetyFunctionSerializer,
+    VerificationDocumentSerializer,
+    ZoneDefinitionSerializer,
+)
+from .services import (
+    CreateExplosionConceptCmd,
+    ValidateExplosionConceptCmd,
+    archive_explosion_concept,
+    create_explosion_concept,
+    validate_explosion_concept,
+)
 
 # =============================================================================
 # STAMMDATEN VIEWSETS
@@ -232,6 +229,7 @@ class ExplosionConceptViewSet(TenantAwareViewSet):
     def export_docx(self, request, pk=None):
         """Exportiert Ex-Konzept als Word-Dokument"""
         from django.http import HttpResponse
+
         from .document_generator import ExSchutzDocumentGenerator
 
         concept = self.get_object()
@@ -259,6 +257,7 @@ class ExplosionConceptViewSet(TenantAwareViewSet):
     def preview_html(self, request, pk=None):
         """HTML-Vorschau des Ex-Konzepts"""
         from django.http import HttpResponse
+
         from .document_generator import ExSchutzDocumentGenerator
 
         concept = self.get_object()

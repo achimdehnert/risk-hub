@@ -331,7 +331,6 @@ def import_avv(
     Expected columns (semicolon-delimited):
     Partner;Rolle;Gegenstand;Status;Gueltig_ab;Gueltig_bis;Unterauftragsverarbeiter;Notizen
     """
-    from datetime import date
     result = ImportResult(csv_type="avv")
     _, rows = _parse_csv(content)
     result.rows_total = len(rows)

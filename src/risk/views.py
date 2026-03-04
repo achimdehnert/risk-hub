@@ -9,9 +9,9 @@ from django.http import (
     HttpResponseBadRequest,
 )
 from django.shortcuts import get_object_or_404, redirect, render
+from django_tenancy.module_access import require_module
 
 from common.tenant import require_tenant as _require_tenant
-from django_tenancy.module_access import require_module
 from risk.models import Assessment
 from risk.services import (
     ApproveAssessmentCmd,
