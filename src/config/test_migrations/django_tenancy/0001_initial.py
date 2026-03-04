@@ -1,6 +1,8 @@
-"""SQLite-compatible stub for django_tenancy 0001_initial.
+"""PostgreSQL-compatible stub for django_tenancy 0001_initial.
 
-Identical to the real migration but WITHOUT PostgreSQL RLS statements.
+Creates Organization and Membership tables without PostgreSQL RLS statements
+(ENABLE ROW LEVEL SECURITY) which are in the real migration but would block
+test setup if run via pytest with --reuse-db or similar.
 Used in test environments via MIGRATION_MODULES setting.
 """
 
@@ -89,7 +91,9 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="organization",
             constraint=models.CheckConstraint(
-                condition=models.Q(status__in=["trial", "active", "suspended", "deleted"]),
+                condition=models.Q(
+                    status__in=["trial", "active", "suspended", "deleted"]
+                ),
                 name="org_status_chk",
             ),
         ),
@@ -175,7 +179,9 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="membership",
             constraint=models.CheckConstraint(
-                condition=models.Q(role__in=["owner", "admin", "member", "viewer", "external"]),
+                condition=models.Q(
+                    role__in=["owner", "admin", "member", "viewer", "external"]
+                ),
                 name="membership_role_chk",
             ),
         ),
