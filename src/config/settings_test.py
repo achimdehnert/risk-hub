@@ -1,36 +1,14 @@
 """
 Risk Hub - Test Settings (ADR-057)
 
-Uses PostgreSQL (via DATABASE_URL) because django-tenancy requires
-PostgreSQL-specific features (SET enable_... statements).
-In CI: DATABASE_URL=postgresql://test:test@localhost:5432/test_risk_hub
+Uses PostgreSQL (via DATABASE_URL) — inherited from settings.py via
+dj_database_url. CI sets DATABASE_URL=postgresql://test:test@localhost:5432/test_risk_hub.
 """
-
-import os
-from urllib.parse import urlparse
 
 from .settings import *  # noqa: F401,F403
 
 DEBUG = False
 
-_db = urlparse(
-    os.environ.get(
-        "DATABASE_URL",
-        "postgresql://test:test@localhost:5432/test_risk_hub",
-    )
-)
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": _db.path.lstrip("/"),
-        "USER": _db.username,
-        "PASSWORD": _db.password,
-        "HOST": _db.hostname,
-        "PORT": str(_db.port or 5432),
-        "TEST": {"NAME": _db.path.lstrip("/")},
-    }
-}
 
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",

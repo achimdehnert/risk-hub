@@ -10,7 +10,8 @@ from django.db import migrations
 RLS_SQL = """
 ALTER TABLE gbu_hazard_assessment_activity ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gbu_hazard_assessment_activity FORCE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS tenant_isolation
+DROP POLICY IF EXISTS tenant_isolation ON gbu_hazard_assessment_activity;
+CREATE POLICY tenant_isolation
     ON gbu_hazard_assessment_activity
     FOR ALL
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
@@ -18,7 +19,8 @@ CREATE POLICY IF NOT EXISTS tenant_isolation
 
 ALTER TABLE gbu_activity_measure ENABLE ROW LEVEL SECURITY;
 ALTER TABLE gbu_activity_measure FORCE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS tenant_isolation
+DROP POLICY IF EXISTS tenant_isolation ON gbu_activity_measure;
+CREATE POLICY tenant_isolation
     ON gbu_activity_measure
     FOR ALL
     USING (tenant_id = current_setting('app.tenant_id', true)::uuid)
