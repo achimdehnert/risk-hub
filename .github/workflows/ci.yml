@@ -183,10 +183,11 @@ jobs:
 
   # ──────────────────────────────────────────────────────────────
   # Stage ⑥: Deploy + Verify
+  # Note: migrations run automatically via entrypoint.sh on web start
   # ──────────────────────────────────────────────────────────────
   deploy-verify:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     needs: deploy-build
     steps:
       - name: Setup SSH
@@ -217,16 +218,7 @@ jobs:
             echo \"Backup OK: /opt/backups/${BACKUP_FILE}\"
           "
 
-      - name: Run Migrations (before app start)
-        run: |
-          set -euo pipefail
-          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
-            cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -f docker-compose.prod.yml run --rm \
-              ${{ vars.DEPLOY_WEB_SERVICE }} python manage.py migrate --noinput
-          "
-
-      - name: Start App
+      - name: Start App (migrations run automatically via entrypoint)
         run: |
           set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
