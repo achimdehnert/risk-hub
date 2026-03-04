@@ -69,7 +69,6 @@ def activity(db, tenant_id, user_id):
     substance, _ = Substance.objects.get_or_create(
         tenant_id=tenant_id,
         name="Testaceton",
-        defaults={"cas_number": "67-64-1"},
     )
     revision, _ = SdsRevision.objects.get_or_create(
         tenant_id=tenant_id,
