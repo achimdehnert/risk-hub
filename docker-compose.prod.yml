@@ -15,6 +15,8 @@ services:
       resources:
         limits:
           memory: 512M
+        reservations:
+          memory: 256M
     shm_size: 128m
     logging:
       driver: json-file
@@ -28,7 +30,7 @@ services:
     image: redis:7-alpine
     container_name: risk_hub_redis
     restart: unless-stopped
-    command: ["redis-server", "--maxmemory", "128mb", "--maxmemory-policy", "allkeys-lru"]
+    command: ["redis-server", "--maxmemory", "96mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -37,7 +39,9 @@ services:
     deploy:
       resources:
         limits:
-          memory: 192M
+          memory: 128M
+        reservations:
+          memory: 48M
     logging:
       driver: json-file
       options:
@@ -66,6 +70,8 @@ services:
       resources:
         limits:
           memory: 256M
+        reservations:
+          memory: 128M
     logging:
       driver: json-file
       options:
@@ -87,7 +93,7 @@ services:
     entrypoint: ["/entrypoint.sh"]
     command: ["web"]
     ports:
-      - "8090:8000"
+      - "127.0.0.1:8090:8000"
     volumes:
       - risk_hub_media:/app/media
     healthcheck:
@@ -124,10 +130,16 @@ services:
     command: ["worker"]
     volumes:
       - risk_hub_media:/app/media
+    healthcheck:
+      test: ["CMD-SHELL", "celery -A config inspect ping --timeout 10 2>/dev/null | grep -q OK"]
+      interval: 60s
+      timeout: 15s
+      retries: 3
+      start_period: 30s
     deploy:
       resources:
         limits:
-          memory: 384M
+          memory: 512M
         reservations:
           memory: 128M
     logging:
