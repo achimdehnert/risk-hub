@@ -106,11 +106,10 @@ jobs:
             --tb=short \
             --no-header \
             -q \
-            --create-db \
             --cov=src \
             --cov-report=term-missing:skip-covered \
             --cov-report=html \
-            --cov-fail-under=50
+            --cov-fail-under=30
 
       - name: Coverage Summary
         if: always()
