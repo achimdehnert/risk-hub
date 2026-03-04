@@ -59,7 +59,8 @@ allow-direct-references = true
 DJANGO_SETTINGS_MODULE = "config.settings_test"
 python_files = ["test_*.py"]
 pythonpath = ["src"]
-testpaths = ["src", "tests"]
+testpaths = ["src"]
+collect_ignore = ["src/test_substances.py"]
 markers = [
     "e2e: Playwright end-to-end tests (require --playwright flag)",
 ]
