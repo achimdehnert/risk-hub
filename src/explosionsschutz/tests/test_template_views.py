@@ -3,21 +3,19 @@
 Tests für HTML-Template Views
 
 Tests nach ADR v5:
-- Template-Rendering
+- Template-Rendering mit HTML-Content Assertions (BeautifulSoup)
 - Tenant-Isolierung bei HTML-Views
 - Korrekte Kontextdaten
+- HTTP-Statuscodes
 
-  NOTE: base.html uses {% url 'notifications:dropdown' %} via HTMX which is
-  resolved at render time. In the test environment the full middleware stack
-  can cause a RecursionError when an exception propagates through the custom
-  error handlers. We therefore set raise_request_exception=False on the client
-  so the test framework does not re-raise server-side exceptions, and only
-  assert on status codes (200 = rendered OK, 302 = redirect).
+NOTE: raise_request_exception=False verhindert RecursionError durch
+base.html HTMX-notification-Tags im Test-Environment.
 """
 
 import uuid
 
 import pytest
+from bs4 import BeautifulSoup
 from django.contrib.auth import get_user_model
 from django.test import Client
 
@@ -32,15 +30,18 @@ from explosionsschutz.models import (
 User = get_user_model()
 
 
+# =============================================================================
+# FIXTURES
+# =============================================================================
+
+
 @pytest.fixture
 def fixture_tenant_id():
-    """Tenant UUID für Tests"""
     return uuid.uuid4()
 
 
 @pytest.fixture
 def fixture_test_user():
-    """Test-User für Authentifizierung"""
     return User.objects.create_user(
         username="testuser",
         email="test@example.com",
@@ -50,11 +51,7 @@ def fixture_test_user():
 
 @pytest.fixture
 def fixture_client(fixture_tenant_id, fixture_test_user):
-    """Test Client mit Tenant-Header und Login.
-
-    raise_request_exception=False: prevents RecursionError from
-    base.html notification URL tags from propagating as test failure.
-    """
+    """Test Client mit Tenant-Header und Login."""
     client = Client(raise_request_exception=False)
     client.defaults["HTTP_X_TENANT_ID"] = str(fixture_tenant_id)
     client.force_login(fixture_test_user)
@@ -63,7 +60,6 @@ def fixture_client(fixture_tenant_id, fixture_test_user):
 
 @pytest.fixture
 def fixture_area(fixture_tenant_id):
-    """Testbereich"""
     return Area.objects.create(
         tenant_id=fixture_tenant_id,
         site_id=uuid.uuid4(),
@@ -74,13 +70,12 @@ def fixture_area(fixture_tenant_id):
 
 @pytest.fixture
 def fixture_equipment_type(fixture_tenant_id):
-    """Test-Betriebsmitteltyp"""
     return EquipmentType.objects.create(
         tenant_id=fixture_tenant_id,
         manufacturer="Test GmbH",
         model="Test-Sensor",
         atex_group="II",
-        atex_category="2",
+        atex_category="2G",
         protection_type="d",
         explosion_group="IIB",
         temperature_class="T4",
@@ -90,7 +85,6 @@ def fixture_equipment_type(fixture_tenant_id):
 
 @pytest.fixture
 def fixture_concept(fixture_tenant_id, fixture_area):
-    """Test Ex-Konzept"""
     return ExplosionConcept.objects.create(
         tenant_id=fixture_tenant_id,
         area=fixture_area,
@@ -103,7 +97,6 @@ def fixture_concept(fixture_tenant_id, fixture_area):
 
 @pytest.fixture
 def fixture_zone(fixture_tenant_id, fixture_concept):
-    """Test-Zone"""
     return ZoneDefinition.objects.create(
         tenant_id=fixture_tenant_id,
         concept=fixture_concept,
@@ -114,7 +107,6 @@ def fixture_zone(fixture_tenant_id, fixture_concept):
 
 @pytest.fixture
 def fixture_equipment(fixture_tenant_id, fixture_area, fixture_equipment_type):
-    """Test-Equipment"""
     return Equipment.objects.create(
         tenant_id=fixture_tenant_id,
         area=fixture_area,
@@ -124,87 +116,205 @@ def fixture_equipment(fixture_tenant_id, fixture_area, fixture_equipment_type):
     )
 
 
+def _soup(response):
+    """BeautifulSoup aus Response-Content."""
+    return BeautifulSoup(response.content, "html.parser")
+
+
+# =============================================================================
+# TESTS: HomeView
+# =============================================================================
+
+
 @pytest.mark.django_db
 class TestHomeView:
-    """Tests für Homepage"""
+    """Tests für Homepage /ex/"""
 
     def test_should_render_homepage(self, fixture_client):
-        """GET /ex/ antwortet (200 oder Redirect bei Fehler im Template)"""
+        """GET /ex/ liefert 200"""
         response = fixture_client.get("/ex/")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
 
-    def test_should_show_stats(self, fixture_client, fixture_area):
-        """Homepage liefert eine HTTP-Antwort"""
+    def test_should_contain_html_structure(self, fixture_client):
+        """Homepage hat valide HTML-Struktur"""
         response = fixture_client.get("/ex/")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
+        soup = _soup(response)
+        assert soup.find("html") is not None
+        assert soup.find("body") is not None
+
+    def test_should_show_stats_with_data(self, fixture_client, fixture_area, fixture_concept):
+        """Homepage rendert mit vorhandenen Daten fehlerfrei"""
+        response = fixture_client.get("/ex/")
+        assert response.status_code == 200
+
+    def test_should_use_correct_template(self, fixture_client):
+        """Homepage verwendet explosionsschutz/home.html"""
+        response = fixture_client.get("/ex/")
+        assert response.status_code == 200
+        template_names = [t.name for t in response.templates]
+        assert "explosionsschutz/home.html" in template_names
+
+
+# =============================================================================
+# TESTS: AreaListView
+# =============================================================================
 
 
 @pytest.mark.django_db
 class TestAreaViews:
-    """Tests für Bereich-Views"""
+    """Tests für Bereich-Views /ex/areas/"""
 
     def test_should_list_areas(self, fixture_client, fixture_area):
-        """GET /ex/areas/ antwortet"""
+        """GET /ex/areas/ liefert 200"""
         response = fixture_client.get("/ex/areas/")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
+
+    def test_should_contain_area_name(self, fixture_client, fixture_area):
+        """Bereichsliste enthält Bereichsname"""
+        response = fixture_client.get("/ex/areas/")
+        assert response.status_code == 200
+        assert b"Testbereich" in response.content
+
+    def test_should_contain_area_code(self, fixture_client, fixture_area):
+        """Bereichsliste enthält Bereichscode"""
+        response = fixture_client.get("/ex/areas/")
+        assert response.status_code == 200
+        assert b"TEST-01" in response.content
 
     def test_should_show_area_detail(self, fixture_client, fixture_area):
-        """GET /ex/areas/{id}/ antwortet"""
+        """GET /ex/areas/{id}/ liefert 200"""
         response = fixture_client.get(f"/ex/areas/{fixture_area.id}/")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
+
+    def test_should_contain_area_name_in_detail(self, fixture_client, fixture_area):
+        """Bereichsdetail enthält Bereichsname"""
+        response = fixture_client.get(f"/ex/areas/{fixture_area.id}/")
+        assert response.status_code == 200
+        assert b"Testbereich" in response.content
 
     def test_should_filter_by_search(self, fixture_client, fixture_area):
-        """GET /ex/areas/?search=test antwortet"""
-        response = fixture_client.get("/ex/areas/?search=test")
-        assert response.status_code in (200, 302, 500)
+        """Suche filtert Bereiche korrekt"""
+        response = fixture_client.get("/ex/areas/?search=Testbereich")
+        assert response.status_code == 200
+        assert b"Testbereich" in response.content
 
-    def test_should_filter_by_hazard(self, fixture_client, fixture_area):
+    def test_should_filter_by_search_no_result(self, fixture_client, fixture_area):
+        """Suche mit nicht vorhandenem Begriff liefert leere Liste"""
+        response = fixture_client.get("/ex/areas/?search=XXXNOTFOUND")
+        assert response.status_code == 200
+        assert b"TEST-01" not in response.content
+
+    def test_should_filter_hazard_true(self, fixture_client, fixture_area):
         """GET /ex/areas/?hazard=1 antwortet"""
         response = fixture_client.get("/ex/areas/?hazard=1")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
+
+    def test_should_return_404_for_nonexistent_area(self, fixture_client):
+        """Nicht-existenter Bereich gibt 404"""
+        response = fixture_client.get(f"/ex/areas/{uuid.uuid4()}/")
+        assert response.status_code == 404
+
+
+# =============================================================================
+# TESTS: ConceptViews
+# =============================================================================
 
 
 @pytest.mark.django_db
 class TestConceptViews:
-    """Tests für Konzept-Views"""
+    """Tests für Konzept-Views /ex/concepts/"""
 
     def test_should_list_concepts(self, fixture_client, fixture_concept):
-        """GET /ex/concepts/ antwortet"""
+        """GET /ex/concepts/ liefert 200"""
         response = fixture_client.get("/ex/concepts/")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
+
+    def test_should_contain_concept_title(self, fixture_client, fixture_concept):
+        """Konzeptliste enthält Titel"""
+        response = fixture_client.get("/ex/concepts/")
+        assert response.status_code == 200
+        assert b"Test-Konzept" in response.content
 
     def test_should_show_concept_detail(self, fixture_client, fixture_concept, fixture_zone):
-        """GET /ex/concepts/{id}/ antwortet"""
+        """GET /ex/concepts/{id}/ liefert 200"""
         response = fixture_client.get(f"/ex/concepts/{fixture_concept.id}/")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
 
-    def test_should_filter_by_status(self, fixture_client, fixture_concept):
-        """GET /ex/concepts/?status=draft antwortet"""
+    def test_should_contain_concept_title_in_detail(
+        self, fixture_client, fixture_concept, fixture_zone
+    ):
+        """Konzeptdetail enthält Titel"""
+        response = fixture_client.get(f"/ex/concepts/{fixture_concept.id}/")
+        assert response.status_code == 200
+        assert b"Test-Konzept" in response.content
+
+    def test_should_filter_by_status_draft(self, fixture_client, fixture_concept):
+        """Filter nach status=draft zeigt Draft-Konzepte"""
         response = fixture_client.get("/ex/concepts/?status=draft")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
+        assert b"Test-Konzept" in response.content
+
+    def test_should_filter_by_status_approved_hides_draft(self, fixture_client, fixture_concept):
+        """Filter nach status=approved versteckt Draft-Konzepte"""
+        response = fixture_client.get("/ex/concepts/?status=approved")
+        assert response.status_code == 200
+        assert b"Test-Konzept" not in response.content
+
+    def test_should_return_404_for_nonexistent_concept(self, fixture_client):
+        """Nicht-existentes Konzept gibt 404"""
+        response = fixture_client.get(f"/ex/concepts/{uuid.uuid4()}/")
+        assert response.status_code == 404
+
+
+# =============================================================================
+# TESTS: EquipmentViews
+# =============================================================================
 
 
 @pytest.mark.django_db
 class TestEquipmentViews:
-    """Tests für Equipment-Views"""
+    """Tests für Equipment-Views /ex/equipment/"""
 
     def test_should_list_equipment(self, fixture_client, fixture_equipment):
-        """GET /ex/equipment/ antwortet"""
+        """GET /ex/equipment/ liefert 200"""
         response = fixture_client.get("/ex/equipment/")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
+
+    def test_should_contain_serial_number(self, fixture_client, fixture_equipment):
+        """Equipment-Liste enthält Seriennummer"""
+        response = fixture_client.get("/ex/equipment/")
+        assert response.status_code == 200
+        assert b"EQ-TEST-001" in response.content
 
     def test_should_show_equipment_detail(self, fixture_client, fixture_equipment):
-        """GET /ex/equipment/{id}/ antwortet"""
+        """GET /ex/equipment/{id}/ liefert 200"""
         response = fixture_client.get(f"/ex/equipment/{fixture_equipment.id}/")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
+
+    def test_should_contain_serial_in_detail(self, fixture_client, fixture_equipment):
+        """Equipment-Detail enthält Seriennummer"""
+        response = fixture_client.get(f"/ex/equipment/{fixture_equipment.id}/")
+        assert response.status_code == 200
+        assert b"EQ-TEST-001" in response.content
+
+    def test_should_return_404_for_nonexistent_equipment(self, fixture_client):
+        """Nicht-existentes Equipment gibt 404"""
+        response = fixture_client.get(f"/ex/equipment/{uuid.uuid4()}/")
+        assert response.status_code == 404
+
+
+# =============================================================================
+# TESTS: Tenant-Isolierung
+# =============================================================================
 
 
 @pytest.mark.django_db
 class TestTenantIsolation:
     """Tests für Tenant-Isolierung bei HTML-Views"""
 
-    def test_should_not_show_other_tenant_area(self, fixture_client, fixture_tenant_id):
-        """Arealist-View antwortet (Isolierung via QuerySet)"""
+    def test_should_not_show_other_tenant_area_in_list(self, fixture_client, fixture_tenant_id):
+        """Bereichsliste zeigt keine fremden Bereiche"""
         other_tenant = uuid.uuid4()
         Area.objects.create(
             tenant_id=other_tenant,
@@ -213,10 +323,13 @@ class TestTenantIsolation:
             name="Fremder Bereich",
         )
         response = fixture_client.get("/ex/areas/")
-        assert response.status_code in (200, 302, 500)
+        assert response.status_code == 200
+        assert b"Fremder Bereich" not in response.content
 
-    def test_should_return_404_for_other_tenant_detail(self, fixture_client, fixture_tenant_id):
-        """Fremder Bereich-Detail gibt 404 oder 500 (middleware isolation)"""
+    def test_should_return_404_for_other_tenant_area_detail(
+        self, fixture_client, fixture_tenant_id
+    ):
+        """Fremder Bereich-Detail gibt 404"""
         other_tenant = uuid.uuid4()
         other_area = Area.objects.create(
             tenant_id=other_tenant,
@@ -225,4 +338,77 @@ class TestTenantIsolation:
             name="Fremder Bereich 2",
         )
         response = fixture_client.get(f"/ex/areas/{other_area.id}/")
-        assert response.status_code in (404, 500)
+        assert response.status_code == 404
+
+    def test_should_not_show_other_tenant_concept(
+        self, fixture_client, fixture_tenant_id, fixture_area
+    ):
+        """Konzeptliste zeigt keine fremden Konzepte"""
+        other_tenant = uuid.uuid4()
+        other_area = Area.objects.create(
+            tenant_id=other_tenant,
+            site_id=uuid.uuid4(),
+            code="OTHER-03",
+            name="Fremder Bereich 3",
+        )
+        ExplosionConcept.objects.create(
+            tenant_id=other_tenant,
+            area=other_area,
+            substance_id=uuid.uuid4(),
+            title="Fremdes Konzept",
+            status="draft",
+        )
+        response = fixture_client.get("/ex/concepts/")
+        assert response.status_code == 200
+        assert b"Fremdes Konzept" not in response.content
+
+    def test_should_return_404_for_other_tenant_concept_detail(
+        self, fixture_client, fixture_tenant_id, fixture_area
+    ):
+        """Fremdes Konzept-Detail gibt 404"""
+        other_tenant = uuid.uuid4()
+        other_area = Area.objects.create(
+            tenant_id=other_tenant,
+            site_id=uuid.uuid4(),
+            code="OTHER-04",
+            name="Fremder Bereich 4",
+        )
+        other_concept = ExplosionConcept.objects.create(
+            tenant_id=other_tenant,
+            area=other_area,
+            substance_id=uuid.uuid4(),
+            title="Fremdes Konzept 2",
+            status="draft",
+        )
+        response = fixture_client.get(f"/ex/concepts/{other_concept.id}/")
+        assert response.status_code == 404
+
+
+# =============================================================================
+# TESTS: Create/Edit Forms (GET only)
+# =============================================================================
+
+
+@pytest.mark.django_db
+class TestFormViews:
+    """Tests für Formular-Views (GET)"""
+
+    def test_should_render_area_create_form(self, fixture_client):
+        """GET /ex/areas/new/ liefert 200"""
+        response = fixture_client.get("/ex/areas/new/")
+        assert response.status_code == 200
+
+    def test_should_render_area_edit_form(self, fixture_client, fixture_area):
+        """GET /ex/areas/{id}/edit/ liefert 200"""
+        response = fixture_client.get(f"/ex/areas/{fixture_area.id}/edit/")
+        assert response.status_code == 200
+
+    def test_should_render_concept_create_form(self, fixture_client):
+        """GET /ex/concepts/new/ liefert 200"""
+        response = fixture_client.get("/ex/concepts/new/")
+        assert response.status_code == 200
+
+    def test_should_render_concept_edit_form(self, fixture_client, fixture_concept):
+        """GET /ex/concepts/{id}/edit/ liefert 200"""
+        response = fixture_client.get(f"/ex/concepts/{fixture_concept.id}/edit/")
+        assert response.status_code == 200
