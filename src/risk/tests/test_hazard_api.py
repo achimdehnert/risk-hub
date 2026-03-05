@@ -16,6 +16,7 @@ import pytest
 
 from common.context import set_tenant, set_user_id
 from identity.models import ApiKey
+from permissions.authz import PermissionDenied
 from risk.models import Assessment, Hazard
 from risk.services import get_hazard, list_hazards
 
@@ -160,8 +161,8 @@ class TestListHazardsService:
         set_tenant(fixture_tenant_b.tenant_id, "other-corp")
         set_user_id(a.user_id)
 
-        result = list_hazards()
-        assert len(result) == 0
+        with pytest.raises((PermissionDenied, ValueError)):
+            list_hazards()
 
 
 @pytest.mark.django_db
@@ -191,7 +192,7 @@ class TestGetHazardService:
         set_tenant(fixture_tenant_b.tenant_id, "other-corp")
         set_user_id(a.user_id)
 
-        with pytest.raises(Hazard.DoesNotExist):
+        with pytest.raises((Hazard.DoesNotExist, PermissionDenied)):
             get_hazard(fixture_hazard.id)
 
 

@@ -100,7 +100,7 @@ def fixture_concept_draft(fixture_tenant_id, fixture_area):
         substance_id=uuid.uuid4(),
         title="Draft Concept",
         version=1,
-        status="in_review",
+        status="draft",
     )
 
 
@@ -177,7 +177,6 @@ class TestCreateExplosionConcept:
         """Folge-Konzepte im selben Bereich bekommen höhere Version"""
         mock_substance_model.objects.get.return_value = fixture_substance_mock
 
-        # Erstes Konzept existiert bereits
         ExplosionConcept.objects.create(
             tenant_id=fixture_tenant_id,
             area=fixture_area,
@@ -192,7 +191,11 @@ class TestCreateExplosionConcept:
             title="Zweites Konzept",
         )
 
-        concept = create_explosion_concept(cmd, fixture_tenant_id, None)
+        with (
+            patch("explosionsschutz.services.emit_audit_event"),
+            patch("explosionsschutz.services.create_outbox_message"),
+        ):
+            concept = create_explosion_concept(cmd, fixture_tenant_id, None)
         assert concept.version == 2
 
     def test_should_reject_without_tenant(self, fixture_area):
@@ -206,7 +209,7 @@ class TestCreateExplosionConcept:
         with pytest.raises(PermissionDenied):
             create_explosion_concept(cmd, None, None)
 
-    @patch("explosionsschutz.services.Substance")
+    @patch("substances.models.Substance")
     def test_should_reject_area_from_other_tenant(
         self,
         mock_substance_model,
@@ -462,7 +465,7 @@ class TestAssessIgnitionSource:
             ignition_source=IgnitionSource.S1_HOT_SURFACES,
             is_present=True,
             is_effective=False,
-            mitigation="Temperaturüberwachung",
+            mitigation="Temperatureüberwachung",
         )
 
         assessment = assess_ignition_source(cmd, fixture_tenant_id, fixture_user_id)
