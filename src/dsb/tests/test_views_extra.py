@@ -159,8 +159,11 @@ class TestVvtEditView:
             pass
 
     def test_wrong_tenant_raises_404(self, rf, fixture_user, fixture_vvt):
-        with pytest.raises(Http404):
-            views.vvt_edit(_req(rf, fixture_user, uuid.uuid4()), pk=fixture_vvt.pk)
+        try:
+            resp = views.vvt_edit(_req(rf, fixture_user, uuid.uuid4()), pk=fixture_vvt.pk)
+            assert resp.status_code == 404
+        except Http404:
+            pass
 
 
 # =============================================================================
