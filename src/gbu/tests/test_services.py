@@ -43,7 +43,7 @@ def test_should_derive_hazard_categories_return_empty_for_no_h_codes(mocker):
     mock_revision.hazard_statements.values_list.return_value = []
 
     mocker.patch(
-        "gbu.services.gbu_engine.SdsRevision.objects.prefetch_related"
+        "substances.models.SdsRevision.objects.prefetch_related"
     ).return_value.get.return_value = mock_revision
 
     result = derive_hazard_categories(rev_id)
