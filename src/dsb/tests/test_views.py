@@ -111,7 +111,6 @@ class TestTenantIdHelper:
         req = rf.get("/dsb/")
         req.user = fixture_user
         req.session = {}
-        # Kein req.tenant_id gesetzt → Fallback via Membership
         tid = views._tenant_id(req)
         assert tid == org.tenant_id
 
@@ -154,7 +153,9 @@ class TestDashboardView:
             resp = views.dashboard(req)
         assert resp.status_code == 200
 
-    def test_should_pass_kpis_to_context(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
+    def test_should_pass_kpis_to_context(
+        self, rf, fixture_user, fixture_tenant_id, fixture_mandate
+    ):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
         with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
             resp = views.dashboard(req)
@@ -240,9 +241,7 @@ class TestMandateCreateView:
         count_before = Mandate.objects.filter(tenant_id=fixture_tenant_id).count()
         resp = views.mandate_create(req)
         count_after = Mandate.objects.filter(tenant_id=fixture_tenant_id).count()
-        # Entweder 302 (redirect) oder 200 (re-render bei Fehler)
         assert resp.status_code in (200, 302)
-        # Wenn 302, wurde Mandate erstellt
         if resp.status_code == 302:
             assert count_after == count_before + 1
 
