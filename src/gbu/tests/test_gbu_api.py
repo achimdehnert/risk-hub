@@ -21,7 +21,7 @@ from unittest.mock import patch
 import pytest
 from django.test import Client
 
-# ── Fixtures ───────────────────────────────────────────────────────────────
+# ── Fixtures ──────────────────────────────────────────────────────────────────
 
 
 @pytest.fixture
@@ -89,7 +89,7 @@ def activity(db, tenant_id, user_id):
     )
 
 
-# ── Tests: list_activities ────────────────────────────────────────────────
+# ── Tests: list_activities ────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -121,7 +121,7 @@ def test_should_filter_activities_by_status(db, api_context, activity):
     assert activity.id not in ids
 
 
-# ── Tests: get_activity ───────────────────────────────────────────────────
+# ── Tests: get_activity ──────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -152,7 +152,7 @@ def test_should_raise_404_for_unknown_activity(db, api_context):
     assert exc_info.value.status_code == 404
 
 
-# ── Tests: create_activity ───────────────────────────────────────────────
+# ── Tests: create_activity ────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -174,7 +174,7 @@ def test_should_create_activity_via_api(db, api_context, activity):
     )
 
     with (
-        patch("gbu.services.gbu_engine.emit_audit_event"),
+        patch("common.context.emit_audit_event"),
         patch("gbu.models.reference.ExposureRiskMatrix.objects"),
     ):
         result = api_create_activity(FakeRequest(), payload=payload)
@@ -183,7 +183,7 @@ def test_should_create_activity_via_api(db, api_context, activity):
     assert result.status == ActivityStatus.DRAFT
 
 
-# ── Tests: approve_activity ──────────────────────────────────────────────
+# ── Tests: approve_activity ───────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -201,7 +201,7 @@ def test_should_approve_activity_via_api(db, api_context, activity):
     )
 
     with (
-        patch("gbu.services.gbu_engine.emit_audit_event"),
+        patch("common.context.emit_audit_event"),
         patch("gbu.tasks.generate_documents_task") as mock_task,
     ):
         mock_task.delay.return_value = None
@@ -212,7 +212,7 @@ def test_should_approve_activity_via_api(db, api_context, activity):
     mock_task.delay.assert_called_once()
 
 
-# ── Tests: compliance ─────────────────────────────────────────────────────
+# ── Tests: compliance ──────────────────────────────────────────────────
 
 
 @pytest.mark.django_db

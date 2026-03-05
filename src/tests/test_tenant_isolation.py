@@ -9,6 +9,7 @@ Verifies that row-level tenant isolation via tenant_id works correctly:
 These tests are MANDATORY CI-Gate (ADR-074 Layer 1 + Layer 2).
 """
 
+import hashlib
 import uuid
 
 import pytest
@@ -48,6 +49,13 @@ def org_b(db, tenant_b_id):
         name="Organisation B",
         slug="org-b",
     )
+
+
+@pytest.fixture
+def user_a(db, tenant_a_id):
+    from tests.factories import UserFactory
+
+    return UserFactory(tenant_id=tenant_a_id)
 
 
 # ---------------------------------------------------------------------------
@@ -107,14 +115,13 @@ def test_two_tenants_have_independent_site_counts(db, org_a, org_b, tenant_a_id,
 
 
 @pytest.mark.django_db
-def test_api_key_isolated_by_tenant(db, tenant_a_id, tenant_b_id):
+def test_api_key_isolated_by_tenant(db, tenant_a_id, tenant_b_id, user_a):
     """ApiKey von Tenant A ist bei Tenant B nicht sichtbar."""
-    import hashlib
-
     from identity.models import ApiKey
 
     key_a = ApiKey.objects.create(
         tenant_id=tenant_a_id,
+        user=user_a,
         name="Key A",
         key_prefix="AAAA1234",
         key_hash=hashlib.sha256(b"secret-a").hexdigest(),

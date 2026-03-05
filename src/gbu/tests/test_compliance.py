@@ -8,7 +8,8 @@ from unittest.mock import patch
 
 import pytest
 
-# ── Hilfsfunktion ──────────────────────────────────────────────────────────────
+
+# ── Hilfsfunktion ─────────────────────────────────────────────────────────
 
 
 def _make_approved_activity(db, tenant_id, review_date, user_id=None):
@@ -37,7 +38,6 @@ def _make_approved_activity(db, tenant_id, review_date, user_id=None):
         tenant_id=tenant_id,
         substance=substance,
         revision_number=1,
-        defaults={"language": "de"},
     )
     from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
 
@@ -58,7 +58,7 @@ def _make_approved_activity(db, tenant_id, review_date, user_id=None):
     )
 
 
-# ── list_due_reviews ────────────────────────────────────────────────────────
+# ── list_due_reviews ──────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -100,7 +100,7 @@ def test_should_not_list_overdue_in_due_reviews(db):
     assert act not in result
 
 
-# ── list_overdue_reviews ───────────────────────────────────────────────────
+# ── list_overdue_reviews ───────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -129,7 +129,7 @@ def test_should_not_list_future_as_overdue(db):
     assert act not in result
 
 
-# ── mark_outdated_activities ─────────────────────────────────────────────
+# ── mark_outdated_activities ───────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -144,7 +144,7 @@ def test_should_mark_overdue_as_outdated(db):
     tenant_id = uuid.uuid4()
     past_date = date.today() - timedelta(days=5)
 
-    with patch("gbu.services.compliance.emit_audit_event"):
+    with patch("common.context.emit_audit_event"):
         act = _make_approved_activity(db, tenant_id, past_date)
         count = mark_outdated_activities(tenant_id)
 
@@ -162,7 +162,7 @@ def test_should_not_mark_future_as_outdated(db):
     tenant_id = uuid.uuid4()
     future_date = date.today() + timedelta(days=10)
 
-    with patch("gbu.services.compliance.emit_audit_event"):
+    with patch("common.context.emit_audit_event"):
         act = _make_approved_activity(db, tenant_id, future_date)
         count = mark_outdated_activities(tenant_id)
 
@@ -171,7 +171,7 @@ def test_should_not_mark_future_as_outdated(db):
     assert act.status == ActivityStatus.APPROVED
 
 
-# ── compliance_summary ──────────────────────────────────────────────────────
+# ── compliance_summary ──────────────────────────────────────────────
 
 
 @pytest.mark.django_db
