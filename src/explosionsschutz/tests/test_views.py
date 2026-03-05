@@ -27,6 +27,8 @@ from explosionsschutz.models import (
 
 User = get_user_model()
 
+APP = "explosionsschutz-api"
+
 
 # =============================================================================
 # FIXTURES
@@ -181,7 +183,7 @@ class TestReferenceStandardsAPI:
         fixture_tenant_standard,
     ):
         """GET listet globale + tenant-spezifische Standards"""
-        url = reverse("explosionsschutz:standard-list")
+        url = reverse(f"{APP}:standard-list")
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -195,7 +197,7 @@ class TestReferenceStandardsAPI:
         fixture_other_tenant_standard,
     ):
         """GET zeigt NICHT Standards anderer Tenants"""
-        url = reverse("explosionsschutz:standard-list")
+        url = reverse(f"{APP}:standard-list")
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -208,7 +210,7 @@ class TestReferenceStandardsAPI:
         fixture_tenant_standard,
     ):
         """GET /{id} gibt einzelnen Standard zurück"""
-        url = reverse("explosionsschutz:standard-detail", kwargs={"pk": fixture_tenant_standard.id})
+        url = reverse(f"{APP}:standard-detail", kwargs={"pk": fixture_tenant_standard.id})
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -230,7 +232,7 @@ class TestEquipmentTypesAPI:
         fixture_equipment_type,
     ):
         """GET listet Betriebsmitteltypen"""
-        url = reverse("explosionsschutz:equipment-type-list")
+        url = reverse(f"{APP}:equipment-type-list")
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -243,14 +245,14 @@ class TestEquipmentTypesAPI:
     ):
         """Response enthält berechnete ATEX-Kennzeichnung"""
         url = reverse(
-            "explosionsschutz:equipment-type-detail", kwargs={"pk": fixture_equipment_type.id}
+            f"{APP}:equipment-type-detail", kwargs={"pk": fixture_equipment_type.id}
         )
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
         assert "full_atex_marking" in response.data
         assert "allowed_zones" in response.data
-        assert "0" in response.data["allowed_zones"]  # Cat 1 erlaubt Zone 0
+        assert "0" in response.data["allowed_zones"]
 
 
 # =============================================================================
@@ -268,7 +270,7 @@ class TestAreasAPI:
         fixture_area,
     ):
         """GET listet Bereiche"""
-        url = reverse("explosionsschutz:area-list")
+        url = reverse(f"{APP}:area-list")
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -276,7 +278,7 @@ class TestAreasAPI:
 
     def test_should_create_area(self, fixture_api_client, fixture_tenant_id):
         """POST erstellt neuen Bereich"""
-        url = reverse("explosionsschutz:area-list")
+        url = reverse(f"{APP}:area-list")
         data = {
             "site_id": str(uuid.uuid4()),
             "code": "NEW-01",
@@ -304,7 +306,7 @@ class TestExplosionConceptsAPI:
         fixture_explosion_concept,
     ):
         """GET listet Ex-Konzepte"""
-        url = reverse("explosionsschutz:concept-list")
+        url = reverse(f"{APP}:concept-list")
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -318,7 +320,7 @@ class TestExplosionConceptsAPI:
     ):
         """GET /{id} gibt Konzept mit Zonen zurück"""
         url = reverse(
-            "explosionsschutz:concept-detail", kwargs={"pk": fixture_explosion_concept.id}
+            f"{APP}:concept-detail", kwargs={"pk": fixture_explosion_concept.id}
         )
         response = fixture_api_client.get(url)
 
@@ -332,7 +334,7 @@ class TestExplosionConceptsAPI:
         fixture_explosion_concept,
     ):
         """GET ?status=draft filtert nach Status"""
-        url = reverse("explosionsschutz:concept-list")
+        url = reverse(f"{APP}:concept-list")
         response = fixture_api_client.get(url, {"status": "draft"})
 
         assert response.status_code == status.HTTP_200_OK
@@ -355,7 +357,7 @@ class TestZonesAPI:
         fixture_zone,
     ):
         """GET listet Zonen"""
-        url = reverse("explosionsschutz:zone-list")
+        url = reverse(f"{APP}:zone-list")
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -367,11 +369,11 @@ class TestZonesAPI:
         fixture_zone,
     ):
         """Response enthält erforderliche Equipment-Kategorie"""
-        url = reverse("explosionsschutz:zone-detail", kwargs={"pk": fixture_zone.id})
+        url = reverse(f"{APP}:zone-detail", kwargs={"pk": fixture_zone.id})
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["required_equipment_category"] == "2"  # Zone 1 = Cat 2
+        assert response.data["required_equipment_category"] == "2"
 
 
 # =============================================================================
@@ -391,7 +393,7 @@ class TestEquipmentAPI:
         fixture_equipment_type,
     ):
         """POST erstellt neues Equipment"""
-        url = reverse("explosionsschutz:equipment-list")
+        url = reverse(f"{APP}:equipment-list")
         data = {
             "area_id": str(fixture_area.id),
             "equipment_type_id": str(fixture_equipment_type.id),
@@ -420,7 +422,7 @@ class TestDashboardAPI:
         fixture_zone,
     ):
         """GET /dashboard gibt Statistiken zurück"""
-        url = reverse("explosionsschutz:dashboard")
+        url = reverse(f"{APP}:dashboard")
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -451,7 +453,7 @@ class TestTenantIsolation:
             name="Fremder Bereich",
         )
 
-        url = reverse("explosionsschutz:area-detail", kwargs={"pk": other_area.id})
+        url = reverse(f"{APP}:area-detail", kwargs={"pk": other_area.id})
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -475,7 +477,7 @@ class TestTenantIsolation:
             title="Fremdes Konzept",
         )
 
-        url = reverse("explosionsschutz:concept-detail", kwargs={"pk": other_concept.id})
+        url = reverse(f"{APP}:concept-detail", kwargs={"pk": other_concept.id})
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_404_NOT_FOUND

@@ -29,7 +29,7 @@ def fixture_assessment(db, fixture_tenant, fixture_user):
         description="Test description",
         category="general",
         status="draft",
-        created_by=fixture_user,
+        created_by_id=fixture_user.id,
     )
 
 
@@ -118,7 +118,7 @@ class TestListHazardsService:
             title="Other Assessment",
             category="general",
             status="draft",
-            created_by=fixture_user,
+            created_by_id=fixture_user.id,
         )
         Hazard.objects.create(
             tenant_id=fixture_tenant.tenant_id,
