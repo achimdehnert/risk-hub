@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
 from uuid import UUID
 
 from django.db.models import Q
@@ -16,9 +15,10 @@ from permissions.models import (
 )
 
 
-@dataclass(frozen=True)
 class PermissionDenied(Exception):
-    permission_code: str
+    def __init__(self, permission_code: str) -> None:
+        self.permission_code = permission_code
+        super().__init__(f"Missing permission: {permission_code}")
 
     def __str__(self) -> str:
         return f"Missing permission: {self.permission_code}"
@@ -33,9 +33,9 @@ def has_permission(
     """Check if user has permission in tenant (ADR-003 §5.2).
 
     Order of evaluation:
-    1. Explicit deny override \u2192 deny
-    2. Explicit grant override \u2192 allow
-    3. Role-based permission \u2192 allow/deny
+    1. Explicit deny override → deny
+    2. Explicit grant override → allow
+    3. Role-based permission → allow/deny
     """
     from tenancy.models import Membership
 
