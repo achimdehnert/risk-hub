@@ -85,7 +85,7 @@ class Role(models.Model):
 
 
 class RolePermission(models.Model):
-    """Role \u2192 Permission mapping."""
+    """Role → Permission mapping."""
 
     id = models.UUIDField(
         primary_key=True,
@@ -134,17 +134,17 @@ class Scope(models.Model):
         db_table = "permissions_scope"
         constraints = [
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     scope_type__in=["TENANT", "SITE", "ASSET"],
                 ),
                 name="ck_scope_type_valid",
             ),
             models.CheckConstraint(
-                check=(~models.Q(scope_type="SITE") | models.Q(site_id__isnull=False)),
+                condition=(~models.Q(scope_type="SITE") | models.Q(site_id__isnull=False)),
                 name="scope_site_chk",
             ),
             models.CheckConstraint(
-                check=(~models.Q(scope_type="ASSET") | models.Q(asset_id__isnull=False)),
+                condition=(~models.Q(scope_type="ASSET") | models.Q(asset_id__isnull=False)),
                 name="scope_asset_chk",
             ),
         ]
@@ -158,7 +158,7 @@ class Scope(models.Model):
 
 
 class Assignment(models.Model):
-    """User \u2192 Role \u2192 Scope assignment (ADR-003 §2.5)."""
+    """User → Role → Scope assignment (ADR-003 §2.5)."""
 
     id = models.UUIDField(
         primary_key=True,
