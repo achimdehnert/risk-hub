@@ -158,10 +158,11 @@ class TestVvtEditView:
         except Exception:
             pass
 
-    def test_wrong_tenant_raises_404(self, rf, fixture_user, fixture_vvt):
+    def test_wrong_tenant_no_access(self, rf, fixture_user, fixture_vvt):
+        """Fremder tenant_id → 403/404 je nach require_module / get_object_or_404."""
         try:
             resp = views.vvt_edit(_req(rf, fixture_user, uuid.uuid4()), pk=fixture_vvt.pk)
-            assert resp.status_code == 404
+            assert resp.status_code in (403, 404)
         except Http404:
             pass
 
