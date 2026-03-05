@@ -371,6 +371,10 @@ class EquipmentSerializer(serializers.ModelSerializer):
     zone_type = serializers.CharField(source="zone.zone_type", read_only=True)
     is_inspection_due = serializers.ReadOnlyField()
 
+    area_id = serializers.UUIDField(required=True)
+    equipment_type_id = serializers.UUIDField(required=True)
+    zone_id = serializers.UUIDField(required=False, allow_null=True)
+
     class Meta:
         model = Equipment
         fields = [
