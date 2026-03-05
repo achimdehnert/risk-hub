@@ -106,7 +106,7 @@ def test_should_approve_activity_set_status_and_snapshot(mocker):
     )
 
     mocker.patch(
-        "gbu.services.gbu_engine.HazardAssessmentActivity.objects.select_for_update"
+        "gbu.models.activity.HazardAssessmentActivity.objects.select_for_update"
     ).return_value.get.return_value = activity
 
     save_mock = mocker.patch.object(activity, "save")
@@ -143,7 +143,7 @@ def test_should_approve_activity_raise_for_already_approved(mocker):
     )
 
     mocker.patch(
-        "gbu.services.gbu_engine.HazardAssessmentActivity.objects.select_for_update"
+        "gbu.models.activity.HazardAssessmentActivity.objects.select_for_update"
     ).return_value.get.return_value = activity
 
     cmd = ApproveActivityCmd(
