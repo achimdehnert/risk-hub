@@ -99,8 +99,10 @@ known-first-party = [
     "notifications",
     "outbox",
     "permissions",
+    "platform_context",
     "reporting",
     "risk",
     "substances",
     "tenancy",
+    "tests",
 ]
