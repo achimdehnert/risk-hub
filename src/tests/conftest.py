@@ -2,15 +2,14 @@
 import uuid
 
 import pytest
-
-# Shared platform fixtures (platform-context[testing])
 from platform_context.testing.fixtures import (  # noqa: F401
     admin_client,
     htmx_client,
 )
 
 
-# ─── Basic fixtures ────────────────────────────────────────────────────────────
+# ─── Basic fixtures ─────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def tenant_id():
@@ -41,7 +40,8 @@ def auth_client(client, user):
     return client
 
 
-# ─── Tenancy fixtures ──────────────────────────────────────────────────────────
+# ─── Tenancy fixtures ────────────────────────────────────────────────────────
+
 
 @pytest.fixture
 def fixture_user(db):
@@ -92,7 +92,8 @@ def fixture_site(db, fixture_tenant):
     )
 
 
-# ─── Permissions / RBAC fixtures ───────────────────────────────────────────────
+# ─── Permissions / RBAC fixtures ────────────────────────────────────────────
+
 
 @pytest.fixture
 def fixture_permission_read(db):
