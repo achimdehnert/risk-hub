@@ -95,7 +95,9 @@ class Hazard(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     assessment = models.ForeignKey(
-        Assessment, on_delete=models.CASCADE, related_name="hazards"
+        Assessment,
+        on_delete=models.CASCADE,
+        related_name="hazards",
     )
 
     title = models.CharField(max_length=240)
