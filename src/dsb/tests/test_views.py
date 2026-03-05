@@ -3,7 +3,8 @@
 View-Tests für dsb/views.py — Coverage P1.
 
 Strategie:
-- @override_settings(MODULE_URL_MAP={}) deaktiviert ModuleAccessMiddleware-Check
+- settings.MODULE_URL_MAP={} via pytest-django `settings` fixture
+  deaktiviert den ModuleAccessMiddleware-Check für @require_module
 - request.tenant_id direkt setzen
 - @login_required via RequestFactory + req.user umgehen
 """
@@ -12,14 +13,11 @@ import uuid
 from datetime import date
 
 import pytest
-from django.test import RequestFactory, override_settings
+from django.test import RequestFactory
 from django.utils import timezone
 
 from dsb import views
 from dsb.models import Breach, Mandate
-
-# MODULE_URL_MAP={} → ModuleAccessMiddleware erlaubt alle Requests
-_NO_MODULE_CHECK = override_settings(MODULE_URL_MAP={})
 
 
 # =============================================================================
@@ -52,6 +50,12 @@ def fixture_mandate(db, fixture_tenant_id):
         dsb_appointed_date=date.today(),
         status="active",
     )
+
+
+@pytest.fixture(autouse=False)
+def no_module_check(settings):
+    """Deaktiviert ModuleAccessMiddleware für alle View-Tests."""
+    settings.MODULE_URL_MAP = {}
 
 
 def _req(rf, user, tenant_id, method="GET", path="/dsb/", data=None):
@@ -122,17 +126,18 @@ class TestUserIdHelper:
 
 
 @pytest.mark.django_db
-@_NO_MODULE_CHECK
 class TestDashboardView:
+    @pytest.fixture(autouse=True)
+    def _disable_module_check(self, settings):
+        settings.MODULE_URL_MAP = {}
+
     def test_returns_200(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
         r = _req(rf, fixture_user, fixture_tenant_id)
-        resp = views.dashboard(r)
-        assert resp.status_code == 200
+        assert views.dashboard(r).status_code == 200
 
     def test_returns_200_with_none_tenant(self, rf, fixture_user):
         r = _req(rf, fixture_user, None)
-        resp = views.dashboard(r)
-        assert resp.status_code == 200
+        assert views.dashboard(r).status_code == 200
 
     def test_includes_open_breaches(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
         Breach.objects.create(
@@ -142,12 +147,11 @@ class TestDashboardView:
             severity="high",
         )
         r = _req(rf, fixture_user, fixture_tenant_id)
-        resp = views.dashboard(r)
-        assert resp.status_code == 200
+        assert views.dashboard(r).status_code == 200
 
 
 # =============================================================================
-# TESTS: mandate_list + mandate_create
+# TESTS: mandate_list + mandate_create (no @require_module)
 # =============================================================================
 
 
@@ -200,13 +204,16 @@ class TestMandateCreateView:
 
 
 # =============================================================================
-# TESTS: vvt_list, tom_list, dpa_list, audit_list, deletion_list, breach_list
+# TESTS: module views (vvt, tom, dpa, audit, deletion, breach)
 # =============================================================================
 
 
 @pytest.mark.django_db
-@_NO_MODULE_CHECK
 class TestModuleViews:
+    @pytest.fixture(autouse=True)
+    def _disable_module_check(self, settings):
+        settings.MODULE_URL_MAP = {}
+
     def test_vvt_list(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
         r = _req(rf, fixture_user, fixture_tenant_id)
         assert views.vvt_list(r).status_code == 200
