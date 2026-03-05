@@ -8,7 +8,7 @@ from platform_context.testing.fixtures import (  # noqa: F401
 )
 
 
-# ─── Basic fixtures ─────────────────────────────────────────────────────────
+# ─── Basic fixtures ───────────────────────────────────────────────
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def auth_client(client, user):
     return client
 
 
-# ─── Tenancy fixtures ────────────────────────────────────────────────────────
+# ─── Tenancy fixtures ─────────────────────────────────────────────
 
 
 @pytest.fixture
@@ -92,7 +92,7 @@ def fixture_site(db, fixture_tenant):
     )
 
 
-# ─── Permissions / RBAC fixtures ────────────────────────────────────────────
+# ─── Permissions / RBAC fixtures ──────────────────────────────────────────
 
 
 @pytest.fixture
