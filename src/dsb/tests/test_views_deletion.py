@@ -89,16 +89,14 @@ def _req(rf, user, tenant_id, method="GET", path="/dsb/deletion-requests/", data
 class TestDeletionRequestListView:
     def test_returns_200_empty(self, rf, fixture_user, fixture_tenant_id):
         with _ALLOW_ALL:
-            resp = views_deletion.deletion_request_list(
-                _req(rf, fixture_user, fixture_tenant_id)
-            )
+            resp = views_deletion.deletion_request_list(_req(rf, fixture_user, fixture_tenant_id))
         assert resp.status_code == 200
 
-    def test_returns_200_with_data(self, rf, fixture_user, fixture_tenant_id, fixture_deletion_request):
+    def test_returns_200_with_data(
+        self, rf, fixture_user, fixture_tenant_id, fixture_deletion_request
+    ):
         with _ALLOW_ALL:
-            resp = views_deletion.deletion_request_list(
-                _req(rf, fixture_user, fixture_tenant_id)
-            )
+            resp = views_deletion.deletion_request_list(_req(rf, fixture_user, fixture_tenant_id))
         assert resp.status_code == 200
 
     def test_isolates_tenant(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
@@ -118,9 +116,7 @@ class TestDeletionRequestListView:
             request_description="Fremder Antrag",
         )
         with _ALLOW_ALL:
-            resp = views_deletion.deletion_request_list(
-                _req(rf, fixture_user, fixture_tenant_id)
-            )
+            resp = views_deletion.deletion_request_list(_req(rf, fixture_user, fixture_tenant_id))
         assert resp.status_code == 200
 
 
@@ -133,9 +129,7 @@ class TestDeletionRequestListView:
 class TestDeletionRequestCreateView:
     def test_get_returns_200(self, rf, fixture_user, fixture_tenant_id):
         with _ALLOW_ALL:
-            resp = views_deletion.deletion_request_create(
-                _req(rf, fixture_user, fixture_tenant_id)
-            )
+            resp = views_deletion.deletion_request_create(_req(rf, fixture_user, fixture_tenant_id))
         assert resp.status_code == 200
 
     def test_post_valid_creates_request(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
@@ -200,7 +194,9 @@ class TestDeletionRequestAdvanceView:
             )
         assert resp.status_code == 302
 
-    def test_post_valid_transition(self, rf, fixture_user, fixture_tenant_id, fixture_deletion_request):
+    def test_post_valid_transition(
+        self, rf, fixture_user, fixture_tenant_id, fixture_deletion_request
+    ):
         """POST pending → auth_sent"""
         with _ALLOW_ALL:
             r = _req(
@@ -215,7 +211,9 @@ class TestDeletionRequestAdvanceView:
         fixture_deletion_request.refresh_from_db()
         assert fixture_deletion_request.status == DeletionRequestStatus.AUTH_SENT
 
-    def test_post_invalid_transition_stays(self, rf, fixture_user, fixture_tenant_id, fixture_deletion_request):
+    def test_post_invalid_transition_stays(
+        self, rf, fixture_user, fixture_tenant_id, fixture_deletion_request
+    ):
         """POST mit ungültigem Übergang → bleibt in PENDING"""
         with _ALLOW_ALL:
             r = _req(

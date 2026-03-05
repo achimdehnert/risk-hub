@@ -203,7 +203,9 @@ class TestBreachAdvanceView:
         fixture_breach.refresh_from_db()
         assert fixture_breach.workflow_status == BreachStatus.DSB_NOTIFIED
 
-    def test_post_invalid_transition_redirects(self, rf, fixture_user, fixture_tenant_id, fixture_breach):
+    def test_post_invalid_transition_redirects(
+        self, rf, fixture_user, fixture_tenant_id, fixture_breach
+    ):
         """POST mit ungültigem Übergang → redirect mit Fehlermeldung"""
         with _ALLOW_ALL:
             r = _req(
