@@ -98,7 +98,9 @@ def _req(rf, user, tenant_id, method="GET", path="/dsb/", data=None):
 
 @pytest.mark.django_db
 class TestMandateEditPost:
-    def test_valid_post_updates_and_redirects(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
+    def test_valid_post_updates_and_redirects(
+        self, rf, fixture_user, fixture_tenant_id, fixture_mandate
+    ):
         r = _req(
             rf,
             fixture_user,
@@ -150,18 +152,14 @@ class TestVvtCreateView:
 class TestVvtEditView:
     def test_get_returns_200(self, rf, fixture_user, fixture_tenant_id, fixture_vvt):
         try:
-            resp = views.vvt_edit(
-                _req(rf, fixture_user, fixture_tenant_id), pk=fixture_vvt.pk
-            )
+            resp = views.vvt_edit(_req(rf, fixture_user, fixture_tenant_id), pk=fixture_vvt.pk)
             assert resp.status_code == 200
         except Exception:
             pass
 
     def test_wrong_tenant_raises_404(self, rf, fixture_user, fixture_vvt):
         with pytest.raises(Http404):
-            views.vvt_edit(
-                _req(rf, fixture_user, uuid.uuid4()), pk=fixture_vvt.pk
-            )
+            views.vvt_edit(_req(rf, fixture_user, uuid.uuid4()), pk=fixture_vvt.pk)
 
 
 # =============================================================================
@@ -182,9 +180,7 @@ class TestTomCreateView:
 
     def test_get_org_returns_200(self, rf, fixture_user, fixture_tenant_id):
         try:
-            resp = views.tom_create(
-                _req(rf, fixture_user, fixture_tenant_id, data={"type": "org"})
-            )
+            resp = views.tom_create(_req(rf, fixture_user, fixture_tenant_id, data={"type": "org"}))
             assert resp.status_code == 200
         except Exception:
             pass
@@ -199,18 +195,14 @@ class TestTomCreateView:
 class TestDpaDetailView:
     def test_returns_200(self, rf, fixture_user, fixture_tenant_id, fixture_dpa):
         try:
-            resp = views.dpa_detail(
-                _req(rf, fixture_user, fixture_tenant_id), pk=fixture_dpa.pk
-            )
+            resp = views.dpa_detail(_req(rf, fixture_user, fixture_tenant_id), pk=fixture_dpa.pk)
             assert resp.status_code == 200
         except Exception:
             pass
 
     def test_wrong_tenant_raises_404(self, rf, fixture_user, fixture_dpa):
         with pytest.raises(Http404):
-            views.dpa_detail(
-                _req(rf, fixture_user, uuid.uuid4()), pk=fixture_dpa.pk
-            )
+            views.dpa_detail(_req(rf, fixture_user, uuid.uuid4()), pk=fixture_dpa.pk)
 
 
 @pytest.mark.django_db
@@ -236,18 +228,14 @@ class TestDpaCreateView:
 class TestDpaEditView:
     def test_get_returns_200(self, rf, fixture_user, fixture_tenant_id, fixture_dpa):
         try:
-            resp = views.dpa_edit(
-                _req(rf, fixture_user, fixture_tenant_id), pk=fixture_dpa.pk
-            )
+            resp = views.dpa_edit(_req(rf, fixture_user, fixture_tenant_id), pk=fixture_dpa.pk)
             assert resp.status_code == 200
         except Exception:
             pass
 
     def test_wrong_tenant_raises_404(self, rf, fixture_user, fixture_dpa):
         with pytest.raises(Http404):
-            views.dpa_edit(
-                _req(rf, fixture_user, uuid.uuid4()), pk=fixture_dpa.pk
-            )
+            views.dpa_edit(_req(rf, fixture_user, uuid.uuid4()), pk=fixture_dpa.pk)
 
 
 # =============================================================================
