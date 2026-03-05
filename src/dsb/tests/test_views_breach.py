@@ -76,6 +76,9 @@ def _req(rf, user, tenant_id, method="GET", path="/dsb/breaches/", data=None):
     r.user = user
     r.tenant_id = tenant_id
     r.session = {}
+    from django.contrib.messages.storage.fallback import FallbackStorage
+
+    r._messages = FallbackStorage(r)
     return r
 
 
