@@ -244,9 +244,7 @@ class TestEquipmentTypesAPI:
         fixture_equipment_type,
     ):
         """Response enthält berechnete ATEX-Kennzeichnung"""
-        url = reverse(
-            f"{APP}:equipment-type-detail", kwargs={"pk": fixture_equipment_type.id}
-        )
+        url = reverse(f"{APP}:equipment-type-detail", kwargs={"pk": fixture_equipment_type.id})
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
@@ -319,9 +317,7 @@ class TestExplosionConceptsAPI:
         fixture_zone,
     ):
         """GET /{id} gibt Konzept mit Zonen zurück"""
-        url = reverse(
-            f"{APP}:concept-detail", kwargs={"pk": fixture_explosion_concept.id}
-        )
+        url = reverse(f"{APP}:concept-detail", kwargs={"pk": fixture_explosion_concept.id})
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
