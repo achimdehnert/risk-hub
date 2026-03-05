@@ -74,7 +74,7 @@ def activity(db, tenant_id, user_id):
         tenant_id=tenant_id,
         substance=substance,
         revision_number=1,
-        defaults={"language": "de"},
+        defaults={"revision_date": date.today()},
     )
     return HazardAssessmentActivity.objects.create(
         tenant_id=tenant_id,

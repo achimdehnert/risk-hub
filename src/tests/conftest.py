@@ -2,13 +2,14 @@
 import uuid
 
 import pytest
+
 from platform_context.testing.fixtures import (  # noqa: F401
     admin_client,
     htmx_client,
 )
 
 
-# ─── Basic fixtures ───────────────────────────────────────────────
+# ─── Basic fixtures ─────────────────────────────────────────────────────────
 
 
 @pytest.fixture

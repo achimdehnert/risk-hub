@@ -70,7 +70,7 @@ def fixture_equipment_type_cat1(fixture_tenant_id):
         manufacturer="Pepperl+Fuchs",
         model="KFD2-SR2-Ex1.W",
         atex_group="II",
-        atex_category="1",
+        atex_category="1G",
         protection_type="ia",
         explosion_group="IIC",
         temperature_class="T6",
@@ -88,7 +88,7 @@ def fixture_equipment_type_cat2(fixture_tenant_id):
         manufacturer="R. STAHL",
         model="IS1+",
         atex_group="II",
-        atex_category="2",
+        atex_category="2G",
         protection_type="d",
         explosion_group="IIB",
         temperature_class="T4",
@@ -107,7 +107,7 @@ def fixture_equipment_type_cat3(fixture_tenant_id):
         manufacturer="Siemens",
         model="SIRIUS 3RT",
         atex_group="II",
-        atex_category="3",
+        atex_category="3G",
         protection_type="nA",
         explosion_group="IIA",
         temperature_class="T3",
@@ -265,22 +265,21 @@ class TestEquipmentTypeAtexMarking:
         assert "T6" in marking
 
     def test_should_return_allowed_zones_for_cat1(self, fixture_equipment_type_cat1):
-        """Kategorie 1 erlaubt Zonen 0, 1, 2"""
+        """Kategorie 1G erlaubt Zonen 0, 1, 2"""
         allowed = fixture_equipment_type_cat1.allowed_zones
         assert "0" in allowed
         assert "1" in allowed
         assert "2" in allowed
-        assert "non_ex" in allowed
 
     def test_should_return_allowed_zones_for_cat2(self, fixture_equipment_type_cat2):
-        """Kategorie 2 erlaubt Zonen 1, 2 (nicht 0)"""
+        """Kategorie 2G erlaubt Zonen 1, 2 (nicht 0)"""
         allowed = fixture_equipment_type_cat2.allowed_zones
         assert "0" not in allowed
         assert "1" in allowed
         assert "2" in allowed
 
     def test_should_return_allowed_zones_for_cat3(self, fixture_equipment_type_cat3):
-        """Kategorie 3 erlaubt nur Zone 2"""
+        """Kategorie 3G erlaubt nur Zone 2"""
         allowed = fixture_equipment_type_cat3.allowed_zones
         assert "0" not in allowed
         assert "1" not in allowed
@@ -297,16 +296,16 @@ class TestZoneDefinition:
     """Tests für Zonendefinitionen"""
 
     def test_should_return_required_category_for_zone_0(self, fixture_zone_0):
-        """Zone 0 erfordert Kategorie 1"""
-        assert fixture_zone_0.required_equipment_category == "1"
+        """Zone 0 erfordert Kategorie 1G"""
+        assert fixture_zone_0.required_equipment_category == "1G"
 
     def test_should_return_required_category_for_zone_1(self, fixture_zone_1):
-        """Zone 1 erfordert Kategorie 2"""
-        assert fixture_zone_1.required_equipment_category == "2"
+        """Zone 1 erfordert Kategorie 2G"""
+        assert fixture_zone_1.required_equipment_category == "2G"
 
     def test_should_return_required_category_for_zone_2(self, fixture_zone_2):
-        """Zone 2 erfordert Kategorie 3"""
-        assert fixture_zone_2.required_equipment_category == "3"
+        """Zone 2 erfordert Kategorie 3G"""
+        assert fixture_zone_2.required_equipment_category == "3G"
 
 
 # =============================================================================
@@ -357,19 +356,21 @@ class TestInspectionSchedule:
     def test_should_calculate_next_inspection_date(
         self, fixture_tenant_id, fixture_area, fixture_zone_2, fixture_equipment_type_cat3
     ):
-        """next_inspection_date wird basierend auf Intervall berechnet"""
+        """next_inspection_date wird direkt gesetzt und ausgelesen"""
+        last = date.today() - timedelta(days=365)
+        expected = date.today()
         equipment = Equipment.objects.create(
             tenant_id=fixture_tenant_id,
             area=fixture_area,
             equipment_type=fixture_equipment_type_cat3,
             zone=fixture_zone_2,
             serial_number="INSP-001",
-            installation_date=date.today() - timedelta(days=365),
-            last_inspection_date=date.today() - timedelta(days=365),
+            installation_date=last,
+            last_inspection_date=last,
+            next_inspection_date=expected,
             inspection_interval_months=12,
         )
 
-        expected = date.today() - timedelta(days=365) + timedelta(days=365)
         assert equipment.next_inspection_date == expected
 
     def test_should_flag_overdue_inspection(

@@ -4,6 +4,7 @@ risk-hub is multi-tenant (Schutztat). Cross-tenant isolation is critical.
 """
 
 import pytest
+
 from platform_context.testing.assertions import (
     assert_login_required,
 )
