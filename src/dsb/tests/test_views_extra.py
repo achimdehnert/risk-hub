@@ -65,7 +65,8 @@ def fixture_vvt(db, fixture_tenant_id, fixture_mandate):
         tenant_id=fixture_tenant_id,
         mandate=fixture_mandate,
         name="Lohnbuchhaltung",
-        number="VVT-001",
+        number=1,
+        legal_basis="contract",
     )
 
 
