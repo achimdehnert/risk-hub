@@ -36,7 +36,7 @@ class TestLocationSubstanceEntry:
             substance_name="Ethanol",
             max_quantity_kg=Decimal("5000.00"),
             current_quantity_kg=Decimal("2500.00"),
-            storage_class=StorageClass.LGK_3,
+            storage_class=StorageClass.SC_3,
         )
         assert entry.pk is not None
         assert entry.storage_class == "3"

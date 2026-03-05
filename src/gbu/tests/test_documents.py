@@ -33,11 +33,13 @@ def _make_activity(db, tenant_id, user_id):
         tenant_id=tenant_id,
         name="Testaceton",
     )
+    from datetime import date
+
     revision, _ = SdsRevision.objects.get_or_create(
         tenant_id=tenant_id,
         substance=substance,
         revision_number=1,
-        defaults={"language": "de"},
+        defaults={"revision_date": date.today()},
     )
     from django.utils import timezone
 

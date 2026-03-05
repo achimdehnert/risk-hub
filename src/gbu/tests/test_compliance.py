@@ -38,6 +38,7 @@ def _make_approved_activity(db, tenant_id, review_date, user_id=None):
         tenant_id=tenant_id,
         substance=substance,
         revision_number=1,
+        defaults={"revision_date": date.today()},
     )
     from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
 

@@ -136,7 +136,7 @@ def fixture_zone_1(fixture_tenant_id, fixture_concept_draft):
 class TestCreateExplosionConcept:
     """Tests für create_explosion_concept Service"""
 
-    @patch("explosionsschutz.services.Substance")
+    @patch("substances.models.Substance")
     @patch("explosionsschutz.services.emit_audit_event")
     @patch("explosionsschutz.services.create_outbox_message")
     def test_should_create_concept_with_version_1(
@@ -166,7 +166,7 @@ class TestCreateExplosionConcept:
         mock_audit.assert_called_once()
         mock_outbox.assert_called_once()
 
-    @patch("explosionsschutz.services.Substance")
+    @patch("substances.models.Substance")
     def test_should_increment_version_for_same_area(
         self,
         mock_substance_model,

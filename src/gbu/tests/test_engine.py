@@ -90,7 +90,7 @@ def test_should_approve_activity_set_status_and_snapshot(mocker):
     from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
     from gbu.services.gbu_engine import ApproveActivityCmd, approve_activity
 
-    mocker.patch("gbu.services.gbu_engine.emit_audit_event")
+    mocker.patch("common.context.emit_audit_event")
 
     tenant_id = uuid.uuid4()
     user_id = uuid.uuid4()

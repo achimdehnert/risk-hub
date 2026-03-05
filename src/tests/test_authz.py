@@ -156,7 +156,7 @@ class TestHasPermission:
 class TestRequirePermission:
     """Test require_permission() context-based check."""
 
-    def test_should_raise_without_context(self):
+    def test_should_raise_without_context(self, fixture_permission_read):
         """Missing context should raise PermissionDenied."""
         set_tenant(None, None)
         set_user_id(None)

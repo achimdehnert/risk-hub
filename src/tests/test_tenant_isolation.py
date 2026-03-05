@@ -52,10 +52,10 @@ def org_b(db, tenant_b_id):
 
 
 @pytest.fixture
-def user_a(db, tenant_a_id):
+def user_a(db):
     from tests.factories import UserFactory
 
-    return UserFactory(tenant_id=tenant_a_id)
+    return UserFactory()
 
 
 # ---------------------------------------------------------------------------
