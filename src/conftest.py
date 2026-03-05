@@ -1,5 +1,3 @@
-import uuid
-
 import pytest
 
 collect_ignore = ["test_substances.py"]
