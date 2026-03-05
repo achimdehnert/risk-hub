@@ -79,30 +79,5 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-select = ["E", "F", "I", "UP"]
+select = ["E", "F", "UP"]
 ignore = ["E501"]
-
-[tool.ruff.lint.isort]
-known-first-party = [
-    "actions",
-    "ai_analysis",
-    "approvals",
-    "audit",
-    "common",
-    "config",
-    "core",
-    "dashboard",
-    "documents",
-    "dsb",
-    "explosionsschutz",
-    "identity",
-    "notifications",
-    "outbox",
-    "permissions",
-    "platform_context",
-    "reporting",
-    "risk",
-    "substances",
-    "tenancy",
-    "tests",
-]
