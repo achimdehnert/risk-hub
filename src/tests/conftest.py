@@ -92,6 +92,41 @@ def fixture_site(db, fixture_tenant):
     )
 
 
+# ─── Module Access fixtures ───────────────────────────────────────────────
+
+
+@pytest.fixture
+def fixture_module_subscription(db, fixture_tenant):
+    """Active ModuleSubscription for explosionsschutz, dsb, gbu, risk modules."""
+    from django_tenancy.module_models import ModuleSubscription
+
+    subs = []
+    for code in ("explosionsschutz", "dsb", "gbu", "risk"):
+        sub, _ = ModuleSubscription.objects.get_or_create(
+            tenant_id=fixture_tenant.tenant_id,
+            module_code=code,
+            defaults={"is_active": True},
+        )
+        subs.append(sub)
+    return subs
+
+
+@pytest.fixture
+def fixture_module_membership(db, fixture_module_subscription, fixture_tenant, fixture_user):
+    """ModuleMembership granting fixture_user access to all subscribed modules."""
+    from django_tenancy.module_models import ModuleMembership, ModuleSubscription
+
+    memberships = []
+    for sub in ModuleSubscription.objects.filter(tenant_id=fixture_tenant.tenant_id):
+        mm, _ = ModuleMembership.objects.get_or_create(
+            subscription=sub,
+            user=fixture_user,
+            defaults={"role": "member"},
+        )
+        memberships.append(mm)
+    return memberships
+
+
 # ─── Permissions / RBAC fixtures ──────────────────────────────────────────
 
 
