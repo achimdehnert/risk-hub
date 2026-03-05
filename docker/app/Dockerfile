@@ -39,7 +39,7 @@ ENV PYTHONPATH=/app/src
 RUN DJANGO_SECRET_KEY=build-only \
     DJANGO_SETTINGS_MODULE=config.settings \
     DATABASE_URL=sqlite:///dev-null \
-    python manage.py collectstatic --noinput 2>/dev/null || true
+    python manage.py collectstatic --noinput
 
 # Create non-root user (ADR-022)
 RUN groupadd --gid 1000 app && \
