@@ -4,7 +4,6 @@ import uuid
 
 from django.conf import settings
 from django.http import HttpRequest, HttpResponse
-from django.template.loader import render_to_string
 from django.utils.deprecation import MiddlewareMixin
 
 from common.context import (
@@ -171,12 +170,11 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 set_db_tenant(None)
                 _sync_platform_context()
                 return None
-            body = render_to_string(
-                "errors/403.html",
-                {"error_message": "Kein Tenant-Subdomain angegeben."},
-                request=request,
+            return HttpResponse(
+                "403 Forbidden: Kein Tenant-Subdomain angegeben.",
+                status=403,
+                content_type="text/plain",
             )
-            return HttpResponse(body, status=403, content_type="text/html")
 
         # Look up tenant
         try:
@@ -192,12 +190,11 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
             return None
 
         if not org:
-            body = render_to_string(
-                "errors/tenant_unknown.html",
-                {"subdomain": subdomain},
-                request=request,
+            return HttpResponse(
+                f"403 Forbidden: Unbekannter Tenant '{subdomain}'.",
+                status=403,
+                content_type="text/plain",
             )
-            return HttpResponse(body, status=403, content_type="text/html")
 
         set_tenant(org.tenant_id, subdomain)
         set_db_tenant(org.tenant_id)

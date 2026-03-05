@@ -191,10 +191,14 @@ class TestCreateExplosionConcept:
         mock_audit.assert_called_once()
         mock_outbox.assert_called_once()
 
+    @patch("explosionsschutz.services.create_outbox_message")
+    @patch("explosionsschutz.services.emit_audit_event")
     @patch("substances.models.Substance")
     def test_should_increment_version_for_same_area(
         self,
         mock_substance_model,
+        mock_audit,
+        mock_outbox,
         fixture_tenant_id,
         fixture_area,
         fixture_substance_mock,
