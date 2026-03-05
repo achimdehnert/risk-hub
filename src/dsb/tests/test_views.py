@@ -3,9 +3,9 @@
 View-Tests für dsb/views.py — Coverage P1.
 
 Strategie:
-- @require_module via mock.patch("django_tenancy.module_access.require_module") bypassen
-- request.tenant_id direkt auf fixture_tenant.tenant_id setzen
-- Kein Template-Rendering notwendig (resolve + call direkt)
+- @require_module via mock.patch("dsb.views.require_module") bypassen
+  (patch im Modul wo importiert, nicht am Ursprungsort)
+- request.tenant_id direkt setzen
 """
 
 import uuid
@@ -18,6 +18,8 @@ from django.utils import timezone
 
 from dsb import views
 from dsb.models import Breach, Mandate
+
+_PATCH = "dsb.views.require_module"
 
 
 # =============================================================================
@@ -32,6 +34,17 @@ def _passthrough(module_code):
         return view_fn
 
     return decorator
+
+
+def _make_request(rf, user, tenant_id, method="GET", path="/dsb/", data=None):
+    if method == "POST":
+        req = rf.post(path, data or {})
+    else:
+        req = rf.get(path)
+    req.user = user
+    req.tenant_id = tenant_id
+    req.session = {}
+    return req
 
 
 # =============================================================================
@@ -67,22 +80,6 @@ def fixture_mandate(db, fixture_tenant_id):
 
 
 # =============================================================================
-# HELPER: Request mit eingeloggtem User + tenant_id
-# =============================================================================
-
-
-def _make_request(rf, user, tenant_id, method="GET", path="/dsb/", data=None):
-    if method == "POST":
-        req = rf.post(path, data or {})
-    else:
-        req = rf.get(path)
-    req.user = user
-    req.tenant_id = tenant_id
-    req.session = {}
-    return req
-
-
-# =============================================================================
 # TESTS: _tenant_id helper
 # =============================================================================
 
@@ -93,14 +90,13 @@ class TestTenantIdHelper:
         req = _make_request(rf, fixture_user, fixture_tenant_id)
         assert views._tenant_id(req) == fixture_tenant_id
 
-    def test_should_fallback_via_membership(self, rf, fixture_user, fixture_tenant_id):
-        """Wenn kein request.tenant_id → Membership-Fallback."""
+    def test_should_fallback_via_membership(self, rf, fixture_user):
+        """Wenn kein request.tenant_id → Membership-Fallback via DB."""
         from tenancy.models import Membership, Organization
 
         org = Organization.objects.create(
             slug="fallback-corp",
             name="Fallback Corp",
-            is_active=True,
         )
         Membership.objects.create(
             tenant_id=org.tenant_id,
@@ -149,7 +145,7 @@ class TestDashboardView:
         self, rf, fixture_user, fixture_tenant_id, fixture_mandate
     ):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.dashboard(req)
         assert resp.status_code == 200
 
@@ -157,14 +153,14 @@ class TestDashboardView:
         self, rf, fixture_user, fixture_tenant_id, fixture_mandate
     ):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.dashboard(req)
         assert resp.status_code == 200
 
     def test_should_work_with_none_tenant_id(self, rf, fixture_user):
         req = _make_request(rf, fixture_user, None)
         req.tenant_id = None
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.dashboard(req)
         assert resp.status_code == 200
 
@@ -178,7 +174,7 @@ class TestDashboardView:
             severity="high",
         )
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.dashboard(req)
         assert resp.status_code == 200
 
@@ -255,13 +251,13 @@ class TestMandateCreateView:
 class TestVvtListView:
     def test_should_return_200(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.vvt_list(req)
         assert resp.status_code == 200
 
     def test_should_return_200_without_data(self, rf, fixture_user, fixture_tenant_id):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.vvt_list(req)
         assert resp.status_code == 200
 
@@ -275,7 +271,7 @@ class TestVvtListView:
 class TestTomListView:
     def test_should_return_200(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.tom_list(req)
         assert resp.status_code == 200
 
@@ -289,7 +285,7 @@ class TestTomListView:
 class TestDpaListView:
     def test_should_return_200(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.dpa_list(req)
         assert resp.status_code == 200
 
@@ -303,7 +299,7 @@ class TestDpaListView:
 class TestBreachListView:
     def test_should_return_200_empty(self, rf, fixture_user, fixture_tenant_id):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.breach_list(req)
         assert resp.status_code == 200
 
@@ -317,7 +313,7 @@ class TestBreachListView:
             severity="high",
         )
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.breach_list(req)
         assert resp.status_code == 200
 
@@ -331,7 +327,7 @@ class TestBreachListView:
 class TestAuditListView:
     def test_should_return_200(self, rf, fixture_user, fixture_tenant_id):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.audit_list(req)
         assert resp.status_code == 200
 
@@ -345,7 +341,7 @@ class TestAuditListView:
 class TestDeletionListView:
     def test_should_return_200(self, rf, fixture_user, fixture_tenant_id):
         req = _make_request(rf, fixture_user, fixture_tenant_id)
-        with patch("django_tenancy.module_access.require_module", side_effect=_passthrough):
+        with patch(_PATCH, side_effect=_passthrough):
             resp = views.deletion_list(req)
         assert resp.status_code == 200
 
