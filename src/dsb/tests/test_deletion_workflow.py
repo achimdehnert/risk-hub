@@ -112,17 +112,13 @@ class TestAdvanceWorkflow:
     def test_send_mail_skipped_for_status_without_template(self, fixture_req):
         """REJECTED hat kein Email-Template → kein Mail."""
         with patch("dsb.deletion_workflow._send_email") as mock_send:
-            advance_workflow(
-                fixture_req, DeletionRequestStatus.REJECTED, send_mail=True
-            )
+            advance_workflow(fixture_req, DeletionRequestStatus.REJECTED, send_mail=True)
         mock_send.assert_not_called()
 
     def test_deletion_confirmed_timestamp(self, fixture_req):
         fixture_req.status = DeletionRequestStatus.DELETION_ORDERED
         fixture_req.save()
-        advance_workflow(
-            fixture_req, DeletionRequestStatus.DELETION_CONFIRMED, send_mail=False
-        )
+        advance_workflow(fixture_req, DeletionRequestStatus.DELETION_CONFIRMED, send_mail=False)
         fixture_req.refresh_from_db()
         assert fixture_req.deletion_confirmed_at is not None
 

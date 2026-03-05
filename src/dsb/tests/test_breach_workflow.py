@@ -110,9 +110,7 @@ class TestAdvanceBreachWorkflow:
         assert fixture_breach.resolution_notes == "Behoben"
 
     def test_authority_notified_sets_reported_to_authority_at(self, fixture_breach):
-        advance_breach_workflow(
-            fixture_breach, BreachStatus.AUTHORITY_NOTIFIED, send_mail=False
-        )
+        advance_breach_workflow(fixture_breach, BreachStatus.AUTHORITY_NOTIFIED, send_mail=False)
         fixture_breach.refresh_from_db()
         assert fixture_breach.reported_to_authority_at is not None
 
@@ -136,20 +134,14 @@ class TestAdvanceBreachWorkflow:
         fixture_breach.refresh_from_db()
         assert fixture_breach.authority_reference == "AZ-2025-001"
 
-    def test_send_mail_true_calls_send(
-        self, fixture_breach, settings
-    ):
+    def test_send_mail_true_calls_send(self, fixture_breach, settings):
         """send_mail=True versucht E-Mail — Exception wird geschluckt."""
         settings.EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
         with patch("dsb.breach_workflow._send_email") as mock_send:
-            advance_breach_workflow(
-                fixture_breach, BreachStatus.DSB_NOTIFIED, send_mail=True
-            )
+            advance_breach_workflow(fixture_breach, BreachStatus.DSB_NOTIFIED, send_mail=True)
         mock_send.assert_called_once()
 
-    def test_send_mail_no_email_skips(
-        self, db, fixture_tenant_id, fixture_mandate
-    ):
+    def test_send_mail_no_email_skips(self, db, fixture_tenant_id, fixture_mandate):
         """Kein reported_by_email → kein Mail-Versuch."""
         breach = Breach.objects.create(
             tenant_id=fixture_tenant_id,
