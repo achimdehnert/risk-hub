@@ -9,12 +9,13 @@ Folgende Bereiche werden getestet:
 
 import hashlib
 import uuid
+from datetime import date
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 
-# ── Hilfsfunktionen ──────────────────────────────────────────────────────────────
+# ── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
 
 def _make_activity(db, tenant_id, user_id):
@@ -38,6 +39,7 @@ def _make_activity(db, tenant_id, user_id):
         tenant_id=tenant_id,
         substance=substance,
         revision_number=1,
+        defaults={"revision_date": date.today()},
     )
     from django.utils import timezone
 
@@ -60,7 +62,7 @@ def _make_activity(db, tenant_id, user_id):
     return activity
 
 
-# ── Tests: PDF-Rendering ────────────────────────────────────────────────────
+# ── Tests: PDF-Rendering ─────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -134,7 +136,7 @@ def test_should_raise_runtime_error_without_weasyprint(db):
             _html_to_pdf("<html><body>test</body></html>")
 
 
-# ── Tests: Dokumentenspeicherung ───────────────────────────────────────────────────
+# ── Tests: Dokumentenspeicherung ─────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -204,7 +206,7 @@ def test_should_increment_version_on_second_store(db):
     assert v2.version == 2
 
 
-# ── Tests: Celery-Task ──────────────────────────────────────────────────────────────
+# ── Tests: Celery-Task ────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
