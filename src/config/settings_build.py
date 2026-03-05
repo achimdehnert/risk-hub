@@ -15,6 +15,7 @@ DATABASES = {
 }
 
 MIDDLEWARE = [
-    m for m in MIDDLEWARE  # noqa: F405
+    m
+    for m in MIDDLEWARE  # noqa: F405
     if "tenancy" not in m.lower() and "tenant" not in m.lower()
 ]
