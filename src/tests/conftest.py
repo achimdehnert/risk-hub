@@ -8,7 +8,6 @@ from platform_context.testing.fixtures import (  # noqa: F401
     htmx_client,
 )
 
-
 # ─── Basic fixtures ─────────────────────────────────────────────────────────
 
 
