@@ -4,7 +4,6 @@ risk-hub is multi-tenant (Schutztat). Cross-tenant isolation is critical.
 """
 
 import pytest
-
 from platform_context.testing.assertions import (
     assert_login_required,
 )
@@ -12,7 +11,7 @@ from platform_context.testing.assertions import (
 PROTECTED_URLS = [
     "/dashboard/",
     "/risk/assessments/",
-    "/explosionsschutz/",
+    "/ex/",
     "/documents/",
 ]
 
@@ -41,5 +40,5 @@ def test_should_authenticated_user_access_dashboard(auth_client):
 @pytest.mark.django_db
 def test_should_api_require_auth(client):
     """A2: API endpoints require authentication."""
-    response = client.get("/api/v1/assessments/")
+    response = client.get("/api/v1/risk/hazards")
     assert response.status_code in (401, 403)

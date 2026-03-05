@@ -160,9 +160,18 @@ def test_should_create_activity_via_api(db, api_context, activity):
     """api_create_activity soll neue Aktivität mit DRAFT-Status erzeugen."""
     from gbu.api import ActivityCreateIn, api_create_activity
     from gbu.models.activity import ActivityStatus
+    from gbu.models.reference import ExposureRiskMatrix
 
     class FakeRequest:
         pass
+
+    ExposureRiskMatrix.objects.create(
+        quantity_class="xs",
+        activity_frequency="occasional",
+        has_cmr=False,
+        risk_score="low",
+        emkg_class="A",
+    )
 
     payload = ActivityCreateIn(
         site_id=activity.site_id,
@@ -173,10 +182,7 @@ def test_should_create_activity_via_api(db, api_context, activity):
         quantity_class="xs",
     )
 
-    with (
-        patch("common.context.emit_audit_event"),
-        patch("gbu.models.reference.ExposureRiskMatrix.objects"),
-    ):
+    with patch("common.context.emit_audit_event"):
         result = api_create_activity(FakeRequest(), payload=payload)
 
     assert result.activity_description == "API-Test-Tätigkeit"
