@@ -3,14 +3,15 @@
 View-Tests für dsb/views.py — Coverage P1.
 
 Strategie:
-- settings.MODULE_URL_MAP={} via pytest-django `settings` fixture
-  deaktiviert den ModuleAccessMiddleware-Check für @require_module
+- mock.patch("django_tenancy.module_access._check_module_access", return_value=None)
+  umgeht den ModuleSubscription+ModuleMembership-Check in @require_module
 - request.tenant_id direkt setzen
 - @login_required via RequestFactory + req.user umgehen
 """
 
 import uuid
 from datetime import date
+from unittest.mock import patch
 
 import pytest
 from django.test import RequestFactory
@@ -18,6 +19,11 @@ from django.utils import timezone
 
 from dsb import views
 from dsb.models import Breach, Mandate
+
+_ALLOW_ALL = patch(
+    "django_tenancy.module_access._check_module_access",
+    return_value=None,
+)
 
 
 # =============================================================================
@@ -52,14 +58,7 @@ def fixture_mandate(db, fixture_tenant_id):
     )
 
 
-@pytest.fixture(autouse=False)
-def no_module_check(settings):
-    """Deaktiviert ModuleAccessMiddleware für alle View-Tests."""
-    settings.MODULE_URL_MAP = {}
-
-
 def _req(rf, user, tenant_id, method="GET", path="/dsb/", data=None):
-    """Erstellt einen Request mit User + tenant_id."""
     if method == "POST":
         r = rf.post(path, data or {})
     else:
@@ -121,23 +120,19 @@ class TestUserIdHelper:
 
 
 # =============================================================================
-# TESTS: dashboard view
+# TESTS: dashboard
 # =============================================================================
 
 
 @pytest.mark.django_db
 class TestDashboardView:
-    @pytest.fixture(autouse=True)
-    def _disable_module_check(self, settings):
-        settings.MODULE_URL_MAP = {}
-
     def test_returns_200(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.dashboard(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.dashboard(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_returns_200_with_none_tenant(self, rf, fixture_user):
-        r = _req(rf, fixture_user, None)
-        assert views.dashboard(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.dashboard(_req(rf, fixture_user, None)).status_code == 200
 
     def test_includes_open_breaches(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
         Breach.objects.create(
@@ -146,8 +141,8 @@ class TestDashboardView:
             discovered_at=timezone.now(),
             severity="high",
         )
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.dashboard(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.dashboard(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
 
 # =============================================================================
@@ -158,8 +153,7 @@ class TestDashboardView:
 @pytest.mark.django_db
 class TestMandateListView:
     def test_returns_200(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.mandate_list(r).status_code == 200
+        assert views.mandate_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_isolates_own_tenant(self, rf, fixture_user, fixture_tenant_id):
         Mandate.objects.create(
@@ -174,15 +168,13 @@ class TestMandateListView:
             dsb_appointed_date=date.today(),
             status="active",
         )
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.mandate_list(r).status_code == 200
+        assert views.mandate_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
 
 @pytest.mark.django_db
 class TestMandateCreateView:
     def test_get_returns_200(self, rf, fixture_user, fixture_tenant_id):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.mandate_create(r).status_code == 200
+        assert views.mandate_create(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_valid_post_creates_mandate(self, rf, fixture_user, fixture_tenant_id):
         r = _req(
@@ -204,43 +196,39 @@ class TestMandateCreateView:
 
 
 # =============================================================================
-# TESTS: module views (vvt, tom, dpa, audit, deletion, breach)
+# TESTS: views mit @require_module
 # =============================================================================
 
 
 @pytest.mark.django_db
 class TestModuleViews:
-    @pytest.fixture(autouse=True)
-    def _disable_module_check(self, settings):
-        settings.MODULE_URL_MAP = {}
-
     def test_vvt_list(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.vvt_list(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.vvt_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_vvt_list_empty(self, rf, fixture_user, fixture_tenant_id):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.vvt_list(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.vvt_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_tom_list(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.tom_list(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.tom_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_dpa_list(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.dpa_list(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.dpa_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_audit_list(self, rf, fixture_user, fixture_tenant_id):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.audit_list(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.audit_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_deletion_list(self, rf, fixture_user, fixture_tenant_id):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.deletion_list(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.deletion_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_breach_list_empty(self, rf, fixture_user, fixture_tenant_id):
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.breach_list(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.breach_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
     def test_breach_list_with_data(self, rf, fixture_user, fixture_tenant_id, fixture_mandate):
         Breach.objects.create(
@@ -249,8 +237,8 @@ class TestModuleViews:
             discovered_at=timezone.now(),
             severity="high",
         )
-        r = _req(rf, fixture_user, fixture_tenant_id)
-        assert views.breach_list(r).status_code == 200
+        with _ALLOW_ALL:
+            assert views.breach_list(_req(rf, fixture_user, fixture_tenant_id)).status_code == 200
 
 
 # =============================================================================
