@@ -298,7 +298,7 @@ class ExplosionConceptSerializer(serializers.ModelSerializer):
             "validated_by_id",
             "validated_at",
             "completion_percentage",
-            "created_by_id",
+            "created_by",
             "created_at",
             "updated_at",
         ]

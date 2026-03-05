@@ -123,7 +123,7 @@ def fixture_equipment_type(fixture_tenant_id):
         manufacturer="Pepperl+Fuchs",
         model="KFD2-SR2-Ex1.W",
         atex_group="II",
-        atex_category="1",
+        atex_category="1G",
         protection_type="ia",
         explosion_group="IIC",
         temperature_class="T6",
@@ -369,7 +369,7 @@ class TestZonesAPI:
         response = fixture_api_client.get(url)
 
         assert response.status_code == status.HTTP_200_OK
-        assert response.data["required_equipment_category"] == "2"
+        assert response.data["required_equipment_category"] == "2G"
 
 
 # =============================================================================
@@ -414,10 +414,14 @@ class TestDashboardAPI:
     def test_should_return_dashboard_stats(
         self,
         fixture_api_client,
+        fixture_test_user,
+        fixture_tenant_id,
         fixture_explosion_concept,
         fixture_zone,
     ):
         """GET /dashboard gibt Statistiken zurück"""
+        fixture_test_user.tenant_id = fixture_tenant_id
+        fixture_test_user.save()
         url = reverse(f"{APP}:dashboard")
         response = fixture_api_client.get(url)
 

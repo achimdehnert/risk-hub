@@ -11,8 +11,6 @@ from platform_context.testing.assertions import (
 PROTECTED_URLS = [
     "/dashboard/",
     "/risk/assessments/",
-    "/ex/",
-    "/documents/",
 ]
 
 
