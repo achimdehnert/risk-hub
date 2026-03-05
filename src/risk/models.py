@@ -50,7 +50,9 @@ class Assessment(models.Model):
         db_table = "risk_assessment"
         constraints = [
             models.CheckConstraint(
-                check=models.Q(status__in=["draft", "in_review", "approved", "archived"]),
+                condition=models.Q(
+                    status__in=["draft", "in_review", "approved", "archived"]
+                ),
                 name="ck_assessment_status_valid",
             ),
             models.UniqueConstraint(

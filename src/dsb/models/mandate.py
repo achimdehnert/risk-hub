@@ -79,7 +79,7 @@ class Mandate(models.Model):
                 name="uq_dsb_mandate_tenant_name",
             ),
             models.CheckConstraint(
-                check=models.Q(
+                condition=models.Q(
                     status__in=["active", "paused", "terminated"],
                 ),
                 name="ck_dsb_mandate_status",
