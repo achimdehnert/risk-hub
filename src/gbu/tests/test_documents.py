@@ -95,7 +95,7 @@ def test_should_call_weasyprint_for_gbu(db):
     mock_html_instance = MagicMock()
     mock_html_instance.write_pdf.return_value = fake_pdf
 
-    with patch("gbu.services.pdf_service.HTML", return_value=mock_html_instance) as mock_cls:
+    with patch("weasyprint.HTML", return_value=mock_html_instance) as mock_cls:
         result = render_gbu_pdf(activity.id, tenant_id)
 
     assert result == fake_pdf
@@ -118,7 +118,7 @@ def test_should_call_weasyprint_for_ba(db):
     mock_html_instance = MagicMock()
     mock_html_instance.write_pdf.return_value = fake_pdf
 
-    with patch("gbu.services.pdf_service.HTML", return_value=mock_html_instance):
+    with patch("weasyprint.HTML", return_value=mock_html_instance):
         result = render_ba_pdf(activity.id, tenant_id)
 
     assert result == fake_pdf
@@ -223,7 +223,7 @@ def test_should_generate_documents_task_returns_ids(db):
     fake_pdf = b"%PDF-fake"
 
     with (
-        patch("gbu.services.pdf_service.HTML") as mock_html_cls,
+        patch("weasyprint.HTML") as mock_html_cls,
         patch("gbu.services.document_store._write_storage"),
     ):
         mock_inst = MagicMock()
