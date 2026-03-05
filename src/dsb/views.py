@@ -44,7 +44,7 @@ def _user_id(request: HttpRequest):
 def dashboard(request: HttpRequest) -> HttpResponse:
     """DSB Dashboard — DSGVO compliance overview."""
     from dsb.models import Breach
-    from dsb.models.deletion import DeletionRequest
+    from dsb.models.deletion_request import DeletionRequest
 
     tid = _tenant_id(request)
     kpis = get_dsb_kpis(tid) if tid else None
@@ -348,19 +348,20 @@ def mandate_delete(request: HttpRequest, pk) -> HttpResponse:
 @login_required
 @require_module("dsb")
 def vvt_detail(request: HttpRequest, pk) -> HttpResponse:
-    """VVT detail — single processing activity."""
+    """Detail view for a processing activity."""
     from dsb.models import ProcessingActivity
 
     tid = _tenant_id(request)
-    obj = get_object_or_404(
-        ProcessingActivity.objects.select_related("mandate"),
-        pk=pk,
-        tenant_id=tid,
+    obj = get_object_or_404(ProcessingActivity, pk=pk, tenant_id=tid)
+    return render(
+        request,
+        "dsb/vvt_detail.html",
+        {"obj": obj},
     )
-    return render(request, "dsb/vvt_detail.html", {"obj": obj})
 
 
 @login_required
+@require_module("dsb")
 def vvt_create(request: HttpRequest) -> HttpResponse:
     """Create a new VVT entry."""
     from dsb.forms import ProcessingActivityForm
@@ -373,7 +374,6 @@ def vvt_create(request: HttpRequest) -> HttpResponse:
             obj.tenant_id = tid
             obj.created_by_id = _user_id(request)
             obj.save()
-            form.save_m2m()
             return redirect("dsb:vvt-list")
     else:
         form = ProcessingActivityForm(tenant_id=tid)
@@ -388,6 +388,7 @@ def vvt_create(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
+@require_module("dsb")
 def vvt_edit(request: HttpRequest, pk) -> HttpResponse:
     """Edit an existing VVT entry."""
     from dsb.forms import ProcessingActivityForm
@@ -396,16 +397,11 @@ def vvt_edit(request: HttpRequest, pk) -> HttpResponse:
     tid = _tenant_id(request)
     obj = get_object_or_404(ProcessingActivity, pk=pk, tenant_id=tid)
     if request.method == "POST":
-        form = ProcessingActivityForm(
-            request.POST,
-            instance=obj,
-            tenant_id=tid,
-        )
+        form = ProcessingActivityForm(request.POST, instance=obj, tenant_id=tid)
         if form.is_valid():
             obj = form.save(commit=False)
             obj.updated_by_id = _user_id(request)
             obj.save()
-            form.save_m2m()
             return redirect("dsb:vvt-list")
     else:
         form = ProcessingActivityForm(instance=obj, tenant_id=tid)
