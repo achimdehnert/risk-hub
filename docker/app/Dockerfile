@@ -36,10 +36,9 @@ WORKDIR /app/src
 ENV PYTHONPATH=/app/src
 
 # Collect static files at build time
-RUN DJANGO_SECRET_KEY=build-only \
-    DJANGO_SETTINGS_MODULE=config.settings \
-    DATABASE_URL=sqlite:///dev-null \
+RUN DJANGO_SETTINGS_MODULE=config.settings_build \
     python manage.py collectstatic --noinput
+RUN chown -R app:app /app/src/staticfiles 2>/dev/null || true
 
 # Create non-root user (ADR-022)
 RUN groupadd --gid 1000 app && \
