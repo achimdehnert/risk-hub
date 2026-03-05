@@ -14,7 +14,6 @@ from datetime import date
 from unittest.mock import patch
 
 import pytest
-from django.contrib.messages.storage.fallback import FallbackStorage
 from django.test import Client
 from django.utils import timezone
 
