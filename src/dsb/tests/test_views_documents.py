@@ -5,7 +5,6 @@ View-Tests für dsb/views_documents.py.
 
 import uuid
 from datetime import date
-from io import BytesIO
 from unittest.mock import patch
 
 import pytest
