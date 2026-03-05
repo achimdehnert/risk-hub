@@ -51,7 +51,7 @@ class Assessment(models.Model):
         constraints = [
             models.CheckConstraint(
                 condition=models.Q(
-                    status__in=["draft", "in_review", "approved", "archived"]
+                    status__in=["draft", "in_review", "approved", "archived"],
                 ),
                 name="ck_assessment_status_valid",
             ),
@@ -94,7 +94,9 @@ class Hazard(models.Model):
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
-    assessment = models.ForeignKey(Assessment, on_delete=models.CASCADE, related_name="hazards")
+    assessment = models.ForeignKey(
+        Assessment, on_delete=models.CASCADE, related_name="hazards"
+    )
 
     title = models.CharField(max_length=240)
     description = models.TextField(blank=True, default="")
