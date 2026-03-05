@@ -9,7 +9,6 @@ Strategie:
 """
 
 import uuid
-from unittest.mock import patch
 
 import pytest
 from django.contrib.messages.storage.fallback import FallbackStorage
@@ -209,10 +208,13 @@ class TestPartialViews:
     def test_partial_risk_badge_with_params(self, rf, fixture_user, fixture_tenant_id):
         """Mit gültigen Parametern → 200 oder Template-Fehler."""
         try:
-            r = rf.get("/gbu/partials/risk-badge/", {
-                "quantity_class": "small",
-                "activity_frequency": "rarely",
-            })
+            r = rf.get(
+                "/gbu/partials/risk-badge/",
+                {
+                    "quantity_class": "small",
+                    "activity_frequency": "rarely",
+                },
+            )
             r.user = fixture_user
             r.tenant_id = fixture_tenant_id
             r.session = {}
