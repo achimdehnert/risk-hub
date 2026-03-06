@@ -15,6 +15,7 @@ TENANT_ID = uuid.uuid4()
 @pytest.fixture
 def fixture_user(db):
     from tests.factories import UserFactory
+
     return UserFactory()
 
 
@@ -22,6 +23,7 @@ def fixture_user(db):
 def mock_context():
     """Patch common.context.get_context to return a fixed tenant."""
     from unittest.mock import MagicMock
+
     ctx = MagicMock()
     ctx.tenant_id = TENANT_ID
     ctx.user = None
@@ -49,6 +51,7 @@ class TestListActions:
 
     def test_no_tenant_raises(self):
         from unittest.mock import MagicMock
+
         ctx = MagicMock()
         ctx.tenant_id = None
         with patch("actions.services.get_context", return_value=ctx):
@@ -75,6 +78,7 @@ class TestGetAction:
 
     def test_no_tenant_raises(self):
         from unittest.mock import MagicMock
+
         ctx = MagicMock()
         ctx.tenant_id = None
         with patch("actions.services.get_context", return_value=ctx):
@@ -105,6 +109,7 @@ class TestCreateAction:
 
     def test_no_tenant_raises(self):
         from unittest.mock import MagicMock
+
         ctx = MagicMock()
         ctx.tenant_id = None
         with patch("actions.services.get_context", return_value=ctx):

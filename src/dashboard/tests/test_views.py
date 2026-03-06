@@ -22,6 +22,7 @@ def rf():
 @pytest.fixture
 def fixture_user(db):
     from tests.factories import UserFactory
+
     return UserFactory()
 
 
