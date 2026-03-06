@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "ai_analysis",
     "dsb",
     "gbu",
+    "billing",
 ]
 
 MIGRATION_MODULES = {
@@ -91,6 +92,17 @@ MIDDLEWARE = [
 
 CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
+
+# Stripe — dummy values for test/CI (no real API calls)
+STRIPE_SECRET_KEY = "sk_test_dummy_ci_key"
+STRIPE_PUBLISHABLE_KEY = "pk_test_dummy_ci_key"
+STRIPE_WEBHOOK_SECRET = "whsec_dummy_ci_secret"
+STRIPE_PRICE_STARTER_MONTHLY = "price_test_starter_monthly"
+STRIPE_PRICE_STARTER_ANNUAL = "price_test_starter_annual"
+STRIPE_PRICE_PROFESSIONAL_MONTHLY = "price_test_professional_monthly"
+STRIPE_PRICE_PROFESSIONAL_ANNUAL = "price_test_professional_annual"
+STRIPE_PRICE_BUSINESS_MONTHLY = "price_test_business_monthly"
+STRIPE_PRICE_BUSINESS_ANNUAL = "price_test_business_annual"
 
 LOGGING = {
     "version": 1,
