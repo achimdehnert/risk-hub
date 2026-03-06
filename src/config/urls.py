@@ -57,4 +57,5 @@ urlpatterns = [
     path("dsb/", include("dsb.urls")),
     path("gbu/", include("gbu.urls")),
     path("tenants/", include("tenancy.urls")),
+    path("billing/", include("billing.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
