@@ -3,7 +3,6 @@
 import uuid
 
 import pytest
-from django.contrib.auth.models import AnonymousUser
 from django.test import RequestFactory
 
 from audit.models import AuditEvent
@@ -20,6 +19,7 @@ def rf():
 @pytest.fixture
 def fixture_user(db):
     from tests.factories import UserFactory
+
     return UserFactory()
 
 
@@ -59,7 +59,9 @@ class TestAuditLogView:
 
     def test_filter_date_range(self, rf, fixture_user):
         req = _req(
-            rf, fixture_user, TENANT_ID,
+            rf,
+            fixture_user,
+            TENANT_ID,
             {"date_from": "2025-01-01", "date_to": "2025-12-31"},
         )
         resp = AuditLogView.as_view()(req)
@@ -101,9 +103,15 @@ class TestAuditLogCsvExportView:
 
     def test_csv_export_with_filters(self, rf, fixture_user):
         req = _req(
-            rf, fixture_user, TENANT_ID,
-            {"event_type": "create", "resource_type": "Risk",
-             "date_from": "2025-01-01", "date_to": "2025-12-31"},
+            rf,
+            fixture_user,
+            TENANT_ID,
+            {
+                "event_type": "create",
+                "resource_type": "Risk",
+                "date_from": "2025-01-01",
+                "date_to": "2025-12-31",
+            },
         )
         resp = AuditLogCsvExportView.as_view()(req)
         assert resp.status_code == 200
