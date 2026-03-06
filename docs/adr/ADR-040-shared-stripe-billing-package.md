@@ -1,4 +1,4 @@
-# ADR-040: Shared Stripe Billing Package (`bf-billing`)
+# ADR-040: Stripe Billing — `billing-hub` als zentraler aktiver Service
 
 | Metadata | Value |
 |----------|-------|
@@ -7,118 +7,68 @@
 | **Author** | Achim Dehnert |
 | **Reviewers** | Achim Dehnert (06.03.2026) |
 | **Supersedes** | — |
-| **Related** | billing-hub ADR-001, ADR-039 (Windsurf Workflows Standard), ADR-003 (Tenant RBAC), ADR-009 (nl2cad Registry) |
+| **Related** | billing-hub ADR-001, ADR-039 (Windsurf Workflows Standard), ADR-003 (Tenant RBAC) |
+
+> **Canonical ADR:** `billing-hub/docs/adr/ADR-001`. Dieses ADR ist der Cross-Referenz-Eintrag für risk-hub.
 
 ---
 
-## 1. Kontext und Problemstellung
+## 1. Entscheidung (Kurzfassung)
 
-### 1.1 Ist-Stand
+**`billing-hub` ist ein aktiver Django-Service** unter `https://billing.iil.pet`
+mit zentralem Stripe-Webhook-Endpunkt, eigenem Deploy und eigener DB.
 
-Stripe-Billing wurde zuerst in `risk-hub` implementiert (`src/billing/`):
-- `StripeCustomer`, `StripeSubscription`, `BillingEvent` (Django-Models)
-- `BillingService` (Customer, Checkout, Portal, Subscription-Sync)
-- Webhook-Handler (`checkout.session.completed`, `invoice.*`, `customer.subscription.*`)
-- `create_trial` Management-Command
-- Context Processor + Dashboard-Widget
-- CI/CD-Step zur Secret-Injektion
+Alle Plattformen (risk-hub, coach-hub, pptx-hub, travel-beat, writing-hub, nl2cad)
+nutzen `billing-hub` als Single Source of Truth für Subscription-Status.
 
-Die gleiche Logik wird identisch auf **coach-hub**, **nl2cad** und zukünftig auf
-`pptx-hub`, `travel-beat`, `writing-hub` u.a. benötigt.
+## 2. Review-Entscheidungen
 
-### 1.2 Problem
+| # | Entscheidung |
+|---|-------------|
+| 1 | **Privates PyPI** (GitHub Packages) |
+| 2 | **`TenantResolver`-Protocol** — erweiterbar auf Django Signals |
+| 3 | **Option B: Zentraler Webhook** — `POST /api/webhook/stripe/` in billing-hub |
+| 4 | **`core` direkt** für nl2cad — kein Django |
+| 5 | **Parallel** — risk-hub behält `billing/` bis Sprint 2 abgeschlossen |
 
-| Problem | Konsequenz |
-|---------|-----------|
-| Copy-Paste der `billing/`-App in jeden Repo | Bugfixes müssen n-fach gepflegt werden |
-| Divergierende Webhook-Handler | Inkonsistentes Verhalten über Plattformen |
-| Stripe SDK-Version unkoordiniert | Sicherheitslücken bleiben unentdeckt |
+## 3. Webhook-Endpunkt
 
----
-
-## 2. Entscheidung
-
-**Canonical ADR in `billing-hub/docs/adr/ADR-001`. Dieses ADR ist der Cross-Referenz-Eintrag für risk-hub.**
-
-### 2.1 Review-Entscheidungen
-
-| # | Frage | Entscheidung |
-|---|-------|-------------|
-| 1 | **PyPI-Strategie** | **Privates PyPI** (GitHub Packages) |
-| 2 | **Tenant-Abstraktion** | **`TenantResolver`-Protocol** — ASAP erweiterbar auf Django Signals |
-| 3 | **Stripe-Webhook-URL** | **Pro Plattform** — `billing-hub` bleibt reines Package |
-| 4 | **nl2cad-Integration** | **`core` direkt** — kein Django |
-| 5 | **Migration-Timing** | **Parallel** — risk-hub behält eigene `billing/` bis `bf-billing==1.0` |
-
-### 2.2 Zu Entscheidung 3 — Webhook-Strategie
-
-#### Gewählt: Option A — Pro Plattform
 ```
-risk-hub  → https://schutztat.de/billing/webhook/
-coach-hub → https://coach.iil.pet/billing/webhook/
-pptx-hub  → https://prezimo.de/billing/webhook/
+https://billing.iil.pet/api/webhook/stripe/   ← 1 Stripe-Endpunkt für alle Plattformen
+https://billing.iil.pet/api/access/{platform}/{email}/{module}/
+https://billing.iil.pet/api/customer/{email}/
+https://billing.iil.pet/api/platforms/
 ```
-- Stripe Dashboard: n Endpunkte, einer pro Plattform
-- `billing-hub` bleibt **reines Package** — keine eigene Infra
-- Kein zentraler SPOF
 
-#### Zukünftige Option B — Zentraler Endpunkt (wenn Cross-Platform-Reporting nötig)
+## 4. Consumer-Integration (risk-hub)
+
+```python
+# src/billing/client.py
+import httpx
+from django.conf import settings
+
+class BillingHubClient:
+    def check_access(
+        self, platform_slug: str, email: str, module_id: str
+    ) -> dict:
+        resp = httpx.get(
+            f"{settings.BILLING_HUB_URL}/api/access/"
+            f"{platform_slug}/{email}/{module_id}/",
+            headers={"X-Internal-Secret": settings.BILLING_HUB_SECRET},
+        )
+        return resp.json()
 ```
-billing-hub → https://billing.iil.pet/api/webhook/stripe/
-```
-- 1 Stripe-Endpunkt, routing per `stripe_customer_id` → Plattform
-- Voraussetzung: `billing-hub` wird aktiver Service mit eigenem Deploy
 
-### 2.3 Migration risk-hub
+Stripe-Webhook in `src/billing/webhooks.py` entfällt nach Sprint 2.
 
-- risk-hub behält `src/billing/` **parallel** bis `bf-billing==1.0` stabil ist
-- Danach: `src/billing/` wird auf Shim mit `TenantResolver` reduziert
-- Migration via Django `replaces`-Mechanismus — keine Datenverluste
+## 5. Migration-Timing
 
-### 2.4 nl2cad-Integration
+- risk-hub behält eigene `billing/` **parallel** bis billing-hub auf `billing.iil.pet` deployed
+- Sprint 2 startet nach billing-hub Sprint 1 (Webhook-Handler + Tests + Deploy)
 
-- Nur `bf_billing.core` — Dataclasses + `BillingServiceBase`
-- Kein Django ORM, keine Migrations
-- Erlaubt in `nl2cad-nlp` (externe Deps dort zulässig)
-
----
-
-## 3. Implementierungsplan
-
-Siehe `billing-hub/docs/adr/ADR-001` für vollständigen Plan.
-
-### Sprint-Übersicht
-
-| Sprint | Scope | Timing |
-|--------|-------|--------|
-| 1 | `core/` + `django_billing/` + `testing/` + `bf-billing==0.1.0` | Jetzt |
-| 2 | Migration risk-hub | Nach `bf-billing==1.0` |
-| 3 | coach-hub + nl2cad | Nach Sprint 2 |
-| 4 | pptx-hub, travel-beat, writing-hub | ~1 Tag/Plattform |
-
----
-
-## 4. Konsequenzen
-
-### 4.1 Positiv
-- Single source of truth für Stripe-Logik
-- SemVer-Versionierung — Breaking Changes kontrollierbar
-- `StripeEventFactory` für Tests ohne echte Credentials
-- Framework-agnostisch: Django + nl2cad + FastAPI
-
-### 4.2 Risiken + Mitigation
-
-| Risiko | Mitigation |
-|--------|------------|
-| Migration-Datenverlust | Django `replaces`-Mechanismus |
-| CI-Zugriff auf privates Package | `GH_PAT` als GitHub Secret |
-| Parallelbetärieb Komplexität | risk-hub `billing/` bleibt bis `1.0` unverändert |
-
----
-
-## 5. Changelog
+## 6. Changelog
 
 | Date | Author | Change |
 |------|--------|--------|
 | 2026-03-06 | Achim Dehnert | Initial draft |
-| 2026-03-06 | Achim Dehnert | Review-Entscheidungen eingetragen — Status Accepted |
+| 2026-03-06 | Achim Dehnert | Option B gewählt, Status Accepted |
