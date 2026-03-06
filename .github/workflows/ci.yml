@@ -204,6 +204,29 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
           "
 
+      - name: Inject Stripe Secrets into .env.prod
+        run: |
+          set -euo pipefail
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} bash << 'ENDSSH'
+          set -euo pipefail
+          ENV_FILE="${{ vars.DEPLOY_SERVER_PATH }}/.env.prod"
+          # Remove any existing STRIPE_* lines (incl. REPLACE_ME placeholders)
+          sed -i '/^STRIPE_/d' "${ENV_FILE}"
+          # Append current values
+          cat >> "${ENV_FILE}" << EOF
+STRIPE_SECRET_KEY=${{ secrets.STRIPE_SECRET_KEY }}
+STRIPE_PUBLISHABLE_KEY=${{ secrets.STRIPE_PUBLISHABLE_KEY }}
+STRIPE_WEBHOOK_SECRET=${{ secrets.STRIPE_WEBHOOK_SECRET }}
+STRIPE_PRICE_STARTER_MONTHLY=${{ secrets.STRIPE_PRICE_STARTER_MONTHLY }}
+STRIPE_PRICE_STARTER_ANNUAL=${{ secrets.STRIPE_PRICE_STARTER_ANNUAL }}
+STRIPE_PRICE_PROFESSIONAL_MONTHLY=${{ secrets.STRIPE_PRICE_PROFESSIONAL_MONTHLY }}
+STRIPE_PRICE_PROFESSIONAL_ANNUAL=${{ secrets.STRIPE_PRICE_PROFESSIONAL_ANNUAL }}
+STRIPE_PRICE_BUSINESS_MONTHLY=${{ secrets.STRIPE_PRICE_BUSINESS_MONTHLY }}
+STRIPE_PRICE_BUSINESS_ANNUAL=${{ secrets.STRIPE_PRICE_BUSINESS_ANNUAL }}
+EOF
+          echo "Stripe secrets injected into ${ENV_FILE}"
+          ENDSSH
+
       - name: Backup Database
         run: |
           set -euo pipefail
