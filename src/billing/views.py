@@ -8,16 +8,16 @@ import logging
 import stripe
 from django.conf import settings
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django_tenancy.models import Organization
 
+from billing.constants import get_price_id
 from billing.models import BillingEvent
 from billing.services import create_checkout_session, create_portal_session
 from billing.webhooks import EVENT_HANDLERS
-from billing.constants import get_price_id
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,12 @@ def checkout_redirect(request: HttpRequest) -> HttpResponse:
 
     price_id = get_price_id(plan, billing)
     if not price_id:
-        logger.error("[billing] No price_id configured for plan=%s billing=%s", plan, billing)
-        return HttpResponse("Plan nicht konfiguriert. Bitte kontaktieren Sie den Support.", status=400)
+        logger.error(
+            "[billing] No price_id configured for plan=%s billing=%s", plan, billing
+        )
+        return HttpResponse(
+            "Plan nicht konfiguriert. Bitte kontaktieren Sie den Support.", status=400
+        )
 
     org = _get_organization(request)
     if not org:
@@ -61,7 +65,9 @@ def checkout_redirect(request: HttpRequest) -> HttpResponse:
         )
         return redirect(checkout_url)
     except Exception:
-        logger.exception("[billing] Failed to create checkout session for org=%s", org.pk)
+        logger.exception(
+            "[billing] Failed to create checkout session for org=%s", org.pk
+        )
         return HttpResponse("Fehler beim Starten des Checkouts.", status=500)
 
 
@@ -77,7 +83,9 @@ def portal_redirect(request: HttpRequest) -> HttpResponse:
         portal_url = create_portal_session(org, return_url)
         return redirect(portal_url)
     except Exception:
-        logger.exception("[billing] Failed to create portal session for org=%s", org.pk)
+        logger.exception(
+            "[billing] Failed to create portal session for org=%s", org.pk
+        )
         return HttpResponse("Fehler beim Öffnen des Kundenportals.", status=500)
 
 
@@ -90,7 +98,8 @@ def checkout_success(request: HttpRequest) -> HttpResponse:
         <!doctype html><html lang="de"><head>
         <meta charset="utf-8"><meta http-equiv="refresh" content="3;url=/dashboard/">
         <title>Aktivierung erfolgreich</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+              rel="stylesheet">
         </head><body class="d-flex align-items-center justify-content-center min-vh-100 bg-light">
         <div class="text-center">
             <div class="display-1 mb-3">✅</div>
