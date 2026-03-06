@@ -7,6 +7,8 @@
     <p class="text-sm text-gray-500 mt-1">Übersicht aller sicherheitsrelevanten Kennzahlen</p>
 </div>
 
+{% include 'billing/dashboard_widget.html' with subscription=stripe_sub %}
+
 <!-- KPI Cards (HTMX-refreshable) -->
 <div id="kpi-cards"
      hx-get="{% url 'dashboard:kpi-partial' %}"
@@ -70,7 +72,7 @@
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="text-lg font-semibold text-gray-900 mb-4">
                 <i data-lucide="shield-alert" class="w-5 h-5 inline text-red-500 mr-1"></i>
-                <a href="{% url 'risk:assessment_list' %}" class="hover:text-red-600">Risikobewertung & Maßnahmen</a>
+                <a href="{% url 'risk:assessment_list' %}" class="hover:text-red-600">Risikobewertung &amp; Maßnahmen</a>
             </h2>
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {% include "components/_stat_card.html" with icon="shield-alert" value=kpis.assessments_total label="Bewertungen" color="gray" %}
@@ -166,6 +168,9 @@
                     {% if kpis.notifications_unread %}
                     <span class="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{{ kpis.notifications_unread }}</span>
                     {% endif %}
+                </a>
+                <a href="/billing/portal/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="credit-card" class="w-4 h-4"></i> Abonnement verwalten
                 </a>
             </div>
         </div>
