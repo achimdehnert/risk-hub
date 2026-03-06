@@ -4,10 +4,15 @@ from __future__ import annotations
 
 import logging
 
+from django.utils import timezone
 from django_tenancy.models import Organization
 
-from billing.models import BillingEvent
-from billing.services import activate_subscription, suspend_subscription, sync_subscription_from_stripe
+from billing.models import StripeSubscription
+from billing.services import (
+    activate_subscription,
+    suspend_subscription,
+    sync_subscription_from_stripe,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,12 +32,17 @@ def handle_checkout_session_completed(event: dict) -> None:
         return
 
     subscription_id = session.get("subscription")
-    metadata = session.get("subscription_data", {}).get("metadata") or session.get("metadata", {})
+    metadata = (
+        session.get("subscription_data", {}).get("metadata")
+        or session.get("metadata", {})
+    )
     tenant_id = metadata.get("tenant_id")
     plan_code = metadata.get("plan_code", "")
 
     if not tenant_id or not subscription_id:
-        logger.warning("[billing] checkout.session.completed missing tenant_id or subscription_id")
+        logger.warning(
+            "[billing] checkout.session.completed missing tenant_id or subscription_id"
+        )
         return
 
     org = _get_organization(tenant_id)
@@ -103,13 +113,17 @@ def handle_invoice_payment_succeeded(event: dict) -> None:
     subscription_id = invoice.get("subscription")
     if not subscription_id:
         return
-    from billing.models import StripeSubscription
-    from django.utils import timezone
 
-    period_end = invoice.get("lines", {}).get("data", [{}])[0].get("period", {}).get("end")
+    period_end = (
+        invoice.get("lines", {}).get("data", [{}])[0].get("period", {}).get("end")
+    )
     if period_end:
-        StripeSubscription.objects.filter(stripe_subscription_id=subscription_id).update(
-            current_period_end=timezone.datetime.fromtimestamp(period_end, tz=timezone.utc)
+        StripeSubscription.objects.filter(
+            stripe_subscription_id=subscription_id
+        ).update(
+            current_period_end=timezone.datetime.fromtimestamp(
+                period_end, tz=timezone.utc
+            )
         )
         logger.info("[billing] invoice.payment_succeeded subscription=%s", subscription_id)
 

@@ -31,13 +31,20 @@ def get_or_create_customer(organization: Organization) -> str:
     client = _stripe_client()
     customer = client.Customer.create(
         name=organization.name,
-        metadata={"tenant_id": str(organization.tenant_id), "org_id": str(organization.pk)},
+        metadata={
+            "tenant_id": str(organization.tenant_id),
+            "org_id": str(organization.pk),
+        },
     )
     StripeCustomer.objects.create(
         organization=organization,
         stripe_customer_id=customer["id"],
     )
-    logger.info("[billing] Created Stripe customer %s for org %s", customer["id"], organization.pk)
+    logger.info(
+        "[billing] Created Stripe customer %s for org %s",
+        customer["id"],
+        organization.pk,
+    )
     return customer["id"]
 
 
@@ -90,7 +97,12 @@ def create_portal_session(organization: Organization, return_url: str) -> str:
     return session["url"]
 
 
-def activate_subscription(organization: Organization, plan_code: str, stripe_subscription_id: str, stripe_price_id: str) -> None:
+def activate_subscription(
+    organization: Organization,
+    plan_code: str,
+    stripe_subscription_id: str,
+    stripe_price_id: str,
+) -> None:
     """Activate ModuleSubscriptions for all modules included in the plan."""
     modules = PLAN_MODULES.get(plan_code, [])
     for module in modules:
@@ -121,7 +133,10 @@ def suspend_subscription(organization: Organization) -> None:
     logger.info("[billing] Suspended %d modules for org %s", updated, organization.pk)
 
 
-def sync_subscription_from_stripe(stripe_subscription: dict, organization: Organization) -> None:
+def sync_subscription_from_stripe(
+    stripe_subscription: dict,
+    organization: Organization,
+) -> None:
     """Sync a Stripe subscription object into StripeSubscription model."""
     plan_code = stripe_subscription.get("metadata", {}).get("plan_code", "")
     price_id = ""
@@ -141,7 +156,9 @@ def sync_subscription_from_stripe(stripe_subscription: dict, organization: Organ
             "current_period_end": timezone.datetime.fromtimestamp(
                 stripe_subscription["current_period_end"], tz=timezone.utc
             ),
-            "cancel_at_period_end": stripe_subscription.get("cancel_at_period_end", False),
+            "cancel_at_period_end": stripe_subscription.get(
+                "cancel_at_period_end", False
+            ),
             "canceled_at": (
                 timezone.datetime.fromtimestamp(
                     stripe_subscription["canceled_at"], tz=timezone.utc
