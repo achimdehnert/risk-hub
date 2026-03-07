@@ -63,6 +63,16 @@ class RecentActivity:
     url: str = ""
 
 
+def _count_site_inventory(tf) -> int:
+    """Count SiteInventoryItem entries safely (returns 0 if model unavailable)."""
+    try:
+        from substances.models import SiteInventoryItem
+
+        return SiteInventoryItem.objects.filter(tf).count()
+    except Exception:
+        return 0
+
+
 def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
     """Aggregate all compliance KPIs for a tenant."""
     from actions.models import ActionItem
@@ -166,7 +176,7 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
         .values("substance_id")
         .distinct()
         .count(),
-        site_inventory_items=0,  # TODO: SiteInventoryItem
+        site_inventory_items=_count_site_inventory(tf),
         assessments_total=assessments_total,
         assessments_open=assessments_open,
         actions_open=actions_qs.exclude(status="completed").count(),
