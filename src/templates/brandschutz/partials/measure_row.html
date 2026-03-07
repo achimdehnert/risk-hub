@@ -1,0 +1,22 @@
+<div class="px-6 py-4 flex items-center justify-between" id="measure-{{ measure.pk }}">
+    <div class="flex-1">
+        <p class="font-medium text-gray-900">{{ measure.title }}</p>
+        <p class="text-sm text-gray-500">{{ measure.get_category_display }}
+            {% if measure.due_date %} &mdash; fällig {{ measure.due_date|date:"d.m.Y" }}{% endif %}
+        </p>
+    </div>
+    <form hx-post="{% url 'brandschutz:measure-update' measure.pk %}"
+          hx-target="#measure-{{ measure.pk }}"
+          hx-swap="outerHTML"
+          class="flex items-center space-x-2">
+        {% csrf_token %}
+        <select name="status" class="text-sm border border-gray-300 rounded px-2 py-1">
+            {% for val, label in measure.Status.choices %}
+            <option value="{{ val }}" {% if measure.status == val %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="px-3 py-1 text-sm bg-orange-500 text-white rounded hover:bg-orange-600">
+            Speichern
+        </button>
+    </form>
+</div>

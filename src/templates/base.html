@@ -58,6 +58,11 @@
                         GBU
                     </a>
                     {% endif %}
+                    {% if "brandschutz" in active_modules %}
+                    <a href="/brandschutz/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                        Brandschutz
+                    </a>
+                    {% endif %}
                     {% if user.is_staff %}
                     <a href="/tenants/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
                         Mandanten

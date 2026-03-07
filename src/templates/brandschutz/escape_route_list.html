@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+
+{% block title %}Fluchtwege - Brandschutz{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <nav class="text-sm text-gray-500 mb-2">
+                <a href="{% url 'brandschutz:concept-list' %}" class="hover:text-gray-700">Brandschutz</a>
+                <span class="mx-2">/</span>
+                <span>Fluchtwege</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900">Fluchtwege</h1>
+            <p class="mt-1 text-gray-500">Übersicht und Mängelstatus aller Fluchtwege</p>
+        </div>
+    </div>
+
+    <!-- Filter -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <form method="get" class="flex flex-wrap gap-4">
+            <div>
+                <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg" aria-label="Status Filter">
+                    <option value="">Alle Status</option>
+                    {% for val, label in status_choices %}
+                    <option value="{{ val }}" {% if current_status == val %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200">
+                Filtern
+            </button>
+            {% if current_status %}
+            <a href="?" class="px-4 py-2 text-gray-500 hover:text-gray-700">Filter aufheben</a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Typ</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Brandabschnitt</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Breite</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Beschilderung</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Letzte Prüfung</th>
+                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for route in routes %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-3">
+                                <i data-lucide="door-open" class="w-4 h-4 text-green-600"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900">{{ route.get_route_type_display }}</p>
+                                {% if route.description %}
+                                <p class="text-xs text-gray-500">{{ route.description|truncatechars:50 }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if route.section %}
+                        <p class="text-sm text-gray-900">{{ route.section.name }}</p>
+                        <p class="text-xs text-gray-500">{{ route.section.concept.title }}</p>
+                        {% else %}
+                        <span class="text-sm text-gray-400">—</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                        {% if route.width_m %}{{ route.width_m }} m{% else %}—{% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if route.is_signposted %}
+                        <span class="flex items-center text-green-600 text-sm">
+                            <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> Ja
+                        </span>
+                        {% else %}
+                        <span class="flex items-center text-red-500 text-sm">
+                            <i data-lucide="x-circle" class="w-4 h-4 mr-1"></i> Nein
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-500">
+                        {% if route.last_inspection_date %}
+                            {{ route.last_inspection_date|date:"d.m.Y" }}
+                        {% else %}—{% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if route.status == "ok" %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">OK</span>
+                        {% elif route.status == "defect" %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Mangel</span>
+                        {% elif route.status == "blocked" %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-orange-100 text-orange-800">Versperrt</span>
+                        {% else %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600">{{ route.status }}</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                        <i data-lucide="door-open" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
+                        <p class="text-gray-500">Keine Fluchtwege erfasst</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
