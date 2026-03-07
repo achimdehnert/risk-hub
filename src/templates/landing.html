@@ -81,10 +81,16 @@
             box-shadow: 0 2px 16px rgba(0,0,0,0.07);
             transition: transform 0.25s ease, box-shadow 0.25s ease;
             height: 100%;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
         }
         .module-card:hover {
             transform: translateY(-4px);
             box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            text-decoration: none;
+            color: inherit;
         }
         .module-icon {
             width: 56px; height: 56px; border-radius: 14px;
@@ -307,7 +313,7 @@
             <div class="row g-4">
                 <!-- GBU -->
                 <div class="col-md-6 col-lg-4">
-                    <div class="card module-card p-4">
+                    <a href="#pricing" class="card module-card p-4">
                         <div class="module-icon" style="background:rgba(232,93,4,0.1); color:var(--brand);">
                             <i class="bi bi-person-workspace"></i>
                         </div>
@@ -320,12 +326,12 @@
                             <span class="module-tag" style="background:rgba(232,93,4,0.1); color:var(--brand);">gbu</span>
                             <span class="badge bg-success bg-opacity-10 text-success small">In allen Plänen</span>
                         </div>
-                    </div>
+                    </a>
                 </div>
 
                 <!-- Risikobewertung -->
                 <div class="col-md-6 col-lg-4">
-                    <div class="card module-card p-4">
+                    <a href="#pricing" class="card module-card p-4">
                         <div class="module-icon bg-danger bg-opacity-10 text-danger">
                             <i class="bi bi-exclamation-triangle-fill"></i>
                         </div>
@@ -338,12 +344,12 @@
                             <span class="module-tag bg-danger bg-opacity-10 text-danger">risk</span>
                             <span class="badge bg-warning bg-opacity-10 text-warning small">Ab Professional</span>
                         </div>
-                    </div>
+                    </a>
                 </div>
 
                 <!-- Explosionsschutz -->
                 <div class="col-md-6 col-lg-4">
-                    <div class="card module-card p-4">
+                    <a href="#pricing" class="card module-card p-4">
                         <div class="module-icon bg-warning bg-opacity-10 text-warning">
                             <i class="bi bi-lightning-charge-fill"></i>
                         </div>
@@ -356,12 +362,12 @@
                             <span class="module-tag bg-warning bg-opacity-10 text-warning">ex</span>
                             <span class="badge bg-primary bg-opacity-10 text-primary small">Ab Business</span>
                         </div>
-                    </div>
+                    </a>
                 </div>
 
                 <!-- Gefahrstoffe -->
                 <div class="col-md-6 col-lg-4">
-                    <div class="card module-card p-4">
+                    <a href="#pricing" class="card module-card p-4">
                         <div class="module-icon bg-success bg-opacity-10 text-success">
                             <i class="bi bi-droplet-fill"></i>
                         </div>
@@ -374,12 +380,12 @@
                             <span class="module-tag bg-success bg-opacity-10 text-success">substances</span>
                             <span class="badge bg-primary bg-opacity-10 text-primary small">Ab Business</span>
                         </div>
-                    </div>
+                    </a>
                 </div>
 
                 <!-- Datenschutz -->
                 <div class="col-md-6 col-lg-4">
-                    <div class="card module-card p-4">
+                    <a href="#pricing" class="card module-card p-4">
                         <div class="module-icon bg-primary bg-opacity-10 text-primary">
                             <i class="bi bi-shield-lock-fill"></i>
                         </div>
@@ -392,12 +398,12 @@
                             <span class="module-tag bg-primary bg-opacity-10 text-primary">dsb</span>
                             <span class="badge bg-warning bg-opacity-10 text-warning small">Ab Professional</span>
                         </div>
-                    </div>
+                    </a>
                 </div>
 
                 <!-- Dokumente -->
                 <div class="col-md-6 col-lg-4">
-                    <div class="card module-card p-4">
+                    <a href="#pricing" class="card module-card p-4">
                         <div class="module-icon bg-info bg-opacity-10 text-info">
                             <i class="bi bi-file-earmark-text-fill"></i>
                         </div>
@@ -410,7 +416,7 @@
                             <span class="module-tag bg-info bg-opacity-10 text-info">documents + actions</span>
                             <span class="badge bg-warning bg-opacity-10 text-warning small">Ab Professional</span>
                         </div>
-                    </div>
+                    </a>
                 </div>
             </div>
         </div>
