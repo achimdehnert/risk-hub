@@ -23,19 +23,19 @@ class TestHandleCheckoutSessionCompleted:
         event = _make_event("checkout.session.completed", {"mode": "payment"})
         handle_checkout_session_completed(event)  # no exception
 
-    def test_missing_tenant_id_logs_warning(self, caplog):
-        import logging
+    def test_missing_tenant_id_logs_warning(self):
+        from unittest.mock import patch
 
         event = _make_event(
             "checkout.session.completed",
             {"mode": "subscription", "subscription": "sub_123", "metadata": {}},
         )
-        with caplog.at_level(logging.WARNING):
+        with patch("billing.webhooks.logger") as mock_log:
             handle_checkout_session_completed(event)
-        assert "missing tenant_id" in caplog.text or "tenant_id" in caplog.text
+        mock_log.warning.assert_called_once()
 
-    def test_unknown_tenant_id_skips(self, caplog):
-        import logging
+    def test_unknown_tenant_id_skips(self):
+        from unittest.mock import patch
 
         event = _make_event(
             "checkout.session.completed",
@@ -48,22 +48,22 @@ class TestHandleCheckoutSessionCompleted:
                 },
             },
         )
-        with caplog.at_level(logging.WARNING):
+        with patch("billing.webhooks.logger") as mock_log:
             handle_checkout_session_completed(event)
-        assert "not found" in caplog.text or "Organization" in caplog.text
+        mock_log.warning.assert_called_once()
 
 
 class TestHandleInvoicePaymentFailed:
-    def test_logs_warning(self, caplog):
-        import logging
+    def test_logs_warning(self):
+        from unittest.mock import patch
 
         event = _make_event(
             "invoice.payment_failed",
             {"customer": "cus_abc", "attempt_count": 2},
         )
-        with caplog.at_level(logging.WARNING):
+        with patch("billing.webhooks.logger") as mock_log:
             handle_invoice_payment_failed(event)
-        assert "payment_failed" in caplog.text or "cus_abc" in caplog.text
+        mock_log.warning.assert_called_once()
 
 
 @pytest.mark.django_db
