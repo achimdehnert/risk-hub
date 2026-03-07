@@ -109,9 +109,7 @@ def handle_invoice_payment_succeeded(event: dict) -> None:
     period_end = invoice.get("lines", {}).get("data", [{}])[0].get("period", {}).get("end")
     if period_end:
         StripeSubscription.objects.filter(stripe_subscription_id=subscription_id).update(
-            current_period_end=datetime.datetime.fromtimestamp(
-                period_end, tz=datetime.timezone.utc
-            ),
+            current_period_end=datetime.datetime.fromtimestamp(period_end, tz=datetime.UTC),
         )
         logger.info("[billing] invoice.payment_succeeded subscription=%s", subscription_id)
 
