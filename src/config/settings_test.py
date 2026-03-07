@@ -69,6 +69,7 @@ INSTALLED_APPS = [
     "dsb",
     "gbu",
     "billing",
+    "brandschutz",
 ]
 
 MIGRATION_MODULES = {
