@@ -31,7 +31,7 @@ class TestCreateTrialCommand:
             stdout=out,
         )
         output = out.getvalue()
-        assert "aktiviert" in output
+        assert "activated" in output
         assert ModuleSubscription.objects.filter(tenant_id=org.tenant_id, module="gbu").exists()
 
     def test_raises_for_unknown_slug(self):
