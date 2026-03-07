@@ -53,3 +53,27 @@ class Command(BaseCommand):
                     self.stdout.write(f"  {r[0]}")
         except Exception:
             self.stderr.write(traceback.format_exc())
+
+        self.stdout.write("\nSimulating full DashboardView render...")
+        try:
+            from django.test import RequestFactory
+
+            from identity.models import User
+
+            user = User.objects.filter(username="ad.risk").first()
+            if not user:
+                user = User.objects.filter(is_staff=True).first()
+            self.stdout.write(f"  User: {user} | tenant_id: {getattr(user, 'tenant_id', None)}")
+
+            rf = RequestFactory()
+            req = rf.get("/dashboard/")
+            req.user = user
+            req.tenant_id = getattr(user, "tenant_id", None)
+
+            from dashboard.views import DashboardView
+
+            resp = DashboardView.as_view()(req)
+            self.stdout.write(self.style.SUCCESS(f"  Response: {resp.status_code}"))
+        except Exception:
+            self.stderr.write("DashboardView FAILED:")
+            self.stderr.write(traceback.format_exc())
