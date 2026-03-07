@@ -92,6 +92,12 @@ class Hazard(models.Model):
         PROBABLE = 4, "Wahrscheinlich"
         FREQUENT = 5, "Häufig"
 
+    class MitigationStatus(models.TextChoices):
+        OPEN = "open", "Offen"
+        IN_PROGRESS = "in_progress", "In Bearbeitung"
+        MITIGATED = "mitigated", "Gemindert"
+        ACCEPTED = "accepted", "Akzeptiert"
+
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     assessment = models.ForeignKey(
@@ -114,6 +120,29 @@ class Hazard(models.Model):
 
     mitigation = models.TextField(blank=True, default="")
     residual_risk = models.IntegerField(null=True, blank=True)
+    mitigation_status = models.CharField(
+        max_length=15,
+        choices=MitigationStatus.choices,
+        default=MitigationStatus.OPEN,
+        db_index=True,
+    )
+    responsible_user_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="UUID der verantwortlichen Person für die Maßnahme",
+    )
+    due_date = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Fälligkeitsdatum der Maßnahme",
+    )
+    substance_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Verknüpfter Gefahrstoff (substances.Substance, optional)",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -125,6 +154,14 @@ class Hazard(models.Model):
                 fields=["tenant_id", "assessment"],
                 name="idx_hazard_tenant_assessment",
             ),
+            models.Index(
+                fields=["tenant_id", "mitigation_status"],
+                name="idx_hazard_tenant_status",
+            ),
+            models.Index(
+                fields=["tenant_id", "due_date"],
+                name="idx_hazard_tenant_due_date",
+            ),
         ]
 
     def __str__(self) -> str:
@@ -134,3 +171,19 @@ class Hazard(models.Model):
     def risk_score(self) -> int:
         """Calculate risk score (severity * probability)."""
         return self.severity * self.probability
+
+    @property
+    def is_overdue(self) -> bool:
+        """True if mitigation is not done and due_date has passed."""
+        from django.utils import timezone
+
+        if not self.due_date:
+            return False
+        return (
+            self.mitigation_status
+            not in (
+                self.MitigationStatus.MITIGATED,
+                self.MitigationStatus.ACCEPTED,
+            )
+            and self.due_date < timezone.now().date()
+        )

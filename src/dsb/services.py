@@ -53,6 +53,53 @@ class DsbKPI:
     breaches_overdue: int = 0
 
 
+def get_cmr_dsfa_hints(tenant_id: UUID) -> list[dict]:
+    """
+    Gibt alle CMR-Stoffe zurück, die im Standort-Inventar des Tenants vorhanden sind,
+    aber für die keine ProcessingActivity mit dsfa_required=True existiert.
+
+    Hintergrund: Gesundheitsdaten von Beschäftigten (Exposition gegenüber CMR-Stoffen,
+    arbeitsmedizinische Vorsorge) sind besondere Datenkategorien nach Art. 9 DSGVO
+    und erfordern in der Regel eine DSFA (Art. 35 DSGVO).
+
+    Returns: Liste von dicts mit {substance_id, substance_name, site_id}
+    """
+    from dsb.models.vvt import ProcessingActivity
+    from substances.models import SiteInventoryItem
+
+    cmr_items = (
+        SiteInventoryItem.objects.filter(
+            tenant_id=tenant_id,
+            substance__is_cmr=True,
+            substance__status="active",
+        )
+        .select_related("substance", "site")
+        .distinct()
+    )
+
+    dsfa_exists = ProcessingActivity.objects.filter(
+        tenant_id=tenant_id,
+        dsfa_required=True,
+    ).exists()
+
+    hints = []
+    for item in cmr_items:
+        hints.append(
+            {
+                "substance_id": str(item.substance_id),
+                "substance_name": item.substance.name,
+                "site_id": str(item.site_id) if item.site_id else None,
+                "dsfa_covered": dsfa_exists,
+                "hint": (
+                    "CMR-Stoff im Inventar — DSFA nach Art. 35 DSGVO prüfen"
+                    if not dsfa_exists
+                    else "CMR-Stoff im Inventar — DSFA vorhanden"
+                ),
+            }
+        )
+    return hints
+
+
 def get_dsb_kpis(tenant_id: UUID) -> DsbKPI:
     """Aggregate all DSB KPIs for a tenant."""
     from dsb.models import (

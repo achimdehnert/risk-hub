@@ -3,7 +3,9 @@
 Template-basierte Views für Explosionsschutz-Modul (HTML-Seiten)
 """
 
+from django.contrib import messages
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
@@ -189,6 +191,15 @@ class ConceptDetailView(View):
         measures = concept.measures.all()
         documents = concept.documents.all()
 
+        from approvals.models import ApprovalRequest
+
+        active_approval = ApprovalRequest.objects.filter(
+            tenant_id=tenant_id,
+            entity_type="explosionsschutz.ExplosionConcept",
+            entity_id=concept.id,
+            status__in=[ApprovalRequest.Status.PENDING, ApprovalRequest.Status.IN_REVIEW],
+        ).first()
+
         return render(
             request,
             self.template_name,
@@ -197,8 +208,75 @@ class ConceptDetailView(View):
                 "zones": zones,
                 "measures": measures,
                 "documents": documents,
+                "active_approval": active_approval,
             },
         )
+
+    def post(self, request, pk):
+        """Submit concept for approval or record a decision (HTMX-compatible)."""
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+
+        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
+
+        action = request.POST.get("action")
+        user_id = getattr(request.user, "id", None)
+
+        if action == "submit_approval":
+            from approvals.services import submit_for_approval
+
+            try:
+                submit_for_approval(
+                    tenant_id=tenant_id,
+                    entity_type="explosionsschutz.ExplosionConcept",
+                    entity_id=concept.id,
+                    user_id=user_id,
+                )
+                concept.status = "in_review"
+                concept.save(update_fields=["status"])
+                messages.success(request, "Freigabeprozess gestartet.")
+            except ValueError as exc:
+                messages.error(request, str(exc))
+
+        elif action in ("approve_step", "reject_step"):
+            from approvals.models import ApprovalDecision, ApprovalRequest
+            from approvals.services import decide
+
+            request_id = request.POST.get("request_id")
+            comment = request.POST.get("comment", "")
+            outcome = (
+                ApprovalDecision.Outcome.APPROVED
+                if action == "approve_step"
+                else ApprovalDecision.Outcome.REJECTED
+            )
+            try:
+                decide(
+                    request_id=request_id,
+                    outcome=outcome,
+                    user_id=user_id,
+                    tenant_id=tenant_id,
+                    comment=comment,
+                )
+                messages.success(
+                    request,
+                    "Freigabe erteilt." if action == "approve_step" else "Freigabe abgelehnt.",
+                )
+            except (ValueError, ApprovalRequest.DoesNotExist) as exc:
+                messages.error(request, str(exc))
+
+        if request.headers.get("HX-Request"):
+            return HttpResponse(
+                '<div id="approval-status" hx-swap-oob="true">'
+                + "".join(
+                    f'<div class="alert alert-{"success" if m.level == 25 else "danger"}">'
+                    f"{m.message}</div>"
+                    for m in messages.get_messages(request)
+                )
+                + "</div>",
+                content_type="text/html",
+            )
+
+        return redirect("explosionsschutz:concept-detail-html", pk=pk)
 
 
 class EquipmentListView(View):

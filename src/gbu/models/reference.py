@@ -128,6 +128,91 @@ class MeasureTemplate(models.Model):
         return f"[{self.tops_type}] {self.title}"
 
 
+class ActivityTemplate(models.Model):
+    """
+    Wiederverwendbare GBU-Tätigkeitsvorlage (tenant-unabhängig oder tenant-spezifisch).
+
+    Erlaubt das Vorbelegen von Tätigkeitsbeschreibung, EMKG-Parametern und
+    abgeleiteten Gefährdungskategorien. Kann beim Anlegen einer neuen
+    HazardAssessmentActivity als Startpunkt dienen.
+    """
+
+    class Scope(models.TextChoices):
+        SYSTEM = "system", "Systemvorlage (global)"
+        TENANT = "tenant", "Mandanten-Vorlage"
+
+    name = models.CharField(max_length=200, help_text="Bezeichnung der Tätigkeitsvorlage")
+    scope = models.CharField(
+        max_length=10,
+        choices=Scope.choices,
+        default=Scope.SYSTEM,
+        db_index=True,
+    )
+    tenant_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Nur bei scope=tenant gesetzt; NULL = systemweite Vorlage",
+    )
+    activity_description = models.TextField(
+        help_text="Vorausgefüllte Tätigkeitsbeschreibung",
+    )
+    activity_frequency = models.CharField(
+        max_length=15,
+        choices=[
+            ("daily", "Täglich"),
+            ("weekly", "Wöchentlich"),
+            ("occasional", "Gelegentlich"),
+            ("rare", "Selten"),
+        ],
+        blank=True,
+        default="",
+    )
+    quantity_class = models.CharField(
+        max_length=2,
+        choices=[
+            ("xs", "XS"),
+            ("s", "S"),
+            ("m", "M"),
+            ("l", "L"),
+        ],
+        blank=True,
+        default="",
+    )
+    duration_minutes = models.PositiveSmallIntegerField(
+        null=True,
+        blank=True,
+        help_text="Typische Expositionsdauer in Minuten",
+    )
+    default_hazard_categories = models.ManyToManyField(
+        HazardCategoryRef,
+        blank=True,
+        related_name="activity_templates",
+        help_text="Voreingestellte Gefährdungskategorien",
+    )
+    is_active = models.BooleanField(default=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "gbu_activity_template"
+        ordering = ["scope", "sort_order", "name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant_id", "name"],
+                condition=models.Q(scope="tenant"),
+                name="uq_gbu_activity_template_tenant_name",
+            ),
+        ]
+        verbose_name = "Tätigkeitsvorlage"
+        verbose_name_plural = "Tätigkeitsvorlagen"
+
+    def __str__(self) -> str:
+        scope_label = "🌐" if self.scope == self.Scope.SYSTEM else "🏢"
+        return f"{scope_label} {self.name}"
+
+
 class ExposureRiskMatrix(models.Model):
     """
     EMKG-Exposition-Risiko-Matrix (admin-pflegbar, keine Hardcodes).

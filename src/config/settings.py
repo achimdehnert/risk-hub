@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     "dsb",
     "gbu",
     "billing",
+    "brandschutz",
 ]
 
 MIDDLEWARE = [

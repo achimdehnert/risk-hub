@@ -58,4 +58,5 @@ urlpatterns = [
     path("gbu/", include("gbu.urls")),
     path("tenants/", include("tenancy.urls")),
     path("billing/", include("billing.urls")),
+    path("brandschutz/", include("brandschutz.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
