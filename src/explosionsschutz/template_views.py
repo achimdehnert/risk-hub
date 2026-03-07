@@ -21,8 +21,10 @@ from .models import (
     Area,
     Equipment,
     ExplosionConcept,
+    Inspection,
     MeasureCatalog,
     ReferenceStandard,
+    ZoneCalculationResult,
     ZoneDefinition,
 )
 
@@ -49,7 +51,12 @@ class HomeView(View):
 
     def _get_stats(self, tenant_id):
         """Berechnet Dashboard-Statistiken"""
+        from django.utils import timezone
+
+        from substances.models import Substance
+
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        today = timezone.now().date()
 
         areas = Area.objects.filter(base_filter).count()
         concepts = ExplosionConcept.objects.filter(base_filter)
@@ -64,21 +71,109 @@ class HomeView(View):
             Q(tenant_id__isnull=True) | Q(tenant_id=tenant_id) if tenant_id else Q()
         ).count()
 
+        # Stoffe in DB — Ex-schutzrelevant (haben UEG oder Flammpunkt)
+        substances_in_db = Substance.objects.filter(
+            base_filter,
+            status="active",
+        ).filter(
+            Q(lower_explosion_limit__isnull=False) | Q(flash_point_c__isnull=False)
+        ).count()
+
+        # Konzepte "In Bearbeitung" = draft + in_review
+        concepts_in_progress = concepts.filter(
+            status__in=["draft", "in_review"]
+        ).count()
+
+        # Fällige Geräteprüfungen
+        inspections_overdue = equipment.filter(
+            next_inspection_date__lte=today,
+            next_inspection_date__isnull=False,
+        ).count()
+
         return {
             "areas": areas,
             "concepts": concepts.count(),
             "concepts_draft": concepts.filter(status="draft").count(),
+            "concepts_in_progress": concepts_in_progress,
             "concepts_approved": concepts.filter(status="approved").count(),
+            "concepts_in_review": concepts.filter(status="in_review").count(),
             "zones": zones,
             "equipment": equipment.count(),
             "inspections_due": equipment.filter(next_inspection_date__isnull=False).count(),
+            "inspections_overdue": inspections_overdue,
             "standards": standards,
             "measures": measures,
+            "substances_in_db": substances_in_db,
         }
 
-    def _get_recent_activities(self, tenant_id):
-        """Holt letzte Aktivitäten (Placeholder)"""
-        return []
+    def _get_recent_activities(self, tenant_id, limit: int = 8):
+        """Holt letzte Aktivitäten aus Konzepten, Berechnungen und Prüfungen."""
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        activities = []
+
+        # Letzte Konzept-Änderungen
+        for c in (
+            ExplosionConcept.objects.filter(base_filter)
+            .order_by("-updated_at")[:4]
+        ):
+            activities.append(
+                {
+                    "type": "concept",
+                    "icon": "shield",
+                    "title": c.title,
+                    "subtitle": c.get_status_display(),
+                    "timestamp": c.updated_at,
+                    "url_name": "explosionsschutz:concept-detail-html",
+                    "url_pk": c.pk,
+                }
+            )
+
+        # Letzte Zonenberechnungen
+        for calc in (
+            ZoneCalculationResult.objects.filter(base_filter)
+            .select_related("zone")
+            .order_by("-calculated_at")[:3]
+        ):
+            activities.append(
+                {
+                    "type": "calculation",
+                    "icon": "calculator",
+                    "title": f"Zone {calc.calculated_zone_type} — {calc.substance_name}",
+                    "subtitle": f"r={calc.calculated_radius_m} m",
+                    "timestamp": calc.calculated_at,
+                    "url_name": None,
+                    "url_pk": None,
+                }
+            )
+
+        # Letzte Geräteprüfungen
+        for insp in (
+            Inspection.objects.filter(base_filter)
+            .select_related("equipment")
+            .order_by("-inspection_date")[:3]
+        ):
+            activities.append(
+                {
+                    "type": "inspection",
+                    "icon": "clipboard-check",
+                    "title": f"Prüfung: {insp.equipment}",
+                    "subtitle": (
+                        insp.get_result_display()
+                        if hasattr(insp, "get_result_display")
+                        else ""
+                    ),
+                    "timestamp": insp.inspection_date,
+                    "url_name": None,
+                    "url_pk": None,
+                }
+            )
+
+        # Nach Zeitstempel sortieren, neueste zuerst
+        activities.sort(
+            key=lambda x: x["timestamp"] if x["timestamp"] else "",
+            reverse=True,
+        )
+        return activities[:limit]
 
 
 class AreaListView(View):
