@@ -49,6 +49,51 @@ def get_action(action_id: UUID) -> ActionItem:
     )
 
 
+@dataclass(frozen=True)
+class UpdateActionCmd:
+    title: str | None = None
+    description: str | None = None
+    status: str | None = None
+    priority: int | None = None
+    due_date: date | None = None
+    assigned_to_id: UUID | None = None
+
+
+def update_action(action_id: UUID, cmd: UpdateActionCmd) -> ActionItem:
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise ValueError("Tenant required")
+
+    require_permission("actions.write")
+
+    action = ActionItem.objects.get(id=action_id, tenant_id=ctx.tenant_id)
+    fields = []
+    for field in ("title", "description", "status", "priority", "due_date", "assigned_to_id"):
+        val = getattr(cmd, field)
+        if val is not None:
+            setattr(action, field, val)
+            fields.append(field)
+    if fields:
+        action.save(update_fields=fields + ["updated_at"])
+    return action
+
+
+def complete_action(action_id: UUID) -> ActionItem:
+    from django.utils import timezone
+
+    ctx = get_context()
+    if ctx.tenant_id is None:
+        raise ValueError("Tenant required")
+
+    require_permission("actions.write")
+
+    action = ActionItem.objects.get(id=action_id, tenant_id=ctx.tenant_id)
+    action.status = ActionItem.Status.COMPLETED
+    action.completed_at = timezone.now()
+    action.save(update_fields=["status", "completed_at", "updated_at"])
+    return action
+
+
 def create_action(cmd: CreateActionCmd) -> ActionItem:
     ctx = get_context()
     if ctx.tenant_id is None:

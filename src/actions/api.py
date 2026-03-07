@@ -7,9 +7,12 @@ from ninja.errors import HttpError
 from actions.models import ActionItem
 from actions.services import (
     CreateActionCmd,
+    UpdateActionCmd,
+    complete_action,
     create_action,
     get_action,
     list_actions,
+    update_action,
 )
 from permissions.authz import PermissionDenied
 
@@ -97,6 +100,39 @@ def api_create_action(request, payload: ActionCreateIn):
 def api_get_action(request, action_id: UUID):
     try:
         return _to_action_out(get_action(action_id=action_id))
+    except PermissionDenied as exc:
+        raise HttpError(403, str(exc))
+    except ActionItem.DoesNotExist:
+        raise HttpError(404, "Not found")
+
+
+class ActionUpdateIn(Schema):
+    title: str | None = None
+    description: str | None = None
+    status: str | None = None
+    priority: int | None = None
+    due_date: date | None = None
+    assigned_to_id: UUID | None = None
+
+
+@router.patch("/{action_id}", response=ActionOut)
+def api_update_action(request, action_id: UUID, payload: ActionUpdateIn):
+    try:
+        action = update_action(
+            action_id=action_id,
+            cmd=UpdateActionCmd(**payload.dict(exclude_none=True)),
+        )
+        return _to_action_out(action)
+    except PermissionDenied as exc:
+        raise HttpError(403, str(exc))
+    except ActionItem.DoesNotExist:
+        raise HttpError(404, "Not found")
+
+
+@router.post("/{action_id}/complete", response=ActionOut)
+def api_complete_action(request, action_id: UUID):
+    try:
+        return _to_action_out(complete_action(action_id=action_id))
     except PermissionDenied as exc:
         raise HttpError(403, str(exc))
     except ActionItem.DoesNotExist:

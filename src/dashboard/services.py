@@ -40,6 +40,12 @@ class ComplianceKPI:
     actions_open: int = 0
     actions_overdue: int = 0
 
+    # Brandschutz
+    fire_concepts_total: int = 0
+    fire_concepts_active: int = 0
+    fire_extinguishers_overdue: int = 0
+    fire_escape_routes_defect: int = 0
+
     # Notifications
     notifications_unread: int = 0
     notifications_critical: int = 0
@@ -108,6 +114,31 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
 
     actions_qs = ActionItem.objects.filter(tf)
 
+    # --- Brandschutz ---
+    fire_concepts_total = 0
+    fire_concepts_active = 0
+    fire_extinguishers_overdue = 0
+    fire_escape_routes_defect = 0
+    try:
+        from brandschutz.models import (
+            EscapeRoute,
+            FireExtinguisher,
+            FireProtectionConcept,
+        )
+
+        fire_concepts_total = FireProtectionConcept.objects.filter(tf).count()
+        fire_concepts_active = FireProtectionConcept.objects.filter(
+            tf, status="active"
+        ).count()
+        fire_extinguishers_overdue = FireExtinguisher.objects.filter(
+            tf, status="overdue"
+        ).count()
+        fire_escape_routes_defect = EscapeRoute.objects.filter(
+            tf, status="defect"
+        ).count()
+    except Exception:
+        pass
+
     # --- Notifications ---
     notifs = Notification.objects.filter(tf, is_read=False)
 
@@ -146,6 +177,10 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
         .count(),
         notifications_unread=notifs.count(),
         notifications_critical=notifs.filter(severity="critical").count(),
+        fire_concepts_total=fire_concepts_total,
+        fire_concepts_active=fire_concepts_active,
+        fire_extinguishers_overdue=fire_extinguishers_overdue,
+        fire_escape_routes_defect=fire_escape_routes_defect,
     )
 
 
@@ -185,6 +220,8 @@ def _event_icon(category: str) -> tuple[str, str]:
         "document": ("file-text", "blue"),
         "action": ("check-square", "green"),
         "inspection": ("clipboard-check", "teal"),
+        "brandschutz": ("flame", "red"),
+        "fire": ("flame", "red"),
     }
     for key, val in mapping.items():
         if key in category.lower():
