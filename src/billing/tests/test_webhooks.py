@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -11,8 +10,6 @@ from billing.webhooks import (
     handle_checkout_session_completed,
     handle_invoice_payment_failed,
     handle_invoice_payment_succeeded,
-    handle_subscription_deleted,
-    handle_subscription_updated,
 )
 
 
@@ -43,7 +40,10 @@ class TestHandleCheckoutSessionCompleted:
             {
                 "mode": "subscription",
                 "subscription": "sub_123",
-                "metadata": {"tenant_id": str("00000000-0000-0000-0000-000000000000"), "plan_code": "professional"},
+                "metadata": {
+                    "tenant_id": "00000000-0000-0000-0000-000000000000",
+                    "plan_code": "professional",
+                },
             },
         )
         with caplog.at_level(logging.WARNING, logger="billing.webhooks"):

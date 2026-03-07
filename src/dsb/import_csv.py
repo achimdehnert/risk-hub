@@ -420,7 +420,8 @@ def import_avv(
 
 AVV_CSV_TEMPLATE = (
     "Partner;Rolle;Gegenstand;Status;Gueltig_ab;Gueltig_bis;Unterauftragsverarbeiter;Notizen\n"
-    "Beispiel GmbH;Auftragsverarbeiter;Cloud-Hosting;aktiv;01.01.2024;31.12.2025;Nein;Muster-Notiz\n"
+    "Beispiel GmbH;Auftragsverarbeiter;Cloud-Hosting;"
+    "aktiv;01.01.2024;31.12.2025;Nein;Muster-Notiz\n"
     "Muster AG;Processor;E-Mail-Versand;draft;;;Ja;Unterauftragsverarbeiter: SendGrid\n"
 )
 

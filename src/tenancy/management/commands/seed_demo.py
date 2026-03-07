@@ -92,7 +92,8 @@ class Command(BaseCommand):
                 },
             )
         self.stdout.write(
-            f"  Module subscriptions: {ModuleSubscription.objects.filter(tenant_id=tenant_id).count()}"
+            "  Module subscriptions: "
+            f"{ModuleSubscription.objects.filter(tenant_id=tenant_id).count()}"
         )
 
         # Create scope and assignment

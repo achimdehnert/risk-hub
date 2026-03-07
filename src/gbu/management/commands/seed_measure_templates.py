@@ -105,7 +105,8 @@ MEASURE_TEMPLATES: list[tuple] = [
         "acute_toxic",
         "T",
         "Lokale Absaugung an der Entstehungsstelle",
-        "Erfassung von Dämpfen/Aerosolen direkt an der Quelle (mind. 0,5 m/s Strömungsgeschwindigkeit)",
+        "Erfassung von Dämpfen/Aerosolen direkt an der Quelle"
+        " (mind. 0,5 m/s Strömungsgeschwindigkeit)",
         "TRGS 500 Nr. 4.2, DIN EN 689",
         True,
         30,
@@ -428,7 +429,8 @@ MEASURE_TEMPLATES: list[tuple] = [
         "environment",
         "T",
         "Auffangwanne / Sekundärcontainment",
-        "Bauliche Sicherung gegen unkontrolliertes Austreten (10% oder max. größtes Behältervolumen)",
+        "Bauliche Sicherung gegen unkontrolliertes Austreten"
+        " (10% oder max. größtes Behältervolumen)",
         "WHG §62, AwSV, VAwS",
         True,
         10,

@@ -2,12 +2,11 @@
 
 from __future__ import annotations
 
-import uuid
 
 import pytest
 from django.test import TestCase
 
-from billing.models import BillingEvent, StripeCustomer, StripeSubscription
+from billing.models import BillingEvent
 
 
 @pytest.mark.django_db

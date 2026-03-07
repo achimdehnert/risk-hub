@@ -42,7 +42,10 @@ class DeletionRequestForm(forms.ModelForm):
             "request_description": forms.Textarea(
                 attrs={
                     "class": _TW_TEXTAREA,
-                    "placeholder": "Welche Daten sollen gelöscht werden? Wo wurden diese gespeichert?",
+                    "placeholder": (
+                        "Welche Daten sollen gelöscht werden? "
+                        "Wo wurden diese gespeichert?"
+                    ),
                 }
             ),
             "data_categories": forms.TextInput(

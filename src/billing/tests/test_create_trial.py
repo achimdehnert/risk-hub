@@ -20,7 +20,10 @@ class TestCreateTrialCommand:
             tenant_id="33333333-3333-3333-3333-333333333333",
         )
         out = StringIO()
-        call_command("create_trial", "--slug", "trial-org", "--plan", "starter", "--days", "14", stdout=out)
+        call_command(
+            "create_trial", "--slug", "trial-org",
+            "--plan", "starter", "--days", "14", stdout=out,
+        )
         output = out.getvalue()
         assert "aktiviert" in output
         assert ModuleSubscription.objects.filter(

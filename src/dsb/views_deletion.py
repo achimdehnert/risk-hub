@@ -86,7 +86,8 @@ def deletion_request_create(request: HttpRequest) -> HttpResponse:
             send_initial_confirmation(obj)
             messages.success(
                 request,
-                f"Löschantrag für {obj.subject_name} angelegt. Bestätigungs-E-Mail wurde versendet.",
+                f"Löschantrag für {obj.subject_name} angelegt. "
+                "Bestätigungs-E-Mail wurde versendet.",
             )
             return redirect("dsb:deletion-request-detail", pk=obj.pk)
     else:
