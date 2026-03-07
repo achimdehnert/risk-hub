@@ -17,6 +17,7 @@ from billing.services import (
 @pytest.fixture
 def org(db):
     from django_tenancy.models import Organization
+
     return Organization.objects.create(
         name="Billing Test Org",
         slug="billing-test-org",
@@ -48,12 +49,14 @@ class TestGetOrCreateCustomer:
 class TestActivateSubscription:
     def test_activates_plan_modules(self, org):
         from django_tenancy.module_models import ModuleSubscription
+
         activate_subscription(org, "starter", "sub_123", "price_abc")
         subs = ModuleSubscription.objects.filter(tenant_id=org.tenant_id)
         assert subs.filter(module="gbu").exists()
 
     def test_unknown_plan_activates_nothing(self, org):
         from django_tenancy.module_models import ModuleSubscription
+
         activate_subscription(org, "nonexistent_plan", "sub_x", "price_x")
         assert ModuleSubscription.objects.filter(tenant_id=org.tenant_id).count() == 0
 
@@ -62,6 +65,7 @@ class TestActivateSubscription:
 class TestSuspendSubscription:
     def test_suspends_active_modules(self, org):
         from django_tenancy.module_models import ModuleSubscription
+
         ModuleSubscription.objects.create(
             organization=org,
             tenant_id=org.tenant_id,

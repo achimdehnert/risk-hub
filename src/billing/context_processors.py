@@ -31,8 +31,7 @@ def billing_context(request: HttpRequest) -> dict:
             return {"stripe_sub": None}
 
         sub = (
-            StripeSubscription.objects
-            .filter(organization=org)
+            StripeSubscription.objects.filter(organization=org)
             .exclude(status="canceled")
             .order_by("-created_at")
             .first()

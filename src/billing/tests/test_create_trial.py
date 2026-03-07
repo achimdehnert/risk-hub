@@ -21,14 +21,18 @@ class TestCreateTrialCommand:
         )
         out = StringIO()
         call_command(
-            "create_trial", "--slug", "trial-org",
-            "--plan", "starter", "--days", "14", stdout=out,
+            "create_trial",
+            "--slug",
+            "trial-org",
+            "--plan",
+            "starter",
+            "--days",
+            "14",
+            stdout=out,
         )
         output = out.getvalue()
         assert "aktiviert" in output
-        assert ModuleSubscription.objects.filter(
-            tenant_id=org.tenant_id, module="gbu"
-        ).exists()
+        assert ModuleSubscription.objects.filter(tenant_id=org.tenant_id, module="gbu").exists()
 
     def test_raises_for_unknown_slug(self):
         with pytest.raises(CommandError, match="not found"):
@@ -45,6 +49,9 @@ class TestCreateTrialCommand:
         )
         call_command("create_trial", "--slug", "idempotent-org", "--plan", "starter")
         call_command("create_trial", "--slug", "idempotent-org", "--plan", "starter")
-        assert ModuleSubscription.objects.filter(
-            tenant_id="44444444-4444-4444-4444-444444444444"
-        ).count() == 1
+        assert (
+            ModuleSubscription.objects.filter(
+                tenant_id="44444444-4444-4444-4444-444444444444"
+            ).count()
+            == 1
+        )

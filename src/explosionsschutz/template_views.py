@@ -72,17 +72,17 @@ class HomeView(View):
         ).count()
 
         # Stoffe in DB — Ex-schutzrelevant (haben UEG oder Flammpunkt)
-        substances_in_db = Substance.objects.filter(
-            base_filter,
-            status="active",
-        ).filter(
-            Q(lower_explosion_limit__isnull=False) | Q(flash_point_c__isnull=False)
-        ).count()
+        substances_in_db = (
+            Substance.objects.filter(
+                base_filter,
+                status="active",
+            )
+            .filter(Q(lower_explosion_limit__isnull=False) | Q(flash_point_c__isnull=False))
+            .count()
+        )
 
         # Konzepte "In Bearbeitung" = draft + in_review
-        concepts_in_progress = concepts.filter(
-            status__in=["draft", "in_review"]
-        ).count()
+        concepts_in_progress = concepts.filter(status__in=["draft", "in_review"]).count()
 
         # Fällige Geräteprüfungen
         inspections_overdue = equipment.filter(
@@ -112,10 +112,7 @@ class HomeView(View):
         activities = []
 
         # Letzte Konzept-Änderungen
-        for c in (
-            ExplosionConcept.objects.filter(base_filter)
-            .order_by("-updated_at")[:4]
-        ):
+        for c in ExplosionConcept.objects.filter(base_filter).order_by("-updated_at")[:4]:
             activities.append(
                 {
                     "type": "concept",
@@ -158,9 +155,7 @@ class HomeView(View):
                     "icon": "clipboard-check",
                     "title": f"Prüfung: {insp.equipment}",
                     "subtitle": (
-                        insp.get_result_display()
-                        if hasattr(insp, "get_result_display")
-                        else ""
+                        insp.get_result_display() if hasattr(insp, "get_result_display") else ""
                     ),
                     "timestamp": insp.inspection_date,
                     "url_name": None,

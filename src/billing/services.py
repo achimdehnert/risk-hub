@@ -156,13 +156,9 @@ def sync_subscription_from_stripe(
             "current_period_end": timezone.datetime.fromtimestamp(
                 stripe_subscription["current_period_end"], tz=timezone.utc
             ),
-            "cancel_at_period_end": stripe_subscription.get(
-                "cancel_at_period_end", False
-            ),
+            "cancel_at_period_end": stripe_subscription.get("cancel_at_period_end", False),
             "canceled_at": (
-                timezone.datetime.fromtimestamp(
-                    stripe_subscription["canceled_at"], tz=timezone.utc
-                )
+                timezone.datetime.fromtimestamp(stripe_subscription["canceled_at"], tz=timezone.utc)
                 if stripe_subscription.get("canceled_at")
                 else None
             ),

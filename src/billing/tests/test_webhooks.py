@@ -25,6 +25,7 @@ class TestHandleCheckoutSessionCompleted:
 
     def test_missing_tenant_id_logs_warning(self, caplog):
         import logging
+
         event = _make_event(
             "checkout.session.completed",
             {"mode": "subscription", "subscription": "sub_123", "metadata": {}},
@@ -35,6 +36,7 @@ class TestHandleCheckoutSessionCompleted:
 
     def test_unknown_tenant_id_skips(self, caplog):
         import logging
+
         event = _make_event(
             "checkout.session.completed",
             {
@@ -54,6 +56,7 @@ class TestHandleCheckoutSessionCompleted:
 class TestHandleInvoicePaymentFailed:
     def test_logs_warning(self, caplog):
         import logging
+
         event = _make_event(
             "invoice.payment_failed",
             {"customer": "cus_abc", "attempt_count": 2},
@@ -72,6 +75,7 @@ class TestHandleInvoicePaymentSucceeded:
     def test_updates_period_end(self):
         from billing.models import StripeSubscription
         from django_tenancy.models import Organization
+
         org = Organization.objects.create(
             name="Test Org",
             slug="test-org-inv",

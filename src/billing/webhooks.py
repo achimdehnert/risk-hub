@@ -32,17 +32,12 @@ def handle_checkout_session_completed(event: dict) -> None:
         return
 
     subscription_id = session.get("subscription")
-    metadata = (
-        session.get("subscription_data", {}).get("metadata")
-        or session.get("metadata", {})
-    )
+    metadata = session.get("subscription_data", {}).get("metadata") or session.get("metadata", {})
     tenant_id = metadata.get("tenant_id")
     plan_code = metadata.get("plan_code", "")
 
     if not tenant_id or not subscription_id:
-        logger.warning(
-            "[billing] checkout.session.completed missing tenant_id or subscription_id"
-        )
+        logger.warning("[billing] checkout.session.completed missing tenant_id or subscription_id")
         return
 
     org = _get_organization(tenant_id)
@@ -74,9 +69,7 @@ def handle_subscription_updated(event: dict) -> None:
     elif sub["status"] in ("past_due", "unpaid", "canceled"):
         suspend_subscription(org)
 
-    logger.info(
-        "[billing] subscription.updated tenant=%s status=%s", tenant_id, sub["status"]
-    )
+    logger.info("[billing] subscription.updated tenant=%s status=%s", tenant_id, sub["status"])
 
 
 def handle_subscription_deleted(event: dict) -> None:
@@ -102,9 +95,7 @@ def handle_invoice_payment_failed(event: dict) -> None:
     invoice = event["data"]["object"]
     customer_id = invoice.get("customer")
     attempt = invoice.get("attempt_count", 0)
-    logger.warning(
-        "[billing] invoice.payment_failed customer=%s attempt=%d", customer_id, attempt
-    )
+    logger.warning("[billing] invoice.payment_failed customer=%s attempt=%d", customer_id, attempt)
 
 
 def handle_invoice_payment_succeeded(event: dict) -> None:
@@ -114,16 +105,10 @@ def handle_invoice_payment_succeeded(event: dict) -> None:
     if not subscription_id:
         return
 
-    period_end = (
-        invoice.get("lines", {}).get("data", [{}])[0].get("period", {}).get("end")
-    )
+    period_end = invoice.get("lines", {}).get("data", [{}])[0].get("period", {}).get("end")
     if period_end:
-        StripeSubscription.objects.filter(
-            stripe_subscription_id=subscription_id
-        ).update(
-            current_period_end=timezone.datetime.fromtimestamp(
-                period_end, tz=timezone.utc
-            )
+        StripeSubscription.objects.filter(stripe_subscription_id=subscription_id).update(
+            current_period_end=timezone.datetime.fromtimestamp(period_end, tz=timezone.utc)
         )
         logger.info("[billing] invoice.payment_succeeded subscription=%s", subscription_id)
 

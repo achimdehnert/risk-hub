@@ -40,9 +40,7 @@ def checkout_redirect(request: HttpRequest) -> HttpResponse:
 
     price_id = get_price_id(plan, billing)
     if not price_id:
-        logger.error(
-            "[billing] No price_id configured for plan=%s billing=%s", plan, billing
-        )
+        logger.error("[billing] No price_id configured for plan=%s billing=%s", plan, billing)
         return HttpResponse(
             "Plan nicht konfiguriert. Bitte kontaktieren Sie den Support.", status=400
         )
@@ -65,9 +63,7 @@ def checkout_redirect(request: HttpRequest) -> HttpResponse:
         )
         return redirect(checkout_url)
     except Exception:
-        logger.exception(
-            "[billing] Failed to create checkout session for org=%s", org.pk
-        )
+        logger.exception("[billing] Failed to create checkout session for org=%s", org.pk)
         return HttpResponse("Fehler beim Starten des Checkouts.", status=500)
 
 
@@ -83,9 +79,7 @@ def portal_redirect(request: HttpRequest) -> HttpResponse:
         portal_url = create_portal_session(org, return_url)
         return redirect(portal_url)
     except Exception:
-        logger.exception(
-            "[billing] Failed to create portal session for org=%s", org.pk
-        )
+        logger.exception("[billing] Failed to create portal session for org=%s", org.pk)
         return HttpResponse("Fehler beim Öffnen des Kundenportals.", status=500)
 
 

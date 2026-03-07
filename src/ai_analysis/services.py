@@ -148,9 +148,7 @@ def analyze_fire_concept(concept_id: UUID, tenant_id: UUID) -> dict:
     sections_count = concept.sections.count()
     escape_routes = EscapeRoute.objects.filter(section__concept=concept)
     extinguishers = FireExtinguisher.objects.filter(section__concept=concept)
-    measures_open = FireProtectionMeasure.objects.filter(
-        concept=concept, status="open"
-    ).count()
+    measures_open = FireProtectionMeasure.objects.filter(concept=concept, status="open").count()
 
     messages = get_fire_concept_messages(
         {

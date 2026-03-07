@@ -62,6 +62,7 @@ class TestStripeWebhook:
         request.META["HTTP_STRIPE_SIGNATURE"] = "invalid"
         with patch("billing.views.stripe.Webhook.construct_event") as mock_construct:
             import stripe
+
             mock_construct.side_effect = stripe.error.SignatureVerificationError(
                 "bad sig", "invalid"
             )
@@ -70,6 +71,7 @@ class TestStripeWebhook:
 
     def test_duplicate_event_returns_200(self, rf):
         from billing.models import BillingEvent
+
         BillingEvent.objects.create(
             stripe_event_id="evt_dup",
             event_type="checkout.session.completed",

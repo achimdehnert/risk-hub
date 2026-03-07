@@ -43,8 +43,7 @@ class DeletionRequestForm(forms.ModelForm):
                 attrs={
                     "class": _TW_TEXTAREA,
                     "placeholder": (
-                        "Welche Daten sollen gelöscht werden? "
-                        "Wo wurden diese gespeichert?"
+                        "Welche Daten sollen gelöscht werden? Wo wurden diese gespeichert?"
                     ),
                 }
             ),
