@@ -22,6 +22,7 @@ stripe>=7.0
 # Platform shared packages (private repo)
 django-tenancy @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-tenancy
 platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/platform-context
+django-module-shop @ file:///app/../packages/django-module-shop
 # ============================================================================
 # iil-ecosystem packages (PRIMARY — do NOT use raw openai/anthropic directly)
 # See: .windsurf/rules/iil-packages.md

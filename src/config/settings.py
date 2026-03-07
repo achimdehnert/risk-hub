@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     # Platform shared packages
     "platform_context",
     "django_tenancy",
+    "django_module_shop",
     # AI Framework
     "aifw",
     # Risk-Hub apps
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
     "billing",
     "brandschutz",
 ]
+
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
@@ -131,6 +133,73 @@ MODULE_URL_MAP = {
     "/api/substances/": "ex",
     "/gbu/": "gbu",
     "/api/gbu/": "gbu",
+}
+
+# Module Shop Catalogue (django-module-shop)
+MODULE_SHOP_CATALOGUE = {
+    "risk": {
+        "name": "Risikobewertung",
+        "description": "Gefährdungsbeurteilungen, Maßnahmen und Prüfungen.",
+        "icon": "shield-alert",
+        "price_month": 29.0,
+        "price_year": 290.0,
+        "category": "safety",
+        "dependencies": [],
+    },
+    "ex": {
+        "name": "Explosionsschutz",
+        "description": "ATEX-konforme Zoneneinteilung und Betriebsmittelprüfung.",
+        "icon": "zap",
+        "price_month": 39.0,
+        "price_year": 390.0,
+        "category": "safety",
+        "dependencies": [],
+    },
+    "substances": {
+        "name": "Gefahrstoffe",
+        "description": "Gefahrstoffverzeichnis, SDB-Verwaltung und Lagerbestand.",
+        "icon": "flask-conical",
+        "price_month": 19.0,
+        "price_year": 190.0,
+        "category": "safety",
+        "dependencies": [],
+    },
+    "dsb": {
+        "name": "Datenschutz",
+        "description": "DSGVO: VVT, TOMs, AVVs, Löschanträge und Datenpannen.",
+        "icon": "shield",
+        "price_month": 19.0,
+        "price_year": 190.0,
+        "category": "legal",
+        "dependencies": [],
+    },
+    "gbu": {
+        "name": "Gefährdungsbeurteilung (GBU)",
+        "description": "Arbeitsschutz-GBU nach ArbSchG mit PDF-Export.",
+        "icon": "clipboard-list",
+        "price_month": 19.0,
+        "price_year": 190.0,
+        "category": "safety",
+        "dependencies": [],
+    },
+    "brandschutz": {
+        "name": "Brandschutz",
+        "description": "Feuerlöscher, Fluchtwege und Brandschutzkonzepte.",
+        "icon": "flame",
+        "price_month": 19.0,
+        "price_year": 190.0,
+        "category": "safety",
+        "dependencies": [],
+    },
+    "documents": {
+        "name": "Dokumentenmanagement",
+        "description": "Zentrales Dokumenten-Archiv mit S3-Speicher.",
+        "icon": "file-text",
+        "price_month": 9.0,
+        "price_year": 90.0,
+        "category": "operations",
+        "dependencies": [],
+    },
 }
 
 # CSRF
