@@ -4,9 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       command:
-        description: "Django management command to run (without 'python manage.py')"
-        required: true
-        default: "create_test_user --username ad.risk --email ad.risk@dehnert.team --password Schutztat2026!"
+        description: "Django management command (without 'python manage.py'), OR leave empty to use host_command"
+        required: false
+        default: ""
+      host_command:
+        description: "Raw shell command on the host (e.g. 'docker logs risk_hub_web --tail 100')"
+        required: false
+        default: ""
 
 jobs:
   run-command:
@@ -19,8 +23,15 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Run command in container
+      - name: Run Django management command in container
+        if: ${{ inputs.command != '' }}
         run: |
           set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "docker exec risk_hub_web python manage.py ${{ inputs.command }}"
+
+      - name: Run host command directly
+        if: ${{ inputs.host_command != '' }}
+        run: |
+          set -euo pipefail
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "${{ inputs.host_command }}"
