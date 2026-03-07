@@ -5,8 +5,8 @@ from django.conf import settings
 PLAN_MODULES: dict[str, list[str]] = {
     "starter": ["gbu"],
     "professional": ["risk", "dsb", "gbu", "actions", "documents"],
-    "business": ["risk", "ex", "substances", "dsb", "gbu", "documents", "actions"],
-    "enterprise": ["risk", "ex", "substances", "dsb", "gbu", "documents", "actions"],
+    "business": ["risk", "ex", "substances", "dsb", "gbu", "documents", "actions", "brandschutz"],
+    "enterprise": ["risk", "ex", "substances", "dsb", "gbu", "documents", "actions", "brandschutz"],
 }
 
 

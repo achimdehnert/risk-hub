@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block title %}IFC-Import - {{ area.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div>
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="/ex/" class="hover:text-gray-700">Explosionsschutz</a>
+            <span class="mx-2">/</span>
+            <a href="/ex/areas/" class="hover:text-gray-700">Bereiche</a>
+            <span class="mx-2">/</span>
+            <a href="/ex/areas/{{ area.pk }}/" class="hover:text-gray-700">{{ area.name }}</a>
+            <span class="mx-2">/</span>
+            <span>IFC-Import</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">IFC-Import</h1>
+        <p class="mt-1 text-gray-500">Bereich: <strong>{{ area.code }} — {{ area.name }}</strong></p>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start space-x-3">
+        <i data-lucide="alert-circle" class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"></i>
+        <div>
+            <p class="font-medium text-red-800">Fehler beim Importieren</p>
+            <p class="text-sm text-red-600 mt-1">{{ error }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Upload Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+            <i data-lucide="upload" class="w-5 h-5 mr-2 text-blue-600"></i>
+            IFC-Datei hochladen
+        </h2>
+        <p class="text-sm text-gray-500 mb-6">
+            Unterstützte Formate: <strong>IFC2X3, IFC4, IFC4X3</strong> (.ifc)<br>
+            Der Parser extrahiert Räume (IfcSpace), Geschosse (IfcBuildingStorey),
+            Wände, Türen (inkl. Brandschutztüren) und Flächenmengen.
+        </p>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-4">
+            {% csrf_token %}
+            <div class="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-blue-400 transition">
+                <i data-lucide="file-code" class="w-12 h-12 mx-auto text-gray-400 mb-3"></i>
+                <p class="text-gray-600 mb-2">IFC-Datei auswählen oder hierher ziehen</p>
+                <input type="file"
+                       name="ifc_file"
+                       accept=".ifc"
+                       required
+                       class="block w-full text-sm text-gray-500 mt-3
+                              file:mr-4 file:py-2 file:px-4
+                              file:rounded-lg file:border-0
+                              file:text-sm file:font-medium
+                              file:bg-blue-50 file:text-blue-700
+                              hover:file:bg-blue-100">
+            </div>
+            <div class="flex justify-end space-x-3">
+                <a href="/ex/areas/{{ area.pk }}/"
+                   class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    Abbrechen
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                    <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                    Importieren
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Info Box -->
+    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <h3 class="font-medium text-blue-900 mb-2 flex items-center">
+            <i data-lucide="info" class="w-4 h-4 mr-2"></i>
+            Was wird importiert?
+        </h3>
+        <ul class="text-sm text-blue-800 space-y-1 list-disc list-inside">
+            <li>Projektname, Gebäudename, IFC-Schema-Version</li>
+            <li>Alle Geschosse (IfcBuildingStorey) mit Höhenangabe</li>
+            <li>Räume (IfcSpace): Fläche, Höhe, Volumen, DIN-277-Nutzungskategorie</li>
+            <li>Brandschutztüren (T30/T60/T90) mit Feuerklasse und Abmessungen</li>
+            <li>Das Ergebnis wird in der Bereichs-Analyse gespeichert</li>
+        </ul>
+    </div>
+
+    <!-- Alternative: DXF -->
+    <div class="text-center text-sm text-gray-500">
+        Alternativ:
+        <a href="{% url 'explosionsschutz:area-dxf-upload' area.pk %}"
+           class="text-blue-600 hover:underline">DXF-Datei importieren</a>
+    </div>
+</div>
+{% endblock %}
