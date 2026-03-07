@@ -9,6 +9,7 @@ from ai_analysis.llm_client import (
     llm_complete_sync,
 )
 from ai_analysis.prompts import (
+    get_fire_concept_messages,
     get_hazard_area_messages,
     get_substance_risk_messages,
 )
@@ -123,6 +124,66 @@ def analyze_substance(
             "error": str(exc),
             "_substance_id": str(substance_id),
         }
+
+
+ACTION_FIRE_ANALYSIS = "brandschutz_analysis"
+
+
+def analyze_fire_concept(concept_id: UUID, tenant_id: UUID) -> dict:
+    """
+    Run AI compliance analysis on a Brandschutzkonzept.
+
+    Collects concept data, sections, escape routes and extinguisher stats,
+    then sends to LLM Gateway for structured findings + recommendations.
+    """
+    from brandschutz.models import (
+        EscapeRoute,
+        FireExtinguisher,
+        FireProtectionConcept,
+        FireProtectionMeasure,
+    )
+
+    concept = FireProtectionConcept.objects.get(id=concept_id, tenant_id=tenant_id)
+
+    sections_count = concept.sections.count()
+    escape_routes = EscapeRoute.objects.filter(section__concept=concept)
+    extinguishers = FireExtinguisher.objects.filter(section__concept=concept)
+    measures_open = FireProtectionMeasure.objects.filter(
+        concept=concept, status="open"
+    ).count()
+
+    messages = get_fire_concept_messages(
+        {
+            "concept_title": concept.title,
+            "concept_type": concept.get_concept_type_display(),
+            "site_name": str(concept.site),
+            "status": concept.get_status_display(),
+            "valid_until": str(concept.valid_until) if concept.valid_until else "nicht gesetzt",
+            "sections_count": sections_count,
+            "escape_routes_count": escape_routes.count(),
+            "escape_routes_defect": escape_routes.filter(status="defect").count(),
+            "extinguishers_count": extinguishers.count(),
+            "extinguishers_overdue": extinguishers.filter(status="overdue").count(),
+            "measures_open": measures_open,
+        }
+    )
+
+    try:
+        raw = llm_complete_sync(
+            messages=messages,
+            action_code=ACTION_FIRE_ANALYSIS,
+            temperature=0.2,
+            max_tokens=3000,
+            tenant_id=tenant_id,
+            object_id=f"fire_concept:{concept_id}",
+        )
+        result = _parse_json_response(raw)
+        result["_raw"] = raw
+        result["_concept_id"] = str(concept_id)
+        return result
+    except Exception as exc:
+        logger.exception("AI fire analysis failed for concept %s", concept_id)
+        return {"error": str(exc), "_concept_id": str(concept_id)}
 
 
 def _collect_area_substances(area) -> list[str]:
