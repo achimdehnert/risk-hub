@@ -20,7 +20,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Build-time secret for private GitHub packages (platform-context, django-tenancy)
 ARG PROJECT_PAT
 
-# Copy local packages before pip install (file:// requirements need them present)
+# Copy local packages before pip install
 COPY packages/ /app/packages/
 
 # Install all dependencies from requirements.txt (single source of truth)
@@ -28,6 +28,7 @@ COPY requirements.txt /app/requirements.txt
 RUN git config --global url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf "https://github.com/" \
     && pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir -r /app/requirements.txt \
+    && pip install --no-cache-dir -e /app/packages/django-module-shop/ \
     && git config --global --unset url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf || true
 
 COPY docker/app/entrypoint.sh /entrypoint.sh

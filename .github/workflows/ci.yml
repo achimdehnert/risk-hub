@@ -87,6 +87,7 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt || echo "::warning::Some packages failed to install"
           pip install -r requirements-dev.txt
+          pip install -e packages/django-module-shop/
 
       - name: Install iil-packages (aifw, promptfw, authoringfw, nl2cad)
         run: |
