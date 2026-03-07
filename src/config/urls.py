@@ -23,9 +23,10 @@ handler404 = custom_404
 handler500 = custom_500
 
 urlpatterns = [
-    # Health checks (ADR-021: /livez/ liveness + /healthz/ readiness)
+    # Health checks (ADR-021: /livez/ liveness + /healthz/ + /readyz/ readiness)
     path("livez/", liveness, name="liveness"),
     path("healthz/", readiness, name="readiness"),
+    path("readyz/", readiness, name="readyz"),
     path("", home),
     path("dashboard/", include("dashboard.urls")),
     path("admin/", admin.site.urls),
