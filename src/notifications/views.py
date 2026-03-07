@@ -89,7 +89,7 @@ class NotificationMarkReadView(View):
         )
         notif.mark_read()
 
-        if request.htmx:
+        if request.headers.get("HX-Request"):
             return HttpResponse(status=204)
         return JsonResponse({"status": "ok"})
 
@@ -102,7 +102,7 @@ class NotificationMarkAllReadView(View):
         user_id = getattr(request.user, "id", None)
         count = mark_all_read(tenant_id, user_id)
 
-        if request.htmx:
+        if request.headers.get("HX-Request"):
             return render(
                 request,
                 "notifications/partials/badge.html",

@@ -25,5 +25,9 @@ app.conf.beat_schedule = {
         "task": "gbu.tasks.check_review_deadlines",
         "schedule": crontab(hour=7, minute=0),  # Daily at 07:00
     },
+    "cleanup-old-export-jobs": {
+        "task": "reporting.cleanup_old_export_jobs",
+        "schedule": crontab(hour=3, minute=0, day_of_week=0),  # Weekly Sunday 03:00
+    },
 }
 app.conf.timezone = "Europe/Berlin"
