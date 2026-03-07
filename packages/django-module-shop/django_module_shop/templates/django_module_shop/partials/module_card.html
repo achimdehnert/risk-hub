@@ -1,0 +1,45 @@
+{% comment %}
+Module card for the configurator.
+Context: module (ModuleDefinition), active_modules (set[str]), organization
+{% endcomment %}
+{% with is_active=module.code|stringformat:"s" in active_modules %}
+<div class="bg-white rounded-lg border-2 {% if is_active %}border-orange-400{% else %}border-gray-200{% endif %} p-4 flex flex-col gap-3 transition-all"
+     id="module-card-{{ module.code }}">
+  <div class="flex items-start justify-between">
+    <div class="flex items-center gap-2">
+      <i data-lucide="{{ module.icon }}" class="w-5 h-5 {% if is_active %}text-orange-500{% else %}text-gray-400{% endif %}"></i>
+      <span class="font-medium text-gray-900 text-sm">{{ module.name }}</span>
+    </div>
+    <label class="relative inline-flex items-center cursor-pointer">
+      <input type="checkbox"
+             name="module"
+             value="{{ module.code }}"
+             {% if is_active %}checked{% endif %}
+             class="sr-only peer"
+             onchange="updateSummary()">
+      <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer
+                  peer-checked:bg-orange-500 after:content-[''] after:absolute
+                  after:top-[2px] after:left-[2px] after:bg-white after:rounded-full
+                  after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-full"></div>
+    </label>
+  </div>
+  <p class="text-xs text-gray-500 leading-snug">{{ module.description }}</p>
+  <div class="flex items-center justify-between mt-auto">
+    {% if module.is_free %}
+    <span class="text-xs font-medium text-green-600">Kostenlos</span>
+    {% else %}
+    <span class="text-xs text-gray-500">
+      {{ module.price_month }}€/Monat
+      {% if module.yearly_discount_pct %}
+      <span class="text-green-600 ml-1">–{{ module.yearly_discount_pct }}% jährlich</span>
+      {% endif %}
+    </span>
+    {% endif %}
+    {% if module.dependencies %}
+    <span class="text-xs text-gray-400">
+      Benötigt: {{ module.dependencies|join:", " }}
+    </span>
+    {% endif %}
+  </div>
+</div>
+{% endwith %}

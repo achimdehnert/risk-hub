@@ -1,0 +1,39 @@
+[project]
+name = "django-module-shop"
+version = "0.1.0"
+description = "Flexible module booking and configuration for multi-tenant Django apps"
+readme = "README.md"
+requires-python = ">=3.11"
+license = {text = "MIT"}
+authors = [{name = "Achim Dehnert"}]
+
+dependencies = [
+    "django>=4.2",
+    "django-tenancy",
+]
+
+[project.optional-dependencies]
+stripe = ["stripe>=8.0"]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.5",
+    "ruff>=0.4",
+    "factory-boy>=3.3",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["django_module_shop"]
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = ["."]
