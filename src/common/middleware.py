@@ -170,6 +170,35 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 set_db_tenant(None)
                 _sync_platform_context()
                 return None
+
+            # Fallback: resolve tenant from authenticated user.tenant_id
+            user = getattr(request, "user", None)
+            if user and user.is_authenticated:
+                user_tenant_id = getattr(user, "tenant_id", None)
+                if user_tenant_id:
+                    try:
+                        from tenancy.models import Organization
+
+                        org = Organization.objects.filter(tenant_id=user_tenant_id).first()
+                        if org:
+                            set_tenant(org.tenant_id, org.slug)
+                            set_db_tenant(org.tenant_id)
+                            request.tenant = org
+                            request.tenant_id = org.tenant_id
+                            request.tenant_slug = org.slug
+                            _sync_platform_context(tenant_id=org.tenant_id, slug=org.slug)
+                            return None
+                    except Exception:
+                        pass
+
+            # Public login / accounts paths — allow without tenant
+            accounts_prefixes = ["/accounts/", "/tenants/", "/admin/"]
+            if any(request.path.startswith(p) for p in accounts_prefixes):
+                set_tenant(None, None)
+                set_db_tenant(None)
+                _sync_platform_context()
+                return None
+
             return HttpResponse(
                 "403 Forbidden: Kein Tenant-Subdomain angegeben.",
                 status=403,

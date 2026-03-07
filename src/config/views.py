@@ -1,4 +1,3 @@
-from django.conf import settings as django_settings
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
@@ -69,19 +68,19 @@ def tenant_login(request: HttpRequest) -> HttpResponse:
 
 
 def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
-    """After successful login: resolve tenant and redirect."""
+    """After successful login: always redirect to /dashboard/ on current domain.
+
+    Tenant context is resolved via user.tenant_id in middleware — no subdomain
+    redirect needed. Modules are freely selectable per user, not per subdomain.
+    """
     from django_tenancy.models import Membership
 
+    # If tenant already set (subdomain or header) → go to dashboard
     tenant_id = getattr(request, "tenant_id", None)
-
-    # Already on a tenant subdomain → go straight to dashboard
     if tenant_id is not None:
-        tenant_slug = getattr(request, "tenant_slug", None)
-        if tenant_slug and tenant_slug.startswith("dsb"):
-            return redirect("/dsb/")
         return redirect("/dashboard/")
 
-    # On base domain → look up memberships
+    # No tenant context yet → look up via membership and set on request
     memberships = (
         Membership.objects.filter(user=request.user)
         .select_related("organization")
@@ -90,46 +89,46 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
     active = [m for m in memberships if m.organization.is_active]
 
     if not active:
-        # Staff/superuser without membership → go to /tenants/
         if request.user.is_staff:
             return redirect("/tenants/")
         return redirect("/dashboard/")
 
     if len(active) == 1:
-        slug = active[0].organization.slug
-        return _build_tenant_redirect(request, slug)
+        # Set tenant on request so middleware picks it up for this request
+        org = active[0].organization
+        request.tenant = org
+        request.tenant_id = org.tenant_id
+        request.tenant_slug = org.slug
+        from common.context import set_db_tenant, set_tenant
 
-    # Multiple tenants → show picker (rendered inline)
+        set_tenant(org.tenant_id, org.slug)
+        set_db_tenant(org.tenant_id)
+        return redirect("/dashboard/")
+
+    # Multiple orgs → let user pick
     return render(
         request,
         "registration/tenant_picker.html",
-        {
-            "memberships": active,
-        },
+        {"memberships": active},
     )
-
-
-def _build_tenant_redirect(request: HttpRequest, slug: str) -> HttpResponse:
-    """Build redirect URL for tenant subdomain."""
-    base_domains = list(getattr(django_settings, "TENANT_BASE_DOMAINS", []))
-    base_domain = (
-        base_domains[0]
-        if base_domains
-        else getattr(django_settings, "TENANT_BASE_DOMAIN", "localhost")
-    )
-    host = request.get_host()
-    # Dev: keep same host:port, just prepend slug as path hint via header
-    # Prod: redirect to <slug>.<base_domain>/dashboard/
-    if "localhost" in host or "127.0.0.1" in host:
-        # In dev we can't do subdomain redirect easily — go to dashboard directly
-        return redirect("/dashboard/")
-    return redirect(f"https://{slug}.{base_domain}/dashboard/")
 
 
 @login_required
 def tenant_pick(request: HttpRequest, slug: str) -> HttpResponse:
-    """Redirect authenticated user to chosen tenant subdomain."""
-    return _build_tenant_redirect(request, slug)
+    """Set tenant context to chosen org and redirect to dashboard."""
+    from tenancy.models import Organization
+    from common.context import set_db_tenant, set_tenant
+
+    try:
+        org = Organization.objects.get(slug=slug)
+        request.tenant = org
+        request.tenant_id = org.tenant_id
+        request.tenant_slug = org.slug
+        set_tenant(org.tenant_id, org.slug)
+        set_db_tenant(org.tenant_id)
+    except Organization.DoesNotExist:
+        pass
+    return redirect("/dashboard/")
 
 
 @login_required
