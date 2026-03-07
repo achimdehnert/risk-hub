@@ -184,13 +184,10 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 set_db_tenant(None)
                 _sync_platform_context()
                 return None
-            if allow_localhost:
-                set_tenant(None, None)
-                set_db_tenant(None)
-                _sync_platform_context()
-                return None
 
             # Fallback: resolve tenant from authenticated user.tenant_id
+            # Must run BEFORE allow_localhost so production (schutztat.de)
+            # with TENANT_ALLOW_LOCALHOST=True still gets tenant context.
             user = getattr(request, "user", None)
             if user and user.is_authenticated:
                 user_tenant_id = getattr(user, "tenant_id", None)
@@ -209,6 +206,12 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                             return None
                     except Exception:
                         pass
+
+            if allow_localhost:
+                set_tenant(None, None)
+                set_db_tenant(None)
+                _sync_platform_context()
+                return None
 
             # Public login / accounts paths — allow without tenant
             accounts_prefixes = ["/accounts/", "/tenants/", "/admin/"]
