@@ -102,14 +102,83 @@ class SdsRevisionViewSet(TenantAwareViewSet):
 
 
 class SdsUploadView(APIView):
-    """Upload einer neuen SDS-Revision."""
+    """Upload einer neuen SDS-Revision — speichert PDF in S3 + DocumentVersion."""
 
     def post(self, request, pk):
-        """Lädt neues SDS hoch."""
-        # TODO: Implementieren mit document-upload
-        return Response(
-            {"message": "SDS upload not yet implemented"}, status=status.HTTP_501_NOT_IMPLEMENTED
+        import hashlib
+
+        from django.conf import settings
+
+        from common.s3 import s3_client
+        from documents.models import Document, DocumentVersion
+
+        tenant_id = getattr(request, "tenant_id", None)
+        try:
+            substance = Substance.objects.get(id=pk, tenant_id=tenant_id)
+        except Substance.DoesNotExist:
+            return Response({"error": "Stoff nicht gefunden"}, status=status.HTTP_404_NOT_FOUND)
+
+        pdf_file = request.FILES.get("file")
+        if not pdf_file:
+            return Response(
+                {"error": "Keine Datei hochgeladen"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        revision_date = request.data.get("revision_date")
+        if not revision_date:
+            return Response(
+                {"error": "revision_date erforderlich (YYYY-MM-DD)"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        content = pdf_file.read()
+        sha256 = hashlib.sha256(content).hexdigest()
+        s3_key = f"sds/{tenant_id}/{pk}/{sha256[:16]}_{pdf_file.name}"
+
+        try:
+            s3 = s3_client()
+            s3.put_object(
+                Bucket=getattr(settings, "S3_BUCKET", "risk-hub"),
+                Key=s3_key,
+                Body=content,
+                ContentType=pdf_file.content_type or "application/pdf",
+            )
+        except Exception as exc:
+            return Response(
+                {"error": f"S3-Upload fehlgeschlagen: {exc}"},
+                status=status.HTTP_502_BAD_GATEWAY,
+            )
+
+        doc, _ = Document.objects.get_or_create(
+            tenant_id=tenant_id,
+            title=f"SDB {substance.name}",
+            defaults={"category": "sds"},
         )
+        next_version = doc.versions.count() + 1
+        doc_version = DocumentVersion.objects.create(
+            tenant_id=tenant_id,
+            document=doc,
+            version=next_version,
+            filename=pdf_file.name,
+            content_type=pdf_file.content_type or "application/pdf",
+            size_bytes=len(content),
+            sha256=sha256,
+            s3_key=s3_key,
+        )
+
+        existing_count = SdsRevision.objects.filter(substance=substance).count()
+        sds = SdsRevision.objects.create(
+            tenant_id=tenant_id,
+            substance=substance,
+            revision_number=existing_count + 1,
+            revision_date=revision_date,
+            document=doc_version,
+            status=SdsRevision.Status.DRAFT,
+            notes=request.data.get("notes", ""),
+        )
+
+        return Response(SdsRevisionSerializer(sds).data, status=status.HTTP_201_CREATED)
 
 
 class SdsApproveView(APIView):
