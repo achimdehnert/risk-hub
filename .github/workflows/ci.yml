@@ -204,6 +204,15 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
           "
 
+      - name: Sanitize .env.prod (remove corrupt lines)
+        run: |
+          set -euo pipefail
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "ENV_FILE=${{ vars.DEPLOY_SERVER_PATH }}/.env.prod && \
+            sed -i '/\"/d' \"\${ENV_FILE}\" && \
+            sed -i '/^STRIPE_/d' \"\${ENV_FILE}\" && \
+            echo 'env.prod sanitized'"
+
       - name: Inject Stripe Secrets into .env.prod
         env:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
@@ -220,7 +229,6 @@ jobs:
           set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "ENV_FILE=${DEPLOY_SERVER_PATH}/.env.prod && \
-            sed -i '/^STRIPE_/d' \"\${ENV_FILE}\" && \
             printf 'STRIPE_SECRET_KEY=%s\nSTRIPE_PUBLISHABLE_KEY=%s\nSTRIPE_WEBHOOK_SECRET=%s\nSTRIPE_PRICE_STARTER_MONTHLY=%s\nSTRIPE_PRICE_STARTER_ANNUAL=%s\nSTRIPE_PRICE_PROFESSIONAL_MONTHLY=%s\nSTRIPE_PRICE_PROFESSIONAL_ANNUAL=%s\nSTRIPE_PRICE_BUSINESS_MONTHLY=%s\nSTRIPE_PRICE_BUSINESS_ANNUAL=%s\n' \
             '${STRIPE_SECRET_KEY}' '${STRIPE_PUBLISHABLE_KEY}' '${STRIPE_WEBHOOK_SECRET}' \
             '${STRIPE_PRICE_STARTER_MONTHLY}' '${STRIPE_PRICE_STARTER_ANNUAL}' \
