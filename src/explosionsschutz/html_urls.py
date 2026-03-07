@@ -18,6 +18,7 @@ from .template_views import (
     AreaDetailView,
     AreaDxfUploadView,
     AreaEditView,
+    AreaIFCUploadView,
     AreaListView,
     ConceptCreateView,
     ConceptDetailView,
@@ -48,6 +49,11 @@ urlpatterns = [
         "areas/<uuid:pk>/dxf/",
         AreaDxfUploadView.as_view(),
         name="area-dxf-upload",
+    ),
+    path(
+        "areas/<uuid:pk>/ifc/",
+        AreaIFCUploadView.as_view(),
+        name="area-ifc-upload",
     ),
     path(
         "areas/<uuid:pk>/brandschutz/",

@@ -692,6 +692,110 @@ class AreaDxfUploadView(View):
         return redirect("explosionsschutz:area-brandschutz", pk=area.pk)
 
 
+class AreaIFCUploadView(View):
+    """IFC-Upload für einen Bereich — parst Räume/Geschosse via nl2cad-core IFCParser."""
+
+    template_name = "explosionsschutz/areas/ifc_upload.html"
+
+    def get(self, request, pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
+        return render(request, self.template_name, {"area": area})
+
+    def post(self, request, pk):
+        import logging
+
+        from nl2cad.core.exceptions import IFCParseError, UnsupportedFormatError
+        from nl2cad.core.parsers.ifc_parser import IFCParser
+
+        logger = logging.getLogger(__name__)
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
+
+        ifc_file = request.FILES.get("ifc_file")
+        if not ifc_file:
+            return render(
+                request,
+                self.template_name,
+                {"area": area, "error": "Keine IFC-Datei hochgeladen."},
+            )
+
+        if not ifc_file.name.lower().endswith(".ifc"):
+            return render(
+                request,
+                self.template_name,
+                {"area": area, "error": "Nur .ifc Dateien sind erlaubt."},
+            )
+
+        try:
+            parser = IFCParser()
+            ifc_model = parser.parse_bytes(ifc_file.read(), ifc_file.name)
+        except (IFCParseError, UnsupportedFormatError) as exc:
+            logger.warning("[AreaIFCUpload] Parse-Fehler %s: %s", area.code, exc)
+            return render(
+                request,
+                self.template_name,
+                {"area": area, "error": f"IFC konnte nicht gelesen werden: {exc}"},
+            )
+
+        analysis = {
+            "schema": ifc_model.schema,
+            "project_name": ifc_model.project_name,
+            "building_name": ifc_model.building_name,
+            "floor_count": ifc_model.floor_count,
+            "rooms_count": len(ifc_model.rooms),
+            "total_area_m2": round(ifc_model.total_area_m2, 2),
+            "floors": [
+                {
+                    "name": f.name,
+                    "elevation_m": round(f.elevation_m, 2),
+                    "rooms_count": len(f.rooms),
+                    "doors_count": len(f.doors),
+                    "walls_count": len(f.walls),
+                }
+                for f in ifc_model.floors
+            ],
+            "rooms": [
+                {
+                    "name": r.name,
+                    "number": r.number,
+                    "floor_name": r.floor_name,
+                    "area_m2": round(r.area_m2, 2),
+                    "height_m": round(r.height_m, 2),
+                    "volume_m3": round(r.volume_m3, 2),
+                    "usage_category": r.usage_category,
+                }
+                for r in ifc_model.rooms
+            ],
+            "fire_doors": [
+                {
+                    "name": d.name,
+                    "fire_rating": d.fire_rating,
+                    "width_m": round(d.width_m, 2),
+                    "floor_guid": d.floor_guid,
+                }
+                for f in ifc_model.floors
+                for d in f.doors
+                if d.is_fire_door
+            ],
+        }
+
+        area.dxf_analysis_json = analysis
+        area.brandschutz_analysis_json = None
+        area.save()
+
+        logger.info(
+            "[AreaIFCUpload] %s: schema=%s, %d Räume, %.1f m² gespeichert",
+            area.code,
+            ifc_model.schema,
+            len(ifc_model.rooms),
+            ifc_model.total_area_m2,
+        )
+        return redirect("explosionsschutz:area-brandschutz", pk=area.pk)
+
+
 class ZoneCalculateView(View):
     """
     TRGS 721 Zonenberechnung via riskfw.
