@@ -1,0 +1,26 @@
+name: Run Management Command
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Django management command to run (without 'python manage.py')"
+        required: true
+        default: "create_test_user --username ad.risk --email ad.risk@dehnert.team --password Schutztat2026!"
+
+jobs:
+  run-command:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Run command in container
+        run: |
+          set -euo pipefail
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "docker exec risk_hub_web python manage.py ${{ inputs.command }}"
