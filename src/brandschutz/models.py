@@ -72,7 +72,7 @@ class FireProtectionConcept(models.Model):
         indexes = [
             models.Index(
                 fields=["tenant_id", "status"],
-                name="ix_brandschutz_concept_tenant_status",
+                name="ix_bs_concept_tenant_status",
             ),
         ]
         constraints = [
@@ -164,7 +164,7 @@ class FireSection(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=["concept", "name"],
-                name="uq_brandschutz_section_name_per_concept",
+                name="uq_bs_section_name_concept",
             ),
         ]
 
@@ -314,11 +314,11 @@ class FireExtinguisher(models.Model):
         indexes = [
             models.Index(
                 fields=["tenant_id", "status"],
-                name="ix_brandschutz_ext_tenant_status",
+                name="ix_bs_ext_tenant_status",
             ),
             models.Index(
                 fields=["tenant_id", "next_inspection_date"],
-                name="ix_brandschutz_ext_inspection",
+                name="ix_bs_ext_inspection",
             ),
         ]
 
@@ -407,7 +407,7 @@ class FireProtectionMeasure(models.Model):
         indexes = [
             models.Index(
                 fields=["tenant_id", "status"],
-                name="ix_brandschutz_measure_tenant_status",
+                name="ix_bs_measure_tenant_status",
             ),
         ]
 
