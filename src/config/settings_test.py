@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     "django_filters",
     "platform_context",
     "django_tenancy",
+    "django_module_shop",
     "aifw",
     "common",
     "tenancy",

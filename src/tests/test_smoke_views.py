@@ -15,18 +15,20 @@ import pytest
 
 # ─── Module URL lists ──────────────────────────────────────────────────────────────
 
-# Dashboard excluded from TestClient smoke — has dedicated RequestFactory tests
-# in dashboard/tests/test_views.py; base.html + middleware causes RecursionError
-# in TestClient full-stack rendering (tracked separately).
-DASHBOARD_URLS: list[str] = []
+DASHBOARD_URLS = [
+    "/dashboard/",
+]
 
 RISK_URLS = [
     "/risk/assessments/",
 ]
 
-# explosionsschutz URLs excluded — RecursionError in template rendering
-# tracked separately: https://github.com/achimdehnert/risk-hub/issues
-EXPLOSIONSSCHUTZ_URLS: list[str] = []
+EXPLOSIONSSCHUTZ_URLS = [
+    "/ex/",
+    "/ex/areas/",
+    "/ex/concepts/",
+    "/ex/equipment/",
+]
 
 SUBSTANCES_URLS = [
     "/substances/",
@@ -86,6 +88,7 @@ PUBLIC_URLS = [
 ALL_AUTHENTICATED_URLS = (
     DASHBOARD_URLS
     + RISK_URLS
+    + EXPLOSIONSSCHUTZ_URLS
     + SUBSTANCES_URLS
     + DSB_URLS
     + GBU_URLS
