@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   # ──────────────────────────────────────────────────────────────
-  # Stage ②a: Fast Checks (lint, format, security audit)
+  # Stage ␂a: Fast Checks (lint, format, security audit)
   # ──────────────────────────────────────────────────────────────
   fast-checks:
     runs-on: ubuntu-latest
@@ -46,7 +46,7 @@ jobs:
           }
 
   # ──────────────────────────────────────────────────────────────
-  # Stage ③: Tests (PostgreSQL — required by django-tenancy)
+  # Stage ␃: Tests (PostgreSQL — required by django-tenancy)
   # ──────────────────────────────────────────────────────────────
   test:
     runs-on: ubuntu-latest
@@ -120,7 +120,7 @@ jobs:
           fi
 
   # ──────────────────────────────────────────────────────────────
-  # Stage ⑤: Build + Push Docker Image (only on main push)
+  # Stage ␅: Build + Push Docker Image (only on main push)
   # ──────────────────────────────────────────────────────────────
   deploy-build:
     runs-on: ubuntu-latest
@@ -130,6 +130,9 @@ jobs:
     environment: production
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -156,32 +159,31 @@ jobs:
             ${{ vars.DEPLOY_CONTAINER }}" 2>/dev/null || echo "unknown")
           echo "previous_sha=${CURRENT_SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: Docker Build
-        run: |
-          set -euo pipefail
-          docker build \
-            --no-cache \
-            --label "org.opencontainers.image.revision=${GITHUB_SHA::7}" \
-            --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
-            --build-arg GIT_SHA=${GITHUB_SHA::7} \
-            --build-arg PROJECT_PAT=${{ secrets.PROJECT_PAT }} \
-            -f ${{ vars.DEPLOY_DOCKERFILE }} \
-            -t ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7} \
-            -t ${{ vars.DEPLOY_IMAGE }}:latest \
-            .
+      - name: Docker Build + Push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ vars.DEPLOY_DOCKERFILE }}
+          push: true
+          tags: |
+            ${{ vars.DEPLOY_IMAGE }}:${{ github.sha }}
+            ${{ vars.DEPLOY_IMAGE }}:latest
+          build-args: |
+            BUILD_DATE=${{ github.event.head_commit.timestamp }}
+            GIT_SHA=${{ github.sha }}
+          labels: |
+            org.opencontainers.image.revision=${{ github.sha }}
+          secrets: |
+            GIT_TOKEN=${{ secrets.PROJECT_PAT }}
 
-      - name: Docker Push
-        run: |
-          set -euo pipefail
-          docker push ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7}
-          docker push ${{ vars.DEPLOY_IMAGE }}:latest
-          echo "## Pushed: ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
+      - name: Push summary
+        run: echo "## Pushed ${{ vars.DEPLOY_IMAGE }}:${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
+
     outputs:
       previous_sha: ${{ steps.pre_deploy.outputs.previous_sha }}
 
   # ──────────────────────────────────────────────────────────────
-  # Stage ⑥: Deploy + Verify
-  # Note: migrations run automatically via entrypoint.sh on web start
+  # Stage ␆: Deploy + Verify
   # ──────────────────────────────────────────────────────────────
   deploy-verify:
     runs-on: ubuntu-latest
@@ -204,7 +206,7 @@ jobs:
             docker compose -f docker-compose.prod.yml pull
           "
 
-      - name: Sanitize .env.prod (remove corrupt lines)
+      - name: Sanitize .env.prod
         run: |
           set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
@@ -249,7 +251,7 @@ jobs:
             echo \"Backup OK: /opt/backups/${BACKUP_FILE}\"
           "
 
-      - name: Start App (migrations run automatically via entrypoint)
+      - name: Start App
         run: |
           set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
@@ -288,7 +290,7 @@ jobs:
           echo "- **Image:** ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
 
   # ──────────────────────────────────────────────────────────────
-  # Stage ⑦: Rollback (only if deploy-verify fails)
+  # Stage ␇: Rollback (only if deploy-verify fails)
   # ──────────────────────────────────────────────────────────────
   rollback:
     runs-on: ubuntu-latest
