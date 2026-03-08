@@ -42,18 +42,12 @@ MIGRATION_MODULES = {
     "django_tenancy": "config.test_migrations.django_tenancy",
 }
 
+# Inherit MIDDLEWARE from settings.py — never duplicate the full list here.
+# New middleware added to settings.py is automatically included in tests.
+# Only whitenoise is removed (static files not served in test runs).
 MIDDLEWARE = [
-    "django.middleware.security.SecurityMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
-    "django.contrib.sessions.middleware.SessionMiddleware",
-    "django.middleware.common.CommonMiddleware",
-    "django.middleware.csrf.CsrfViewMiddleware",
-    "django.contrib.auth.middleware.AuthenticationMiddleware",
-    "common.middleware.RequestContextMiddleware",
-    "common.middleware.SubdomainTenantMiddleware",
-    "django_tenancy.module_access.ModuleAccessMiddleware",
-    "django.contrib.messages.middleware.MessageMiddleware",
-    "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    m for m in MIDDLEWARE  # noqa: F821 — defined by wildcard import above
+    if m != "whitenoise.middleware.WhiteNoiseMiddleware"
 ]
 
 CELERY_TASK_ALWAYS_EAGER = True
