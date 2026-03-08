@@ -1,2 +1,7 @@
 # tests/conftest.py — ADR-058
-pytest_plugins = ["iil_testkit.fixtures"]
+import os
+
+import django
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings_test")
+django.setup()

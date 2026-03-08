@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1
 FROM python:3.12-slim
 
 # OCI Labels (ADR-022)
@@ -18,16 +17,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdk-pixbuf-2.0-0 libcairo2 libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install all dependencies from requirements.txt (single source of truth).
-# GIT_TOKEN is injected at build time via --secret and is never stored
-# in any image layer (BuildKit --mount=type=secret).
+# Build-time secret for private GitHub packages (platform-context, django-tenancy)
+ARG PROJECT_PAT
+
+# Install all dependencies from requirements.txt (single source of truth)
 COPY requirements.txt /app/requirements.txt
-RUN --mount=type=secret,id=GIT_TOKEN,required=true \
-    GIT_TOKEN=$(cat /run/secrets/GIT_TOKEN) \
-    && git config --global url."https://x-access-token:${GIT_TOKEN}@github.com/".insteadOf "https://github.com/" \
+RUN git config --global url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf "https://github.com/" \
     && pip install --no-cache-dir -U pip \
     && pip install --no-cache-dir -r /app/requirements.txt \
-    && git config --global --remove-section url."https://x-access-token:${GIT_TOKEN}@github.com/" 2>/dev/null || true
+    && git config --global --unset url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf || true
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
@@ -49,6 +47,9 @@ RUN groupadd --gid 1000 app && \
 USER app
 
 EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["web"]
