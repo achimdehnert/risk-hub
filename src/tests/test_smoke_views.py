@@ -13,7 +13,7 @@ Adding a new view? Add its URL to the relevant URLS list below.
 import pytest
 
 
-# ─── Module URL lists ─────────────────────────────────────────────────────────
+# ─── Module URL lists ──────────────────────────────────────────────────────────────
 
 # Dashboard excluded from TestClient smoke — has dedicated RequestFactory tests
 # in dashboard/tests/test_views.py; base.html + middleware causes RecursionError
@@ -68,6 +68,12 @@ TENANCY_URLS = [
 
 BILLING_URLS = [
     "/billing/",
+    "/billing/success/",
+    "/billing/cancel/",
+]
+
+MODULE_SHOP_URLS = [
+    "/billing/modules/",
 ]
 
 PUBLIC_URLS = [
@@ -87,10 +93,12 @@ ALL_AUTHENTICATED_URLS = (
     + NOTIFICATIONS_URLS
     + BRANDSCHUTZ_URLS
     + TENANCY_URLS
+    + BILLING_URLS
+    + MODULE_SHOP_URLS
 )
 
 
-# ─── Fixtures ─────────────────────────────────────────────────────────────────
+# ─── Fixtures ────────────────────────────────────────────────────────────────────
 
 ALL_MODULES = [
     "risk",
@@ -177,7 +185,7 @@ def tenant_client(client, smoke_org, smoke_user, smoke_modules):
     return client
 
 
-# ─── Helper ───────────────────────────────────────────────────────────────────
+# ─── Helper ──────────────────────────────────────────────────────────────────────
 
 
 def _get(client, url):
@@ -208,7 +216,7 @@ def test_public_urls_not_500(client, url):
     assert resp.status_code != 404, f"404 on {url}"
 
 
-# ─── Dashboard ────────────────────────────────────────────────────────────────
+# ─── Dashboard ──────────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -218,7 +226,7 @@ def test_dashboard_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Risk ─────────────────────────────────────────────────────────────────────
+# ─── Risk ──────────────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -228,7 +236,7 @@ def test_risk_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Explosionsschutz ─────────────────────────────────────────────────────────
+# ─── Explosionsschutz ─────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -238,7 +246,7 @@ def test_explosionsschutz_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Substances / Gefahrstoffe ────────────────────────────────────────────────
+# ─── Substances / Gefahrstoffe ──────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -248,7 +256,7 @@ def test_substances_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── DSB / Datenschutz ────────────────────────────────────────────────────────
+# ─── DSB / Datenschutz ────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -268,7 +276,7 @@ def test_gbu_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Documents ────────────────────────────────────────────────────────────────
+# ─── Documents ─────────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -278,7 +286,7 @@ def test_documents_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Notifications ────────────────────────────────────────────────────────────
+# ─── Notifications ───────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -288,7 +296,7 @@ def test_notifications_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Brandschutz ──────────────────────────────────────────────────────────────
+# ─── Brandschutz ─────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -298,7 +306,7 @@ def test_brandschutz_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Tenancy (staff only) ─────────────────────────────────────────────────────
+# ─── Tenancy (staff only) ────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -308,7 +316,27 @@ def test_tenancy_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Anonym: should redirect to login, not crash ──────────────────────────────
+# ─── Billing ──────────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("url", BILLING_URLS)
+def test_billing_smoke(tenant_client, url):
+    resp = _get(tenant_client, url)
+    _assert_not_error(resp, url)
+
+
+# ─── Module Shop ──────────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("url", MODULE_SHOP_URLS)
+def test_module_shop_smoke(tenant_client, url):
+    resp = _get(tenant_client, url)
+    _assert_not_error(resp, url)
+
+
+# ─── Anonym: should redirect to login, not crash ───────────────────────────────
 
 
 @pytest.mark.django_db
