@@ -38,41 +38,6 @@ PASSWORD_HASHERS = [
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
-INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-    "rest_framework",
-    "django_filters",
-    "platform_context",
-    "django_tenancy",
-    "django_module_shop",
-    "aifw",
-    "common",
-    "tenancy",
-    "identity",
-    "permissions",
-    "audit",
-    "outbox",
-    "risk",
-    "actions",
-    "documents",
-    "reporting",
-    "explosionsschutz",
-    "substances",
-    "notifications",
-    "dashboard",
-    "approvals",
-    "ai_analysis",
-    "dsb",
-    "gbu",
-    "billing",
-    "brandschutz",
-]
-
 MIGRATION_MODULES = {
     "django_tenancy": "config.test_migrations.django_tenancy",
 }
@@ -86,6 +51,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "common.middleware.RequestContextMiddleware",
     "common.middleware.SubdomainTenantMiddleware",
+    "django_tenancy.module_access.ModuleAccessMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]

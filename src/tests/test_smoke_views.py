@@ -15,10 +15,11 @@ import pytest
 
 # ─── Module URL lists ───────────────────────────────────────────────────
 
-# Dashboard excluded from TestClient smoke — has dedicated RequestFactory tests
-# in dashboard/tests/test_views.py; base.html + middleware causes RecursionError
-# in TestClient full-stack rendering (tracked separately).
-DASHBOARD_URLS: list[str] = []
+DASHBOARD_URLS = [
+    "/dashboard/",
+    "/dashboard/partials/kpis/",
+    "/dashboard/partials/activity/",
+]
 
 RISK_URLS = [
     "/risk/assessments/",
@@ -179,12 +180,10 @@ def smoke_modules(db, smoke_org, smoke_user, smoke_membership):
 def tenant_client(client, smoke_org, smoke_user, smoke_modules):
     """Authenticated TestClient with tenant context bypassing middleware.
 
-    Uses TENANT_ALLOW_LOCALHOST=True so the middleware returns None
-    immediately, then the common.context is patched via the context API
-    so views see the correct tenant_id on request.
+    Uses TENANT_ALLOW_LOCALHOST=True so the middleware resolves tenant
+    from user.tenant_id directly without needing a subdomain.
     """
     client.force_login(smoke_user)
-    # Inject tenant via X-Tenant-Id header — picked up before allow_localhost
     client.defaults["HTTP_X_TENANT_ID"] = str(smoke_org.tenant_id)
     return client
 
@@ -202,9 +201,7 @@ def _assert_not_error(response, url):
     status = response.status_code
     assert status != 500, f"500 Internal Server Error on {url}"
     assert status != 404, f"404 Not Found on {url}"
-    # smoke_user is staff + admin with all modules — 403 means broken access
     assert status != 403, f"403 Forbidden on {url} — check module access"
-    # 200, 302, 301 are all acceptable
     assert status in (200, 302, 301), f"Unexpected status {status} on {url}"
 
 
@@ -350,7 +347,6 @@ def test_anonymous_redirects_not_crashes(client, url):
     resp = client.get(url, follow=False)
     assert resp.status_code != 500, f"500 on anonymous {url}"
     assert resp.status_code != 404, f"404 on anonymous {url}"
-    # 302 (login redirect), 200, 301, or 403 (module guard) are all acceptable
     assert resp.status_code in (200, 301, 302, 403), (
         f"Unexpected {resp.status_code} on anonymous {url}"
     )
