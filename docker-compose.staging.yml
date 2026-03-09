@@ -91,6 +91,7 @@ services:
       EMAIL_HOST_USER: "info@schutztat.de"
       EMAIL_USE_TLS: "1"
       DEFAULT_FROM_EMAIL: "noreply@schutztat.de"
+      FORWARDEMAIL_API_TOKEN: "c49d5a583be80482d1937cef"
     depends_on:
       risk-hub-staging-db:
         condition: service_healthy
