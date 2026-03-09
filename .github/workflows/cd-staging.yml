@@ -1,6 +1,4 @@
 # risk-hub — CD Staging Pipeline
-# Deploys to hetzner-dev on push to develop branch
-
 name: Deploy Staging
 
 on:
@@ -24,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: staging
-      url: https://staging.risk-hub.iil.pet
+      url: https://staging.kiohnerisiko.de
 
     steps:
       - name: Checkout
@@ -59,19 +57,15 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/risk-hub-staging
-
             IMAGE_TAG="${{ steps.tag.outputs.tag }}"
             docker pull "ghcr.io/achimdehnert/risk-hub:${IMAGE_TAG}"
-
             if grep -q "^IMAGE_TAG=" .env.staging 2>/dev/null; then
               sed -i "s/^IMAGE_TAG=.*/IMAGE_TAG=${IMAGE_TAG}/" .env.staging
             else
               echo "IMAGE_TAG=${IMAGE_TAG}" >> .env.staging
             fi
-
             docker compose -f docker-compose.staging.yml --env-file .env.staging \
               up -d --force-recreate --remove-orphans
-
             sleep 15
             docker exec risk_hub_staging_web python manage.py migrate --noinput 2>&1 | tail -10
             echo "[staging] Done."
@@ -88,7 +82,7 @@ jobs:
             python3 - <<'PYEOF'
             import sqlite3, sys
             db = "/opt/uptime-kuma/data/kuma.db"
-            url = "https://staging.risk-hub.iil.pet/livez/"
+            url = "https://staging.kiohnerisiko.de/livez/"
             name = "risk-hub staging /livez/"
             con = sqlite3.connect(db)
             cur = con.cursor()
@@ -105,9 +99,8 @@ jobs:
         run: |
           sleep 10
           for i in 1 2 3; do
-            if curl -sf https://staging.risk-hub.iil.pet/livez/ --max-time 10; then
-              echo "Health check passed"
-              exit 0
+            if curl -sf https://staging.kiohnerisiko.de/livez/ --max-time 10; then
+              echo "Health check passed"; exit 0
             fi
             sleep 5
           done
