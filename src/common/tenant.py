@@ -18,7 +18,7 @@ def resolve_tenant_id(request: HttpRequest):
     tenant_id = get_context().tenant_id
     if not tenant_id and getattr(request, "user", None) and request.user.is_authenticated:
         try:
-            from django_tenancy.models import Membership
+            from tenancy.models import Membership
 
             m = (
                 Membership.objects.filter(user=request.user)
