@@ -17,8 +17,11 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # ──────────────────────────────────────────────────────────────
+  # Stage ②a: Fast Checks (lint, format, security audit)
+  # ──────────────────────────────────────────────────────────────
   fast-checks:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -42,8 +45,11 @@ jobs:
             echo "::warning::pip-audit found issues (non-blocking for now)"
           }
 
+  # ──────────────────────────────────────────────────────────────
+  # Stage ③: Tests (PostgreSQL — required by django-tenancy)
+  # ──────────────────────────────────────────────────────────────
   test:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: fast-checks
     services:
@@ -73,19 +79,16 @@ jobs:
 
       - name: Configure git for private packages
         run: |
-          GITCONFIG_FILE="$(mktemp)"
-          printf '[url "https://x-access-token:%s@github.com/"]\n\tinsteadOf = https://github.com/\n' \
-            "${{ secrets.PROJECT_PAT }}" > "$GITCONFIG_FILE"
-          echo "GIT_CONFIG_GLOBAL=${GITCONFIG_FILE}" >> "$GITHUB_ENV"
+          git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
 
       - name: Install Dependencies
         run: |
           set -euo pipefail
-          pip install --upgrade pip "setuptools>=69" wheel
+          pip install --upgrade pip
           pip install -r requirements.txt || echo "::warning::Some packages failed to install"
-          pip install -r requirements-dev.txt || echo "::warning::Some dev packages failed to install"
+          pip install -r requirements-dev.txt
 
-      - name: Install iil-packages
+      - name: Install iil-packages (aifw, promptfw, authoringfw, nl2cad)
         run: |
           pip install \
             "iil-aifw>=0.5.0,<1" \
@@ -116,17 +119,17 @@ jobs:
             echo "## Coverage: ${TOTAL}%" >> "$GITHUB_STEP_SUMMARY"
           fi
 
+  # ──────────────────────────────────────────────────────────────
+  # Stage ⑤: Build + Push Docker Image (only on main push)
+  # ──────────────────────────────────────────────────────────────
   deploy-build:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -153,31 +156,35 @@ jobs:
             ${{ vars.DEPLOY_CONTAINER }}" 2>/dev/null || echo "unknown")
           echo "previous_sha=${CURRENT_SHA}" >> "$GITHUB_OUTPUT"
 
-      - name: Docker Build + Push
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ${{ vars.DEPLOY_DOCKERFILE }}
-          push: true
-          tags: |
-            ${{ vars.DEPLOY_IMAGE }}:${{ github.sha }}
-            ${{ vars.DEPLOY_IMAGE }}:latest
-          build-args: |
-            BUILD_DATE=${{ github.event.head_commit.timestamp }}
-            GIT_SHA=${{ github.sha }}
-          labels: |
-            org.opencontainers.image.revision=${{ github.sha }}
-          secrets: |
-            GIT_TOKEN=${{ secrets.PROJECT_PAT }}
+      - name: Docker Build
+        run: |
+          set -euo pipefail
+          docker build \
+            --no-cache \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA::7}" \
+            --build-arg BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ) \
+            --build-arg GIT_SHA=${GITHUB_SHA::7} \
+            --build-arg PROJECT_PAT=${{ secrets.PROJECT_PAT }} \
+            -f ${{ vars.DEPLOY_DOCKERFILE }} \
+            -t ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7} \
+            -t ${{ vars.DEPLOY_IMAGE }}:latest \
+            .
 
-      - name: Push summary
-        run: echo "## Pushed ${{ vars.DEPLOY_IMAGE }}:${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
-
+      - name: Docker Push
+        run: |
+          set -euo pipefail
+          docker push ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7}
+          docker push ${{ vars.DEPLOY_IMAGE }}:latest
+          echo "## Pushed: ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
     outputs:
       previous_sha: ${{ steps.pre_deploy.outputs.previous_sha }}
 
+  # ──────────────────────────────────────────────────────────────
+  # Stage ⑥: Deploy + Verify
+  # Note: migrations run automatically via entrypoint.sh on web start
+  # ──────────────────────────────────────────────────────────────
   deploy-verify:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: deploy-build
     steps:
@@ -191,17 +198,19 @@ jobs:
 
       - name: Pull New Image
         run: |
+          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -p risk-hub-prod -f docker-compose.prod.yml pull
+            docker compose -f docker-compose.prod.yml pull
           "
 
-      - name: Sanitize .env.prod
+      - name: Sanitize .env.prod (remove corrupt lines)
         run: |
+          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "ENV_FILE=${{ vars.DEPLOY_SERVER_PATH }}/.env.prod && \
-            sed -i '/\"/d' \"${ENV_FILE}\" && \
-            sed -i '/^STRIPE_/d' \"${ENV_FILE}\" && \
+            sed -i '/\"/d' \"\${ENV_FILE}\" && \
+            sed -i '/^STRIPE_/d' \"\${ENV_FILE}\" && \
             echo 'env.prod sanitized'"
 
       - name: Inject Stripe Secrets into .env.prod
@@ -217,6 +226,7 @@ jobs:
           STRIPE_PRICE_BUSINESS_ANNUAL: ${{ secrets.STRIPE_PRICE_BUSINESS_ANNUAL }}
           DEPLOY_SERVER_PATH: ${{ vars.DEPLOY_SERVER_PATH }}
         run: |
+          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "ENV_FILE=${DEPLOY_SERVER_PATH}/.env.prod && \
             printf 'STRIPE_SECRET_KEY=%s\nSTRIPE_PUBLISHABLE_KEY=%s\nSTRIPE_WEBHOOK_SECRET=%s\nSTRIPE_PRICE_STARTER_MONTHLY=%s\nSTRIPE_PRICE_STARTER_ANNUAL=%s\nSTRIPE_PRICE_PROFESSIONAL_MONTHLY=%s\nSTRIPE_PRICE_PROFESSIONAL_ANNUAL=%s\nSTRIPE_PRICE_BUSINESS_MONTHLY=%s\nSTRIPE_PRICE_BUSINESS_ANNUAL=%s\n' \
@@ -224,11 +234,12 @@ jobs:
             '${STRIPE_PRICE_STARTER_MONTHLY}' '${STRIPE_PRICE_STARTER_ANNUAL}' \
             '${STRIPE_PRICE_PROFESSIONAL_MONTHLY}' '${STRIPE_PRICE_PROFESSIONAL_ANNUAL}' \
             '${STRIPE_PRICE_BUSINESS_MONTHLY}' '${STRIPE_PRICE_BUSINESS_ANNUAL}' \
-            >> \"${ENV_FILE}\" && \
+            >> \"\${ENV_FILE}\" && \
             echo 'Stripe secrets injected'"
 
       - name: Backup Database
         run: |
+          set -euo pipefail
           BACKUP_FILE="${{ vars.DEPLOY_APP_NAME }}-pre-${GITHUB_SHA::7}-$(date +%Y%m%d-%H%M%S).sql.gz"
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             mkdir -p /opt/backups && \
@@ -238,19 +249,20 @@ jobs:
             echo \"Backup OK: /opt/backups/${BACKUP_FILE}\"
           "
 
-      - name: Start App
+      - name: Start App (migrations run automatically via entrypoint)
         run: |
+          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -p risk-hub-prod -f docker-compose.prod.yml up -d --force-recreate
+            docker compose -f docker-compose.prod.yml up -d --force-recreate
           "
 
       - name: Wait for Liveness (max 150s)
         run: |
+          set -euo pipefail
           for i in $(seq 1 30); do
             HTTP_STATUS=$(ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
               "curl -sf -o /dev/null -w '%{http_code}' \
-              -H 'Host: schutztat.de' \
               http://localhost:${{ vars.DEPLOY_PORT }}/livez/" 2>/dev/null || echo "000")
             [ "$HTTP_STATUS" = "200" ] && echo "OK: /livez/ -> 200" && exit 0
             echo "Attempt $i: HTTP $HTTP_STATUS - waiting 5s..."
@@ -259,16 +271,31 @@ jobs:
           echo "FAIL: /livez/ not reachable after 150s"
           exit 1
 
+      - name: Readiness Check
+        run: |
+          set -euo pipefail
+          HTTP_STATUS=$(ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "curl -sf -o /dev/null -w '%{http_code}' \
+            http://localhost:${{ vars.DEPLOY_PORT }}/healthz/" 2>/dev/null || echo "000")
+          [ "$HTTP_STATUS" = "200" ] || { echo "WARN: /healthz/ -> $HTTP_STATUS"; }
+          echo "OK: /healthz/ -> $HTTP_STATUS"
+
       - name: Post-Deploy Summary
         if: success()
         run: |
           echo "## Deploy Success" >> "$GITHUB_STEP_SUMMARY"
           echo "- **App:** ${{ vars.DEPLOY_APP_NAME }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image:** ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
 
+  # ──────────────────────────────────────────────────────────────
+  # Stage ⑥b: Deploy Staging (same image, port 8091)
+  # Runs in parallel with deploy-verify after image is built
+  # ──────────────────────────────────────────────────────────────
   deploy-staging:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 10
-    needs: deploy-verify
+    needs: deploy-build
+    environment: staging
     steps:
       - name: Setup SSH
         run: |
@@ -278,20 +305,47 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy Staging
+      - name: Pull New Image
         run: |
+          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -p risk-hub-staging -f docker-compose.staging.yml --env-file .env.staging pull --quiet && \
-            docker compose -p risk-hub-staging -f docker-compose.staging.yml --env-file .env.staging up -d --force-recreate
+            docker compose -f docker-compose.staging.yml pull
+          "
+
+      - name: Inject Staging Secrets into .env.staging
+        env:
+          DJANGO_SECRET_KEY: ${{ secrets.STAGING_SECRET_KEY }}
+          DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+          MINIO_ROOT_USER: ${{ secrets.STAGING_MINIO_USER }}
+          MINIO_ROOT_PASSWORD: ${{ secrets.STAGING_MINIO_PASSWORD }}
+          DEPLOY_SERVER_PATH: ${{ vars.DEPLOY_SERVER_PATH }}
+        run: |
+          set -euo pipefail
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "ENV_FILE=${DEPLOY_SERVER_PATH}/.env.staging && \
+            sed -i '/^DJANGO_SECRET_KEY=/d; /^POSTGRES_PASSWORD=/d; /^DATABASE_URL=/d; /^MINIO_ROOT_/d; /^S3_ACCESS_KEY=/d; /^S3_SECRET_KEY=/d' \"\${ENV_FILE}\" && \
+            printf 'DJANGO_SECRET_KEY=%s\nPOSTGRES_PASSWORD=%s\nDATABASE_URL=postgresql://risk_hub:%s@risk-hub-staging-db:5432/risk_hub_staging\nMINIO_ROOT_USER=%s\nMINIO_ROOT_PASSWORD=%s\nS3_ACCESS_KEY=%s\nS3_SECRET_KEY=%s\n' \
+            '${DJANGO_SECRET_KEY}' '${DB_PASSWORD}' '${DB_PASSWORD}' \
+            '${MINIO_ROOT_USER}' '${MINIO_ROOT_PASSWORD}' \
+            '${MINIO_ROOT_USER}' '${MINIO_ROOT_PASSWORD}' \
+            >> \"\${ENV_FILE}\" && \
+            echo 'staging secrets injected'"
+
+      - name: Start Staging App
+        run: |
+          set -euo pipefail
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
+            cd ${{ vars.DEPLOY_SERVER_PATH }} && \
+            docker compose -f docker-compose.staging.yml up -d --force-recreate
           "
 
       - name: Wait for Staging Liveness (max 150s)
         run: |
+          set -euo pipefail
           for i in $(seq 1 30); do
             HTTP_STATUS=$(ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
               "curl -sf -o /dev/null -w '%{http_code}' \
-              -H 'Host: staging.schutztat.de' \
               http://localhost:8099/livez/" 2>/dev/null || echo "000")
             [ "$HTTP_STATUS" = "200" ] && echo "OK: staging /livez/ -> 200" && exit 0
             echo "Attempt $i: HTTP $HTTP_STATUS - waiting 5s..."
@@ -300,21 +354,25 @@ jobs:
           echo "FAIL: staging /livez/ not reachable after 150s"
           exit 1
 
-      - name: Staging Summary
+      - name: Post-Deploy Staging Summary
         if: success()
         run: |
           echo "## Staging Deploy Success" >> "$GITHUB_STEP_SUMMARY"
           echo "- **URL:** https://staging.schutztat.de" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image:** ${{ vars.DEPLOY_IMAGE }}:latest" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image:** ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
 
+  # ──────────────────────────────────────────────────────────────
+  # Stage ⑦: Rollback (only if deploy-verify fails)
+  # ──────────────────────────────────────────────────────────────
   rollback:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     needs: [deploy-build, deploy-verify]
     if: failure() && needs.deploy-build.result == 'success'
     steps:
       - name: Setup SSH
         run: |
+          set -euo pipefail
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
@@ -328,15 +386,17 @@ jobs:
 
       - name: Rollback to Previous Image
         run: |
+          set -euo pipefail
           PREV_SHA="${{ needs.deploy-build.outputs.previous_sha }}"
           if [ "$PREV_SHA" = "unknown" ] || [ -z "$PREV_SHA" ]; then
             echo "WARN: No previous SHA found - cannot rollback automatically"
             exit 1
           fi
+          echo "Rolling back to ${{ vars.DEPLOY_IMAGE }}:${PREV_SHA}..."
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
             docker pull ${{ vars.DEPLOY_IMAGE }}:${PREV_SHA} && \
-            IMAGE_TAG=${PREV_SHA} docker compose -p risk-hub-prod -f docker-compose.prod.yml \
+            IMAGE_TAG=${PREV_SHA} docker compose -f docker-compose.prod.yml \
               up -d --no-deps --force-recreate \
               ${{ vars.DEPLOY_WEB_SERVICE }} ${{ vars.DEPLOY_APP_NAME }}-worker
           "
