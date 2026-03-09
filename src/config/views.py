@@ -1,10 +1,11 @@
 import json
+import urllib.parse
+import urllib.request
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.core.mail import send_mail
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
@@ -72,14 +73,31 @@ def trial_request(request: HttpRequest) -> JsonResponse:
         f"--- Automatisch generiert von staging.schutztat.de ---"
     )
 
+    from django.conf import settings
+    api_token = getattr(settings, "FORWARDEMAIL_API_TOKEN", "")
+    if not api_token:
+        import os
+        api_token = os.environ.get("FORWARDEMAIL_API_TOKEN", "")
+
     try:
-        send_mail(
-            subject=subject,
-            message=body,
-            from_email="noreply@schutztat.de",
-            recipient_list=["info@schutztat.de"],
-            fail_silently=False,
+        payload = urllib.parse.urlencode({
+            "from": "noreply@schutztat.de",
+            "to": "info@schutztat.de",
+            "subject": subject,
+            "text": body,
+        }).encode()
+        credentials = (
+            api_token + ":"
+        ).encode()
+        import base64
+        auth = base64.b64encode(credentials).decode()
+        req = urllib.request.Request(
+            "https://api.forwardemail.net/v1/emails",
+            data=payload,
+            headers={"Authorization": f"Basic {auth}"},
+            method="POST",
         )
+        urllib.request.urlopen(req, timeout=10)
     except Exception as exc:
         return JsonResponse({"ok": False, "error": str(exc)}, status=500)
 
