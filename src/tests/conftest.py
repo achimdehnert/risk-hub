@@ -3,10 +3,36 @@ import uuid
 
 import pytest
 
-from platform_context.testing.fixtures import (  # noqa: F401
-    admin_client,
-    htmx_client,
-)
+try:
+    from platform_context.testing.fixtures import (  # noqa: F401
+        admin_client,
+        htmx_client,
+    )
+except ImportError:
+    import django.test
+
+    @pytest.fixture
+    def admin_client(db):
+        from tests.factories import UserFactory
+
+        user = UserFactory(is_staff=True, is_superuser=True)
+        client = django.test.Client()
+        client.force_login(user)
+        return client
+
+    @pytest.fixture
+    def htmx_client(client):
+        class _HtmxClient:
+            def __init__(self, c):
+                self._c = c
+
+            def get(self, url, **kw):
+                return self._c.get(url, HTTP_HX_REQUEST="true", **kw)
+
+            def post(self, url, **kw):
+                return self._c.post(url, HTTP_HX_REQUEST="true", **kw)
+
+        return _HtmxClient(client)
 
 # ─── Basic fixtures ─────────────────────────────────────────────────────────
 
