@@ -1,0 +1,1273 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Schutztat – Risikomanagement &amp; Datenschutz</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --brand: #e85d04;
+            --brand-dark: #c44d03;
+            --hero-bg: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        }
+        body { font-family: 'Segoe UI', system-ui, sans-serif; }
+
+        /* NAV */
+        .navbar-brand-logo {
+            width: 36px; height: 36px;
+            background: var(--brand);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        /* HERO */
+        .hero-section {
+            background: var(--hero-bg);
+            min-height: 100vh;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero-section::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse at 70% 50%, rgba(232,93,4,0.12) 0%, transparent 60%);
+        }
+        .hero-badge {
+            display: inline-flex; align-items: center; gap: 8px;
+            background: rgba(232,93,4,0.15);
+            border: 1px solid rgba(232,93,4,0.3);
+            color: #ff8c42;
+            padding: 6px 16px; border-radius: 100px;
+            font-size: 0.85rem; font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+
+        /* LOGIN CARD */
+        .login-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 20px;
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+        }
+        .login-card .form-control {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            color: #fff;
+            border-radius: 10px;
+            padding: 12px 16px;
+        }
+        .login-card .form-control::placeholder { color: rgba(255,255,255,0.4); }
+        .login-card .form-control:focus {
+            background: rgba(255,255,255,0.12);
+            border-color: var(--brand);
+            box-shadow: 0 0 0 3px rgba(232,93,4,0.2);
+            color: #fff;
+        }
+        .login-card label { color: rgba(255,255,255,0.7); font-size: 0.875rem; }
+        .btn-brand {
+            background: var(--brand); border: none; color: #fff;
+            padding: 12px; border-radius: 10px; font-weight: 600;
+            transition: background 0.2s, transform 0.1s;
+        }
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; transform: translateY(-1px); }
+        .btn-brand:active { transform: translateY(0); }
+
+        /* MODULES */
+        .module-card {
+            border: none; border-radius: 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            height: 100%;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+        }
+        .module-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+            text-decoration: none;
+            color: inherit;
+        }
+        .module-icon {
+            width: 56px; height: 56px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.4rem; margin-bottom: 1rem;
+        }
+        .module-tag {
+            font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em;
+            padding: 3px 10px; border-radius: 6px;
+        }
+
+        /* PRICING */
+        .pricing-card {
+            border-radius: 20px;
+            border: 2px solid transparent;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 100%;
+        }
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+        }
+        .pricing-card.popular {
+            border-color: var(--brand);
+            box-shadow: 0 8px 32px rgba(232,93,4,0.18);
+            position: relative;
+        }
+        .popular-badge {
+            position: absolute;
+            top: -14px; left: 50%; transform: translateX(-50%);
+            background: var(--brand);
+            color: #fff;
+            font-size: 0.75rem; font-weight: 700;
+            padding: 4px 16px; border-radius: 100px;
+            white-space: nowrap;
+        }
+        .price-amount {
+            font-size: 2.8rem; font-weight: 800; line-height: 1;
+            color: #1a1a2e;
+        }
+        .price-period { font-size: 0.9rem; color: #6c757d; }
+        .pricing-feature {
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.9rem; padding: 5px 0;
+        }
+        .pricing-feature i { font-size: 1rem; flex-shrink: 0; }
+        .pricing-feature.disabled { opacity: 0.38; }
+        .annual-note {
+            font-size: 0.78rem;
+            background: rgba(232,93,4,0.08);
+            border: 1px solid rgba(232,93,4,0.2);
+            color: var(--brand-dark);
+            border-radius: 8px;
+            padding: 4px 10px;
+            display: inline-block;
+            margin-top: 6px;
+        }
+
+        /* BILLING TOGGLE */
+        .billing-toggle .btn {
+            border-radius: 8px;
+            padding: 6px 20px;
+            font-weight: 500;
+        }
+        .billing-toggle .btn.active {
+            background: var(--brand);
+            border-color: var(--brand);
+            color: #fff;
+        }
+
+        /* TRUST BAR */
+        .trust-item {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 0.875rem; color: #495057;
+        }
+
+        /* FOOTER */
+        footer { background: #0d0d1a; }
+
+        /* ══════════════════════════════════════════════════════════
+           KONFIGURATOR MODAL
+        ══════════════════════════════════════════════════════════ */
+        .konfig-modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.65);
+            backdrop-filter: blur(4px);
+            z-index: 1060;
+            display: flex; align-items: center; justify-content: center;
+            padding: 1rem;
+            opacity: 0; pointer-events: none;
+            transition: opacity 0.25s;
+        }
+        .konfig-modal-overlay.open {
+            opacity: 1; pointer-events: auto;
+        }
+        .konfig-modal {
+            background: #fff;
+            border-radius: 24px;
+            width: 100%; max-width: 760px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.3);
+            transform: translateY(24px);
+            transition: transform 0.3s;
+        }
+        .konfig-modal-overlay.open .konfig-modal {
+            transform: translateY(0);
+        }
+        .konfig-header {
+            padding: 2rem 2rem 1.25rem;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .konfig-body { padding: 1.5rem 2rem; }
+        .konfig-footer {
+            padding: 1.25rem 2rem;
+            border-top: 1px solid #f0f0f0;
+            background: #fafafa;
+            border-radius: 0 0 24px 24px;
+        }
+
+        /* Plan Badge in Modal */
+        .plan-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 14px; border-radius: 100px;
+            font-size: 0.8rem; font-weight: 700; letter-spacing: 0.05em;
+        }
+        .plan-badge.starter { background: #f1f3f5; color: #495057; }
+        .plan-badge.professional { background: rgba(232,93,4,0.12); color: var(--brand); }
+        .plan-badge.business { background: #1a1a2e; color: #fff; }
+
+        /* Step Indicator */
+        .step-indicator {
+            display: flex; gap: 0; margin-bottom: 1.5rem;
+        }
+        .step-item {
+            flex: 1; text-align: center;
+            padding: 8px 4px;
+            font-size: 0.8rem; font-weight: 600;
+            color: #adb5bd;
+            border-bottom: 3px solid #e9ecef;
+            transition: all 0.2s;
+        }
+        .step-item.active {
+            color: var(--brand);
+            border-bottom-color: var(--brand);
+        }
+        .step-item.done {
+            color: #20c997;
+            border-bottom-color: #20c997;
+        }
+
+        /* Module Selector Cards */
+        .module-select-card {
+            border: 2px solid #e9ecef;
+            border-radius: 14px;
+            padding: 1rem;
+            cursor: pointer;
+            transition: all 0.18s;
+            position: relative;
+            height: 100%;
+        }
+        .module-select-card:hover:not(.locked) {
+            border-color: var(--brand);
+            background: rgba(232,93,4,0.03);
+        }
+        .module-select-card.selected {
+            border-color: var(--brand);
+            background: rgba(232,93,4,0.06);
+        }
+        .module-select-card.locked {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+        .module-select-card .check-icon {
+            position: absolute; top: 10px; right: 10px;
+            width: 22px; height: 22px;
+            background: var(--brand);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 0.7rem;
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .module-select-card.selected .check-icon { opacity: 1; }
+        .module-select-card .lock-icon {
+            position: absolute; top: 10px; right: 10px;
+            color: #adb5bd; font-size: 0.9rem;
+        }
+        .module-sm-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.1rem; margin-bottom: 0.6rem;
+            flex-shrink: 0;
+        }
+
+        /* Summary Step */
+        .summary-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9rem;
+        }
+        .summary-row:last-child { border-bottom: none; }
+        .price-total {
+            font-size: 2rem; font-weight: 800; color: #1a1a2e;
+        }
+    </style>
+</head>
+<body class="bg-white">
+
+    <!-- ════════════════════════════════════════════════════════════ HERO -->
+    <section class="hero-section d-flex flex-column">
+
+        <!-- Navbar -->
+        <nav class="navbar navbar-expand-lg py-3 position-relative" style="z-index:10;">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center gap-2 text-white fw-bold fs-5" href="/">
+                    <div class="navbar-brand-logo">
+                        <i class="bi bi-shield-check text-white"></i>
+                    </div>
+                    Schutztat
+                </a>
+                <div class="d-flex gap-2">
+                    <a href="#module" class="btn btn-sm btn-outline-light px-3">Module</a>
+                    <a href="#pricing" class="btn btn-sm btn-outline-light px-3">Preise</a>
+                    <a href="#login-section" class="btn btn-sm px-3 text-white" style="background:var(--brand);">Anmelden</a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Hero Content -->
+        <div class="container flex-grow-1 d-flex align-items-center position-relative py-5" style="z-index:5;">
+            <div class="row w-100 align-items-center g-5">
+
+                <!-- Left: Headline -->
+                <div class="col-lg-6 text-white">
+                    <div class="hero-badge">
+                        <i class="bi bi-shield-fill-check"></i>
+                        Compliance-Plattform für den Mittelstand
+                    </div>
+                    <h1 class="display-4 fw-bold lh-sm mb-4">
+                        Risikomanagement<br>
+                        <span style="color:#ff8c42;">und Datenschutz</span><br>
+                        <span class="opacity-60 fs-2">einfach gemacht</span>
+                    </h1>
+                    <p class="lead mb-4 opacity-75" style="max-width:480px;">
+                        Die Multi-Tenant-Plattform für Gefährdungsbeurteilungen,
+                        Explosionsschutz-Dokumentation, Gefahrstoffmanagement
+                        und Datenschutz nach DSGVO.
+                    </p>
+                    <div class="d-flex gap-3 flex-wrap mb-5">
+                        <a href="#pricing" class="btn btn-brand btn-lg px-4">
+                            <i class="bi bi-rocket-takeoff me-2"></i>14 Tage kostenlos testen
+                        </a>
+                        <a href="#module" class="btn btn-outline-light btn-lg px-4">
+                            <i class="bi bi-grid me-2"></i>Alle Module
+                        </a>
+                    </div>
+                    <!-- Trust signals -->
+                    <div class="d-flex gap-4 flex-wrap">
+                        <div class="trust-item" style="color:rgba(255,255,255,0.55);">
+                            <i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>
+                            Keine Kreditkarte nötig
+                        </div>
+                        <div class="trust-item" style="color:rgba(255,255,255,0.55);">
+                            <i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>
+                            Server in Deutschland
+                        </div>
+                        <div class="trust-item" style="color:rgba(255,255,255,0.55);">
+                            <i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>
+                            DSGVO-konform
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Login Card -->
+                <div class="col-lg-5 offset-lg-1" id="login-section">
+                    <div class="login-card">
+                        <h4 class="text-white fw-bold mb-1">Willkommen zurück</h4>
+                        <p class="mb-4" style="color:rgba(255,255,255,0.5); font-size:0.9rem;">
+                            Melden Sie sich an — wir leiten Sie automatisch zu Ihrer Organisation weiter.
+                        </p>
+
+                        {% if messages %}
+                        {% for msg in messages %}
+                        <div class="alert alert-danger py-2 mb-3" style="border-radius:10px; font-size:0.875rem;">
+                            <i class="bi bi-exclamation-circle me-1"></i>{{ msg }}
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+
+                        <form method="post" action="/accounts/login/" class="d-flex flex-column gap-3">
+                            {% csrf_token %}
+                            <input type="hidden" name="next" value="/dashboard/">
+                            <div>
+                                <label class="form-label mb-1">Benutzername</label>
+                                <input type="text" name="username" class="form-control"
+                                       placeholder="benutzername" autofocus autocomplete="username" required>
+                            </div>
+                            <div>
+                                <label class="form-label mb-1">Passwort</label>
+                                <input type="password" name="password" class="form-control"
+                                       placeholder="••••••••" autocomplete="current-password" required>
+                            </div>
+                            <button type="submit" class="btn btn-brand w-100 mt-1">
+                                <i class="bi bi-box-arrow-in-right me-2"></i>Anmelden
+                            </button>
+                        </form>
+
+                        <p class="text-center mt-3 mb-0" style="color:rgba(255,255,255,0.4); font-size:0.8rem;">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Demo-Zugang:
+                            <a href="https://demo.schutztat.de/accounts/login/"
+                               class="text-decoration-none" style="color:#ff8c42;">demo.schutztat.de</a>
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Scroll hint -->
+        <div class="text-center pb-4 position-relative" style="z-index:5;">
+            <a href="#module" class="text-white opacity-25">
+                <i class="bi bi-chevron-down fs-3"></i>
+            </a>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════════ MODULE -->
+    <section id="module" class="py-5 bg-light">
+        <div class="container py-4">
+            <div class="text-center mb-5">
+                <span class="badge text-bg-warning mb-3 px-3 py-2" style="border-radius:8px; font-size:0.8rem;">
+                    PLATTFORM-MODULE
+                </span>
+                <h2 class="display-5 fw-bold">Alles aus einer Hand</h2>
+                <p class="text-muted lead">Integrierte Werkzeuge für Compliance, Sicherheit und Datenschutz</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6 col-lg-4">
+                    <a href="#pricing" class="card module-card p-4">
+                        <div class="module-icon" style="background:rgba(232,93,4,0.1); color:var(--brand);">
+                            <i class="bi bi-person-workspace"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Gefährdungsbeurteilung</h5>
+                        <p class="text-muted small mb-3">
+                            Strukturierter 5-Stufen-Wizard für GBU nach ArbSchG.
+                            Gefährdungskategorien, Maßnahmen und Freigabe-Workflow.
+                        </p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="module-tag" style="background:rgba(232,93,4,0.1); color:var(--brand);">gbu</span>
+                            <span class="badge bg-success bg-opacity-10 text-success small">In allen Plänen</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="#pricing" class="card module-card p-4">
+                        <div class="module-icon bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Risikobewertung</h5>
+                        <p class="text-muted small mb-3">
+                            Systematische Gefährdungsbeurteilungen nach ArbSchG, BetrSichV und TRBS.
+                            Maßnahmenverfolgung mit Fristenmanagement.
+                        </p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="module-tag bg-danger bg-opacity-10 text-danger">risk</span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning small">Ab Professional</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="#pricing" class="card module-card p-4">
+                        <div class="module-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-lightning-charge-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Explosionsschutz</h5>
+                        <p class="text-muted small mb-3">
+                            Ex-Zonen, Zündquellenanalyse und Schutzkonzepte nach ATEX/IECEx.
+                            Explosionsschutzdokument (ESD) auf Knopfdruck.
+                        </p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="module-tag bg-warning bg-opacity-10 text-warning">ex</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary small">Ab Business</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="#pricing" class="card module-card p-4">
+                        <div class="module-icon bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-droplet-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Gefahrstoffe</h5>
+                        <p class="text-muted small mb-3">
+                            Gefahrstoffkataster, SDB-Verwaltung und Lagerbestandübersicht
+                            nach GefStoffV und CLP-Verordnung.
+                        </p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="module-tag bg-success bg-opacity-10 text-success">substances</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary small">Ab Business</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="#pricing" class="card module-card p-4">
+                        <div class="module-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-shield-lock-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Datenschutz (DSB)</h5>
+                        <p class="text-muted small mb-3">
+                            Verarbeitungsverzeichnis, TOMs, AVV-Verwaltung und Datenpannen-Workflow
+                            nach DSGVO Art. 30.
+                        </p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="module-tag bg-primary bg-opacity-10 text-primary">dsb</span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning small">Ab Professional</span>
+                        </div>
+                    </a>
+                </div>
+
+                <div class="col-md-6 col-lg-4">
+                    <a href="#pricing" class="card module-card p-4">
+                        <div class="module-icon bg-info bg-opacity-10 text-info">
+                            <i class="bi bi-file-earmark-text-fill"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2">Dokumente &amp; Maßnahmen</h5>
+                        <p class="text-muted small mb-3">
+                            Zentrale Ablage für Betriebsanweisungen und Nachweise mit Freigabe-Workflow.
+                            Übergreifendes Maßnahmen-Tracking mit Fristen.
+                        </p>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <span class="module-tag bg-info bg-opacity-10 text-info">documents</span>
+                            <span class="badge bg-warning bg-opacity-10 text-warning small">Ab Professional</span>
+                        </div>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════════════ PRICING -->
+    <section id="pricing" class="py-5 bg-white">
+        <div class="container py-4">
+            <div class="text-center mb-5">
+                <span class="badge mb-3 px-3 py-2" style="background:rgba(232,93,4,0.12); color:var(--brand); border-radius:8px; font-size:0.8rem; font-weight:700; letter-spacing:0.05em;">
+                    TRANSPARENTE PREISE
+                </span>
+                <h2 class="display-5 fw-bold">Einfach starten, flexibel wachsen</h2>
+                <p class="text-muted lead mb-4">14 Tage kostenlos testen &mdash; keine Kreditkarte erforderlich</p>
+
+                <!-- Billing Toggle -->
+                <div class="billing-toggle d-inline-flex border rounded-3 p-1 gap-1" style="background:#f8f9fa;">
+                    <button id="btn-monthly" class="btn btn-sm active" onclick="toggleBilling('monthly')">
+                        Monatlich
+                    </button>
+                    <button id="btn-annual" class="btn btn-sm" onclick="toggleBilling('annual')">
+                        Jährlich <span class="badge text-bg-success ms-1" style="font-size:0.65rem;">-17%</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-4 justify-content-center align-items-stretch">
+
+                <!-- STARTER -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card pricing-card p-4 h-100 shadow-sm">
+                        <div class="mb-3">
+                            <span class="badge text-bg-secondary px-3 py-2 mb-3" style="font-size:0.7rem; letter-spacing:0.08em;">STARTER</span>
+                            <div class="d-flex align-items-end gap-1 mb-1">
+                                <span class="price-amount" id="price-starter">39 €</span>
+                            </div>
+                            <div class="price-period">/Monat</div>
+                            <div class="annual-note d-none" id="annual-note-starter">
+                                <i class="bi bi-tag-fill me-1"></i>33 € bei jährl. Zahlung
+                            </div>
+                            <p class="text-muted small mt-3 mb-0">Für Einzel-Betriebe und erste Schritte.</p>
+                        </div>
+                        <hr>
+                        <div class="flex-grow-1">
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>1 Modul (GBU)</div>
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>Bis 3 Nutzer</div>
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>5 GB Dokumentenspeicher</div>
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>PDF-Export</div>
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>E-Mail-Support</div>
+                            <div class="pricing-feature disabled"><i class="bi bi-x-circle text-muted"></i>Mehrere Module</div>
+                            <div class="pricing-feature disabled"><i class="bi bi-x-circle text-muted"></i>API-Zugang</div>
+                        </div>
+                        <button class="btn btn-outline-secondary w-100 mt-4"
+                                onclick="openKonfigurator('starter')">
+                            14 Tage testen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PROFESSIONAL -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card pricing-card popular p-4 h-100">
+                        <div class="popular-badge"><i class="bi bi-star-fill me-1"></i>Beliebtester Plan</div>
+                        <div class="mb-3">
+                            <span class="badge px-3 py-2 mb-3" style="background:var(--brand); font-size:0.7rem; letter-spacing:0.08em;">PROFESSIONAL</span>
+                            <div class="d-flex align-items-end gap-1 mb-1">
+                                <span class="price-amount" id="price-professional">89 €</span>
+                            </div>
+                            <div class="price-period">/Monat</div>
+                            <div class="annual-note d-none" id="annual-note-professional">
+                                <i class="bi bi-tag-fill me-1"></i>74 € bei jährl. Zahlung
+                            </div>
+                            <p class="text-muted small mt-3 mb-0">Für KMU mit vollständigem Compliance-Bedarf.</p>
+                        </div>
+                        <hr>
+                        <div class="flex-grow-1">
+                            <div class="pricing-feature">
+                                <i class="bi bi-check-circle-fill text-success"></i>
+                                <span><strong>5 Module</strong> (GBU, Risk, DSB, Docs, Maßnahmen)</span>
+                            </div>
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>Bis 10 Nutzer</div>
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>25 GB Dokumentenspeicher</div>
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>PDF-Export &amp; CSV-Import</div>
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>Priority-Support</div>
+                            <div class="pricing-feature"><i class="bi bi-check-circle-fill text-success"></i>Onboarding-Call</div>
+                            <div class="pricing-feature disabled"><i class="bi bi-x-circle text-muted"></i>Explosionsschutz &amp; Gefahrstoffe</div>
+                        </div>
+                        <button class="btn btn-brand w-100 mt-4"
+                                onclick="openKonfigurator('professional')">
+                            14 Tage kostenlos starten
+                        </button>
+                    </div>
+                </div>
+
+                <!-- BUSINESS -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card pricing-card p-4 h-100 shadow-sm" style="background:#1a1a2e; color:#fff;">
+                        <div class="mb-3">
+                            <span class="badge text-bg-light px-3 py-2 mb-3" style="font-size:0.7rem; letter-spacing:0.08em; color:#1a1a2e !important;">BUSINESS</span>
+                            <div class="d-flex align-items-end gap-1 mb-1">
+                                <span class="price-amount" id="price-business" style="color:#fff;">179 €</span>
+                            </div>
+                            <div class="price-period" style="color:rgba(255,255,255,0.5);">/Monat</div>
+                            <div class="annual-note d-none" id="annual-note-business" style="background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.2); color:#fff;">
+                                <i class="bi bi-tag-fill me-1"></i>149 € bei jährl. Zahlung
+                            </div>
+                            <p class="small mt-3 mb-0" style="color:rgba(255,255,255,0.6);">Für Industrie-Unternehmen mit allen Anforderungen.</p>
+                        </div>
+                        <hr style="border-color:rgba(255,255,255,0.15);">
+                        <div class="flex-grow-1">
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i><strong>Alle 7 Module</strong></div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>Bis 25 Nutzer</div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>Unbegrenzter Speicher</div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i><strong>Explosionsschutz + Gefahrstoffe</strong></div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>API-Zugang</div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>SLA 99,9 %</div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>Dedizierter Support</div>
+                        </div>
+                        <button class="btn w-100 mt-4" style="background:#fff; color:#1a1a2e; font-weight:600; border-radius:10px;"
+                                onclick="openKonfigurator('business')">
+                            14 Tage testen
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ENTERPRISE -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card pricing-card p-4 h-100 shadow-sm" style="background:linear-gradient(135deg,#1a1a2e,#0f3460); color:#fff;">
+                        <div class="mb-3">
+                            <span class="badge px-3 py-2 mb-3" style="background:var(--brand); font-size:0.7rem; letter-spacing:0.08em;">ENTERPRISE</span>
+                            <div class="price-amount mb-1" style="color:#fff; font-size:2.2rem; line-height:1.1;">Auf<br>Anfrage</div>
+                            <p class="small mt-3 mb-0" style="color:rgba(255,255,255,0.6);">Für DSB-Agenturen und Berater, die mehrere Mandanten betreuen.</p>
+                        </div>
+                        <hr style="border-color:rgba(255,255,255,0.15);">
+                        <div class="flex-grow-1">
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>Multi-Mandanten-Verwaltung</div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>Unbegrenzte Nutzer</div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>Alle 7 Module</div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>Custom Branding</div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>DSGVO-Auftragsverarbeitung</div>
+                            <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>Persönlicher Account-Manager</div>
+                        </div>
+                        <a href="mailto:info@schutztat.de" class="btn w-100 mt-4"
+                           style="background:var(--brand); color:#fff; font-weight:600; border-radius:10px;">
+                            <i class="bi bi-envelope me-2"></i>Kontakt aufnehmen
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Add-ons -->
+            <div class="mt-5 p-4 rounded-4" style="background:#f8f9fa; border:1px solid #e9ecef;">
+                <div class="row align-items-center">
+                    <div class="col-12 mb-3">
+                        <span class="badge text-bg-secondary px-3 py-2" style="font-size:0.7rem; letter-spacing:0.08em;">FLEXIBEL ERWEITERBAR &mdash; ADD-ONS</span>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-person-plus-fill" style="color:var(--brand);"></i>
+                            <span class="small"><strong>+9 €/Monat</strong> je zusätzlichem Nutzer</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-puzzle-fill" style="color:var(--brand);"></i>
+                            <span class="small"><strong>+29 €/Monat</strong> je zusätzlichem Modul</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-mortarboard-fill" style="color:var(--brand);"></i>
+                            <span class="small"><strong>299 €</strong> persönliches Onboarding-Paket</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-download" style="color:var(--brand);"></i>
+                            <span class="small"><strong>49 €</strong> Daten-Export (einmalig)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trust bar -->
+            <div class="row justify-content-center mt-4">
+                <div class="col-lg-10">
+                    <div class="d-flex justify-content-center gap-4 flex-wrap">
+                        <div class="trust-item"><i class="bi bi-shield-lock-fill text-success"></i> SSL &amp; DSGVO-konform</div>
+                        <div class="trust-item"><i class="bi bi-geo-alt-fill text-success"></i> Server in Deutschland</div>
+                        <div class="trust-item"><i class="bi bi-credit-card-fill text-success"></i> Zahlung über Stripe (sicher)</div>
+                        <div class="trust-item"><i class="bi bi-arrow-counterclockwise text-success"></i> Jederzeit kündbar</div>
+                        <div class="trust-item"><i class="bi bi-headset text-success"></i> Support auf Deutsch</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ═══════════════════════════════════════ FAQ -->
+    <section class="py-5 bg-light">
+        <div class="container py-4">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <h2 class="fw-bold text-center mb-5">Häufige Fragen</h2>
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item border-0 mb-3 rounded-3 overflow-hidden">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    Brauche ich eine Kreditkarte für den Trial?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body text-muted">
+                                    Nein. Für den 14-Tage-Test ist keine Kreditkarte nötig. Sie können die Plattform vollständig testen und entscheiden danach, ob Sie ein Abonnement abschließen möchten.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item border-0 mb-3 rounded-3 overflow-hidden">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Kann ich das Abo jederzeit kündigen?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body text-muted">
+                                    Ja, jederzeit zum Ende der Laufzeit. Über das Self-Service-Portal können Sie Ihr Abo verwalten, upgraden, downgraden oder kündigen — ohne Anruf, ohne Wartezeit.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item border-0 mb-3 rounded-3 overflow-hidden">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Wo werden meine Daten gespeichert?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body text-muted">
+                                    Alle Daten werden ausschließlich auf Servern in Deutschland gespeichert (Hetzner Online). DSGVO-konformer Betrieb ist selbstverständlich. Auf Anfrage stellen wir einen Auftragsverarbeitungsvertrag (AVV) bereit.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════ FOOTER -->
+    <footer class="py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <span class="fw-bold text-white">
+                        <i class="bi bi-shield-check me-2" style="color:var(--brand);"></i>Schutztat
+                    </span>
+                    <span class="ms-3 small text-white-50">Risikomanagement &amp; Datenschutz</span>
+                </div>
+                <div class="col-md-6 text-md-end mt-3 mt-md-0">
+                    <a href="#pricing" class="text-white-50 text-decoration-none me-3 small">
+                        <i class="bi bi-tag me-1"></i>Preise
+                    </a>
+                    <a href="/api/v1/docs" class="text-white-50 text-decoration-none me-3 small">
+                        <i class="bi bi-code-slash me-1"></i>API Docs
+                    </a>
+                    <a href="mailto:info@schutztat.de" class="text-white-50 text-decoration-none small">
+                        <i class="bi bi-envelope me-1"></i>Kontakt
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ══════════════════════════════════════════════════════════════
+         MODUL-KONFIGURATOR MODAL
+    ══════════════════════════════════════════════════════════════ -->
+    <div id="konfigOverlay" class="konfig-modal-overlay" onclick="handleOverlayClick(event)">
+        <div class="konfig-modal">
+
+            <!-- Header -->
+            <div class="konfig-header d-flex align-items-start justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span id="konfigPlanBadge" class="plan-badge professional">PROFESSIONAL</span>
+                        <span class="text-muted small">· 14 Tage kostenlos</span>
+                    </div>
+                    <h4 class="fw-bold mb-0" id="konfigTitle">Welche Module brauchen Sie?</h4>
+                    <p class="text-muted small mb-0 mt-1" id="konfigSubtitle">Wählen Sie Ihre Module aus — Sie können jederzeit erweitern.</p>
+                </div>
+                <button class="btn btn-sm btn-light rounded-circle" onclick="closeKonfigurator()" style="width:32px;height:32px;padding:0;">
+                    <i class="bi bi-x"></i>
+                </button>
+            </div>
+
+            <!-- Step Indicator -->
+            <div class="px-4 pt-3">
+                <div class="step-indicator">
+                    <div class="step-item active" id="step-ind-1">
+                        <i class="bi bi-1-circle me-1"></i>Plan gewählt
+                    </div>
+                    <div class="step-item" id="step-ind-2">
+                        <i class="bi bi-2-circle me-1"></i>Module wählen
+                    </div>
+                    <div class="step-item" id="step-ind-3">
+                        <i class="bi bi-3-circle me-1"></i>Zusammenfassung
+                    </div>
+                </div>
+            </div>
+
+            <!-- Step 1: Plan bestätigen -->
+            <div id="konfig-step-1" class="konfig-body">
+                <div class="text-center py-3">
+                    <div class="mb-4" style="font-size:3rem;">🎯</div>
+                    <h5 class="fw-bold mb-2">Sie haben gewählt:</h5>
+                    <div id="step1-plan-display" class="mb-3"></div>
+                    <p class="text-muted" id="step1-plan-desc"></p>
+                    <div id="step1-included-modules" class="mb-4"></div>
+                    <button class="btn btn-brand px-5" onclick="goToStep(2)">
+                        <i class="bi bi-arrow-right me-2"></i>Module konfigurieren
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: Module wählen -->
+            <div id="konfig-step-2" class="konfig-body d-none">
+                <p class="text-muted small mb-3" id="step2-hint"></p>
+                <div class="row g-3" id="module-grid">
+                    <!-- wird per JS befüllt -->
+                </div>
+                <div class="mt-3 p-3 rounded-3" style="background:#fff8f5; border:1px solid rgba(232,93,4,0.2);" id="addon-info">
+                    <i class="bi bi-info-circle-fill me-2" style="color:var(--brand);"></i>
+                    <span class="small" id="addon-info-text"></span>
+                </div>
+            </div>
+
+            <!-- Step 3: Zusammenfassung -->
+            <div id="konfig-step-3" class="konfig-body d-none">
+                <h6 class="fw-bold mb-3">Ihre Konfiguration:</h6>
+                <div id="summary-content"></div>
+                <div class="mt-4 p-3 rounded-3 text-center" style="background:#f8f9fa;">
+                    <div class="text-muted small mb-1">Monatlicher Gesamtbetrag (geschätzt)</div>
+                    <div class="price-total" id="summary-price">–</div>
+                    <div class="text-muted small mt-1">14 Tage kostenlos · Keine Kreditkarte nötig</div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="konfig-footer d-flex align-items-center justify-content-between">
+                <button id="konfig-back-btn" class="btn btn-outline-secondary" onclick="goPrevStep()" style="display:none!important;">
+                    <i class="bi bi-arrow-left me-1"></i>Zurück
+                </button>
+                <div class="ms-auto d-flex gap-2">
+                    <button class="btn btn-light" onclick="closeKonfigurator()">Abbrechen</button>
+                    <button id="konfig-next-btn" class="btn btn-brand px-4" onclick="goNextStep()">
+                        <span id="konfig-next-label">Weiter</span>
+                        <i class="bi bi-arrow-right ms-1" id="konfig-next-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    /* ══════════════════════════════════════════════
+       BILLING TOGGLE
+    ══════════════════════════════════════════════ */
+    const PRICES = {
+        starter:      { monthly: '39 €', annual: '33 €' },
+        professional: { monthly: '89 €', annual: '74 €' },
+        business:     { monthly: '179 €', annual: '149 €' },
+    };
+    function toggleBilling(mode) {
+        document.getElementById('btn-monthly').classList.toggle('active', mode === 'monthly');
+        document.getElementById('btn-annual').classList.toggle('active', mode === 'annual');
+        ['starter', 'professional', 'business'].forEach(plan => {
+            document.getElementById('price-' + plan).textContent = PRICES[plan][mode];
+            document.getElementById('annual-note-' + plan).classList.toggle('d-none', mode === 'monthly');
+        });
+    }
+
+    /* ══════════════════════════════════════════════
+       KONFIGURATOR DATEN
+    ══════════════════════════════════════════════ */
+    const PLANS = {
+        starter: {
+            label: 'STARTER',
+            price: 39,
+            desc: 'Für Einzel-Betriebe und erste Schritte.',
+            maxModules: 1,
+            includedModules: ['gbu'],
+            availableModules: ['gbu'],
+            lockedModules: ['risk', 'dsb', 'documents', 'ex', 'substances', 'brandschutz'],
+            badgeClass: 'starter',
+        },
+        professional: {
+            label: 'PROFESSIONAL',
+            price: 89,
+            desc: 'Für KMU mit vollständigem Compliance-Bedarf.',
+            maxModules: 5,
+            includedModules: ['gbu'],
+            availableModules: ['gbu', 'risk', 'dsb', 'documents', 'brandschutz'],
+            lockedModules: ['ex', 'substances'],
+            badgeClass: 'professional',
+        },
+        business: {
+            label: 'BUSINESS',
+            price: 179,
+            desc: 'Für Industrie-Unternehmen mit allen Anforderungen.',
+            maxModules: 7,
+            includedModules: ['gbu'],
+            availableModules: ['gbu', 'risk', 'dsb', 'documents', 'brandschutz', 'ex', 'substances'],
+            lockedModules: [],
+            badgeClass: 'business',
+        },
+    };
+
+    const ALL_MODULES = [
+        {
+            id: 'gbu',
+            label: 'Gefährdungsbeurteilung',
+            icon: 'bi-person-workspace',
+            iconBg: 'rgba(232,93,4,0.1)',
+            iconColor: 'var(--brand)',
+            desc: 'GBU-Wizard nach ArbSchG, Maßnahmen & Freigabe',
+            plan: 'In allen Plänen',
+        },
+        {
+            id: 'risk',
+            label: 'Risikobewertung',
+            icon: 'bi-exclamation-triangle-fill',
+            iconBg: 'rgba(220,53,69,0.1)',
+            iconColor: '#dc3545',
+            desc: 'Gefährdungsbeurteilungen nach BetrSichV & TRBS',
+            plan: 'Ab Professional',
+        },
+        {
+            id: 'dsb',
+            label: 'Datenschutz (DSB)',
+            icon: 'bi-shield-lock-fill',
+            iconBg: 'rgba(13,110,253,0.1)',
+            iconColor: '#0d6efd',
+            desc: 'Verarbeitungsverzeichnis, TOMs, AVV nach DSGVO',
+            plan: 'Ab Professional',
+        },
+        {
+            id: 'documents',
+            label: 'Dokumente & Maßnahmen',
+            icon: 'bi-file-earmark-text-fill',
+            iconBg: 'rgba(13,202,240,0.1)',
+            iconColor: '#0dcaf0',
+            desc: 'Betriebsanweisungen, Nachweise, Maßnahmen-Tracking',
+            plan: 'Ab Professional',
+        },
+        {
+            id: 'brandschutz',
+            label: 'Brandschutz',
+            icon: 'bi-fire',
+            iconBg: 'rgba(253,126,20,0.1)',
+            iconColor: '#fd7e14',
+            desc: 'Brandschutzkonzepte, Feuerlöscher, Fluchtwege',
+            plan: 'Ab Professional',
+        },
+        {
+            id: 'ex',
+            label: 'Explosionsschutz',
+            icon: 'bi-lightning-charge-fill',
+            iconBg: 'rgba(255,193,7,0.1)',
+            iconColor: '#ffc107',
+            desc: 'Ex-Zonen, ATEX/IECEx, Explosionsschutzdokument',
+            plan: 'Ab Business',
+        },
+        {
+            id: 'substances',
+            label: 'Gefahrstoffe',
+            icon: 'bi-droplet-fill',
+            iconBg: 'rgba(25,135,84,0.1)',
+            iconColor: '#198754',
+            desc: 'Gefahrstoffkataster, SDB-Verwaltung nach GefStoffV',
+            plan: 'Ab Business',
+        },
+    ];
+
+    /* ══════════════════════════════════════════════
+       STATE
+    ══════════════════════════════════════════════ */
+    let currentPlan = 'professional';
+    let currentStep = 1;
+    let selectedModules = new Set();
+
+    /* ══════════════════════════════════════════════
+       OPEN / CLOSE
+    ══════════════════════════════════════════════ */
+    function openKonfigurator(plan) {
+        currentPlan = plan;
+        currentStep = 1;
+        selectedModules = new Set(PLANS[plan].includedModules);
+        renderStep1();
+        document.getElementById('konfigOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+    }
+    function closeKonfigurator() {
+        document.getElementById('konfigOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    function handleOverlayClick(e) {
+        if (e.target === document.getElementById('konfigOverlay')) closeKonfigurator();
+    }
+
+    /* ══════════════════════════════════════════════
+       NAVIGATION
+    ══════════════════════════════════════════════ */
+    function goToStep(n) {
+        currentStep = n;
+        document.getElementById('konfig-step-1').classList.toggle('d-none', n !== 1);
+        document.getElementById('konfig-step-2').classList.toggle('d-none', n !== 2);
+        document.getElementById('konfig-step-3').classList.toggle('d-none', n !== 3);
+
+        // Step indicators
+        ['1','2','3'].forEach(i => {
+            const el = document.getElementById('step-ind-' + i);
+            el.classList.remove('active', 'done');
+            if (parseInt(i) < n) el.classList.add('done');
+            else if (parseInt(i) === n) el.classList.add('active');
+        });
+
+        // Back button
+        const backBtn = document.getElementById('konfig-back-btn');
+        backBtn.style.display = n > 1 ? 'inline-flex' : 'none';
+
+        // Next button label
+        const nextLabel = document.getElementById('konfig-next-label');
+        const nextIcon = document.getElementById('konfig-next-icon');
+        if (n === 3) {
+            nextLabel.textContent = 'Jetzt starten';
+            nextIcon.className = 'bi bi-rocket-takeoff ms-1';
+        } else {
+            nextLabel.textContent = 'Weiter';
+            nextIcon.className = 'bi bi-arrow-right ms-1';
+        }
+
+        if (n === 2) renderStep2();
+        if (n === 3) renderStep3();
+    }
+    function goNextStep() {
+        if (currentStep < 3) goToStep(currentStep + 1);
+        else submitKonfigurator();
+    }
+    function goPrevStep() {
+        if (currentStep > 1) goToStep(currentStep - 1);
+    }
+
+    /* ══════════════════════════════════════════════
+       RENDER STEP 1 — Plan bestätigen
+    ══════════════════════════════════════════════ */
+    function renderStep1() {
+        const plan = PLANS[currentPlan];
+        const badge = document.getElementById('konfigPlanBadge');
+        badge.className = 'plan-badge ' + plan.badgeClass;
+        badge.textContent = plan.label;
+
+        document.getElementById('konfigTitle').textContent = 'Welche Module brauchen Sie?';
+        document.getElementById('konfigSubtitle').textContent = 'Wählen Sie Ihre Module aus — Sie können jederzeit erweitern.';
+
+        const display = document.getElementById('step1-plan-display');
+        display.innerHTML = `
+            <div class="d-inline-flex align-items-center gap-2 px-4 py-2 rounded-3"
+                 style="background:#f8f9fa; border:2px solid rgba(232,93,4,0.2);">
+                <span class="fw-bold" style="color:var(--brand); font-size:1.2rem;">${plan.price} €</span>
+                <span class="text-muted">/Monat · ${plan.label}</span>
+            </div>`;
+
+        document.getElementById('step1-plan-desc').textContent = plan.desc;
+
+        const incl = document.getElementById('step1-included-modules');
+        const inclModules = ALL_MODULES.filter(m => plan.includedModules.includes(m.id));
+        incl.innerHTML = `
+            <p class="text-muted small mb-2">Inklusive im Plan:</p>
+            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                ${inclModules.map(m => `
+                    <span class="badge px-3 py-2" style="background:rgba(232,93,4,0.1); color:var(--brand); font-size:0.8rem;">
+                        <i class="bi ${m.icon} me-1"></i>${m.label}
+                    </span>`).join('')}
+            </div>`;
+
+        goToStep(1);
+    }
+
+    /* ══════════════════════════════════════════════
+       RENDER STEP 2 — Module wählen
+    ══════════════════════════════════════════════ */
+    function renderStep2() {
+        const plan = PLANS[currentPlan];
+        const hint = document.getElementById('step2-hint');
+
+        if (plan.maxModules === 1) {
+            hint.innerHTML = '<i class="bi bi-info-circle me-1"></i>Im Starter-Plan ist <strong>1 Modul</strong> inklusive. Weitere Module können als Add-on gebucht werden.';
+        } else if (plan.maxModules === 7) {
+            hint.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i>Im Business-Plan sind <strong>alle 7 Module</strong> verfügbar. Wählen Sie aus, welche Sie direkt aktivieren möchten.';
+        } else {
+            hint.innerHTML = `<i class="bi bi-info-circle me-1"></i>Im ${plan.label}-Plan können Sie bis zu <strong>${plan.maxModules} Module</strong> wählen. Gesperrte Module sind in einem höheren Plan verfügbar.`;
+        }
+
+        const addonInfo = document.getElementById('addon-info-text');
+        if (plan.lockedModules.length > 0) {
+            addonInfo.innerHTML = `<strong>Mehr Module gewünscht?</strong> Gesperrte Module sind im Business-Plan verfügbar oder einzeln als Add-on buchbar (+29 €/Monat je Modul).`;
+            document.getElementById('addon-info').style.display = '';
+        } else {
+            document.getElementById('addon-info').style.display = 'none';
+        }
+
+        const grid = document.getElementById('module-grid');
+        grid.innerHTML = ALL_MODULES.map(mod => {
+            const isAvailable = plan.availableModules.includes(mod.id);
+            const isLocked = plan.lockedModules.includes(mod.id);
+            const isSelected = selectedModules.has(mod.id);
+            const isIncluded = plan.includedModules.includes(mod.id);
+
+            return `
+                <div class="col-md-6">
+                    <div class="module-select-card ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}"
+                         id="mc-${mod.id}"
+                         onclick="${isLocked ? '' : `toggleModule('${mod.id}')`}">
+                        <div class="check-icon"><i class="bi bi-check"></i></div>
+                        ${isLocked ? '<i class="bi bi-lock-fill lock-icon"></i>' : ''}
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="module-sm-icon flex-shrink-0"
+                                 style="background:${mod.iconBg}; color:${mod.iconColor};">
+                                <i class="bi ${mod.icon}"></i>
+                            </div>
+                            <div>
+                                <div class="fw-semibold" style="font-size:0.9rem;">${mod.label}</div>
+                                <div class="text-muted" style="font-size:0.78rem;">${mod.desc}</div>
+                                <div class="mt-1">
+                                    ${isIncluded
+                                        ? '<span class="badge bg-success bg-opacity-10 text-success" style="font-size:0.7rem;">Im Plan inklusive</span>'
+                                        : isLocked
+                                            ? `<span class="badge bg-light text-muted" style="font-size:0.7rem;"><i class="bi bi-lock me-1"></i>${mod.plan}</span>`
+                                            : `<span class="badge bg-light text-muted" style="font-size:0.7rem;">${mod.plan}</span>`
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function toggleModule(modId) {
+        const plan = PLANS[currentPlan];
+        if (plan.lockedModules.includes(modId)) return;
+
+        // Included modules can't be deselected
+        if (plan.includedModules.includes(modId)) return;
+
+        if (selectedModules.has(modId)) {
+            selectedModules.delete(modId);
+        } else {
+            // Check max modules
+            if (selectedModules.size >= plan.maxModules) {
+                const card = document.getElementById('mc-' + modId);
+                card.style.animation = 'none';
+                card.offsetHeight;
+                card.style.animation = '';
+                // Shake effect
+                card.style.outline = '2px solid #dc3545';
+                setTimeout(() => card.style.outline = '', 600);
+
+                const hint = document.getElementById('step2-hint');
+                hint.innerHTML = `<i class="bi bi-exclamation-triangle-fill text-warning me-1"></i>
+                    <strong>Maximal ${plan.maxModules} Module</strong> im ${plan.label}-Plan.
+                    Entfernen Sie ein Modul oder wählen Sie einen höheren Plan.`;
+                return;
+            }
+            selectedModules.add(modId);
+        }
+
+        // Re-render card
+        const card = document.getElementById('mc-' + modId);
+        if (card) card.classList.toggle('selected', selectedModules.has(modId));
+    }
+
+    /* ══════════════════════════════════════════════
+       RENDER STEP 3 — Zusammenfassung
+    ══════════════════════════════════════════════ */
+    function renderStep3() {
+        const plan = PLANS[currentPlan];
+        const selModules = ALL_MODULES.filter(m => selectedModules.has(m.id));
+        const extraModules = selModules.filter(m => !plan.includedModules.includes(m.id));
+        const extraModuleCost = extraModules.length * 29;
+        const totalCost = plan.price + extraModuleCost;
+
+        let html = `
+            <div class="summary-row">
+                <div><i class="bi bi-box me-2 text-muted"></i><strong>${plan.label}-Plan</strong></div>
+                <div class="fw-semibold">${plan.price} €/Monat</div>
+            </div>`;
+
+        selModules.forEach(mod => {
+            const isExtra = !plan.includedModules.includes(mod.id);
+            html += `
+                <div class="summary-row">
+                    <div>
+                        <i class="bi ${mod.icon} me-2" style="color:${mod.iconColor};"></i>
+                        ${mod.label}
+                        ${isExtra ? '<span class="badge bg-warning bg-opacity-25 text-warning ms-2" style="font-size:0.7rem;">Add-on</span>' : ''}
+                    </div>
+                    <div class="text-muted">${isExtra ? '+29 €/Monat' : 'Inklusive'}</div>
+                </div>`;
+        });
+
+        html += `
+            <div class="summary-row mt-2 pt-2" style="border-top:2px solid #dee2e6;">
+                <div><strong>14-Tage-Trial</strong> <span class="badge bg-success bg-opacity-10 text-success ms-2">Kostenlos</span></div>
+                <div class="text-success fw-bold">0 € jetzt</div>
+            </div>`;
+
+        document.getElementById('summary-content').innerHTML = html;
+        document.getElementById('summary-price').textContent = totalCost + ' €';
+    }
+
+    /* ══════════════════════════════════════════════
+       SUBMIT — Weiterleitung zum Login
+    ══════════════════════════════════════════════ */
+    function submitKonfigurator() {
+        const params = new URLSearchParams({
+            plan: currentPlan,
+            modules: Array.from(selectedModules).join(','),
+            trial: '14',
+        });
+        window.location.href = '/accounts/login/?' + params.toString();
+    }
+
+    /* Keyboard close */
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeKonfigurator();
+    });
+    </script>
+</body>
+</html>
