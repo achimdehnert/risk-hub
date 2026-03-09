@@ -74,9 +74,11 @@ def trial_request(request: HttpRequest) -> JsonResponse:
     )
 
     from django.conf import settings
+
     api_token = getattr(settings, "FORWARDEMAIL_API_TOKEN", "")
     if not api_token:
         import os
+
         api_token = os.environ.get("FORWARDEMAIL_API_TOKEN", "")
 
     try:
@@ -93,9 +95,7 @@ def trial_request(request: HttpRequest) -> JsonResponse:
         lines = []
         for name, value in fields:
             lines.append(f"--{boundary}".encode())
-            lines.append(
-                f'Content-Disposition: form-data; name="{name}"'.encode()
-            )
+            lines.append(f'Content-Disposition: form-data; name="{name}"'.encode())
             lines.append(b"")
             lines.append(value.encode("utf-8"))
         lines.append(f"--{boundary}--".encode())
