@@ -1,9 +1,13 @@
+import json
+
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
-from django.http import HttpRequest, HttpResponse
+from django.core.mail import send_mail
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
+from django.views.decorators.http import require_POST
 
 
 def custom_403(request: HttpRequest, exception=None) -> HttpResponse:
@@ -36,6 +40,50 @@ def home(request: HttpRequest) -> HttpResponse:
     is_staging = host.startswith("staging.")
     template = "landing_staging.html" if is_staging else "landing.html"
     return render(request, template)
+
+
+@require_POST
+def trial_request(request: HttpRequest) -> JsonResponse:
+    """Receive trial lead from Konfigurator and send notification email."""
+    try:
+        data = json.loads(request.body)
+    except (json.JSONDecodeError, ValueError):
+        return JsonResponse({"ok": False, "error": "Ungültige Anfrage"}, status=400)
+
+    name = data.get("name", "").strip()
+    email = data.get("email", "").strip()
+    company = data.get("company", "").strip()
+    phone = data.get("phone", "").strip()
+    plan = data.get("plan", "").strip()
+    modules = data.get("modules", "").strip()
+
+    if not name or not email:
+        return JsonResponse({"ok": False, "error": "Name und E-Mail sind pflicht"}, status=400)
+
+    subject = f"[Schutztat] Trial-Anfrage: {plan.upper()} — {name}"
+    body = (
+        f"Neue Trial-Anfrage über den Konfigurator:\n\n"
+        f"Name:     {name}\n"
+        f"E-Mail:   {email}\n"
+        f"Firma:    {company or '—'}\n"
+        f"Telefon:  {phone or '—'}\n\n"
+        f"Plan:     {plan.upper()}\n"
+        f"Module:   {modules}\n\n"
+        f"--- Automatisch generiert von staging.schutztat.de ---"
+    )
+
+    try:
+        send_mail(
+            subject=subject,
+            message=body,
+            from_email="noreply@schutztat.de",
+            recipient_list=["info@schutztat.de"],
+            fail_silently=False,
+        )
+    except Exception as exc:
+        return JsonResponse({"ok": False, "error": str(exc)}, status=500)
+
+    return JsonResponse({"ok": True})
 
 
 def register(request: HttpRequest) -> HttpResponse:
