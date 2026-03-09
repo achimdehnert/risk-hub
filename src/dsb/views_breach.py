@@ -17,7 +17,7 @@ def _tenant_id(request: HttpRequest):
     user = getattr(request, "user", None)
     if user and getattr(user, "is_authenticated", False):
         try:
-            from django_tenancy.models import Membership
+            from tenancy.models import Membership
 
             m = (
                 Membership.objects.filter(user=user)
