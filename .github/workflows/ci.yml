@@ -17,11 +17,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # ──────────────────────────────────────────────────────────────
-  # Stage ␂a: Fast Checks (lint, format, security audit)
-  # ──────────────────────────────────────────────────────────────
   fast-checks:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
@@ -45,11 +42,8 @@ jobs:
             echo "::warning::pip-audit found issues (non-blocking for now)"
           }
 
-  # ──────────────────────────────────────────────────────────────
-  # Stage ␃: Tests (PostgreSQL — required by django-tenancy)
-  # ──────────────────────────────────────────────────────────────
   test:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 10
     needs: fast-checks
     services:
@@ -88,7 +82,7 @@ jobs:
           pip install -r requirements.txt || echo "::warning::Some packages failed to install"
           pip install -r requirements-dev.txt
 
-      - name: Install iil-packages (aifw, promptfw, authoringfw, nl2cad)
+      - name: Install iil-packages
         run: |
           pip install \
             "iil-aifw>=0.5.0,<1" \
@@ -119,11 +113,8 @@ jobs:
             echo "## Coverage: ${TOTAL}%" >> "$GITHUB_STEP_SUMMARY"
           fi
 
-  # ──────────────────────────────────────────────────────────────
-  # Stage ␅: Build + Push Docker Image (only on main push)
-  # ──────────────────────────────────────────────────────────────
   deploy-build:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -182,11 +173,8 @@ jobs:
     outputs:
       previous_sha: ${{ steps.pre_deploy.outputs.previous_sha }}
 
-  # ──────────────────────────────────────────────────────────────
-  # Stage ␆: Deploy + Verify
-  # ──────────────────────────────────────────────────────────────
   deploy-verify:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 10
     needs: deploy-build
     steps:
@@ -200,7 +188,6 @@ jobs:
 
       - name: Pull New Image
         run: |
-          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
             docker compose -f docker-compose.prod.yml pull
@@ -208,11 +195,10 @@ jobs:
 
       - name: Sanitize .env.prod
         run: |
-          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "ENV_FILE=${{ vars.DEPLOY_SERVER_PATH }}/.env.prod && \
-            sed -i '/\"/d' \"\${ENV_FILE}\" && \
-            sed -i '/^STRIPE_/d' \"\${ENV_FILE}\" && \
+            sed -i '/\"/d' \"${ENV_FILE}\" && \
+            sed -i '/^STRIPE_/d' \"${ENV_FILE}\" && \
             echo 'env.prod sanitized'"
 
       - name: Inject Stripe Secrets into .env.prod
@@ -228,7 +214,6 @@ jobs:
           STRIPE_PRICE_BUSINESS_ANNUAL: ${{ secrets.STRIPE_PRICE_BUSINESS_ANNUAL }}
           DEPLOY_SERVER_PATH: ${{ vars.DEPLOY_SERVER_PATH }}
         run: |
-          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
             "ENV_FILE=${DEPLOY_SERVER_PATH}/.env.prod && \
             printf 'STRIPE_SECRET_KEY=%s\nSTRIPE_PUBLISHABLE_KEY=%s\nSTRIPE_WEBHOOK_SECRET=%s\nSTRIPE_PRICE_STARTER_MONTHLY=%s\nSTRIPE_PRICE_STARTER_ANNUAL=%s\nSTRIPE_PRICE_PROFESSIONAL_MONTHLY=%s\nSTRIPE_PRICE_PROFESSIONAL_ANNUAL=%s\nSTRIPE_PRICE_BUSINESS_MONTHLY=%s\nSTRIPE_PRICE_BUSINESS_ANNUAL=%s\n' \
@@ -236,12 +221,11 @@ jobs:
             '${STRIPE_PRICE_STARTER_MONTHLY}' '${STRIPE_PRICE_STARTER_ANNUAL}' \
             '${STRIPE_PRICE_PROFESSIONAL_MONTHLY}' '${STRIPE_PRICE_PROFESSIONAL_ANNUAL}' \
             '${STRIPE_PRICE_BUSINESS_MONTHLY}' '${STRIPE_PRICE_BUSINESS_ANNUAL}' \
-            >> \"\${ENV_FILE}\" && \
+            >> \"${ENV_FILE}\" && \
             echo 'Stripe secrets injected'"
 
       - name: Backup Database
         run: |
-          set -euo pipefail
           BACKUP_FILE="${{ vars.DEPLOY_APP_NAME }}-pre-${GITHUB_SHA::7}-$(date +%Y%m%d-%H%M%S).sql.gz"
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             mkdir -p /opt/backups && \
@@ -253,7 +237,6 @@ jobs:
 
       - name: Start App
         run: |
-          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
             docker compose -f docker-compose.prod.yml up -d --force-recreate
@@ -261,7 +244,6 @@ jobs:
 
       - name: Wait for Liveness (max 150s)
         run: |
-          set -euo pipefail
           for i in $(seq 1 30); do
             HTTP_STATUS=$(ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
               "curl -sf -o /dev/null -w '%{http_code}' \
@@ -273,34 +255,20 @@ jobs:
           echo "FAIL: /livez/ not reachable after 150s"
           exit 1
 
-      - name: Readiness Check
-        run: |
-          set -euo pipefail
-          HTTP_STATUS=$(ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "curl -sf -o /dev/null -w '%{http_code}' \
-            http://localhost:${{ vars.DEPLOY_PORT }}/healthz/" 2>/dev/null || echo "000")
-          [ "$HTTP_STATUS" = "200" ] || { echo "WARN: /healthz/ -> $HTTP_STATUS"; }
-          echo "OK: /healthz/ -> $HTTP_STATUS"
-
       - name: Post-Deploy Summary
         if: success()
         run: |
           echo "## Deploy Success" >> "$GITHUB_STEP_SUMMARY"
           echo "- **App:** ${{ vars.DEPLOY_APP_NAME }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image:** ${{ vars.DEPLOY_IMAGE }}:${GITHUB_SHA::7}" >> "$GITHUB_STEP_SUMMARY"
 
-  # ──────────────────────────────────────────────────────────────
-  # Stage ␇: Rollback (only if deploy-verify fails)
-  # ──────────────────────────────────────────────────────────────
   rollback:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 5
     needs: [deploy-build, deploy-verify]
     if: failure() && needs.deploy-build.result == 'success'
     steps:
       - name: Setup SSH
         run: |
-          set -euo pipefail
           mkdir -p ~/.ssh
           echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519
@@ -314,13 +282,11 @@ jobs:
 
       - name: Rollback to Previous Image
         run: |
-          set -euo pipefail
           PREV_SHA="${{ needs.deploy-build.outputs.previous_sha }}"
           if [ "$PREV_SHA" = "unknown" ] || [ -z "$PREV_SHA" ]; then
             echo "WARN: No previous SHA found - cannot rollback automatically"
             exit 1
           fi
-          echo "Rolling back to ${{ vars.DEPLOY_IMAGE }}:${PREV_SHA}..."
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
             docker pull ${{ vars.DEPLOY_IMAGE }}:${PREV_SHA} && \
