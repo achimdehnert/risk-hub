@@ -270,7 +270,7 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
     Tenant context is resolved via user.tenant_id in middleware — no subdomain
     redirect needed. Modules are freely selectable per user, not per subdomain.
     """
-    from django_tenancy.models import Membership
+    from tenancy.models import Membership
 
     # If tenant already set (subdomain or header) → go to dashboard
     tenant_id = getattr(request, "tenant_id", None)
