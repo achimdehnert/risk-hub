@@ -118,6 +118,67 @@ def trial_request(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"ok": True})
 
 
+def _provision_trial_tenant(user, plan: str, modules_csv: str) -> None:
+    """Create Organization + Membership + ModuleSubscriptions for a new trial user."""
+    from django.utils import timezone
+    from django_tenancy.module_models import ModuleMembership, ModuleSubscription
+    from tenancy.models import Membership, Organization
+
+    slug = user.username.lower().replace(" ", "-")[:50]
+    base_slug = slug
+    counter = 1
+    while Organization.objects.filter(slug=slug).exists():
+        slug = f"{base_slug}-{counter}"
+        counter += 1
+
+    org = Organization.objects.create(
+        name=user.username,
+        slug=slug,
+        status=Organization.Status.ACTIVE,
+    )
+    tenant_id = org.tenant_id
+
+    user.tenant_id = tenant_id
+    user.save(update_fields=["tenant_id"])
+
+    Membership.objects.create(
+        tenant_id=tenant_id,
+        organization=org,
+        user=user,
+        role=Membership.Role.ADMIN,
+        invited_by=user,
+        invited_at=timezone.now(),
+        accepted_at=timezone.now(),
+    )
+
+    from billing.constants import PLAN_MODULES
+
+    plan_key = plan.lower() if plan else "professional"
+    plan_modules = PLAN_MODULES.get(plan_key, PLAN_MODULES.get("professional", []))
+    requested = [m.strip() for m in modules_csv.split(",") if m.strip()]
+    active_modules = [m for m in plan_modules if not requested or m in requested]
+    if not active_modules:
+        active_modules = plan_modules
+
+    for module in active_modules:
+        ModuleSubscription.objects.update_or_create(
+            tenant_id=tenant_id,
+            module=module,
+            defaults={
+                "organization": org,
+                "status": ModuleSubscription.Status.ACTIVE,
+                "plan_code": plan_key,
+                "activated_at": timezone.now(),
+            },
+        )
+        ModuleMembership.objects.update_or_create(
+            tenant_id=tenant_id,
+            user=user,
+            module=module,
+            defaults={"role": ModuleMembership.Role.ADMIN},
+        )
+
+
 def register(request: HttpRequest) -> HttpResponse:
     """Self-service registration — only exposed on staging."""
     host = request.get_host().split(":")[0]
@@ -157,16 +218,13 @@ def register(request: HttpRequest) -> HttpResponse:
                     email=email,
                     password=password1,
                 )
+                _provision_trial_tenant(user, plan, modules)
                 login(request, user)
-                next_url = "/dashboard/"
-                if plan or modules:
-                    from urllib.parse import urlencode
-
-                    params = {k: v for k, v in [("plan", plan), ("modules", modules)] if v}
-                    next_url = "/dashboard/?" + urlencode(params)
-                return redirect(next_url)
+                return redirect("/dashboard/")
             except ValidationError as e:
                 error = " ".join(e.messages)
+            except Exception as e:
+                error = f"Fehler beim Einrichten des Kontos: {e}"
 
     return render(
         request,
