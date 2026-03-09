@@ -190,7 +190,7 @@ jobs:
         run: |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -f docker-compose.prod.yml pull
+            docker compose -p risk-hub-prod -f docker-compose.prod.yml pull
           "
 
       - name: Sanitize .env.prod
@@ -239,7 +239,7 @@ jobs:
         run: |
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            docker compose -p risk-hub-prod -f docker-compose.prod.yml up -d --force-recreate
           "
 
       - name: Wait for Liveness (max 150s)
@@ -247,6 +247,7 @@ jobs:
           for i in $(seq 1 30); do
             HTTP_STATUS=$(ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
               "curl -sf -o /dev/null -w '%{http_code}' \
+              -H 'Host: schutztat.de' \
               http://localhost:${{ vars.DEPLOY_PORT }}/livez/" 2>/dev/null || echo "000")
             [ "$HTTP_STATUS" = "200" ] && echo "OK: /livez/ -> 200" && exit 0
             echo "Attempt $i: HTTP $HTTP_STATUS - waiting 5s..."
@@ -260,6 +261,48 @@ jobs:
         run: |
           echo "## Deploy Success" >> "$GITHUB_STEP_SUMMARY"
           echo "- **App:** ${{ vars.DEPLOY_APP_NAME }}" >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-staging:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    needs: deploy-verify
+    steps:
+      - name: Setup SSH
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy Staging
+        run: |
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
+            cd ${{ vars.DEPLOY_SERVER_PATH }} && \
+            docker compose -p risk-hub-staging -f docker-compose.staging.yml --env-file .env.staging pull --quiet && \
+            docker compose -p risk-hub-staging -f docker-compose.staging.yml --env-file .env.staging up -d --force-recreate
+          "
+
+      - name: Wait for Staging Liveness (max 150s)
+        run: |
+          for i in $(seq 1 30); do
+            HTTP_STATUS=$(ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+              "curl -sf -o /dev/null -w '%{http_code}' \
+              -H 'Host: staging.schutztat.de' \
+              http://localhost:8099/livez/" 2>/dev/null || echo "000")
+            [ "$HTTP_STATUS" = "200" ] && echo "OK: staging /livez/ -> 200" && exit 0
+            echo "Attempt $i: HTTP $HTTP_STATUS - waiting 5s..."
+            sleep 5
+          done
+          echo "FAIL: staging /livez/ not reachable after 150s"
+          exit 1
+
+      - name: Staging Summary
+        if: success()
+        run: |
+          echo "## Staging Deploy Success" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **URL:** https://staging.schutztat.de" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Image:** ${{ vars.DEPLOY_IMAGE }}:latest" >> "$GITHUB_STEP_SUMMARY"
 
   rollback:
     runs-on: self-hosted
@@ -290,7 +333,7 @@ jobs:
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
             docker pull ${{ vars.DEPLOY_IMAGE }}:${PREV_SHA} && \
-            IMAGE_TAG=${PREV_SHA} docker compose -f docker-compose.prod.yml \
+            IMAGE_TAG=${PREV_SHA} docker compose -p risk-hub-prod -f docker-compose.prod.yml \
               up -d --no-deps --force-recreate \
               ${{ vars.DEPLOY_WEB_SERVICE }} ${{ vars.DEPLOY_APP_NAME }}-worker
           "

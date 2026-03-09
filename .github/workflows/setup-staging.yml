@@ -19,46 +19,36 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Deploy compose file + nginx config to server
+      - name: Deploy files to server
         run: |
           set -euo pipefail
-          # Copy correct compose file from repo (source of truth)
           scp docker-compose.staging.yml \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/opt/risk-hub/docker-compose.staging.yml
-          # Copy nginx staging config
           scp docker/nginx/nginx-staging.conf \
             ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/etc/nginx/sites-available/staging.schutztat.de.conf
-          echo "Files deployed"
 
-      - name: Enable nginx + start staging containers
+      - name: Enable nginx + start staging
         run: |
-          set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' << 'REMOTE'
           set -euo pipefail
-
-          # Enable nginx site
           ln -sf /etc/nginx/sites-available/staging.schutztat.de.conf \
                  /etc/nginx/sites-enabled/staging.schutztat.de.conf
-          nginx -t && systemctl reload nginx && echo "nginx reloaded"
+          nginx -t && systemctl reload nginx
 
-          # Stop any broken staging containers
           cd /opt/risk-hub
-          docker compose -f docker-compose.staging.yml --env-file .env.staging down --remove-orphans 2>/dev/null || true
+          # Explicit project-name prevents orphan-contamination with prod stack
+          docker compose -p risk-hub-staging -f docker-compose.staging.yml --env-file .env.staging down 2>/dev/null || true
+          docker compose -p risk-hub-staging -f docker-compose.staging.yml --env-file .env.staging pull --quiet
+          docker compose -p risk-hub-staging -f docker-compose.staging.yml --env-file .env.staging up -d
 
-          # Pull latest image + start
-          docker compose -f docker-compose.staging.yml --env-file .env.staging pull --quiet
-          docker compose -f docker-compose.staging.yml --env-file .env.staging up -d
-          echo "Staging containers started"
-
-          # Wait for liveness (max 3 min)
           for i in $(seq 1 36); do
-            S=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:8099/livez/ 2>/dev/null || echo "000")
+            S=$(curl -sf -o /dev/null -w '%{http_code}' \
+              -H 'Host: staging.schutztat.de' http://127.0.0.1:8099/livez/ 2>/dev/null || echo "000")
             [ "$S" = "200" ] && echo "OK: /livez/ -> 200 (attempt $i)" && break
-            echo "  $i: HTTP $S - waiting 5s..."
+            echo "  $i: $S - 5s..."
             sleep 5
           done
 
-          echo "--- Container status ---"
           docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep risk
           REMOTE
 
@@ -68,4 +58,4 @@ jobs:
           echo "## Staging Setup Complete" >> "$GITHUB_STEP_SUMMARY"
           echo "- **URL:** https://staging.schutztat.de" >> "$GITHUB_STEP_SUMMARY"
           echo "- **Port:** 8099" >> "$GITHUB_STEP_SUMMARY"
-          echo "- **Image:** ghcr.io/achimdehnert/risk-hub/risk-hub-web:latest" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Project:** risk-hub-staging" >> "$GITHUB_STEP_SUMMARY"
