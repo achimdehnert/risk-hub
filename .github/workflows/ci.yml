@@ -330,15 +330,22 @@ jobs:
           DEPLOY_SERVER_PATH: ${{ vars.DEPLOY_SERVER_PATH }}
         run: |
           set -euo pipefail
+          # Write secrets locally (avoids shell escaping issues with special chars)
+          cat > /tmp/staging-secrets.env << 'ENDSECRETS'
+          ENDSECRETS
+          printf 'DJANGO_SECRET_KEY=%s\n' "$DJANGO_SECRET_KEY" > /tmp/staging-secrets.env
+          printf 'POSTGRES_PASSWORD=%s\n' "$DB_PASSWORD" >> /tmp/staging-secrets.env
+          printf 'DATABASE_URL=postgresql://risk_hub:%s@risk-hub-staging-db:5432/risk_hub_staging\n' "$DB_PASSWORD" >> /tmp/staging-secrets.env
+          printf 'MINIO_ROOT_USER=%s\n' "$MINIO_ROOT_USER" >> /tmp/staging-secrets.env
+          printf 'MINIO_ROOT_PASSWORD=%s\n' "$MINIO_ROOT_PASSWORD" >> /tmp/staging-secrets.env
+          printf 'S3_ACCESS_KEY=%s\n' "$MINIO_ROOT_USER" >> /tmp/staging-secrets.env
+          printf 'S3_SECRET_KEY=%s\n' "$MINIO_ROOT_PASSWORD" >> /tmp/staging-secrets.env
+          # Remove old secret lines and append new ones
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
-            "ENV_FILE=${DEPLOY_SERVER_PATH}/.env.staging && \
-            sed -i '/^DJANGO_SECRET_KEY=/d; /^POSTGRES_PASSWORD=/d; /^DATABASE_URL=/d; /^MINIO_ROOT_/d; /^S3_ACCESS_KEY=/d; /^S3_SECRET_KEY=/d' \"\${ENV_FILE}\" && \
-            printf 'DJANGO_SECRET_KEY=%s\nPOSTGRES_PASSWORD=%s\nDATABASE_URL=postgresql://risk_hub:%s@risk-hub-staging-db:5432/risk_hub_staging\nMINIO_ROOT_USER=%s\nMINIO_ROOT_PASSWORD=%s\nS3_ACCESS_KEY=%s\nS3_SECRET_KEY=%s\n' \
-            '${DJANGO_SECRET_KEY}' '${DB_PASSWORD}' '${DB_PASSWORD}' \
-            '${MINIO_ROOT_USER}' '${MINIO_ROOT_PASSWORD}' \
-            '${MINIO_ROOT_USER}' '${MINIO_ROOT_PASSWORD}' \
-            >> \"\${ENV_FILE}\" && \
-            echo 'staging secrets injected'"
+            "sed -i '/^DJANGO_SECRET_KEY=/d; /^POSTGRES_PASSWORD=/d; /^DATABASE_URL=/d; /^MINIO_ROOT_/d; /^S3_ACCESS_KEY=/d; /^S3_SECRET_KEY=/d' ${DEPLOY_SERVER_PATH}/.env.staging"
+          scp /tmp/staging-secrets.env ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}:/tmp/staging-secrets.env
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} \
+            "cat /tmp/staging-secrets.env >> ${DEPLOY_SERVER_PATH}/.env.staging && rm /tmp/staging-secrets.env && echo 'staging secrets injected'"
 
       - name: Start Staging App
         run: |
