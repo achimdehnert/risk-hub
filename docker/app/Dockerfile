@@ -37,6 +37,7 @@ ENV PYTHONPATH=/app/src
 
 # Collect static files at build time
 RUN DJANGO_SETTINGS_MODULE=config.settings_build \
+    SECRET_KEY=build-only-not-used-in-prod \
     python manage.py collectstatic --noinput
 RUN chown -R app:app /app/src/staticfiles 2>/dev/null || true
 
