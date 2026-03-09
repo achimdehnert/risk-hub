@@ -4,9 +4,16 @@ risk-hub is multi-tenant (Schutztat). Cross-tenant isolation is critical.
 """
 
 import pytest
-from platform_context.testing.assertions import (
-    assert_login_required,
-)
+
+try:
+    from platform_context.testing.assertions import assert_login_required
+except ImportError:
+
+    def assert_login_required(client, url):
+        response = client.get(url)
+        assert response.status_code in (302, 301), f"{url} should redirect"
+        assert "/login" in (response.get("Location") or ""), f"{url} should redirect to login"
+
 
 PROTECTED_URLS = [
     "/dashboard/",
