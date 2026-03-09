@@ -1,5 +1,7 @@
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
@@ -34,6 +36,62 @@ def home(request: HttpRequest) -> HttpResponse:
     is_staging = host.startswith("staging.")
     template = "landing_staging.html" if is_staging else "landing.html"
     return render(request, template)
+
+
+def register(request: HttpRequest) -> HttpResponse:
+    """Self-service registration — only exposed on staging."""
+    host = request.get_host().split(":")[0]
+    is_staging = host.startswith("staging.") or host in ("localhost", "127.0.0.1")
+    if not is_staging:
+        return redirect("/")
+
+    plan = request.GET.get("plan", "")
+    modules = request.GET.get("modules", "")
+    error = None
+
+    if request.method == "POST":
+        from django.contrib.auth import get_user_model
+
+        User = get_user_model()
+        username = request.POST.get("username", "").strip()
+        email = request.POST.get("email", "").strip()
+        password1 = request.POST.get("password1", "")
+        password2 = request.POST.get("password2", "")
+        plan = request.POST.get("plan", "")
+        modules = request.POST.get("modules", "")
+
+        if not username:
+            error = "Benutzername ist erforderlich."
+        elif User.objects.filter(username=username).exists():
+            error = "Dieser Benutzername ist bereits vergeben."
+        elif email and User.objects.filter(email=email).exists():
+            error = "Diese E-Mail-Adresse ist bereits registriert."
+        elif password1 != password2:
+            error = "Die Passwörter stimmen nicht überein."
+        else:
+            try:
+                validate_password(password1)
+                user = User.objects.create_user(
+                    username=username,
+                    email=email,
+                    password=password1,
+                )
+                login(request, user)
+                next_url = "/dashboard/"
+                if plan or modules:
+                    from urllib.parse import urlencode
+
+                    params = {k: v for k, v in [("plan", plan), ("modules", modules)] if v}
+                    next_url = "/dashboard/?" + urlencode(params)
+                return redirect(next_url)
+            except ValidationError as e:
+                error = " ".join(e.messages)
+
+    return render(
+        request,
+        "registration/register.html",
+        {"error": error, "plan": plan, "modules": modules},
+    )
 
 
 def tenant_login(request: HttpRequest) -> HttpResponse:
