@@ -261,7 +261,8 @@ jobs:
           set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -f docker-compose.prod.yml up -d --force-recreate
+            docker compose -p risk-hub-prod -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true && \
+            docker compose -p risk-hub-prod -f docker-compose.prod.yml up -d --remove-orphans
           "
 
       - name: Wait for Liveness (max 150s)
@@ -344,7 +345,8 @@ jobs:
           set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -f docker-compose.staging.yml up -d --force-recreate
+            docker compose -f docker-compose.staging.yml down --remove-orphans 2>/dev/null || true && \
+            docker compose -f docker-compose.staging.yml up -d --remove-orphans
           "
 
       - name: Wait for Staging Liveness (max 150s)
