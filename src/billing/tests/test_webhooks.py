@@ -74,7 +74,7 @@ class TestHandleInvoicePaymentSucceeded:
 
     def test_updates_period_end(self):
         from billing.models import StripeSubscription
-        from django_tenancy.models import Organization
+        from tenancy.models import Organization
 
         org = Organization.objects.create(
             name="Test Org",
