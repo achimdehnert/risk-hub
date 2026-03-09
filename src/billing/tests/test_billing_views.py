@@ -27,7 +27,7 @@ def _req(rf, user, tenant_id=None, method="GET", path="/billing/"):
     return r
 
 
-# ── checkout_success ────────────────────────────────────────────────────────
+# ── checkout_success ──────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -52,7 +52,7 @@ class TestCheckoutSuccessView:
         assert resp.status_code == 200
 
 
-# ── checkout_cancel ─────────────────────────────────────────────────────
+# ── checkout_cancel ───────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -64,7 +64,7 @@ class TestCheckoutCancelView:
         assert resp["Location"] == "/"
 
 
-# ── checkout_redirect — no tenant → redirect to login ────────────────────
+# ── checkout_redirect — no tenant → redirect to login ────────────────────────
 
 
 @pytest.mark.django_db
@@ -78,7 +78,7 @@ def test_checkout_redirect_without_tenant_redirects(client, db):
     assert resp.status_code in (302, 400)
 
 
-# ── portal_redirect — no tenant → redirect to login ─────────────────────
+# ── portal_redirect — no tenant → redirect to login ──────────────────────────
 
 
 @pytest.mark.django_db
@@ -91,7 +91,7 @@ def test_portal_redirect_without_tenant_redirects(client, db):
     assert resp.status_code == 302
 
 
-# ── Billing smoke — anon redirects ────────────────────────────────────────
+# ── Billing smoke — anon redirects ────────────────────────────────────────────
 
 
 @pytest.mark.django_db
