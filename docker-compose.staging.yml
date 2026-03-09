@@ -1,6 +1,3 @@
-# risk-hub — Staging Docker Compose
-# Domain: staging.kiohnerisiko.de | Port: 8190
-
 services:
   risk-hub-staging-db:
     image: postgres:16-alpine
@@ -10,7 +7,7 @@ services:
     volumes:
       - risk_hub_staging_pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U risk_hub_staging -d risk_hub_staging"]
+      test: ["CMD-SHELL", "pg_isready -U risk_hub -d risk_hub_staging"]
       interval: 5s
       timeout: 3s
       retries: 30
@@ -18,7 +15,13 @@ services:
       resources:
         limits:
           memory: 256M
-    shm_size: 64m
+        reservations:
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - risk_hub_staging_network
 
@@ -26,7 +29,7 @@ services:
     image: redis:7-alpine
     container_name: risk_hub_staging_redis
     restart: unless-stopped
-    command: ["redis-server", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
+    command: ["redis-server", "--maxmemory", "48mb", "--maxmemory-policy", "allkeys-lru", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
@@ -35,25 +38,74 @@ services:
     deploy:
       resources:
         limits:
-          memory: 96M
+          memory: 64M
+        reservations:
+          memory: 24M
+    logging:
+      driver: json-file
+      options:
+        max-size: "5m"
+        max-file: "2"
+    networks:
+      - risk_hub_staging_network
+
+  risk-hub-staging-minio:
+    image: minio/minio:latest
+    container_name: risk_hub_staging_minio
+    restart: unless-stopped
+    env_file: .env.staging
+    command: server /data --console-address ":9001"
+    ports:
+      - "127.0.0.1:9002:9000"
+      - "127.0.0.1:9003:9001"
+    volumes:
+      - risk_hub_staging_minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+        reservations:
+          memory: 64M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - risk_hub_staging_network
 
   risk-hub-staging-web:
-    image: ghcr.io/achimdehnert/risk-hub:${IMAGE_TAG:-latest}
+    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-risk-hub}/risk-hub-web:${IMAGE_TAG:-latest}
     container_name: risk_hub_staging_web
     restart: unless-stopped
     env_file: .env.staging
-    ports:
-      - "127.0.0.1:8190:8000"
+    environment:
+      EMAIL_BACKEND: "django.core.mail.backends.smtp.EmailBackend"
+      EMAIL_HOST: "smtp.forwardemail.net"
+      EMAIL_PORT: "587"
+      EMAIL_HOST_USER: "info@schutztat.de"
+      EMAIL_USE_TLS: "1"
+      DEFAULT_FROM_EMAIL: "noreply@schutztat.de"
+      FORWARDEMAIL_API_TOKEN: "c49d5a583be80482d1937cef"
     depends_on:
       risk-hub-staging-db:
         condition: service_healthy
       risk-hub-staging-redis:
         condition: service_healthy
+    entrypoint: ["/entrypoint.sh"]
+    command: ["web"]
+    ports:
+      - "127.0.0.1:8099:8000"
+    volumes:
+      - risk_hub_staging_media:/app/media
     healthcheck:
       test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')\""]
-      interval: 30s
+      interval: 15s
       timeout: 5s
       retries: 3
       start_period: 30s
@@ -61,11 +113,48 @@ services:
       resources:
         limits:
           memory: 512M
+        reservations:
+          memory: 128M
+    logging:
+      driver: json-file
+      options:
+        max-size: "20m"
+        max-file: "5"
+    networks:
+      - risk_hub_staging_network
+
+  risk-hub-staging-worker:
+    image: ghcr.io/${GHCR_OWNER:-achimdehnert}/${GHCR_REPO:-risk-hub}/risk-hub-web:${IMAGE_TAG:-latest}
+    container_name: risk_hub_staging_worker
+    restart: unless-stopped
+    env_file: .env.staging
+    depends_on:
+      risk-hub-staging-db:
+        condition: service_healthy
+      risk-hub-staging-redis:
+        condition: service_healthy
+    entrypoint: ["/entrypoint.sh"]
+    command: ["worker"]
+    volumes:
+      - risk_hub_staging_media:/app/media
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 64M
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - risk_hub_staging_network
 
 volumes:
   risk_hub_staging_pgdata:
+  risk_hub_staging_minio_data:
+  risk_hub_staging_media:
 
 networks:
   risk_hub_staging_network:
