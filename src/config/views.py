@@ -80,21 +80,35 @@ def trial_request(request: HttpRequest) -> JsonResponse:
         api_token = os.environ.get("FORWARDEMAIL_API_TOKEN", "")
 
     try:
-        payload = urllib.parse.urlencode({
-            "from": "noreply@schutztat.de",
-            "to": "info@schutztat.de",
-            "subject": subject,
-            "text": body,
-        }).encode()
-        credentials = (
-            api_token + ":"
-        ).encode()
         import base64
-        auth = base64.b64encode(credentials).decode()
+        import uuid
+
+        boundary = uuid.uuid4().hex
+        fields = [
+            ("from", "noreply@schutztat.de"),
+            ("to", "info@schutztat.de"),
+            ("subject", subject),
+            ("text", body),
+        ]
+        lines = []
+        for name, value in fields:
+            lines.append(f"--{boundary}".encode())
+            lines.append(
+                f'Content-Disposition: form-data; name="{name}"'.encode()
+            )
+            lines.append(b"")
+            lines.append(value.encode("utf-8"))
+        lines.append(f"--{boundary}--".encode())
+        multipart_data = b"\r\n".join(lines)
+
+        auth = base64.b64encode(f"{api_token}:".encode()).decode()
         req = urllib.request.Request(
             "https://api.forwardemail.net/v1/emails",
-            data=payload,
-            headers={"Authorization": f"Basic {auth}"},
+            data=multipart_data,
+            headers={
+                "Authorization": f"Basic {auth}",
+                "Content-Type": f"multipart/form-data; boundary={boundary}",
+            },
             method="POST",
         )
         urllib.request.urlopen(req, timeout=10)
