@@ -2,6 +2,7 @@
 
 Bypasses full middleware stack (avoids RecursionError in template rendering).
 """
+
 from __future__ import annotations
 
 import uuid

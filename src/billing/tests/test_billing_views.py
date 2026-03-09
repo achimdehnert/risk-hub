@@ -1,4 +1,5 @@
 """Tests for billing views — checkout_success, checkout_cancel, portal redirect."""
+
 from __future__ import annotations
 
 import pytest
