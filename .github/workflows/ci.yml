@@ -84,7 +84,7 @@ jobs:
       - name: Install Dependencies
         run: |
           set -euo pipefail
-          pip install --upgrade pip
+          pip install --upgrade pip setuptools wheel
           pip install -r requirements.txt || echo "::warning::Some packages failed to install"
           pip install -r requirements-dev.txt
 
