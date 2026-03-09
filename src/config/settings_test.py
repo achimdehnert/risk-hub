@@ -42,10 +42,11 @@ MIGRATION_MODULES = {
     "django_tenancy": "config.test_migrations.django_tenancy",
 }
 
-# Inherit MIDDLEWARE from settings.py — remove whitenoise (static files not needed in tests).
-# Never duplicate the full list here: new middleware in settings.py would silently be dropped.
+# Inherit MIDDLEWARE from settings.py — remove whitenoise (not needed in tests).
+# Never duplicate the full list here: new middleware would silently be dropped.
 MIDDLEWARE = [
-    m for m in MIDDLEWARE  # noqa: F405 — defined by wildcard import above
+    m
+    for m in MIDDLEWARE  # noqa: F405 — defined by wildcard import above
     if m != "whitenoise.middleware.WhiteNoiseMiddleware"
 ]
 
