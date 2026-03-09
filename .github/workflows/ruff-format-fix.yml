@@ -3,6 +3,9 @@ name: Ruff Format Fix
 on:
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   format:
     runs-on: self-hosted
