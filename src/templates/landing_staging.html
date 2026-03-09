@@ -1329,10 +1329,12 @@
         .then(r => r.json())
         .then(data => {
             if (data.ok) {
-                document.getElementById('trial-form').classList.add('d-none');
-                document.getElementById('trial-success').classList.remove('d-none');
-                document.getElementById('konfig-next-btn').style.display = 'none';
-                document.getElementById('konfig-back-btn').style.display = 'none';
+                const params = new URLSearchParams({
+                    email: email,
+                    plan: currentPlan,
+                    modules: Array.from(selectedModules).join(','),
+                });
+                window.location.href = '/accounts/register/?' + params.toString();
             } else {
                 throw new Error(data.error || 'Unbekannter Fehler');
             }
