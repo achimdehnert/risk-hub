@@ -1,5 +1,5 @@
 # risk-hub — Staging Docker Compose
-# Domain: staging.risk-hub.iil.pet | Port: 8101
+# Domain: staging.kiohnerisiko.de | Port: 8190
 
 services:
   risk-hub-staging-db:
@@ -19,11 +19,6 @@ services:
         limits:
           memory: 256M
     shm_size: 64m
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "2"
     networks:
       - risk_hub_staging_network
 
@@ -41,21 +36,16 @@ services:
       resources:
         limits:
           memory: 96M
-    logging:
-      driver: json-file
-      options:
-        max-size: "5m"
-        max-file: "2"
     networks:
       - risk_hub_staging_network
 
   risk-hub-staging-web:
-    image: ghcr.io/achimdehnert/risk-hub:${IMAGE_TAG:-latest}
+    image: ghcr.io/achimdehnert/risk-hub/risk-hub-web:${IMAGE_TAG:-latest}
     container_name: risk_hub_staging_web
     restart: unless-stopped
     env_file: .env.staging
     ports:
-      - "127.0.0.1:8101:8000"
+      - "127.0.0.1:8190:8000"
     depends_on:
       risk-hub-staging-db:
         condition: service_healthy
@@ -71,11 +61,6 @@ services:
       resources:
         limits:
           memory: 512M
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
     networks:
       - risk_hub_staging_network
 
