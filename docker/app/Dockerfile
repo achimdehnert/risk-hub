@@ -20,12 +20,17 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Build-time secret for private GitHub packages (platform-context, django-tenancy)
 ARG PROJECT_PAT
 
-# Install all dependencies from requirements.txt (single source of truth)
+# Install public packages first (always succeeds)
 COPY requirements.txt /app/requirements.txt
+RUN pip install --no-cache-dir -U pip setuptools wheel \
+    && grep -v 'git+https://' /app/requirements.txt | grep -v '^#' | grep -v '^$' > /tmp/requirements-public.txt \
+    && pip install --no-cache-dir -r /tmp/requirements-public.txt
+
+# Install private packages (requires PROJECT_PAT, non-fatal if fails)
 RUN git config --global url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf "https://github.com/" \
-    && pip install --no-cache-dir -U pip \
-    && pip install --no-cache-dir -r /app/requirements.txt \
-    && git config --global --unset url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf || true
+    && grep 'git+https://' /app/requirements.txt > /tmp/requirements-private.txt \
+    && pip install --no-cache-dir -r /tmp/requirements-private.txt || echo "Private packages install failed (non-fatal)" \
+    && (git config --global --unset url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf 2>/dev/null || true)
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
