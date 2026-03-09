@@ -7,7 +7,7 @@ import logging
 import stripe
 from django.conf import settings
 from django.utils import timezone
-from django_tenancy.models import Organization
+from tenancy.models import Organization
 from django_tenancy.module_models import ModuleSubscription
 
 from billing.constants import PLAN_MODULES
