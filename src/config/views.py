@@ -30,7 +30,10 @@ def home(request: HttpRequest) -> HttpResponse:
             return redirect("/accounts/login/")
         return redirect("dashboard:home")
 
-    return render(request, "landing.html")
+    host = request.get_host().split(":")[0]
+    is_staging = host.startswith("staging.")
+    template = "landing_staging.html" if is_staging else "landing.html"
+    return render(request, template)
 
 
 def tenant_login(request: HttpRequest) -> HttpResponse:
