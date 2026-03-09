@@ -17,47 +17,42 @@ jobs:
           chmod 600 ~/.ssh/id_ed25519
           ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Fix compose port + start staging
-        env:
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-          STAGING_SECRET_KEY: ${{ secrets.STAGING_SECRET_KEY }}
-          STAGING_DB_PASSWORD: ${{ secrets.STAGING_DB_PASSWORD }}
+      - name: Fix port + start staging
         run: |
           set -euo pipefail
-          ssh ${DEPLOY_USER}@${DEPLOY_HOST} 'bash -s' << 'REMOTE'
+          ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} 'bash -s' << 'REMOTE'
           set -euo pipefail
           cd /opt/risk-hub
 
-          # Fix port 8091 -> 8099 in compose
+          # Fix port 8091 -> 8099 in compose (idempotent)
           sed -i 's/127\.0\.0\.1:8091:8000/127.0.0.1:8099:8000/' docker-compose.staging.yml
 
-          # Fix nginx port
+          # Fix nginx port (idempotent)
           sed -i 's|proxy_pass http://127\.0\.0\.1:8091|proxy_pass http://127.0.0.1:8099|' \
-            /etc/nginx/sites-available/staging.schutztat.de.conf
-          nginx -t && systemctl reload nginx
-          echo "nginx reloaded"
+            /etc/nginx/sites-available/staging.schutztat.de.conf 2>/dev/null || true
+          nginx -t && systemctl reload nginx && echo "nginx reloaded"
 
-          # Down any failed containers
+          # Down any failed containers cleanly
           docker compose -f docker-compose.staging.yml --env-file .env.staging down --remove-orphans 2>/dev/null || true
 
           # Start staging
           docker compose -f docker-compose.staging.yml --env-file .env.staging up -d
-          echo "staging up"
+          echo "staging containers started"
 
-          # Wait for liveness
+          # Wait for liveness (max 3 min)
           for i in $(seq 1 36); do
             S=$(curl -sf -o /dev/null -w '%{http_code}' http://127.0.0.1:8099/livez/ 2>/dev/null || echo "000")
-            [ "$S" = "200" ] && echo "OK /livez/ -> 200 (attempt $i)" && break
-            echo "  $i: $S - 5s..."
+            [ "$S" = "200" ] && echo "OK: /livez/ -> 200 (attempt $i)" && break
+            echo "  $i: HTTP $S - waiting 5s..."
             sleep 5
           done
 
+          echo "--- Container status ---"
           docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep risk
           REMOTE
 
       - name: Summary
         run: |
           echo "## Staging Setup Complete" >> "$GITHUB_STEP_SUMMARY"
-          echo "- URL: https://staging.schutztat.de" >> "$GITHUB_STEP_SUMMARY"
-          echo "- Port: 8099" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **URL:** https://staging.schutztat.de" >> "$GITHUB_STEP_SUMMARY"
+          echo "- **Port:** 8099 (internal)" >> "$GITHUB_STEP_SUMMARY"
