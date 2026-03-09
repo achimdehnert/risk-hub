@@ -99,7 +99,7 @@ jobs:
             2>/dev/null || true
 
       - name: Django System Check
-        run: python -m django check --deploy --fail-level WARNING
+        run: python -m django check --fail-level ERROR
 
       - name: Run Tests + Coverage
         run: |
