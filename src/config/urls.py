@@ -12,6 +12,7 @@ from config.views import (
     custom_404,
     custom_500,
     home,
+    register,
     tenant_login,
     tenant_pick,
     user_profile,
@@ -31,6 +32,7 @@ urlpatterns = [
     path("dashboard/", include("dashboard.urls")),
     path("admin/", admin.site.urls),
     path("accounts/login/", tenant_login, name="login"),
+    path("accounts/register/", register, name="register"),
     path("accounts/login/pick/<slug:slug>/", tenant_pick, name="tenant-pick"),
     path(
         "accounts/logout/",
