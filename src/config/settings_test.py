@@ -7,10 +7,19 @@ In CI: DATABASE_URL=postgresql://test:test@localhost:5432/risk_hub_ci
 Django will create 'test_risk_hub_ci' automatically (test_ prefix).
 """
 
+import importlib
 import os
 from urllib.parse import urlparse
 
 from .settings import *  # noqa: F401,F403
+
+# Remove private packages from INSTALLED_APPS if not installed (CI without PROJECT_PAT)
+_OPTIONAL_APPS = ["platform_context", "django_module_shop", "aifw"]
+INSTALLED_APPS = [  # noqa: F405
+    app
+    for app in INSTALLED_APPS  # noqa: F405
+    if app not in _OPTIONAL_APPS or importlib.util.find_spec(app.replace("-", "_")) is not None
+]
 
 DEBUG = False
 
