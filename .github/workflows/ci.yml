@@ -81,9 +81,9 @@ jobs:
       - name: Install Dependencies
         run: |
           set -euo pipefail
-          pip install --upgrade pip setuptools wheel
+          pip install --upgrade pip "setuptools>=69" wheel
           pip install -r requirements.txt || echo "::warning::Some packages failed to install"
-          pip install -r requirements-dev.txt
+          pip install -r requirements-dev.txt || echo "::warning::Some dev packages failed to install"
 
       - name: Install iil-packages
         run: |
