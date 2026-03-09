@@ -44,6 +44,7 @@ def fixture_org(db):
 @pytest.fixture
 def concept(db, fixture_org):
     from brandschutz.models import FireProtectionConcept
+
     from tenancy.models import Site
 
     site = Site.objects.create(
@@ -67,7 +68,7 @@ def _req(rf, user, tenant_id=None):
     return r
 
 
-# ── ConceptListView ────────────────────────────────────────────────────────
+# ── ConceptListView ───────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -97,7 +98,7 @@ class TestConceptListView:
         assert b"Testkonzept" not in resp.content
 
 
-# ── ExtinguisherListView ──────────────────────────────────────────────────
+# ── ExtinguisherListView ──────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -121,7 +122,7 @@ class TestExtinguisherListView:
         assert resp.status_code == 200
 
 
-# ── EscapeRouteListView ──────────────────────────────────────────────────
+# ── EscapeRouteListView ───────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
