@@ -103,12 +103,13 @@ jobs:
         continue-on-error: true
 
       - name: Run Tests + Coverage
+        working-directory: src
         run: |
           python -m pytest \
             --tb=long \
             --no-header \
             -q \
-            --cov=src \
+            --cov=. \
             --cov-report=term-missing:skip-covered \
             --cov-fail-under=60
 
