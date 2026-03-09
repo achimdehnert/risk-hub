@@ -99,7 +99,7 @@ services:
     entrypoint: ["/entrypoint.sh"]
     command: ["web"]
     ports:
-      - "127.0.0.1:8091:8000"
+      - "127.0.0.1:8099:8000"
     volumes:
       - risk_hub_staging_media:/app/media
     healthcheck:
