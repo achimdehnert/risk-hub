@@ -105,16 +105,12 @@ jobs:
       - name: Run Tests + Coverage
         run: |
           python -m pytest \
-            --tb=short \
+            --tb=long \
             --no-header \
             -q \
             --cov=src \
             --cov-report=term-missing:skip-covered \
-            --cov-report=html \
-            --cov-fail-under=60 2>&1 | tee /tmp/pytest-output.txt; EXIT=${PIPESTATUS[0]}
-          echo "--- PYTEST SUMMARY ---"
-          tail -50 /tmp/pytest-output.txt
-          exit $EXIT
+            --cov-fail-under=60
 
       - name: Coverage Summary
         if: always()
