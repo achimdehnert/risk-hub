@@ -113,6 +113,7 @@ def register(request: HttpRequest) -> HttpResponse:
 
     plan = request.GET.get("plan", "")
     modules = request.GET.get("modules", "")
+    prefill_email = request.GET.get("email", "")
     error = None
 
     if request.method == "POST":
@@ -156,7 +157,12 @@ def register(request: HttpRequest) -> HttpResponse:
     return render(
         request,
         "registration/register.html",
-        {"error": error, "plan": plan, "modules": modules},
+        {
+            "error": error,
+            "plan": plan,
+            "modules": modules,
+            "prefill_email": prefill_email,
+        },
     )
 
 
