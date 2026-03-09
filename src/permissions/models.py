@@ -203,7 +203,7 @@ class PermissionOverride(models.Model):
         editable=False,
     )
     membership = models.ForeignKey(
-        "django_tenancy.Membership",
+        "tenancy.Membership",
         on_delete=models.CASCADE,
         related_name="permission_overrides",
     )
