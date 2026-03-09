@@ -12,7 +12,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("django_tenancy", "0001_initial"),
+        ("tenancy", "0001_initial"),
     ]
 
     operations = [
@@ -27,7 +27,7 @@ class Migration(migrations.Migration):
                     models.OneToOneField(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="stripe_customer",
-                        to="django_tenancy.organization",
+                        to="tenancy.organization",
                     ),
                 ),
             ],
@@ -36,10 +36,20 @@ class Migration(migrations.Migration):
         migrations.CreateModel(
             name="StripeSubscription",
             fields=[
-                ("id", models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
+                (
+                    "id",
+                    models.UUIDField(
+                        default=uuid.uuid4, editable=False, primary_key=True, serialize=False
+                    ),
+                ),
                 ("stripe_subscription_id", models.CharField(max_length=100, unique=True)),
                 ("stripe_price_id", models.CharField(max_length=100)),
-                ("plan_code", models.CharField(help_text="starter / professional / business / enterprise", max_length=50)),
+                (
+                    "plan_code",
+                    models.CharField(
+                        help_text="starter / professional / business / enterprise", max_length=50
+                    ),
+                ),
                 (
                     "status",
                     models.CharField(
@@ -66,7 +76,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="stripe_subscriptions",
-                        to="django_tenancy.organization",
+                        to="tenancy.organization",
                     ),
                 ),
             ],
