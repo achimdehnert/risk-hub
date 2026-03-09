@@ -31,7 +31,7 @@ def tenant_b_id():
 
 @pytest.fixture
 def org_a(db, tenant_a_id):
-    from django_tenancy.models import Organization
+    from tenancy.models import Organization
 
     return Organization.objects.create(
         tenant_id=tenant_a_id,
@@ -42,7 +42,7 @@ def org_a(db, tenant_a_id):
 
 @pytest.fixture
 def org_b(db, tenant_b_id):
-    from django_tenancy.models import Organization
+    from tenancy.models import Organization
 
     return Organization.objects.create(
         tenant_id=tenant_b_id,
@@ -66,7 +66,7 @@ def user_a(db):
 @pytest.mark.django_db
 def test_organization_isolated_by_tenant(org_a, org_b, tenant_a_id, tenant_b_id):
     """KRITISCH: Organisation von Tenant A darf bei Tenant B nicht sichtbar sein."""
-    from django_tenancy.models import Organization
+    from tenancy.models import Organization
 
     results_b = Organization.objects.filter(tenant_id=tenant_b_id)
     assert not results_b.filter(pk=org_a.pk).exists(), (
@@ -136,7 +136,7 @@ def test_api_key_isolated_by_tenant(db, tenant_a_id, tenant_b_id, user_a):
 @pytest.mark.django_db
 def test_tenant_id_filter_returns_only_own_objects(db, tenant_a_id, tenant_b_id):
     """filter(tenant_id=...) gibt ausschließlich eigene Objekte zurück."""
-    from django_tenancy.models import Organization
+    from tenancy.models import Organization
 
     from tenancy.models import Site
 
