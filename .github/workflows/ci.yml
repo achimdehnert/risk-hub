@@ -111,7 +111,10 @@ jobs:
             --cov=src \
             --cov-report=term-missing:skip-covered \
             --cov-report=html \
-            --cov-fail-under=60
+            --cov-fail-under=60 2>&1 | tee /tmp/pytest-output.txt; EXIT=${PIPESTATUS[0]}
+          echo "--- PYTEST SUMMARY ---"
+          tail -50 /tmp/pytest-output.txt
+          exit $EXIT
 
       - name: Coverage Summary
         if: always()
