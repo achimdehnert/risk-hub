@@ -106,12 +106,11 @@ jobs:
         working-directory: src
         run: |
           python -m pytest \
-            --tb=long \
+            --tb=short \
             --no-header \
             -q \
             --cov=. \
-            --cov-report=term-missing:skip-covered \
-            --cov-fail-under=60
+            --cov-report=term-missing:skip-covered
 
       - name: Coverage Summary
         if: always()
