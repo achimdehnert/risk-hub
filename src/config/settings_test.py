@@ -47,9 +47,7 @@ PASSWORD_HASHERS = [
 
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 
-MIGRATION_MODULES = {
-    "django_tenancy": "config.test_migrations.django_tenancy",
-}
+MIGRATION_MODULES = {}
 
 # Inherit MIDDLEWARE from settings.py — remove whitenoise (not needed in tests).
 # Never duplicate the full list here: new middleware would silently be dropped.
