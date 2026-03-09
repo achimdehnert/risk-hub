@@ -11,7 +11,7 @@ from io import StringIO
 @pytest.mark.django_db
 class TestCreateTrialCommand:
     def test_creates_trial_for_valid_slug(self):
-        from django_tenancy.models import Organization
+        from tenancy.models import Organization
         from django_tenancy.module_models import ModuleSubscription
 
         org = Organization.objects.create(
@@ -39,7 +39,7 @@ class TestCreateTrialCommand:
             call_command("create_trial", "--slug", "nonexistent-slug")
 
     def test_idempotent_second_run(self):
-        from django_tenancy.models import Organization
+        from tenancy.models import Organization
         from django_tenancy.module_models import ModuleSubscription
 
         Organization.objects.create(
