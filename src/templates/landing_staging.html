@@ -842,7 +842,7 @@
                         <i class="bi bi-2-circle me-1"></i>Module wählen
                     </div>
                     <div class="step-item" id="step-ind-3">
-                        <i class="bi bi-3-circle me-1"></i>Zusammenfassung
+                        <i class="bi bi-3-circle me-1"></i>Kontakt
                     </div>
                 </div>
             </div>
@@ -873,14 +873,59 @@
                 </div>
             </div>
 
-            <!-- Step 3: Zusammenfassung -->
+            <!-- Step 3: Kontaktformular -->
             <div id="konfig-step-3" class="konfig-body d-none">
-                <h6 class="fw-bold mb-3">Ihre Konfiguration:</h6>
-                <div id="summary-content"></div>
-                <div class="mt-4 p-3 rounded-3 text-center" style="background:#f8f9fa;">
-                    <div class="text-muted small mb-1">Monatlicher Gesamtbetrag (geschätzt)</div>
-                    <div class="price-total" id="summary-price">–</div>
-                    <div class="text-muted small mt-1">14 Tage kostenlos · Keine Kreditkarte nötig</div>
+                <!-- Mini-Zusammenfassung -->
+                <div class="p-3 rounded-3 mb-4" style="background:#f8f9fa; border:1px solid #e9ecef;">
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <span id="contact-plan-badge" class="badge px-3 py-2" style="background:rgba(232,93,4,0.12);color:var(--brand);"></span>
+                        <span id="contact-modules-list" class="text-muted small"></span>
+                        <span class="badge bg-success bg-opacity-10 text-success ms-auto">
+                            <i class="bi bi-check-circle me-1"></i>14 Tage kostenlos
+                        </span>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold mb-1">Wie dürfen wir Sie kontaktieren?</h6>
+                <p class="text-muted small mb-3">Wir richten Ihren Test-Zugang ein und melden uns innerhalb von 24 Stunden.</p>
+
+                <form id="trial-form" class="d-flex flex-column gap-3">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Vorname &amp; Nachname <span class="text-danger">*</span></label>
+                            <input type="text" id="contact-name" class="form-control form-control-sm"
+                                   placeholder="Max Mustermann" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Firma / Organisation</label>
+                            <input type="text" id="contact-company" class="form-control form-control-sm"
+                                   placeholder="Muster GmbH">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-semibold">E-Mail-Adresse <span class="text-danger">*</span></label>
+                        <input type="email" id="contact-email" class="form-control form-control-sm"
+                               placeholder="max@muster-gmbh.de" required>
+                    </div>
+                    <div>
+                        <label class="form-label small fw-semibold">Telefon <span class="text-muted fw-normal">(optional)</span></label>
+                        <input type="tel" id="contact-phone" class="form-control form-control-sm"
+                               placeholder="+49 123 456789">
+                    </div>
+                    <div id="trial-form-error" class="text-danger small d-none">
+                        <i class="bi bi-exclamation-circle me-1"></i><span></span>
+                    </div>
+                </form>
+
+                <!-- Bestätigungs-View (nach Submit) -->
+                <div id="trial-success" class="text-center py-3 d-none">
+                    <div style="font-size:3.5rem;">&#x1F4E7;</div>
+                    <h5 class="fw-bold mt-3 mb-2">Anfrage erhalten!</h5>
+                    <p class="text-muted mb-1">Wir haben Ihre Anfrage erhalten und melden uns innerhalb von <strong>24 Stunden</strong>.</p>
+                    <p class="text-muted small">Schauen Sie auch in Ihren Spam-Ordner.</p>
+                    <button class="btn btn-outline-secondary btn-sm mt-2" onclick="closeKonfigurator()">
+                        Schließen
+                    </button>
                 </div>
             </div>
 
@@ -1071,12 +1116,15 @@
         // Next button label
         const nextLabel = document.getElementById('konfig-next-label');
         const nextIcon = document.getElementById('konfig-next-icon');
+        const nextBtn = document.getElementById('konfig-next-btn');
         if (n === 3) {
-            nextLabel.textContent = 'Jetzt starten';
-            nextIcon.className = 'bi bi-rocket-takeoff ms-1';
+            nextLabel.textContent = 'Anfrage senden';
+            nextIcon.className = 'bi bi-send ms-1';
+            nextBtn.style.display = '';
         } else {
             nextLabel.textContent = 'Weiter';
             nextIcon.className = 'bi bi-arrow-right ms-1';
+            nextBtn.style.display = '';
         }
 
         if (n === 2) renderStep2();
@@ -1221,54 +1269,85 @@
     }
 
     /* ══════════════════════════════════════════════
-       RENDER STEP 3 — Zusammenfassung
+       RENDER STEP 3 — Kontakt-Zusammenfassung vorbefüllen
     ══════════════════════════════════════════════ */
     function renderStep3() {
         const plan = PLANS[currentPlan];
         const selModules = ALL_MODULES.filter(m => selectedModules.has(m.id));
-        const extraModules = selModules.filter(m => !plan.includedModules.includes(m.id));
-        const extraModuleCost = extraModules.length * 29;
-        const totalCost = plan.price + extraModuleCost;
 
-        let html = `
-            <div class="summary-row">
-                <div><i class="bi bi-box me-2 text-muted"></i><strong>${plan.label}-Plan</strong></div>
-                <div class="fw-semibold">${plan.price} €/Monat</div>
-            </div>`;
+        document.getElementById('contact-plan-badge').textContent = plan.label + ' — ' + plan.price + ' €/Monat';
+        document.getElementById('contact-modules-list').textContent =
+            selModules.map(m => m.label).join(', ');
 
-        selModules.forEach(mod => {
-            const isExtra = !plan.includedModules.includes(mod.id);
-            html += `
-                <div class="summary-row">
-                    <div>
-                        <i class="bi ${mod.icon} me-2" style="color:${mod.iconColor};"></i>
-                        ${mod.label}
-                        ${isExtra ? '<span class="badge bg-warning bg-opacity-25 text-warning ms-2" style="font-size:0.7rem;">Add-on</span>' : ''}
-                    </div>
-                    <div class="text-muted">${isExtra ? '+29 €/Monat' : 'Inklusive'}</div>
-                </div>`;
-        });
-
-        html += `
-            <div class="summary-row mt-2 pt-2" style="border-top:2px solid #dee2e6;">
-                <div><strong>14-Tage-Trial</strong> <span class="badge bg-success bg-opacity-10 text-success ms-2">Kostenlos</span></div>
-                <div class="text-success fw-bold">0 € jetzt</div>
-            </div>`;
-
-        document.getElementById('summary-content').innerHTML = html;
-        document.getElementById('summary-price').textContent = totalCost + ' €';
+        // Reset form + error
+        document.getElementById('trial-form').classList.remove('d-none');
+        document.getElementById('trial-success').classList.add('d-none');
+        document.getElementById('trial-form-error').classList.add('d-none');
+        document.getElementById('konfig-next-btn').style.display = '';
+        document.getElementById('konfig-back-btn').style.display = 'inline-flex';
     }
 
     /* ══════════════════════════════════════════════
-       SUBMIT — Weiterleitung zur Registrierung
+       SUBMIT — Lead-E-Mail senden
     ══════════════════════════════════════════════ */
     function submitKonfigurator() {
-        const params = new URLSearchParams({
+        const name = document.getElementById('contact-name').value.trim();
+        const email = document.getElementById('contact-email').value.trim();
+        const company = document.getElementById('contact-company').value.trim();
+        const phone = document.getElementById('contact-phone').value.trim();
+        const errEl = document.getElementById('trial-form-error');
+
+        if (!name) {
+            errEl.querySelector('span').textContent = 'Bitte geben Sie Ihren Namen an.';
+            errEl.classList.remove('d-none'); return;
+        }
+        if (!email || !email.includes('@')) {
+            errEl.querySelector('span').textContent = 'Bitte geben Sie eine gültige E-Mail-Adresse an.';
+            errEl.classList.remove('d-none'); return;
+        }
+        errEl.classList.add('d-none');
+
+        const btn = document.getElementById('konfig-next-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Wird gesendet…';
+
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        const payload = {
+            name, email, company, phone,
             plan: currentPlan,
             modules: Array.from(selectedModules).join(','),
-            trial: '14',
+        };
+
+        fetch('/trial-request/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken ? csrfToken.value : getCookie('csrftoken'),
+            },
+            body: JSON.stringify(payload),
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.ok) {
+                document.getElementById('trial-form').classList.add('d-none');
+                document.getElementById('trial-success').classList.remove('d-none');
+                document.getElementById('konfig-next-btn').style.display = 'none';
+                document.getElementById('konfig-back-btn').style.display = 'none';
+            } else {
+                throw new Error(data.error || 'Unbekannter Fehler');
+            }
+        })
+        .catch(err => {
+            btn.disabled = false;
+            btn.innerHTML = '<span id="konfig-next-label">Anfrage senden</span><i class="bi bi-send ms-1"></i>';
+            errEl.querySelector('span').textContent = 'Fehler beim Senden: ' + err.message;
+            errEl.classList.remove('d-none');
         });
-        window.location.href = '/accounts/register/?' + params.toString();
+    }
+
+    function getCookie(name) {
+        const v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+        return v ? v[2] : null;
     }
 
     /* Keyboard close */
