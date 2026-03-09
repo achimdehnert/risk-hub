@@ -73,8 +73,10 @@ jobs:
 
       - name: Configure git for private packages
         run: |
-          export HOME="${HOME:-/root}"
-          git config --global url."https://x-access-token:${{ secrets.PROJECT_PAT }}@github.com/".insteadOf "https://github.com/"
+          GITCONFIG_FILE="$(mktemp)"
+          printf '[url "https://x-access-token:%s@github.com/"]\n\tinsteadOf = https://github.com/\n' \
+            "${{ secrets.PROJECT_PAT }}" > "$GITCONFIG_FILE"
+          echo "GIT_CONFIG_GLOBAL=${GITCONFIG_FILE}" >> "$GITHUB_ENV"
 
       - name: Install Dependencies
         run: |
