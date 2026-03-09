@@ -11,7 +11,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ("django_tenancy", "0002_module_subscription_module_membership"),
+        ("tenancy", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
@@ -222,7 +222,7 @@ class Migration(migrations.Migration):
                     models.ForeignKey(
                         on_delete=django.db.models.deletion.CASCADE,
                         related_name="permission_overrides",
-                        to="django_tenancy.membership",
+                        to="tenancy.membership",
                     ),
                 ),
                 (
