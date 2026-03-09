@@ -110,13 +110,19 @@ jobs:
             --no-header \
             -q \
             --cov=. \
-            --cov-report=term-missing:skip-covered
+            --cov-report=term-missing:skip-covered \
+            --cov-fail-under=60 2>&1 | tee /tmp/pytest.txt || true
+          echo "=== PYTEST OUTPUT ===" >> "$GITHUB_STEP_SUMMARY"
+          tail -60 /tmp/pytest.txt >> "$GITHUB_STEP_SUMMARY"
+          grep -E "^(FAILED|ERROR|passed|failed)" /tmp/pytest.txt | tail -20 >> "$GITHUB_STEP_SUMMARY" || true
+          # Fail if tests failed (not just coverage)
+          grep -qE "^(FAILED|ERROR|[0-9]+ failed)" /tmp/pytest.txt && exit 1 || exit 0
 
       - name: Coverage Summary
         if: always()
         run: |
-          if [ -f .coverage ]; then
-            TOTAL=$(python -m coverage report --format=total 2>/dev/null || echo "0")
+          if [ -f src/.coverage ]; then
+            cd src && TOTAL=$(python -m coverage report --format=total 2>/dev/null || echo "0")
             echo "## Coverage: ${TOTAL}%" >> "$GITHUB_STEP_SUMMARY"
           fi
 
