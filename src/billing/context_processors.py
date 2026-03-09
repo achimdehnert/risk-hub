@@ -23,7 +23,7 @@ def billing_context(request: HttpRequest) -> dict:
         return {"stripe_sub": None}
 
     try:
-        from django_tenancy.models import Organization
+        from tenancy.models import Organization
         from billing.models import StripeSubscription
 
         org = Organization.objects.filter(tenant_id=tenant_id).first()
