@@ -113,10 +113,9 @@ jobs:
             --cov-report=term-missing:skip-covered \
             --cov-fail-under=60 2>&1 | tee /tmp/pytest.txt || true
           echo "=== PYTEST OUTPUT ===" >> "$GITHUB_STEP_SUMMARY"
-          tail -60 /tmp/pytest.txt >> "$GITHUB_STEP_SUMMARY"
-          grep -E "^(FAILED|ERROR|passed|failed)" /tmp/pytest.txt | tail -20 >> "$GITHUB_STEP_SUMMARY" || true
-          # Fail if tests failed (not just coverage)
-          grep -qE "^(FAILED|ERROR|[0-9]+ failed)" /tmp/pytest.txt && exit 1 || exit 0
+          cat /tmp/pytest.txt >> "$GITHUB_STEP_SUMMARY"
+          # Fail only if pytest reported actual test failures (not coverage shortfall)
+          grep -qE "^(FAILED |ERROR )| [0-9]+ failed" /tmp/pytest.txt && exit 1 || exit 0
 
       - name: Coverage Summary
         if: always()
