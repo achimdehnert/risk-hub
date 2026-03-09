@@ -400,7 +400,14 @@
                             </button>
                         </form>
 
-                        <p class="text-center mt-3 mb-0" style="color:rgba(255,255,255,0.4); font-size:0.8rem;">
+                        <hr style="border-color:rgba(255,255,255,0.1);">
+                        <p class="text-center mb-2" style="color:rgba(255,255,255,0.5); font-size:0.9rem;">
+                            Noch kein Konto?
+                            <a href="/accounts/register/" class="text-decoration-none fw-semibold" style="color:#ff8c42;">
+                                <i class="bi bi-rocket-takeoff me-1"></i>Kostenlos registrieren
+                            </a>
+                        </p>
+                        <p class="text-center mb-0" style="color:rgba(255,255,255,0.3); font-size:0.78rem;">
                             <i class="bi bi-info-circle me-1"></i>
                             Demo-Zugang:
                             <a href="https://demo.schutztat.de/accounts/login/"
@@ -1253,7 +1260,7 @@
     }
 
     /* ══════════════════════════════════════════════
-       SUBMIT — Weiterleitung zum Login
+       SUBMIT — Weiterleitung zur Registrierung
     ══════════════════════════════════════════════ */
     function submitKonfigurator() {
         const params = new URLSearchParams({
@@ -1261,7 +1268,7 @@
             modules: Array.from(selectedModules).join(','),
             trial: '14',
         });
-        window.location.href = '/accounts/login/?' + params.toString();
+        window.location.href = '/accounts/register/?' + params.toString();
     }
 
     /* Keyboard close */
