@@ -37,3 +37,4 @@ nl2cad-core @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packag
 nl2cad-areas @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-areas
 nl2cad-brandschutz @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-brandschutz
 nl2cad-gaeb @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-gaeb
+# build-trigger: platform Membership fix
