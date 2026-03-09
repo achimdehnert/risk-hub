@@ -12,7 +12,7 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django_tenancy.models import Organization
+from tenancy.models import Organization
 
 from billing.constants import get_price_id
 from billing.models import BillingEvent
