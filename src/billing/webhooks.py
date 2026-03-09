@@ -6,7 +6,7 @@ import logging
 
 import datetime
 
-from django_tenancy.models import Organization
+from tenancy.models import Organization
 
 from billing.models import StripeSubscription
 from billing.services import (
