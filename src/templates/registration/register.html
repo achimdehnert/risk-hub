@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Registrieren – Schutztat</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root { --brand: #e85d04; --brand-dark: #c44d03; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            padding: 2rem 1rem;
+        }
+        .reg-card {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 24px;
+            backdrop-filter: blur(20px);
+            padding: 2.5rem;
+            width: 100%; max-width: 460px;
+        }
+        .form-control {
+            background: rgba(255,255,255,0.08) !important;
+            border: 1px solid rgba(255,255,255,0.15) !important;
+            color: #fff !important;
+            border-radius: 10px;
+            padding: 12px 16px;
+        }
+        .form-control::placeholder { color: rgba(255,255,255,0.4) !important; }
+        .form-control:focus {
+            background: rgba(255,255,255,0.12) !important;
+            border-color: var(--brand) !important;
+            box-shadow: 0 0 0 3px rgba(232,93,4,0.2) !important;
+        }
+        .form-label { color: rgba(255,255,255,0.7); font-size: 0.875rem; }
+        .btn-brand {
+            background: var(--brand); border: none; color: #fff;
+            padding: 12px; border-radius: 10px; font-weight: 600;
+            transition: background 0.2s;
+        }
+        .btn-brand:hover { background: var(--brand-dark); color: #fff; }
+        .plan-info {
+            background: rgba(232,93,4,0.12);
+            border: 1px solid rgba(232,93,4,0.25);
+            border-radius: 12px;
+            padding: 12px 16px;
+            margin-bottom: 1.5rem;
+        }
+        .password-hint {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.4);
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="reg-card">
+
+        <!-- Logo -->
+        <div class="d-flex align-items-center gap-2 mb-4">
+            <div style="width:36px;height:36px;background:var(--brand);border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-shield-check text-white"></i>
+            </div>
+            <span class="fw-bold text-white fs-5">Schutztat</span>
+            <span class="badge ms-2" style="background:rgba(255,165,0,0.2);color:#ff8c42;font-size:0.7rem;">STAGING</span>
+        </div>
+
+        <h4 class="text-white fw-bold mb-1">Konto erstellen</h4>
+        <p class="mb-4" style="color:rgba(255,255,255,0.5);font-size:0.9rem;">
+            Starten Sie Ihren 14-Tage-Test — kostenlos, ohne Kreditkarte.
+        </p>
+
+        {% if plan %}
+        <div class="plan-info">
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>
+                <span class="fw-semibold" style="color:#ff8c42;">
+                    {{ plan|upper }}-Plan
+                </span>
+                <span style="color:rgba(255,255,255,0.5);font-size:0.85rem;">· 14 Tage kostenlos</span>
+            </div>
+            {% if modules %}
+            <div style="color:rgba(255,255,255,0.6);font-size:0.8rem;">
+                <i class="bi bi-puzzle me-1"></i>
+                Module: {{ modules }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        {% if error %}
+        <div class="alert alert-danger py-2 mb-3" style="border-radius:10px;font-size:0.875rem;background:rgba(220,53,69,0.15);border-color:rgba(220,53,69,0.3);color:#ff6b6b;">
+            <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+        </div>
+        {% endif %}
+
+        <form method="post" class="d-flex flex-column gap-3">
+            {% csrf_token %}
+            <input type="hidden" name="plan" value="{{ plan }}">
+            <input type="hidden" name="modules" value="{{ modules }}">
+
+            <div>
+                <label class="form-label mb-1">Benutzername <span style="color:var(--brand);">*</span></label>
+                <input type="text" name="username" class="form-control"
+                       placeholder="mein-benutzername" autofocus autocomplete="username" required>
+            </div>
+
+            <div>
+                <label class="form-label mb-1">E-Mail</label>
+                <input type="email" name="email" class="form-control"
+                       placeholder="name@firma.de" autocomplete="email">
+            </div>
+
+            <div>
+                <label class="form-label mb-1">Passwort <span style="color:var(--brand);">*</span></label>
+                <input type="password" name="password1" class="form-control"
+                       placeholder="••••••••" autocomplete="new-password" required>
+                <div class="password-hint">Mindestens 8 Zeichen, nicht zu einfach.</div>
+            </div>
+
+            <div>
+                <label class="form-label mb-1">Passwort wiederholen <span style="color:var(--brand);">*</span></label>
+                <input type="password" name="password2" class="form-control"
+                       placeholder="••••••••" autocomplete="new-password" required>
+            </div>
+
+            <button type="submit" class="btn btn-brand w-100 mt-1">
+                <i class="bi bi-rocket-takeoff me-2"></i>Jetzt kostenlos starten
+            </button>
+        </form>
+
+        <hr style="border-color:rgba(255,255,255,0.1);margin:1.5rem 0;">
+
+        <p class="text-center mb-0" style="color:rgba(255,255,255,0.5);font-size:0.85rem;">
+            Bereits registriert?
+            <a href="/accounts/login/" class="text-decoration-none" style="color:#ff8c42;">Anmelden</a>
+        </p>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
