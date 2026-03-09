@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 
 from django.db import models
-from django_tenancy.models import Organization
+from tenancy.models import Organization
 
 
 class StripeCustomer(models.Model):
