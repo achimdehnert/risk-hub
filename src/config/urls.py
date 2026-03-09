@@ -15,6 +15,7 @@ from config.views import (
     register,
     tenant_login,
     tenant_pick,
+    trial_request,
     user_profile,
 )
 from core.healthz import liveness, readiness
@@ -33,6 +34,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("accounts/login/", tenant_login, name="login"),
     path("accounts/register/", register, name="register"),
+    path("trial-request/", trial_request, name="trial-request"),
     path("accounts/login/pick/<slug:slug>/", tenant_pick, name="tenant-pick"),
     path(
         "accounts/logout/",
