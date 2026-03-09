@@ -23,8 +23,8 @@ ROLE_MAP = {
 
 
 def seed_module_access(apps, schema_editor):
-    Organization = apps.get_model("django_tenancy", "Organization")
-    Membership = apps.get_model("django_tenancy", "Membership")
+    Organization = apps.get_model("tenancy", "Organization")
+    Membership = apps.get_model("tenancy", "Membership")
     ModuleSubscription = apps.get_model("django_tenancy", "ModuleSubscription")
     ModuleMembership = apps.get_model("django_tenancy", "ModuleMembership")
 
