@@ -84,8 +84,8 @@ jobs:
       - name: Install Dependencies
         run: |
           set -euo pipefail
-          pip install --upgrade pip setuptools wheel
-          pip install -r requirements.txt || echo "::warning::Some packages failed to install"
+          pip install --upgrade pip setuptools wheel hatchling
+          pip install --no-cache-dir -r requirements.txt || echo "::warning::Some packages failed to install"
           pip install -r requirements-dev.txt || echo "::warning::Some dev packages failed to install"
           pip install pytest pytest-django pytest-cov pytest-xdist pytest-randomly pytest-mock factory-boy responses respx beautifulsoup4 "ruff>=0.15"
 
