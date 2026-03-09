@@ -16,7 +16,7 @@ from billing.services import (
 
 @pytest.fixture
 def org(db):
-    from django_tenancy.models import Organization
+    from tenancy.models import Organization
 
     return Organization.objects.create(
         name="Billing Test Org",
