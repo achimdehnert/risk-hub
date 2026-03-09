@@ -15,7 +15,7 @@ from datetime import timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
-from django_tenancy.models import Organization
+from tenancy.models import Organization
 from django_tenancy.module_models import ModuleSubscription
 
 from billing.constants import PLAN_MODULES
