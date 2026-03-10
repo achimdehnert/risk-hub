@@ -221,11 +221,11 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 _sync_platform_context()
                 return None
 
-            return HttpResponse(
-                "403 Forbidden: Kein Tenant-Subdomain angegeben.",
-                status=403,
-                content_type="text/plain",
-            )
+            from django.conf import settings as _s
+            from django.shortcuts import redirect as _r
+
+            login_url = getattr(_s, "LOGIN_URL", "/accounts/login/")
+            return _r(f"{login_url}?next={request.path}")
 
         # Look up tenant
         try:
