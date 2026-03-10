@@ -132,7 +132,7 @@ def fixture_module_subscription(db, fixture_tenant):
             tenant_id=fixture_tenant.tenant_id,
             module=code,
             defaults={
-                "organization": fixture_tenant,
+                "organization_id": fixture_tenant.pk,
                 "status": ModuleSubscription.Status.ACTIVE,
                 "plan_code": "business",
             },
