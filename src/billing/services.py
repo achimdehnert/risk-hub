@@ -7,8 +7,9 @@ import logging
 import stripe
 from django.conf import settings
 from django.utils import timezone
-from tenancy.models import Organization
+from django_tenancy.models import Organization as DtOrg
 from django_tenancy.module_models import ModuleSubscription
+from tenancy.models import Organization
 
 from billing.constants import PLAN_MODULES
 from billing.models import StripeCustomer, StripeSubscription
@@ -105,11 +106,15 @@ def activate_subscription(
 ) -> None:
     """Activate ModuleSubscriptions for all modules included in the plan."""
     modules = PLAN_MODULES.get(plan_code, [])
+    dt_org, _ = DtOrg.objects.get_or_create(
+        slug=organization.slug, defaults={"name": organization.name}
+    )
     for module in modules:
         ModuleSubscription.objects.update_or_create(
             tenant_id=organization.tenant_id,
             module=module,
             defaults={
+                "organization_id": dt_org.pk,
                 "status": ModuleSubscription.Status.ACTIVE,
                 "plan_code": plan_code,
                 "activated_at": timezone.now(),
