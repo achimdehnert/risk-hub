@@ -54,7 +54,11 @@ MIGRATION_MODULES = {}
 MIDDLEWARE = [
     m
     for m in MIDDLEWARE  # noqa: F405 — defined by wildcard import above
-    if m != "whitenoise.middleware.WhiteNoiseMiddleware"
+    if m
+    not in {
+        "whitenoise.middleware.WhiteNoiseMiddleware",
+        "django_tenancy.module_access.ModuleAccessMiddleware",
+    }
 ]
 
 CELERY_TASK_ALWAYS_EAGER = True
