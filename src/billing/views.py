@@ -22,6 +22,12 @@ from billing.webhooks import EVENT_HANDLERS
 logger = logging.getLogger(__name__)
 
 
+@login_required
+def billing_home(request: HttpRequest) -> HttpResponse:
+    """Billing home — redirect to dashboard."""
+    return redirect("/dashboard/")
+
+
 def _get_organization(request: HttpRequest) -> Organization | None:
     tenant_id = getattr(request, "tenant_id", None)
     if not tenant_id:
