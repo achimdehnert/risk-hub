@@ -77,7 +77,7 @@ class Membership(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
-        related_name="memberships",
+        related_name="tenancy_memberships",
     )
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBER)
     invited_by = models.ForeignKey(
