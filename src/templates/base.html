@@ -73,7 +73,6 @@
             </div>
             <div class="flex items-center space-x-4">
                 {% if user.is_authenticated %}
-                <!-- Notification Bell -->
                 <div class="relative">
                     <button hx-get="{% url 'notifications:dropdown' %}"
                             hx-target="#notif-panel"
@@ -90,7 +89,6 @@
                     </button>
                     <div id="notif-panel"></div>
                 </div>
-                <!-- User Dropdown -->
                 <div class="relative" id="user-menu">
                     <button hx-get="#"
                             hx-target="#user-dropdown"
@@ -181,5 +179,7 @@
     });
 </script>
 {% block extra_js %}{% endblock %}
+<!-- IIL Bug Reporter Widget (ADR-055) -->
+<script src="https://bfagent.iil.pet/static/js/bug-reporter.js" data-app="risk-hub"></script>
 </body>
 </html>
