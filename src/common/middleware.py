@@ -109,6 +109,18 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
 
         host = request.get_host().split(":")[0].lower()
         if host in {d.lower() for d in base_domains}:
+            # Check for X-Tenant-ID header first (API clients / tests)
+            header_tenant = request.headers.get("X-Tenant-Id")
+            if header_tenant:
+                try:
+                    tenant_uuid = uuid.UUID(header_tenant)
+                    set_tenant(tenant_uuid, None)
+                    set_db_tenant(tenant_uuid)
+                    request.tenant_id = tenant_uuid
+                    _sync_platform_context(tenant_id=tenant_uuid)
+                    return None
+                except (ValueError, TypeError):
+                    pass
             # Try to resolve tenant from authenticated user before giving up
             user = getattr(request, "user", None)
             if user and user.is_authenticated:
