@@ -15,8 +15,9 @@ from datetime import timedelta
 
 from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
-from tenancy.models import Organization
+from django_tenancy.models import Organization as DtOrg
 from django_tenancy.module_models import ModuleSubscription
+from tenancy.models import Organization
 
 from billing.constants import PLAN_MODULES
 
@@ -59,12 +60,13 @@ class Command(BaseCommand):
         created_count = 0
         updated_count = 0
 
+        dt_org, _ = DtOrg.objects.get_or_create(slug=org.slug, defaults={"name": org.name})
         for module in modules:
             _, created = ModuleSubscription.objects.update_or_create(
-                organization=org,
                 tenant_id=org.tenant_id,
                 module=module,
                 defaults={
+                    "organization_id": dt_org.pk,
                     "status": ModuleSubscription.Status.TRIAL,
                     "plan_code": plan,
                     "activated_at": timezone.now(),
