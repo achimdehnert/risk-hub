@@ -13,7 +13,7 @@ Adding a new view? Add its URL to the relevant URLS list below.
 import pytest
 
 
-# ─── Module URL lists ───────────────────────────────────────────────────
+# ─── Module URL lists ─────────────────────────────────────────────────────────
 
 DASHBOARD_URLS = [
     "/dashboard/",
@@ -90,7 +90,6 @@ PUBLIC_URLS = [
 ALL_AUTHENTICATED_URLS = (
     DASHBOARD_URLS
     + RISK_URLS
-    + EXPLOSIONSSCHUTZ_URLS
     + SUBSTANCES_URLS
     + DSB_URLS
     + GBU_URLS
@@ -103,7 +102,7 @@ ALL_AUTHENTICATED_URLS = (
 )
 
 
-# ─── Fixtures ──────────────────────────────────────────────────────────────
+# ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 ALL_MODULES = [  # noqa: RUF012
     "risk",
@@ -163,7 +162,7 @@ def smoke_modules(db, smoke_org, smoke_user, smoke_membership):
             tenant_id=smoke_org.tenant_id,
             module=module,
             defaults={
-                "organization": smoke_org,
+                "organization_id": smoke_org.pk,
                 "status": ModuleSubscription.Status.ACTIVE,
                 "plan_code": "business",
             },
@@ -180,15 +179,17 @@ def smoke_modules(db, smoke_org, smoke_user, smoke_membership):
 def tenant_client(client, smoke_org, smoke_user, smoke_modules):
     """Authenticated TestClient with tenant context bypassing middleware.
 
-    Uses TENANT_ALLOW_LOCALHOST=True so the middleware resolves tenant
-    from user.tenant_id directly without needing a subdomain.
+    Uses TENANT_ALLOW_LOCALHOST=True so the middleware returns None
+    immediately, then the common.context is patched via the context API
+    so views see the correct tenant_id on request.
     """
     client.force_login(smoke_user)
+    # Inject tenant via X-Tenant-Id header — picked up before allow_localhost
     client.defaults["HTTP_X_TENANT_ID"] = str(smoke_org.tenant_id)
     return client
 
 
-# ─── Helper ───────────────────────────────────────────────────────────────────────
+# ─── Helper ───────────────────────────────────────────────────────────────────
 
 
 def _get(client, url):
@@ -201,11 +202,13 @@ def _assert_not_error(response, url):
     status = response.status_code
     assert status != 500, f"500 Internal Server Error on {url}"
     assert status != 404, f"404 Not Found on {url}"
+    # smoke_user is staff + admin with all modules — 403 means broken access
     assert status != 403, f"403 Forbidden on {url} — check module access"
+    # 200, 302, 301 are all acceptable
     assert status in (200, 302, 301), f"Unexpected status {status} on {url}"
 
 
-# ─── Public URL tests ────────────────────────────────────────────────────────────
+# ─── Public URL tests ──────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -217,7 +220,7 @@ def test_public_urls_not_500(client, url):
     assert resp.status_code != 404, f"404 on {url}"
 
 
-# ─── Dashboard ───────────────────────────────────────────────────────────────────
+# ─── Dashboard ────────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -227,7 +230,7 @@ def test_dashboard_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Risk ───────────────────────────────────────────────────────────────────────────
+# ─── Risk ─────────────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -237,7 +240,7 @@ def test_risk_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Explosionsschutz ─────────────────────────────────────────────────────────────
+# ─── Explosionsschutz ─────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -247,7 +250,7 @@ def test_explosionsschutz_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Substances / Gefahrstoffe ───────────────────────────────────────────────────────
+# ─── Substances / Gefahrstoffe ────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -257,7 +260,7 @@ def test_substances_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── DSB / Datenschutz ──────────────────────────────────────────────────────────────
+# ─── DSB / Datenschutz ────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -267,7 +270,7 @@ def test_dsb_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── GBU ─────────────────────────────────────────────────────────────────────────────
+# ─── GBU ──────────────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -277,7 +280,7 @@ def test_gbu_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Documents ──────────────────────────────────────────────────────────────────────
+# ─── Documents ────────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -287,7 +290,7 @@ def test_documents_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Notifications ────────────────────────────────────────────────────────────────
+# ─── Notifications ────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -297,7 +300,7 @@ def test_notifications_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Brandschutz ───────────────────────────────────────────────────────────────────
+# ─── Brandschutz ──────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -307,7 +310,7 @@ def test_brandschutz_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Tenancy (staff only) ──────────────────────────────────────────────────────────────
+# ─── Tenancy (staff only) ─────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -317,7 +320,7 @@ def test_tenancy_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Billing ───────────────────────────────────────────────────────────────────────────
+# ─── Billing ──────────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -327,7 +330,7 @@ def test_billing_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Module Shop ───────────────────────────────────────────────────────────────────────
+# ─── Module Shop ───────────────────────────────────────────────────────────────
 
 
 @pytest.mark.django_db
@@ -337,7 +340,7 @@ def test_module_shop_smoke(tenant_client, url):
     _assert_not_error(resp, url)
 
 
-# ─── Anonym: should redirect to login, not crash ────────────────────────────────────
+# ─── Anonym: should redirect to login, not crash ──────────────────────────────
 
 
 @pytest.mark.django_db
@@ -347,6 +350,7 @@ def test_anonymous_redirects_not_crashes(client, url):
     resp = client.get(url, follow=False)
     assert resp.status_code != 500, f"500 on anonymous {url}"
     assert resp.status_code != 404, f"404 on anonymous {url}"
+    # 302 (login redirect), 200, 301, or 403 (module guard) are all acceptable
     assert resp.status_code in (200, 301, 302, 403), (
         f"Unexpected {resp.status_code} on anonymous {url}"
     )
