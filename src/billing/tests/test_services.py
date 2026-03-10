@@ -29,9 +29,7 @@ def org(db):
 def dt_org(db, org):
     from django_tenancy.models import Organization as DtOrg
 
-    obj, _ = DtOrg.objects.get_or_create(
-        slug=org.slug, defaults={"name": org.name}
-    )
+    obj, _ = DtOrg.objects.get_or_create(slug=org.slug, defaults={"name": org.name})
     return obj
 
 
