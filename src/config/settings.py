@@ -184,7 +184,7 @@ MODULE_SHOP_CATALOGUE = {
     },
     "brandschutz": {
         "name": "Brandschutz",
-        "description": "Feuerlöscher, Fluchtwege und Brandschutzkonzepte.",
+        "description": "Feuerschutz, Fluchtwege und Brandschutzkonzepte.",
         "icon": "flame",
         "price_month": 19.0,
         "price_year": 190.0,
@@ -272,3 +272,6 @@ STRIPE_PRICE_PROFESSIONAL_MONTHLY = os.getenv("STRIPE_PRICE_PROFESSIONAL_MONTHLY
 STRIPE_PRICE_PROFESSIONAL_ANNUAL = os.getenv("STRIPE_PRICE_PROFESSIONAL_ANNUAL", "")
 STRIPE_PRICE_BUSINESS_MONTHLY = os.getenv("STRIPE_PRICE_BUSINESS_MONTHLY", "")
 STRIPE_PRICE_BUSINESS_ANNUAL = os.getenv("STRIPE_PRICE_BUSINESS_ANNUAL", "")
+
+# billing-hub internal API secret (ADR-118)
+BILLING_INTERNAL_SECRET = read_secret("BILLING_INTERNAL_SECRET", default="")

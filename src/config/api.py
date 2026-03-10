@@ -4,6 +4,7 @@ from django.http import HttpRequest
 from ninja import NinjaAPI
 
 from actions.api import router as actions_router
+from billing.internal_api import router as billing_internal_router
 from config.api_auth import ApiKeyAuth
 from documents.api import router as documents_router
 from gbu.api import router as gbu_router
@@ -19,6 +20,7 @@ api.add_router("/risk", risk_router)
 api.add_router("/documents", documents_router)
 api.add_router("/actions", actions_router)
 api.add_router("/gbu", gbu_router)
+api.add_router("/internal/billing", billing_internal_router)
 
 
 @api.get("/health", auth=None, tags=["system"])
