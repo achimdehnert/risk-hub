@@ -107,7 +107,6 @@ def activate_subscription(
     modules = PLAN_MODULES.get(plan_code, [])
     for module in modules:
         ModuleSubscription.objects.update_or_create(
-            organization=organization,
             tenant_id=organization.tenant_id,
             module=module,
             defaults={
