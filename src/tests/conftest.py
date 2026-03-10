@@ -122,7 +122,19 @@ def fixture_site(db, fixture_tenant):
 
 
 @pytest.fixture
-def fixture_module_subscription(db, fixture_tenant):
+def _dt_org_for_tenant(db, fixture_tenant):
+    """django_tenancy.Organization for ModuleSubscription FK (BigInt PK)."""
+    from django_tenancy.models import Organization as DtOrg
+
+    obj, _ = DtOrg.objects.get_or_create(
+        slug=fixture_tenant.slug,
+        defaults={"name": fixture_tenant.name},
+    )
+    return obj
+
+
+@pytest.fixture
+def fixture_module_subscription(db, fixture_tenant, _dt_org_for_tenant):
     """Active ModuleSubscription for risk, dsb, gbu, ex modules."""
     from django_tenancy.module_models import ModuleSubscription
 
@@ -132,7 +144,7 @@ def fixture_module_subscription(db, fixture_tenant):
             tenant_id=fixture_tenant.tenant_id,
             module=code,
             defaults={
-                "organization_id": fixture_tenant.pk,
+                "organization_id": _dt_org_for_tenant.pk,
                 "status": ModuleSubscription.Status.ACTIVE,
                 "plan_code": "business",
             },
