@@ -46,9 +46,13 @@ COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 COPY src /app/src
+COPY packages /app/packages
 WORKDIR /app/src
 
 ENV PYTHONPATH=/app/src
+
+# Override platform's django-tenancy with risk-hub's own version (UUID PK, tenancy_organization table)
+RUN pip install --no-cache-dir /app/packages/django-tenancy 2>&1 && echo "OK: risk-hub django-tenancy" || echo "SKIP: risk-hub django-tenancy"
 
 # Collect static files at build time (non-fatal if private packages missing)
 RUN DJANGO_SETTINGS_MODULE=config.settings_build \
