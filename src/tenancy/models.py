@@ -11,6 +11,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django_tenancy.managers import TenantManager
 
 __all__ = ["Membership", "Organization", "Site"]
 
@@ -107,6 +108,8 @@ class Membership(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = TenantManager()
+
     class Meta:
         app_label = "tenancy"
         db_table = "tenancy_membership"
@@ -143,6 +146,8 @@ class Site(models.Model):
     address = models.TextField(blank=True, default="")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
 
     class Meta:
         app_label = "tenancy"

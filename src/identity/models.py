@@ -4,6 +4,7 @@ import uuid
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django_tenancy.managers import TenantManager
 
 
 class User(AbstractUser):
@@ -30,6 +31,8 @@ class ApiKey(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     revoked_at = models.DateTimeField(null=True, blank=True)
     last_used_at = models.DateTimeField(null=True, blank=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "identity_api_key"

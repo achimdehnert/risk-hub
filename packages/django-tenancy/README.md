@@ -103,6 +103,62 @@ After `setup_rls_roles`, update `DATABASE_URL` for
 gunicorn/celery to use the app-user. Keep the admin-user
 for migrations.
 
+## ADR-137: Phase 4 — RLS Rollout Checklist
+
+### Pre-requisites
+
+1. All tenant-scoped models use `TenantManager` (Phase 4.1 ✅)
+2. `SubdomainTenantMiddleware` sets `app.tenant_id` session var
+3. DB roles created via `setup_rls_roles`
+
+### Rollout Steps (per environment)
+
+```bash
+# 1. Dry-run — verify SQL, no changes
+python manage.py enable_rls --dry-run
+
+# 2. Apply RLS policies
+python manage.py enable_rls
+
+# 3. Verify no query breakage (run test suite)
+python -m pytest tests/ -x
+
+# 4. Switch app to non-owner DB user
+#    Update DATABASE_URL in .env.prod:
+#    OLD: postgresql://risk_hub_admin:xxx@db/risk_hub
+#    NEW: postgresql://risk_hub_app:xxx@db/risk_hub
+#    Keep admin user for migrate service only.
+
+# 5. Restart app containers
+docker compose restart web celery
+
+# 6. Smoke test — verify tenant isolation
+curl -H "X-Tenant-ID: <uuid>" https://app/api/v1/...
+```
+
+### Covered Tables (28 models)
+
+| App | Models |
+|-----|--------|
+| risk | Assessment, Hazard |
+| actions | ActionItem |
+| documents | Document, DocumentVersion |
+| approvals | ApprovalWorkflow, ApprovalRequest |
+| notifications | Notification, NotificationPreference |
+| permissions | Role, Scope, Assignment |
+| identity | ApiKey |
+| tenancy | Membership, Site |
+| explosionsschutz | Area, ExplosionConcept, ZoneDefinition, ProtectionMeasure, Equipment, Inspection, ZoneIgnitionSourceAssessment, VerificationDocument, ZoneCalculationResult, EquipmentATEXCheck |
+| substances | Party + all TenantScopedModel subclasses |
+| gbu | HazardAssessmentActivity, ActivityMeasure |
+
+### Excluded (by design)
+
+- `Organization` — tenant entity itself, not tenant-scoped
+- `User` — nullable tenant_id, uses Django's UserManager
+- `Permission`, `RolePermission`, `ApprovalStep`, `ApprovalDecision` — no tenant_id
+- `TenantScopedMasterData` subclasses (explosionsschutz) — nullable tenant_id, hybrid isolation
+
 ## Critical Rule
 
 `Organization.id != Organization.tenant_id` — **always** use `org.tenant_id` for data isolation.

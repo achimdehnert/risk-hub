@@ -3,6 +3,7 @@
 import uuid
 
 from django.db import models
+from django_tenancy.managers import TenantManager
 
 
 class Assessment(models.Model):
@@ -45,6 +46,8 @@ class Assessment(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "risk_assessment"
@@ -146,6 +149,8 @@ class Hazard(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "risk_hazard"

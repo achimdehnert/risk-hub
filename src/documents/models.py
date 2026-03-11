@@ -3,6 +3,7 @@
 import uuid
 
 from django.db import models
+from django_tenancy.managers import TenantManager
 
 
 class Document(models.Model):
@@ -25,6 +26,8 @@ class Document(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "documents_document"
@@ -49,6 +52,8 @@ class DocumentVersion(models.Model):
     sha256 = models.CharField(max_length=64)
     s3_key = models.CharField(max_length=512)
     uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "documents_document_version"

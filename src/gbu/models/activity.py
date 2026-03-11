@@ -9,6 +9,7 @@ import uuid
 from enum import StrEnum
 
 from django.db import models
+from django_tenancy.managers import TenantManager
 
 from gbu.models.reference import HazardCategoryRef, MeasureTemplate, TOPSType
 from substances.models import TenantScopedModel
@@ -201,6 +202,8 @@ class ActivityMeasure(models.Model):
     is_mandatory = models.BooleanField(default=False)
     sort_order = models.PositiveSmallIntegerField(default=0)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "gbu_activity_measure"

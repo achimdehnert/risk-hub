@@ -14,6 +14,7 @@ Enthält:
 import uuid
 
 from django.db import models
+from django_tenancy.managers import TenantManager
 
 # =============================================================================
 # BASE CLASS (Tenant-Scoped)
@@ -28,6 +29,8 @@ class TenantScopedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     created_by = models.UUIDField(null=True, blank=True)
+
+    objects = TenantManager()
 
     class Meta:
         abstract = True

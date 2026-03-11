@@ -6,6 +6,7 @@ import uuid
 
 from django.conf import settings
 from django.db import models
+from django_tenancy.managers import TenantManager
 
 
 class Permission(models.Model):
@@ -71,6 +72,8 @@ class Role(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "permissions_role"
         constraints = [
@@ -130,6 +133,8 @@ class Scope(models.Model):
     asset_id = models.UUIDField(null=True, blank=True, db_index=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "permissions_scope"
         constraints = [
@@ -177,6 +182,8 @@ class Assignment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     valid_from = models.DateTimeField(null=True, blank=True)
     valid_to = models.DateTimeField(null=True, blank=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "permissions_assignment"

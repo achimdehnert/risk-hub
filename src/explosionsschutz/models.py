@@ -15,6 +15,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.db import models
+from django_tenancy.managers import TenantManager
 
 User = get_user_model()
 
@@ -322,6 +323,8 @@ class Area(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "ex_area"
         verbose_name = "Betriebsbereich"
@@ -390,6 +393,8 @@ class ExplosionConcept(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "ex_concept"
@@ -498,6 +503,8 @@ class ZoneDefinition(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "ex_zone_definition"
         verbose_name = "Zonendefinition"
@@ -583,6 +590,8 @@ class ProtectionMeasure(models.Model):
     # Audit
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "ex_protection_measure"
@@ -797,6 +806,8 @@ class Equipment(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "ex_equipment"
         verbose_name = "Betriebsmittel"
@@ -883,6 +894,8 @@ class Inspection(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "ex_inspection"
         verbose_name = "Prüfung"
@@ -946,6 +959,8 @@ class ZoneIgnitionSourceAssessment(models.Model):
     assessed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
     assessed_at = models.DateTimeField(null=True, blank=True)
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "ex_zone_ignition_assessment"
         verbose_name = "Zündquellen-Bewertung"
@@ -1006,6 +1021,8 @@ class VerificationDocument(models.Model):
 
     created_at = models.DateTimeField(auto_now_add=True)
     uploaded_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "ex_verification_document"
@@ -1076,6 +1093,8 @@ class ZoneCalculationResult(models.Model):
     calculated_at = models.DateTimeField(auto_now_add=True)
     notes = models.TextField(blank=True, default="")
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "ex_zone_calculation_result"
         verbose_name = "Zonenberechnungs-Nachweis"
@@ -1115,6 +1134,8 @@ class EquipmentATEXCheck(models.Model):
     )
     riskfw_version = models.CharField(max_length=20)
     checked_at = models.DateTimeField(auto_now_add=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "ex_equipment_atex_check"

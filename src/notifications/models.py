@@ -4,6 +4,7 @@ import uuid
 
 from django.db import models
 from django.utils import timezone
+from django_tenancy.managers import TenantManager
 
 
 class Notification(models.Model):
@@ -66,6 +67,8 @@ class Notification(models.Model):
     read_at = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(default=timezone.now, db_index=True)
 
+    objects = TenantManager()
+
     class Meta:
         db_table = "notifications_notification"
         ordering = ["-created_at"]
@@ -120,6 +123,8 @@ class NotificationPreference(models.Model):
         default=list,
         help_text="Erinnerung X Tage vorher, z.B. [30, 7, 3, 1]",
     )
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "notifications_preference"

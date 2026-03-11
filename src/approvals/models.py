@@ -4,6 +4,7 @@ import uuid
 
 from django.db import models
 from django.utils import timezone
+from django_tenancy.managers import TenantManager
 
 from identity.models import User
 
@@ -28,6 +29,8 @@ class ApprovalWorkflow(models.Model):
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "approvals_workflow"
@@ -124,6 +127,8 @@ class ApprovalRequest(models.Model):
     )
     requested_at = models.DateTimeField(default=timezone.now)
     completed_at = models.DateTimeField(null=True, blank=True)
+
+    objects = TenantManager()
 
     class Meta:
         db_table = "approvals_request"
