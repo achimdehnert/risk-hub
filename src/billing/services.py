@@ -7,7 +7,6 @@ import logging
 import stripe
 from django.conf import settings
 from django.utils import timezone
-from django_tenancy.models import Organization as DtOrg
 from django_tenancy.module_models import ModuleSubscription
 
 from billing.constants import PLAN_MODULES
@@ -104,17 +103,19 @@ def activate_subscription(
     stripe_subscription_id: str,
     stripe_price_id: str,
 ) -> None:
-    """Activate ModuleSubscriptions for all modules included in the plan."""
+    """Activate ModuleSubscriptions for all modules included in the plan.
+
+    Uses organization.pk (UUID) directly as organization_id since
+    tenancy.Organization and django_tenancy.Organization share the same
+    DB table (tenancy_organization) with UUID primary key.
+    """
     modules = PLAN_MODULES.get(plan_code, [])
-    dt_org, _ = DtOrg.objects.get_or_create(
-        slug=organization.slug, defaults={"name": organization.name}
-    )
     for module in modules:
         ModuleSubscription.objects.update_or_create(
             tenant_id=organization.tenant_id,
             module=module,
             defaults={
-                "organization_id": dt_org.pk,
+                "organization_id": organization.pk,
                 "status": ModuleSubscription.Status.ACTIVE,
                 "plan_code": plan_code,
                 "activated_at": timezone.now(),
@@ -162,7 +163,9 @@ def sync_subscription_from_stripe(
             ),
             "cancel_at_period_end": stripe_subscription.get("cancel_at_period_end", False),
             "canceled_at": (
-                timezone.datetime.fromtimestamp(stripe_subscription["canceled_at"], tz=timezone.utc)
+                timezone.datetime.fromtimestamp(
+                    stripe_subscription["canceled_at"], tz=timezone.utc
+                )
                 if stripe_subscription.get("canceled_at")
                 else None
             ),
