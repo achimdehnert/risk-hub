@@ -1,6 +1,7 @@
-"""Shared multi-tenancy infrastructure for the BF Agent platform.
+"""Shared multi-tenancy infrastructure for the IIL platform.
 
-Provides Organization, Membership, TenantAwareManager,
+Provides Organization, Membership, TenantManager (auto-filter),
+TenantModelAdmin, TenantLifecycleMiddleware,
 SubdomainTenantMiddleware, health endpoints, and contextvars-based
 tenant context propagation.
 
@@ -15,7 +16,8 @@ Usage:
     MIDDLEWARE = [
         ...
         "django_tenancy.middleware.SubdomainTenantMiddleware",
+        "django_tenancy.lifecycle.TenantLifecycleMiddleware",  # ADR-137
     ]
 """
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

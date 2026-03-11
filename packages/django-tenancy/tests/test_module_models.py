@@ -1,7 +1,10 @@
 """Tests for ModuleSubscription and ModuleMembership models."""
 
+from datetime import timedelta
+
 import pytest
 from django.contrib.auth import get_user_model
+from django.utils import timezone
 
 from django_tenancy.models import Organization
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
@@ -90,6 +93,46 @@ class TestModuleSubscription:
     def test_str(self, subscription):
         assert "risk" in str(subscription)
         assert "active" in str(subscription)
+
+    def test_should_not_be_accessible_when_trial_expired(self, org, db):
+        sub = ModuleSubscription.objects.create(
+            organization=org,
+            tenant_id=org.tenant_id,
+            module="gbu",
+            status=ModuleSubscription.Status.TRIAL,
+            trial_ends_at=timezone.now() - timedelta(days=1),
+        )
+        assert sub.is_accessible is False
+
+    def test_should_be_accessible_when_trial_valid(self, org, db):
+        sub = ModuleSubscription.objects.create(
+            organization=org,
+            tenant_id=org.tenant_id,
+            module="gbu",
+            status=ModuleSubscription.Status.TRIAL,
+            trial_ends_at=timezone.now() + timedelta(days=7),
+        )
+        assert sub.is_accessible is True
+
+    def test_should_not_be_accessible_when_expired(self, org, db):
+        sub = ModuleSubscription.objects.create(
+            organization=org,
+            tenant_id=org.tenant_id,
+            module="docs",
+            status=ModuleSubscription.Status.ACTIVE,
+            expires_at=timezone.now() - timedelta(hours=1),
+        )
+        assert sub.is_accessible is False
+
+    def test_should_be_accessible_when_not_expired(self, org, db):
+        sub = ModuleSubscription.objects.create(
+            organization=org,
+            tenant_id=org.tenant_id,
+            module="docs",
+            status=ModuleSubscription.Status.ACTIVE,
+            expires_at=timezone.now() + timedelta(days=30),
+        )
+        assert sub.is_accessible is True
 
 
 class TestModuleMembership:

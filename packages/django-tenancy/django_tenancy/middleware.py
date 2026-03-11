@@ -74,6 +74,13 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 return result
             return None
 
+        # Try session-based resolution (ADR-137: tenant picker persistence)
+        result = self._resolve_from_session(request)
+        if result is not None:
+            return result
+        if getattr(request, "tenant_id", None) is not None:
+            return None
+
         # No tenant context
         request.tenant_id = None
         request.tenant = None
@@ -145,14 +152,71 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         self._set_tenant_context(request, org, org.slug)
         return None
 
+    def _resolve_from_session(
+        self, request: HttpRequest
+    ) -> HttpResponse | None:
+        """Resolve tenant from session (ADR-137: tenant picker persistence).
+
+        Security: Membership check prevents session manipulation —
+        without it a user could forge a session value to access
+        another tenant's data.
+
+        Returns None on success or no-match, HttpResponse on error.
+        """
+        session = getattr(request, "session", None)
+        if session is None:
+            return None
+
+        session_tid = session.get("_tenant_id")
+        if not session_tid:
+            return None
+
+        user = getattr(request, "user", None)
+        if not user or not getattr(user, "is_authenticated", False):
+            return None
+
+        from .models import Membership, Organization
+
+        # Verify user has membership for this tenant
+        has_access = Membership.objects.filter(
+            user=user,
+            organization__tenant_id=session_tid,
+        ).exists()
+        if not has_access:
+            logger.warning(
+                "Session tenant %s rejected — no membership for user %s",
+                session_tid,
+                user.pk,
+            )
+            session.pop("_tenant_id", None)
+            return None
+
+        try:
+            org = Organization.objects.get(tenant_id=session_tid)
+        except Organization.DoesNotExist:
+            session.pop("_tenant_id", None)
+            return None
+
+        if not org.is_active:
+            session.pop("_tenant_id", None)
+            return None
+
+        self._set_tenant_context(request, org, org.slug)
+        return None
+
     @staticmethod
     def _set_tenant_context(
         request: HttpRequest, org: "Organization", slug: str
     ) -> None:
-        """Set tenant on request + contextvars + RLS."""
+        """Set tenant on request + contextvars + RLS + session."""
         request.tenant_id = org.tenant_id
         request.tenant = org
         request.tenant_slug = slug
 
         set_tenant(org.tenant_id, slug)
         set_db_tenant(org.tenant_id)
+
+        # Persist to session for tenant picker (ADR-137)
+        session = getattr(request, "session", None)
+        if session is not None:
+            session["_tenant_id"] = str(org.tenant_id)
