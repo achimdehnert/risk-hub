@@ -20,7 +20,7 @@ gunicorn>=22.0
 whitenoise>=6.6
 stripe>=7.0
 # Platform shared packages (private repo)
-iil-django-tenancy @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-tenancy
+# django-tenancy: risk-hub uses its own version from packages/django-tenancy (not platform's)
 platform-context @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/platform-context
 django-module-shop @ git+https://github.com/achimdehnert/platform.git#subdirectory=packages/django-module-shop
 # ============================================================================
@@ -37,4 +37,3 @@ nl2cad-core @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packag
 nl2cad-areas @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-areas
 nl2cad-brandschutz @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-brandschutz
 nl2cad-gaeb @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-gaeb
-# build-trigger: platform Membership fix
