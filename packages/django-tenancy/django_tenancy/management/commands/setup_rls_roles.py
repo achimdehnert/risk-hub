@@ -20,39 +20,43 @@ from django.db import connection
 
 logger = logging.getLogger(__name__)
 
-SETUP_SQL = """
--- 1. Create app role (if not exists)
-DO $$
-BEGIN
-    IF NOT EXISTS (
-        SELECT FROM pg_roles WHERE rolname = '{app_user}'
-    ) THEN
-        CREATE ROLE {app_user} LOGIN PASSWORD '{app_password}';
-    END IF;
-END
-$$;
 
--- 2. Grant connect + usage
-GRANT CONNECT ON DATABASE {db_name} TO {app_user};
-GRANT USAGE ON SCHEMA public TO {app_user};
-
--- 3. Grant DML on all existing tables
-GRANT SELECT, INSERT, UPDATE, DELETE
-    ON ALL TABLES IN SCHEMA public TO {app_user};
-
--- 4. Grant usage on sequences
-GRANT USAGE, SELECT
-    ON ALL SEQUENCES IN SCHEMA public TO {app_user};
-
--- 5. Default privileges for future tables
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-    GRANT SELECT, INSERT, UPDATE, DELETE
-    ON TABLES TO {app_user};
-
-ALTER DEFAULT PRIVILEGES IN SCHEMA public
-    GRANT USAGE, SELECT
-    ON SEQUENCES TO {app_user};
-"""
+def _build_statements(app_user: str, app_password: str, db_name: str) -> list[str]:
+    """Return a list of individual SQL statements for RLS role setup."""
+    return [
+        # 1. Create app role (if not exists) — DO block must be a single statement
+        (
+            f"DO $$ BEGIN "
+            f"IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = '{app_user}') THEN "
+            f"CREATE ROLE {app_user} LOGIN PASSWORD '{app_password}'; "
+            f"END IF; "
+            f"END $$"
+        ),
+        # 2. Grant connect + usage
+        f"GRANT CONNECT ON DATABASE {db_name} TO {app_user}",
+        f"GRANT USAGE ON SCHEMA public TO {app_user}",
+        # 3. Grant DML on all existing tables
+        (
+            f"GRANT SELECT, INSERT, UPDATE, DELETE "
+            f"ON ALL TABLES IN SCHEMA public TO {app_user}"
+        ),
+        # 4. Grant usage on sequences
+        (
+            f"GRANT USAGE, SELECT "
+            f"ON ALL SEQUENCES IN SCHEMA public TO {app_user}"
+        ),
+        # 5. Default privileges for future tables
+        (
+            f"ALTER DEFAULT PRIVILEGES IN SCHEMA public "
+            f"GRANT SELECT, INSERT, UPDATE, DELETE "
+            f"ON TABLES TO {app_user}"
+        ),
+        (
+            f"ALTER DEFAULT PRIVILEGES IN SCHEMA public "
+            f"GRANT USAGE, SELECT "
+            f"ON SEQUENCES TO {app_user}"
+        ),
+    ]
 
 
 class Command(BaseCommand):
@@ -93,11 +97,7 @@ class Command(BaseCommand):
         app_user = options["app_user"] or f"{db_name}_app"
         app_password = options["app_password"] or f"{app_user}_rls"
 
-        sql = SETUP_SQL.format(
-            app_user=app_user,
-            app_password=app_password,
-            db_name=db_name,
-        )
+        statements = _build_statements(app_user, app_password, db_name)
 
         self.stdout.write(
             self.style.MIGRATE_HEADING(f"RLS Role Setup{' (DRY RUN)' if dry_run else ''}")
@@ -111,7 +111,8 @@ class Command(BaseCommand):
         )
 
         if dry_run:
-            self.stdout.write(self.style.SQL_KEYWORD(sql))
+            for stmt in statements:
+                self.stdout.write(self.style.SQL_KEYWORD(f"{stmt};"))
             self.stdout.write(
                 self.style.WARNING(
                     "\nAfter running this command:\n"
@@ -123,16 +124,11 @@ class Command(BaseCommand):
                 )
             )
         else:
-            self._execute_sql(sql)
+            with connection.cursor() as cursor:
+                for stmt in statements:
+                    try:
+                        cursor.execute(stmt)
+                    except Exception as exc:
+                        self.stderr.write(self.style.ERROR(f"  ERROR: {exc}"))
+                        logger.exception("RLS role setup failed")
             self.stdout.write(self.style.SUCCESS(f"\nRole '{app_user}' created/updated."))
-
-    def _execute_sql(self, sql):
-        """Execute SQL statements."""
-        stmts = [s.strip() for s in sql.split(";") if s.strip() and not s.strip().startswith("--")]
-        with connection.cursor() as cursor:
-            for stmt in stmts:
-                try:
-                    cursor.execute(stmt)
-                except Exception as exc:
-                    self.stderr.write(self.style.ERROR(f"  ERROR: {exc}"))
-                    logger.exception("RLS role setup failed")
