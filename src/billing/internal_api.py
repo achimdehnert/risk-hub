@@ -47,7 +47,7 @@ def _verify_hmac(request: HttpRequest, secret: str) -> bool:
         body = request.body.decode("utf-8")
     except Exception:
         body = ""
-    payload_str = f"{timestamp}:{body}"
+    payload_str = f"{timestamp}.{body}"
     expected = hmac.new(
         secret.encode(),
         payload_str.encode(),
