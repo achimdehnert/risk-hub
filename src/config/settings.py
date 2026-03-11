@@ -66,6 +66,8 @@ MIDDLEWARE = [
     "common.middleware.RequestContextMiddleware",
     "common.middleware.SubdomainTenantMiddleware",
     "django_tenancy.module_access.ModuleAccessMiddleware",
+    # ADR-118: block writes for suspended/deactivated tenants
+    "common.middleware.ReadOnlyTenantMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]

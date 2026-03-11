@@ -3,7 +3,7 @@
 import uuid
 
 from django.conf import settings
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 
 from common.context import (
@@ -129,14 +129,18 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                     try:
                         from tenancy.models import Organization
 
-                        org = Organization.objects.filter(tenant_id=user_tenant_id).first()
+                        org = Organization.objects.filter(
+                            tenant_id=user_tenant_id
+                        ).first()
                         if org:
                             set_tenant(org.tenant_id, org.slug)
                             set_db_tenant(org.tenant_id)
                             request.tenant = org
                             request.tenant_id = org.tenant_id
                             request.tenant_slug = org.slug
-                            _sync_platform_context(tenant_id=org.tenant_id, slug=org.slug)
+                            _sync_platform_context(
+                                tenant_id=org.tenant_id, slug=org.slug
+                            )
                             return None
                     except Exception:
                         pass
@@ -198,8 +202,6 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                 return None
 
             # Fallback: resolve tenant from authenticated user.tenant_id
-            # Must run BEFORE allow_localhost so production (schutztat.de)
-            # with TENANT_ALLOW_LOCALHOST=True still gets tenant context.
             user = getattr(request, "user", None)
             if user and user.is_authenticated:
                 user_tenant_id = getattr(user, "tenant_id", None)
@@ -207,14 +209,18 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                     try:
                         from tenancy.models import Organization
 
-                        org = Organization.objects.filter(tenant_id=user_tenant_id).first()
+                        org = Organization.objects.filter(
+                            tenant_id=user_tenant_id
+                        ).first()
                         if org:
                             set_tenant(org.tenant_id, org.slug)
                             set_db_tenant(org.tenant_id)
                             request.tenant = org
                             request.tenant_id = org.tenant_id
                             request.tenant_slug = org.slug
-                            _sync_platform_context(tenant_id=org.tenant_id, slug=org.slug)
+                            _sync_platform_context(
+                                tenant_id=org.tenant_id, slug=org.slug
+                            )
                             return None
                     except Exception:
                         pass
@@ -272,3 +278,67 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         )
 
         return None
+
+
+_READONLY_WRITE_METHODS = frozenset(["POST", "PUT", "PATCH", "DELETE"])
+
+_READONLY_ALLOWLIST = (
+    "/api/v1/internal/",  # billing-hub activate/deactivate callbacks
+    "/admin/",            # Django admin (superusers can always access)
+    "/livez/",
+    "/healthz/",
+    "/readyz/",
+    "/accounts/logout/",
+)
+
+
+class ReadOnlyTenantMiddleware(MiddlewareMixin):
+    """Block write requests when org.is_readonly=True (ADR-118).
+
+    Runs after SubdomainTenantMiddleware — request.tenant must be set.
+    Safe paths (billing callbacks, admin, health) are always allowed.
+    API clients receive JSON 403; browsers receive plain 403.
+    """
+
+    def process_request(self, request: HttpRequest) -> HttpResponse | None:
+        if request.method not in _READONLY_WRITE_METHODS:
+            return None
+
+        if any(request.path.startswith(p) for p in _READONLY_ALLOWLIST):
+            return None
+
+        org = getattr(request, "tenant", None)
+        if org is None or not getattr(org, "is_readonly", False):
+            return None
+
+        delete_at = getattr(org, "gdpr_delete_at", None)
+        delete_str = (
+            delete_at.strftime("%d.%m.%Y") if delete_at else "unbekannt"
+        )
+        reason = getattr(org, "deactivation_reason", "") or "Abonnement beendet"
+
+        accept = request.headers.get("Accept", "")
+        if "application/json" in accept or request.path.startswith("/api/"):
+            return JsonResponse(
+                {
+                    "error": "read_only",
+                    "detail": (
+                        f"Ihr Zugang ist deaktiviert: {reason}. "
+                        f"Daten werden am {delete_str} gel\u00f6scht."
+                    ),
+                },
+                status=403,
+            )
+
+        return HttpResponse(
+            (
+                f"<h1>Zugang deaktiviert</h1>"
+                f"<p>{reason}</p>"
+                f"<p>Ihre Daten werden am <strong>{delete_str}</strong> "
+                f"automatisch gel\u00f6scht (DSGVO).</p>"
+                f"<p>Zum Reaktivieren: "
+                f'<a href=\"https://billing.iil.pet\">billing.iil.pet</a></p>'
+            ),
+            status=403,
+            content_type="text/html; charset=utf-8",
+        )
