@@ -19,9 +19,7 @@ DEFAULT_CATALOGUE: dict[str, dict[str, Any]] = {}
 
 def get_catalogue() -> dict[str, dict[str, Any]]:
     """Return the module catalogue from settings."""
-    return getattr(
-        settings, "MODULE_SHOP_CATALOGUE", DEFAULT_CATALOGUE
-    )
+    return getattr(settings, "MODULE_SHOP_CATALOGUE", DEFAULT_CATALOGUE)
 
 
 def get_module_entry(code: str) -> dict[str, Any] | None:
@@ -70,20 +68,24 @@ def enrich_catalogue(
         else:
             status = "locked"
 
-        result.append({
-            "code": code,
-            "name": meta.get("name", code),
-            "description": meta.get("description", ""),
-            "icon": meta.get("icon", "package"),
-            "trial_days": meta.get("trial_days", 0),
-            "status": status,
-            "is_active": status == "active",
-            "is_bookable": status in (
-                "available", "included",
-            ),
-            "included_in_plan": code in included,
-            "subscription": sub,
-        })
+        result.append(
+            {
+                "code": code,
+                "name": meta.get("name", code),
+                "description": meta.get("description", ""),
+                "icon": meta.get("icon", "package"),
+                "trial_days": meta.get("trial_days", 0),
+                "status": status,
+                "is_active": status == "active",
+                "is_bookable": status
+                in (
+                    "available",
+                    "included",
+                ),
+                "included_in_plan": code in included,
+                "subscription": sub,
+            }
+        )
 
     # Sort: active first, then available, then locked
     order = {"active": 0, "included": 1, "available": 2, "locked": 3}

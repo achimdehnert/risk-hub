@@ -25,7 +25,8 @@ def rf():
 @pytest.fixture
 def user(db):
     return User.objects.create_user(
-        username="alice", password="pw",
+        username="alice",
+        password="pw",
     )
 
 
@@ -41,17 +42,21 @@ def _attach_tenant(request, user):
     from django.contrib.sessions.backends.db import (
         SessionStore,
     )
+
     request.session = SessionStore()
     from django.contrib.messages.storage.fallback import (
         FallbackStorage,
     )
+
     setattr(request, "_messages", FallbackStorage(request))
     return request
 
 
 class TestCatalogueView:
     def test_should_redirect_without_tenant(
-        self, rf, user,
+        self,
+        rf,
+        user,
     ):
         request = rf.get("/modules/")
         request.user = user
@@ -69,7 +74,9 @@ class TestCatalogueView:
 
 class TestDetailView:
     def test_should_404_for_unknown_module(
-        self, rf, user,
+        self,
+        rf,
+        user,
     ):
         request = rf.get("/modules/nonexistent/")
         _attach_tenant(request, user)
@@ -77,7 +84,9 @@ class TestDetailView:
         assert resp.status_code == 404
 
     def test_should_render_known_module(
-        self, rf, user,
+        self,
+        rf,
+        user,
     ):
         request = rf.get("/modules/risk/")
         _attach_tenant(request, user)
@@ -87,7 +96,9 @@ class TestDetailView:
 
 class TestActivateView:
     def test_should_redirect_get_to_detail(
-        self, rf, user,
+        self,
+        rf,
+        user,
     ):
         request = rf.get("/modules/risk/activate/")
         _attach_tenant(request, user)
@@ -95,7 +106,9 @@ class TestActivateView:
         assert resp.status_code == 302
 
     def test_should_redirect_to_billing_hub(
-        self, rf, user,
+        self,
+        rf,
+        user,
     ):
         request = rf.post("/modules/risk/activate/")
         _attach_tenant(request, user)
@@ -105,7 +118,9 @@ class TestActivateView:
         assert "module=risk" in resp.url
 
     def test_should_reject_non_bookable_module(
-        self, rf, user,
+        self,
+        rf,
+        user,
     ):
         request = rf.post("/modules/locked/activate/")
         _attach_tenant(request, user)
@@ -113,7 +128,9 @@ class TestActivateView:
         assert resp.status_code == 302
 
     def test_should_404_unknown_module(
-        self, rf, user,
+        self,
+        rf,
+        user,
     ):
         request = rf.post("/modules/xxx/activate/")
         _attach_tenant(request, user)
@@ -129,7 +146,9 @@ class TestCancelView:
         assert resp.status_code == 302
 
     def test_should_send_cancel_request(
-        self, rf, user,
+        self,
+        rf,
+        user,
     ):
         request = rf.post("/modules/risk/cancel/")
         _attach_tenant(request, user)

@@ -30,18 +30,12 @@ from .types import RequestContext
 
 logger = logging.getLogger(__name__)
 
-_tenant_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar(
-    "tenant_id", default=None
-)
+_tenant_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar("tenant_id", default=None)
 _tenant_slug: contextvars.ContextVar[str | None] = contextvars.ContextVar(
     "tenant_slug", default=None
 )
-_user_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar(
-    "user_id", default=None
-)
-_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "request_id", default=None
-)
+_user_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar("user_id", default=None)
+_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)
 
 
 def get_context() -> RequestContext:

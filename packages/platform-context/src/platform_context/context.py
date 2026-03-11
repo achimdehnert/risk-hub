@@ -11,9 +11,7 @@ import contextvars
 from dataclasses import dataclass
 from uuid import UUID
 
-_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "request_id", default=None
-)
+_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)
 _current_tenant_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar(
     "tenant_id", default=None
 )

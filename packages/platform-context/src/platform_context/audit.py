@@ -45,8 +45,7 @@ def emit_audit_event(
     model_path = getattr(settings, "PLATFORM_AUDIT_MODEL", None)
     if not model_path:
         _logger.warning(
-            "PLATFORM_AUDIT_MODEL not configured, audit event dropped: "
-            "%s.%s on %s",
+            "PLATFORM_AUDIT_MODEL not configured, audit event dropped: %s.%s on %s",
             category,
             action,
             entity_type,

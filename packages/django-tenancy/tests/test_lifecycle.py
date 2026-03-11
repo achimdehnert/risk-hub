@@ -24,15 +24,18 @@ def middleware():
 class TestLifecycleExemptPaths:
     """Test that exempt paths are not blocked."""
 
-    @pytest.mark.parametrize("path", [
-        "/livez/",
-        "/healthz/",
-        "/static/foo.css",
-        "/accounts/login/",
-        "/api/internal/activate/",
-        "/billing/checkout/",
-        "/admin/",
-    ])
+    @pytest.mark.parametrize(
+        "path",
+        [
+            "/livez/",
+            "/healthz/",
+            "/static/foo.css",
+            "/accounts/login/",
+            "/api/internal/activate/",
+            "/billing/checkout/",
+            "/admin/",
+        ],
+    )
     def test_should_allow_exempt_paths(self, rf, middleware, path):
         request = rf.get(path)
         request.tenant = MagicMock(status="suspended")

@@ -82,10 +82,7 @@ class Command(BaseCommand):
 
         if connection.vendor != "postgresql":
             self.stderr.write(
-                self.style.ERROR(
-                    "RLS roles require PostgreSQL. "
-                    f"Current: {connection.vendor}"
-                )
+                self.style.ERROR(f"RLS roles require PostgreSQL. Current: {connection.vendor}")
             )
             return
 
@@ -103,10 +100,7 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(
-            self.style.MIGRATE_HEADING(
-                f"RLS Role Setup"
-                f"{' (DRY RUN)' if dry_run else ''}"
-            )
+            self.style.MIGRATE_HEADING(f"RLS Role Setup{' (DRY RUN)' if dry_run else ''}")
         )
         self.stdout.write(
             f"  Database:        {db_name}\n"
@@ -130,25 +124,15 @@ class Command(BaseCommand):
             )
         else:
             self._execute_sql(sql)
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"\nRole '{app_user}' created/updated."
-                )
-            )
+            self.stdout.write(self.style.SUCCESS(f"\nRole '{app_user}' created/updated."))
 
     def _execute_sql(self, sql):
         """Execute SQL statements."""
-        stmts = [
-            s.strip()
-            for s in sql.split(";")
-            if s.strip() and not s.strip().startswith("--")
-        ]
+        stmts = [s.strip() for s in sql.split(";") if s.strip() and not s.strip().startswith("--")]
         with connection.cursor() as cursor:
             for stmt in stmts:
                 try:
                     cursor.execute(stmt)
                 except Exception as exc:
-                    self.stderr.write(
-                        self.style.ERROR(f"  ERROR: {exc}")
-                    )
+                    self.stderr.write(self.style.ERROR(f"  ERROR: {exc}"))
                     logger.exception("RLS role setup failed")

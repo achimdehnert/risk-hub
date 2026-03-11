@@ -11,9 +11,7 @@ import contextvars
 from dataclasses import dataclass
 from uuid import UUID
 
-_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar(
-    "request_id", default=None
-)
+_request_id: contextvars.ContextVar[str | None] = contextvars.ContextVar("request_id", default=None)
 _current_tenant_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar(
     "tenant_id", default=None
 )
@@ -28,17 +26,17 @@ _current_user_id: contextvars.ContextVar[UUID | None] = contextvars.ContextVar(
 @dataclass(frozen=True)
 class RequestContext:
     """Immutable snapshot of the current request context."""
-    
+
     request_id: str | None
     tenant_id: UUID | None
     tenant_slug: str | None
     user_id: UUID | None
-    
+
     @property
     def is_authenticated(self) -> bool:
         """Check if a user is set in context."""
         return self.user_id is not None
-    
+
     @property
     def has_tenant(self) -> bool:
         """Check if a tenant is set in context."""

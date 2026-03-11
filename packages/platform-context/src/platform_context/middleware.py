@@ -109,6 +109,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
 
         try:
             from django.apps import apps
+
             app_label, model_name = model_path.rsplit(".", 1)
             model = apps.get_model(app_label, model_name)
             return model.objects.filter(**{slug_field: slug}).first()

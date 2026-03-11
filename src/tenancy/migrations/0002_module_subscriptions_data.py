@@ -58,6 +58,7 @@ def reverse_seed(apps, schema_editor):
 class Migration(migrations.Migration):
     dependencies = [
         ("tenancy", "0001_initial"),
+        ("django_tenancy", "0002_module_subscription_module_membership"),
     ]
 
     operations = [

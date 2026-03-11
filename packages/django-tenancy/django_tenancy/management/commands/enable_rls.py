@@ -84,10 +84,7 @@ def _safe_name(table: str) -> str:
 
 
 class Command(BaseCommand):
-    help = (
-        "Enable/disable PostgreSQL RLS on tenant tables"
-        " (ADR-137)."
-    )
+    help = "Enable/disable PostgreSQL RLS on tenant tables (ADR-137)."
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -114,30 +111,20 @@ class Command(BaseCommand):
 
         if connection.vendor != "postgresql":
             self.stderr.write(
-                self.style.ERROR(
-                    "RLS requires PostgreSQL. "
-                    f"Current backend: {connection.vendor}"
-                )
+                self.style.ERROR(f"RLS requires PostgreSQL. Current backend: {connection.vendor}")
             )
             return
 
         tables = list(_get_tenant_models())
         if not tables:
-            self.stdout.write(
-                self.style.WARNING("No models with tenant_id found.")
-            )
+            self.stdout.write(self.style.WARNING("No models with tenant_id found."))
             return
 
         if target_table:
-            tables = [
-                (m, t, c) for m, t, c in tables if t == target_table
-            ]
+            tables = [(m, t, c) for m, t, c in tables if t == target_table]
             if not tables:
                 self.stderr.write(
-                    self.style.ERROR(
-                        f"Table '{target_table}' not found "
-                        "among tenant models."
-                    )
+                    self.style.ERROR(f"Table '{target_table}' not found among tenant models.")
                 )
                 return
 
@@ -146,8 +133,7 @@ class Command(BaseCommand):
 
         self.stdout.write(
             self.style.MIGRATE_HEADING(
-                f"{action} RLS for {len(tables)} table(s)"
-                f"{' (DRY RUN)' if dry_run else ''}"
+                f"{action} RLS for {len(tables)} table(s){' (DRY RUN)' if dry_run else ''}"
             )
         )
 
@@ -159,45 +145,26 @@ class Command(BaseCommand):
                 cast_type=cast_type,
             )
 
-            label = (
-                f"{model._meta.app_label}.{model.__name__}"
-            )
-            self.stdout.write(
-                f"  {label} ({table}) "
-                f"→ cast ::{cast_type}"
-            )
+            label = f"{model._meta.app_label}.{model.__name__}"
+            self.stdout.write(f"  {label} ({table}) → cast ::{cast_type}")
 
             if dry_run:
-                self.stdout.write(
-                    self.style.SQL_KEYWORD(sql)
-                )
+                self.stdout.write(self.style.SQL_KEYWORD(sql))
             else:
                 self._execute_sql(sql, table, action)
 
         if not dry_run:
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"\n{action}d RLS on {len(tables)} table(s)."
-                )
-            )
+            self.stdout.write(self.style.SUCCESS(f"\n{action}d RLS on {len(tables)} table(s)."))
 
     def _execute_sql(self, sql, table, action):
         """Execute SQL statements one by one."""
         statements = [
-            s.strip()
-            for s in sql.split(";")
-            if s.strip() and not s.strip().startswith("--")
+            s.strip() for s in sql.split(";") if s.strip() and not s.strip().startswith("--")
         ]
         with connection.cursor() as cursor:
             for stmt in statements:
                 try:
                     cursor.execute(stmt)
                 except Exception as exc:
-                    self.stderr.write(
-                        self.style.ERROR(
-                            f"  ERROR on {table}: {exc}"
-                        )
-                    )
-                    logger.exception(
-                        "RLS %s failed for %s", action, table
-                    )
+                    self.stderr.write(self.style.ERROR(f"  ERROR on {table}: {exc}"))
+                    logger.exception("RLS %s failed for %s", action, table)

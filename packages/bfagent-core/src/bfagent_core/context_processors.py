@@ -8,7 +8,7 @@ from bfagent_core.context import get_context
 def tenant_context(request: HttpRequest) -> dict:
     """
     Add tenant information to template context.
-    
+
     Usage in settings.py:
         TEMPLATES = [{
             ...
@@ -19,7 +19,7 @@ def tenant_context(request: HttpRequest) -> dict:
                 ],
             },
         }]
-    
+
     Available in templates:
         {{ tenant_id }}
         {{ tenant_slug }}

@@ -91,6 +91,7 @@ def with_tenant_from_arg(arg_name: str = "tenant_id"):
 
     def decorator(func):
         if asyncio.iscoroutinefunction(func):
+
             @wraps(func)
             async def async_wrapper(*args, **kwargs):
                 raw_value = _resolve_arg(func, arg_name, args, kwargs)

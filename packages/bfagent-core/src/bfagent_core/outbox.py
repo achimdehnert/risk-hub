@@ -17,22 +17,22 @@ def emit_outbox_event(
 ) -> None:
     """
     Emit an outbox event for async processing.
-    
+
     The event is written to the outbox table within the current transaction.
     A background worker polls the outbox and publishes events to the event bus.
-    
+
     Args:
         tenant_id: The tenant this event belongs to
         topic: Event topic (e.g., "risk.assessment.created")
         payload: Event payload data
-    
+
     Example:
         emit_outbox_event(
             tenant_id=ctx.tenant_id,
             topic="risk.assessment.approved",
             payload={"assessment_id": str(assessment.id)},
         )
-    
+
     Note:
         - Always call within a transaction (atomic block)
         - Keep payloads small, use IDs to reference large data
@@ -40,7 +40,7 @@ def emit_outbox_event(
     """
     # Import here to avoid circular imports
     from bfagent_core.models import OutboxMessage
-    
+
     OutboxMessage.objects.create(
         tenant_id=tenant_id,
         topic=topic,

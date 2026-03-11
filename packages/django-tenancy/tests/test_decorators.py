@@ -108,9 +108,7 @@ class TestWithTenantFromArgAsync:
             return "async_ok"
 
         tid = uuid.uuid4()
-        result = await my_async_func(
-            tenant_id=str(tid), data="hello"
-        )
+        result = await my_async_func(tenant_id=str(tid), data="hello")
         assert result == "async_ok"
         assert captured["tid"] == tid
 

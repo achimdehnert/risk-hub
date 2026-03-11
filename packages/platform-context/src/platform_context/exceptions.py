@@ -7,6 +7,7 @@ All platform exceptions inherit from PlatformError.
 
 class PlatformError(Exception):
     """Base class for all platform errors."""
+
     pass
 
 
@@ -14,8 +15,10 @@ class PlatformError(Exception):
 # TENANT ERRORS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TenantError(PlatformError):
     """Base for tenant-related errors."""
+
     pass
 
 
@@ -64,8 +67,10 @@ class TenantInactiveError(TenantError):
 # MEMBERSHIP ERRORS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class MembershipError(PlatformError):
     """Base for membership-related errors."""
+
     pass
 
 
@@ -113,8 +118,10 @@ class InvitationNotPendingError(MembershipError):
 # PERMISSION ERRORS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class PermissionError(PlatformError):
     """Base for permission-related errors."""
+
     pass
 
 
@@ -146,8 +153,10 @@ class RoleNotFoundError(PermissionError):
 # USER ERRORS
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class UserError(PlatformError):
     """Base for user-related errors."""
+
     pass
 
 

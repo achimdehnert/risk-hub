@@ -25,15 +25,17 @@ from django.utils.deprecation import MiddlewareMixin
 
 logger = logging.getLogger(__name__)
 
-EXEMPT_PATHS = frozenset([
-    "/livez/",
-    "/healthz/",
-    "/static/",
-    "/accounts/",
-    "/api/internal/",
-    "/billing/",
-    "/admin/",
-])
+EXEMPT_PATHS = frozenset(
+    [
+        "/livez/",
+        "/healthz/",
+        "/static/",
+        "/accounts/",
+        "/api/internal/",
+        "/billing/",
+        "/admin/",
+    ]
+)
 
 
 class TenantLifecycleMiddleware(MiddlewareMixin):
@@ -69,9 +71,7 @@ class TenantLifecycleMiddleware(MiddlewareMixin):
                     org.slug,
                     org.trial_ends_at,
                 )
-                upgrade_url = getattr(
-                    settings, "BILLING_UPGRADE_URL", "/billing/"
-                )
+                upgrade_url = getattr(settings, "BILLING_UPGRADE_URL", "/billing/")
                 return render(
                     request,
                     "tenancy/trial_expired.html",

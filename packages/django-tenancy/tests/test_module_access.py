@@ -2,7 +2,7 @@
 
 import pytest
 from django.contrib.auth import get_user_model
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpResponse
 from django.test import RequestFactory
 
 from django_tenancy.models import Organization
@@ -50,13 +50,19 @@ def _make_request(path, tenant_id=None, user=None):
         request.user = user
     else:
         from django.contrib.auth.models import AnonymousUser
+
         request.user = AnonymousUser()
     return request
 
 
 class TestRequireModuleDecorator:
     def test_allows_access_with_subscription_and_membership(
-        self, db, org, user, active_subscription, member_membership,
+        self,
+        db,
+        org,
+        user,
+        active_subscription,
+        member_membership,
     ):
         @require_module("risk")
         def my_view(request):
@@ -94,7 +100,12 @@ class TestRequireModuleDecorator:
         assert response.status_code == 403
 
     def test_denies_insufficient_role(
-        self, db, org, user, active_subscription, member_membership,
+        self,
+        db,
+        org,
+        user,
+        active_subscription,
+        member_membership,
     ):
         @require_module("risk", min_role="admin")
         def my_view(request):
@@ -105,7 +116,12 @@ class TestRequireModuleDecorator:
         assert response.status_code == 403
 
     def test_allows_exact_role(
-        self, db, org, user, active_subscription, member_membership,
+        self,
+        db,
+        org,
+        user,
+        active_subscription,
+        member_membership,
     ):
         @require_module("risk", min_role="member")
         def my_view(request):
@@ -153,7 +169,13 @@ class TestModuleAccessMiddleware:
         return ModuleAccessMiddleware(get_response=lambda r: HttpResponse("ok"))
 
     def test_allows_access_with_subscription_and_membership(
-        self, db, settings, org, user, active_subscription, member_membership,
+        self,
+        db,
+        settings,
+        org,
+        user,
+        active_subscription,
+        member_membership,
     ):
         settings.MODULE_URL_MAP = {"/risk/": "risk", "/dsb/": "dsb"}
         mw = self._get_middleware()
@@ -184,7 +206,13 @@ class TestModuleAccessMiddleware:
         assert response is None
 
     def test_dsb_path_checked_separately(
-        self, db, settings, org, user, active_subscription, member_membership,
+        self,
+        db,
+        settings,
+        org,
+        user,
+        active_subscription,
+        member_membership,
     ):
         settings.MODULE_URL_MAP = {"/risk/": "risk", "/dsb/": "dsb"}
         # risk subscription/membership exists but NOT dsb

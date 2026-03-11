@@ -25,9 +25,7 @@ def org_b():
 
 @pytest.fixture
 def user_a():
-    return User.objects.create_user(
-        username="user_a", email="a@test.com", password="test123"
-    )
+    return User.objects.create_user(username="user_a", email="a@test.com", password="test123")
 
 
 @pytest.fixture
@@ -82,9 +80,7 @@ class TestTenantManagerAutoFilter:
 
     def test_should_chain_filter_with_auto_filter(self, org_a, org_b, subs):
         set_tenant(org_a.tenant_id, "orga")
-        qs = ModuleSubscription.objects.filter(
-            status=ModuleSubscription.Status.ACTIVE
-        )
+        qs = ModuleSubscription.objects.filter(status=ModuleSubscription.Status.ACTIVE)
         assert qs.count() == 1
         assert qs.first().tenant_id == org_a.tenant_id
 

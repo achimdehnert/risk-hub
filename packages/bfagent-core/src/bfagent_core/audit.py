@@ -21,10 +21,10 @@ def emit_audit_event(
 ) -> None:
     """
     Emit an audit event for a mutation.
-    
+
     This creates an AuditEvent record in the database. The actor_user_id
     and request_id are automatically populated from the current context.
-    
+
     Args:
         tenant_id: The tenant this event belongs to
         category: Event category (e.g., "risk.assessment", "documents.document")
@@ -32,7 +32,7 @@ def emit_audit_event(
         entity_type: Full entity type (e.g., "risk.Assessment")
         entity_id: UUID of the affected entity
         payload: Additional data to store (keep small, reference docs for large data)
-    
+
     Example:
         emit_audit_event(
             tenant_id=ctx.tenant_id,
@@ -45,9 +45,9 @@ def emit_audit_event(
     """
     # Import here to avoid circular imports and allow standalone usage
     from bfagent_core.models import AuditEvent
-    
+
     ctx = get_context()
-    
+
     AuditEvent.objects.create(
         tenant_id=tenant_id,
         actor_user_id=ctx.user_id,

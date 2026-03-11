@@ -10,9 +10,7 @@ class TestTenantModelAdmin:
     """Test that TenantModelAdmin bypasses auto-filter."""
 
     def test_should_call_unscoped_when_available(self):
-        admin_instance = TenantModelAdmin(
-            ModuleSubscription, MagicMock()
-        )
+        admin_instance = TenantModelAdmin(ModuleSubscription, MagicMock())
         mock_manager = MagicMock()
         mock_manager.unscoped.return_value = MagicMock()
 
@@ -26,9 +24,7 @@ class TestTenantModelAdmin:
         mock_manager.unscoped.assert_called_once()
 
     def test_should_fallback_to_get_queryset(self):
-        admin_instance = TenantModelAdmin(
-            ModuleSubscription, MagicMock()
-        )
+        admin_instance = TenantModelAdmin(ModuleSubscription, MagicMock())
         mock_manager = MagicMock(spec=["get_queryset"])
         del mock_manager.unscoped  # no unscoped method
 

@@ -87,16 +87,12 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         request.tenant_slug = None
         return None
 
-    def process_response(
-        self, request: HttpRequest, response: HttpResponse
-    ) -> HttpResponse:
+    def process_response(self, request: HttpRequest, response: HttpResponse) -> HttpResponse:
         """Clear context at end of request."""
         clear_context()
         return response
 
-    def _resolve_from_subdomain(
-        self, request: HttpRequest, subdomain: str
-    ) -> HttpResponse | None:
+    def _resolve_from_subdomain(self, request: HttpRequest, subdomain: str) -> HttpResponse | None:
         """Resolve tenant from subdomain slug.
 
         Returns None on success, HttpResponse on error.
@@ -122,9 +118,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         self._set_tenant_context(request, org, subdomain)
         return None
 
-    def _resolve_from_header(
-        self, request: HttpRequest, header_value: str
-    ) -> HttpResponse | None:
+    def _resolve_from_header(self, request: HttpRequest, header_value: str) -> HttpResponse | None:
         """Resolve tenant from X-Tenant-ID header.
 
         Returns None on success, HttpResponse on error.
@@ -152,9 +146,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         self._set_tenant_context(request, org, org.slug)
         return None
 
-    def _resolve_from_session(
-        self, request: HttpRequest
-    ) -> HttpResponse | None:
+    def _resolve_from_session(self, request: HttpRequest) -> HttpResponse | None:
         """Resolve tenant from session (ADR-137: tenant picker persistence).
 
         Security: Membership check prevents session manipulation —
@@ -205,9 +197,7 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
         return None
 
     @staticmethod
-    def _set_tenant_context(
-        request: HttpRequest, org: "Organization", slug: str
-    ) -> None:
+    def _set_tenant_context(request: HttpRequest, org: "Organization", slug: str) -> None:
         """Set tenant on request + contextvars + RLS + session."""
         request.tenant_id = org.tenant_id
         request.tenant = org

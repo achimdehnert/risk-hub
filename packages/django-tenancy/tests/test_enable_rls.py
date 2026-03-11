@@ -57,48 +57,46 @@ class TestEnableRlsCommand:
         out = StringIO()
         err = StringIO()
         call_command(
-            "enable_rls", "--dry-run",
-            stdout=out, stderr=err,
+            "enable_rls",
+            "--dry-run",
+            stdout=out,
+            stderr=err,
         )
         output = err.getvalue()
         assert "PostgreSQL" in output or "sqlite" in output.lower()
 
     def test_should_show_dry_run_sql_on_postgres(self):
         """On PostgreSQL, --dry-run shows SQL."""
-        with patch(
-            "django_tenancy.management.commands.enable_rls"
-            ".connection"
-        ) as mock_conn:
+        with patch("django_tenancy.management.commands.enable_rls.connection") as mock_conn:
             mock_conn.vendor = "postgresql"
             out = StringIO()
             call_command(
-                "enable_rls", "--dry-run",
-                stdout=out, stderr=StringIO(),
+                "enable_rls",
+                "--dry-run",
+                stdout=out,
+                stderr=StringIO(),
             )
             output = out.getvalue()
             assert "Enable RLS" in output
             assert "ENABLE ROW LEVEL SECURITY" in output
 
     def test_should_show_disable_sql_on_postgres(self):
-        with patch(
-            "django_tenancy.management.commands.enable_rls"
-            ".connection"
-        ) as mock_conn:
+        with patch("django_tenancy.management.commands.enable_rls.connection") as mock_conn:
             mock_conn.vendor = "postgresql"
             out = StringIO()
             call_command(
-                "enable_rls", "--dry-run", "--disable",
-                stdout=out, stderr=StringIO(),
+                "enable_rls",
+                "--dry-run",
+                "--disable",
+                stdout=out,
+                stderr=StringIO(),
             )
             output = out.getvalue()
             assert "Disable RLS" in output
             assert "DISABLE ROW LEVEL SECURITY" in output
 
     def test_should_filter_by_table(self):
-        with patch(
-            "django_tenancy.management.commands.enable_rls"
-            ".connection"
-        ) as mock_conn:
+        with patch("django_tenancy.management.commands.enable_rls.connection") as mock_conn:
             mock_conn.vendor = "postgresql"
             out = StringIO()
             err = StringIO()
@@ -106,6 +104,7 @@ class TestEnableRlsCommand:
                 "enable_rls",
                 "--dry-run",
                 "--table=nonexistent_table",
-                stdout=out, stderr=err,
+                stdout=out,
+                stderr=err,
             )
             assert "not found" in err.getvalue()

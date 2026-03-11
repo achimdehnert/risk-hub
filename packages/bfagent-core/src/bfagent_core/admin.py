@@ -7,7 +7,7 @@ from bfagent_core.models import AuditEvent, OutboxMessage
 @admin.register(AuditEvent)
 class AuditEventAdmin(admin.ModelAdmin):
     """Admin for audit events (read-only)."""
-    
+
     list_display = [
         "created_at",
         "tenant_id",
@@ -32,13 +32,13 @@ class AuditEventAdmin(admin.ModelAdmin):
         "created_at",
     ]
     ordering = ["-created_at"]
-    
+
     def has_add_permission(self, request):
         return False
-    
+
     def has_change_permission(self, request, obj=None):
         return False
-    
+
     def has_delete_permission(self, request, obj=None):
         return False
 
@@ -46,7 +46,7 @@ class AuditEventAdmin(admin.ModelAdmin):
 @admin.register(OutboxMessage)
 class OutboxMessageAdmin(admin.ModelAdmin):
     """Admin for outbox messages."""
-    
+
     list_display = [
         "created_at",
         "tenant_id",
@@ -64,7 +64,7 @@ class OutboxMessageAdmin(admin.ModelAdmin):
         "created_at",
     ]
     ordering = ["-created_at"]
-    
+
     @admin.display(boolean=True, description="Published")
     def is_published(self, obj):
         return obj.is_published

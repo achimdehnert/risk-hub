@@ -68,15 +68,20 @@ def catalogue_view(request: HttpRequest) -> HttpResponse:
             f'Modul "{activated}" wurde aktiviert!',
         )
 
-    return render(request, "module_shop/catalogue.html", {
-        "modules": modules,
-        "tenant": tenant,
-    })
+    return render(
+        request,
+        "module_shop/catalogue.html",
+        {
+            "modules": modules,
+            "tenant": tenant,
+        },
+    )
 
 
 @login_required
 def detail_view(
-    request: HttpRequest, code: str,
+    request: HttpRequest,
+    code: str,
 ) -> HttpResponse:
     """Show module detail page."""
     tenant_id = getattr(request, "tenant_id", None)
@@ -90,19 +95,22 @@ def detail_view(
 
     plan_code = getattr(tenant, "plan_code", "")
     modules = enrich_catalogue(tenant_id, plan_code)
-    module = next(
-        (m for m in modules if m["code"] == code), None
-    )
+    module = next((m for m in modules if m["code"] == code), None)
 
-    return render(request, "module_shop/detail.html", {
-        "module": module or {"code": code, **entry},
-        "tenant": tenant,
-    })
+    return render(
+        request,
+        "module_shop/detail.html",
+        {
+            "module": module or {"code": code, **entry},
+            "tenant": tenant,
+        },
+    )
 
 
 @login_required
 def activate_view(
-    request: HttpRequest, code: str,
+    request: HttpRequest,
+    code: str,
 ) -> HttpResponse:
     """POST: Redirect to billing-hub checkout for module."""
     if request.method != "POST":
@@ -124,14 +132,16 @@ def activate_view(
         return redirect("module_shop:detail", code=code)
 
     # Build billing-hub checkout URL
-    params = urlencode({
-        "product": _get_product_name(),
-        "module": code,
-        "tenant_id": str(tenant_id),
-        "return_url": request.build_absolute_uri(
-            f"/billing/modules/?activated={code}"
-        ),
-    })
+    params = urlencode(
+        {
+            "product": _get_product_name(),
+            "module": code,
+            "tenant_id": str(tenant_id),
+            "return_url": request.build_absolute_uri(
+                f"/billing/modules/?activated={code}"
+            ),
+        }
+    )
     checkout_url = f"{_get_billing_checkout_url()}?{params}"
 
     logger.info(
@@ -145,7 +155,8 @@ def activate_view(
 
 @login_required
 def cancel_view(
-    request: HttpRequest, code: str,
+    request: HttpRequest,
+    code: str,
 ) -> HttpResponse:
     """POST: Send deactivation request to billing-hub."""
     if request.method != "POST":

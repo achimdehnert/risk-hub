@@ -72,9 +72,9 @@ def _resolve_tenant_from_membership(user) -> "uuid.UUID | None":
     """Resolve tenant_id from user's first active membership (dev fallback)."""
     try:
         from .models import Membership
+
         m = (
-            Membership.objects
-            .filter(user=user)
+            Membership.objects.filter(user=user)
             .select_related("organization")
             .order_by("created_at")
             .first()
@@ -122,8 +122,7 @@ def _check_module_access(
     # 3. Role must be sufficient.
     if not _role_sufficient(membership.role, min_role):
         return (
-            f"Role '{membership.role}' insufficient for module '{module}' "
-            f"(requires '{min_role}')"
+            f"Role '{membership.role}' insufficient for module '{module}' (requires '{min_role}')"
         )
 
     return None
@@ -166,9 +165,7 @@ class ModuleAccessMiddleware(MiddlewareMixin):
     )
 
     def process_request(self, request: HttpRequest) -> HttpResponse | None:
-        module_url_map: dict[str, str] = getattr(
-            settings, "MODULE_URL_MAP", {}
-        )
+        module_url_map: dict[str, str] = getattr(settings, "MODULE_URL_MAP", {})
         if not module_url_map:
             return None
 
@@ -188,20 +185,18 @@ class ModuleAccessMiddleware(MiddlewareMixin):
         user = getattr(request, "user", None)
 
         # Dev fallback: no subdomain tenant → resolve from user membership
-        if (
-            tenant_id is None
-            and user
-            and getattr(user, "is_authenticated", False)
-        ):
+        if tenant_id is None and user and getattr(user, "is_authenticated", False):
             tenant_id = _resolve_tenant_from_membership(user)
 
         error = _check_module_access(tenant_id, user, matched_module)
         if error:
             logger.warning(
-                "Module access denied: path=%s module=%s "
-                "tenant=%s user=%s reason=%s",
-                path, matched_module, tenant_id,
-                getattr(user, "username", "?"), error,
+                "Module access denied: path=%s module=%s tenant=%s user=%s reason=%s",
+                path,
+                matched_module,
+                tenant_id,
+                getattr(user, "username", "?"),
+                error,
             )
             body = render_to_string(
                 "errors/module_access.html",
@@ -234,29 +229,27 @@ def require_module(module: str, min_role: str = "viewer") -> Callable:
         def mandate_delete(request, pk):
             ...
     """
+
     def decorator(view_func: Callable) -> Callable:
         @wraps(view_func)
         def wrapper(request: HttpRequest, *args, **kwargs) -> HttpResponse:
             tenant_id = getattr(request, "tenant_id", None)
             user = getattr(request, "user", None)
 
-            if (
-                tenant_id is None
-                and user
-                and getattr(user, "is_authenticated", False)
-            ):
+            if tenant_id is None and user and getattr(user, "is_authenticated", False):
                 tenant_id = _resolve_tenant_from_membership(user)
 
-            error = _check_module_access(
-                tenant_id, user, module, min_role
-            )
+            error = _check_module_access(tenant_id, user, module, min_role)
             if error:
                 logger.warning(
                     "require_module denied: view=%s module=%s "
                     "min_role=%s tenant=%s user=%s reason=%s",
-                    view_func.__name__, module, min_role,
+                    view_func.__name__,
+                    module,
+                    min_role,
                     tenant_id,
-                    getattr(user, "username", "?"), error,
+                    getattr(user, "username", "?"),
+                    error,
                 )
                 body = render_to_string(
                     "errors/module_access.html",
@@ -271,4 +264,5 @@ def require_module(module: str, min_role: str = "viewer") -> Callable:
             return view_func(request, *args, **kwargs)
 
         return wrapper
+
     return decorator

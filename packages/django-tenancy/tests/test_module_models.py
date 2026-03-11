@@ -68,6 +68,7 @@ class TestModuleSubscription:
 
     def test_unique_per_tenant_module(self, subscription, org, db):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             ModuleSubscription.objects.create(
                 organization=org,
@@ -78,7 +79,9 @@ class TestModuleSubscription:
 
     def test_for_tenant_manager(self, subscription, org, db):
         other_org = Organization.objects.create(
-            slug="other", name="Other GmbH", status="active",
+            slug="other",
+            name="Other GmbH",
+            status="active",
         )
         ModuleSubscription.objects.create(
             organization=other_org,
@@ -142,6 +145,7 @@ class TestModuleMembership:
 
     def test_unique_per_tenant_user_module(self, membership, org, user, db):
         from django.db import IntegrityError
+
         with pytest.raises(IntegrityError):
             ModuleMembership.objects.create(
                 tenant_id=org.tenant_id,
@@ -162,7 +166,9 @@ class TestModuleMembership:
     def test_for_tenant_manager(self, membership, org, db):
         other_user = User.objects.create_user(username="bob", password="pw")
         other_org = Organization.objects.create(
-            slug="other2", name="Other2 GmbH", status="active",
+            slug="other2",
+            name="Other2 GmbH",
+            status="active",
         )
         ModuleMembership.objects.create(
             tenant_id=other_org.tenant_id,

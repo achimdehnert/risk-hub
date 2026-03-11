@@ -15,9 +15,7 @@ class TestSubdomainTenantMiddleware:
     def setup_method(self):
         clear_context()
         self.factory = RequestFactory()
-        self.middleware = SubdomainTenantMiddleware(
-            get_response=lambda r: r
-        )
+        self.middleware = SubdomainTenantMiddleware(get_response=lambda r: r)
 
     def teardown_method(self):
         clear_context()
@@ -36,10 +34,13 @@ class TestSubdomainTenantMiddleware:
 
     def test_should_resolve_from_subdomain(self):
         org = Organization.objects.create(
-            name="Acme", slug="acme", status="active",
+            name="Acme",
+            slug="acme",
+            status="active",
         )
         request = self.factory.get(
-            "/", HTTP_HOST="acme.example.com",
+            "/",
+            HTTP_HOST="acme.example.com",
         )
         result = self.middleware.process_request(request)
         assert result is None
@@ -49,7 +50,9 @@ class TestSubdomainTenantMiddleware:
 
     def test_should_resolve_from_header(self):
         org = Organization.objects.create(
-            name="Beta", slug="beta", status="trial",
+            name="Beta",
+            slug="beta",
+            status="trial",
         )
         request = self.factory.get(
             "/",
@@ -62,7 +65,8 @@ class TestSubdomainTenantMiddleware:
 
     def test_should_handle_unknown_subdomain(self):
         request = self.factory.get(
-            "/", HTTP_HOST="unknown.example.com",
+            "/",
+            HTTP_HOST="unknown.example.com",
         )
         result = self.middleware.process_request(request)
         assert result is None
@@ -80,7 +84,8 @@ class TestSubdomainTenantMiddleware:
 
     def test_should_skip_www_subdomain(self):
         request = self.factory.get(
-            "/", HTTP_HOST="www.example.com",
+            "/",
+            HTTP_HOST="www.example.com",
         )
         result = self.middleware.process_request(request)
         assert result is None
@@ -88,10 +93,13 @@ class TestSubdomainTenantMiddleware:
 
     def test_should_reject_inactive_tenant(self):
         Organization.objects.create(
-            name="Dead", slug="dead", status="deleted",
+            name="Dead",
+            slug="dead",
+            status="deleted",
         )
         request = self.factory.get(
-            "/", HTTP_HOST="dead.example.com",
+            "/",
+            HTTP_HOST="dead.example.com",
         )
         result = self.middleware.process_request(request)
         assert result is None
@@ -103,11 +111,14 @@ class TestSubdomainTenantMiddleware:
         from django_tenancy.context import get_context
 
         org = Organization.objects.create(
-            name="Ctx", slug="ctx", status="active",
+            name="Ctx",
+            slug="ctx",
+            status="active",
         )
         # Simulate a request that sets tenant context
         request = self.factory.get(
-            "/", HTTP_HOST="ctx.example.com",
+            "/",
+            HTTP_HOST="ctx.example.com",
         )
         self.middleware.process_request(request)
         assert request.tenant_id == org.tenant_id

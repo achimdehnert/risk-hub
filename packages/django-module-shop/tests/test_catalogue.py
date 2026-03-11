@@ -45,27 +45,21 @@ class TestEnrichCatalogue:
     def test_should_mark_bookable_as_available(self):
         tid = uuid.uuid4()
         result = enrich_catalogue(tid, "starter")
-        risk = next(
-            m for m in result if m["code"] == "risk"
-        )
+        risk = next(m for m in result if m["code"] == "risk")
         assert risk["status"] == "available"
         assert risk["is_bookable"] is True
 
     def test_should_mark_non_bookable_as_locked(self):
         tid = uuid.uuid4()
         result = enrich_catalogue(tid, "starter")
-        locked = next(
-            m for m in result if m["code"] == "locked"
-        )
+        locked = next(m for m in result if m["code"] == "locked")
         assert locked["status"] == "locked"
         assert locked["is_bookable"] is False
 
     def test_should_mark_included_in_plan(self):
         tid = uuid.uuid4()
         result = enrich_catalogue(tid, "professional")
-        risk = next(
-            m for m in result if m["code"] == "risk"
-        )
+        risk = next(m for m in result if m["code"] == "risk")
         # risk is in professional plan but no subscription
         assert risk["included_in_plan"] is True
 
@@ -74,8 +68,10 @@ class TestEnrichCatalogue:
         result = enrich_catalogue(tid, "starter")
         statuses = [m["status"] for m in result]
         order = {
-            "active": 0, "included": 1,
-            "available": 2, "locked": 3,
+            "active": 0,
+            "included": 1,
+            "available": 2,
+            "locked": 3,
         }
         values = [order[s] for s in statuses]
         assert values == sorted(values)
