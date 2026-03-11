@@ -1,12 +1,16 @@
 """Internal billing API — called by billing-hub after Stripe checkout.
 
-Authentication: X-Billing-Secret header must match BILLING_INTERNAL_SECRET setting.
+Authentication: HMAC-SHA256 signature via X-Billing-Timestamp + X-Billing-Signature.
 ADR-118: Platform Store — billing-hub als zentraler Registrierungs- und Zahlungspunkt.
 """
 
 from __future__ import annotations
 
+import hashlib
+import hmac
+import json
 import logging
+import time
 import uuid
 from datetime import datetime
 from typing import Optional
@@ -25,20 +29,56 @@ logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
+HMAC_REPLAY_WINDOW = 300  # 5 minutes
 
-class BillingInternalAuth(HttpBearer):
-    """Validates X-Billing-Secret header against BILLING_INTERNAL_SECRET setting."""
+
+def _verify_hmac(request: HttpRequest, secret: str) -> bool:
+    """Verify HMAC-SHA256 signature. Returns True if valid."""
+    timestamp = request.headers.get("X-Billing-Timestamp", "")
+    signature = request.headers.get("X-Billing-Signature", "")
+    if not timestamp or not signature:
+        return False
+    try:
+        ts = int(timestamp)
+    except ValueError:
+        return False
+    if abs(time.time() - ts) > HMAC_REPLAY_WINDOW:
+        logger.warning("[internal_api] HMAC timestamp outside replay window")
+        return False
+    try:
+        body = request.body.decode("utf-8")
+    except Exception:
+        body = ""
+    payload_str = f"{timestamp}:{body}"
+    expected = hmac.new(
+        secret.encode(),
+        payload_str.encode(),
+        hashlib.sha256,
+    ).hexdigest()
+    return hmac.compare_digest(expected, signature)
+
+
+class BillingHmacAuth(HttpBearer):
+    """HMAC-SHA256 auth — validates X-Billing-Timestamp + X-Billing-Signature.
+
+    Supports dual-secret rotation: BILLING_HMAC_SECRET (primary) and
+    BILLING_HMAC_SECRET_PREV (previous, optional).
+    """
 
     openapi_scheme = "bearer"
 
     def authenticate(self, request: HttpRequest, token: str) -> str | None:
-        expected = getattr(settings, "BILLING_INTERNAL_SECRET", "")
-        if not expected:
-            logger.error("[internal_api] BILLING_INTERNAL_SECRET not configured")
+        primary = getattr(settings, "BILLING_HMAC_SECRET", "")
+        if not primary:
+            logger.error("[internal_api] BILLING_HMAC_SECRET not configured")
             return None
-        if token == expected:
-            return token
-        logger.warning("[internal_api] Invalid BILLING_INTERNAL_SECRET attempt")
+        if _verify_hmac(request, primary):
+            return "hmac-ok"
+        prev = getattr(settings, "BILLING_HMAC_SECRET_PREV", "")
+        if prev and _verify_hmac(request, prev):
+            logger.info("[internal_api] Auth via previous HMAC secret (rotation)")
+            return "hmac-ok-prev"
+        logger.warning("[internal_api] HMAC verification failed")
         return None
 
 
@@ -52,6 +92,7 @@ class ActivatePayload(Schema):
 
 class DeactivatePayload(Schema):
     tenant_id: uuid.UUID
+    reason: str = ""
 
 
 class ActivateResponse(Schema):
@@ -66,7 +107,7 @@ class DeactivateResponse(Schema):
     tenant_id: str
 
 
-router = Router(auth=BillingInternalAuth(), tags=["internal"])
+router = Router(auth=BillingHmacAuth(), tags=["internal"])
 
 
 @router.post("/activate", response=ActivateResponse)
@@ -76,6 +117,8 @@ def activate(request: HttpRequest, payload: ActivatePayload) -> ActivateResponse
     Called by billing-hub after:
     - Stripe checkout.session.completed
     - Trial start
+
+    Idempotent: safe to call multiple times.
     """
     tenant_id = payload.tenant_id
     org_created = False
@@ -89,15 +132,27 @@ def activate(request: HttpRequest, payload: ActivatePayload) -> ActivateResponse
             "status": Organization.Status.TRIAL,
             "plan_code": payload.plan,
             "trial_ends_at": payload.trial_ends_at,
+            "is_readonly": False,
         },
     )
 
     if not org_created:
         org.plan_code = payload.plan
         org.status = Organization.Status.ACTIVE
+        org.is_readonly = False
+        org.deactivation_reason = ""
         if payload.trial_ends_at:
             org.trial_ends_at = payload.trial_ends_at
-        org.save(update_fields=["plan_code", "status", "trial_ends_at", "updated_at"])
+        org.save(
+            update_fields=[
+                "plan_code",
+                "status",
+                "trial_ends_at",
+                "is_readonly",
+                "deactivation_reason",
+                "updated_at",
+            ]
+        )
 
     user, user_created = User.objects.get_or_create(
         email=payload.email,
@@ -141,24 +196,49 @@ def activate(request: HttpRequest, payload: ActivatePayload) -> ActivateResponse
 
 
 @router.post("/deactivate", response=DeactivateResponse)
-def deactivate(request: HttpRequest, payload: DeactivatePayload) -> DeactivateResponse:
-    """Suspend all active modules for a tenant.
+def deactivate(
+    request: HttpRequest, payload: DeactivatePayload
+) -> DeactivateResponse:
+    """Suspend all active modules for a tenant. Set read-only + GDPR delete date.
 
     Called by billing-hub after:
     - Trial expiry
     - Stripe subscription.deleted / payment failure
+
+    GDPR: org is scheduled for hard-delete 90 days after deactivation.
     """
     tenant_id = payload.tenant_id
     try:
         org = Organization.objects.get(tenant_id=tenant_id)
     except Organization.DoesNotExist:
-        logger.warning("[internal_api] deactivate: tenant=%s not found", tenant_id)
+        logger.warning(
+            "[internal_api] deactivate: tenant=%s not found", tenant_id
+        )
         return DeactivateResponse(status="not_found", tenant_id=str(tenant_id))
 
     suspend_subscription(org)
-    org.status = Organization.Status.SUSPENDED
-    org.suspended_at = timezone.now()
-    org.save(update_fields=["status", "suspended_at", "updated_at"])
 
-    logger.info("[internal_api] deactivate: tenant=%s suspended", tenant_id)
+    now = timezone.now()
+    from datetime import timedelta
+    org.status = Organization.Status.SUSPENDED
+    org.suspended_at = now
+    org.is_readonly = True
+    org.deactivation_reason = payload.reason or "billing-hub: subscription ended"
+    org.gdpr_delete_at = now + timedelta(days=90)
+    org.save(
+        update_fields=[
+            "status",
+            "suspended_at",
+            "is_readonly",
+            "deactivation_reason",
+            "gdpr_delete_at",
+            "updated_at",
+        ]
+    )
+
+    logger.info(
+        "[internal_api] deactivate: tenant=%s suspended, gdpr_delete_at=%s",
+        tenant_id,
+        org.gdpr_delete_at,
+    )
     return DeactivateResponse(status="suspended", tenant_id=str(tenant_id))

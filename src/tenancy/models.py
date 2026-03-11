@@ -25,16 +25,35 @@ class Organization(models.Model):
         DELETED = "deleted", _("Deleted")
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    tenant_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
+    tenant_id = models.UUIDField(
+        default=uuid.uuid4, editable=False, unique=True, db_index=True
+    )
     slug = models.SlugField(max_length=63, unique=True)
     name = models.CharField(max_length=200)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.TRIAL)
+    status = models.CharField(
+        max_length=20, choices=Status.choices, default=Status.TRIAL
+    )
     plan_code = models.CharField(max_length=50, default="free")
     trial_ends_at = models.DateTimeField(null=True, blank=True)
     suspended_at = models.DateTimeField(null=True, blank=True)
     suspended_reason = models.TextField(blank=True, default="")
     deleted_at = models.DateTimeField(null=True, blank=True)
     settings = models.JSONField(blank=True, default=dict)
+    # ADR-118 billing fields
+    is_readonly = models.BooleanField(
+        default=False,
+        help_text="True when subscription ended — read-only access until gdpr_delete_at",
+    )
+    deactivation_reason = models.TextField(
+        blank=True,
+        default="",
+        help_text="Reason provided by billing-hub on deactivation",
+    )
+    gdpr_delete_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Scheduled hard-delete date (90 days after deactivation, GDPR)",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -43,7 +62,9 @@ class Organization(models.Model):
         db_table = "tenancy_organization"
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(status__in=["trial", "active", "suspended", "deleted"]),
+                condition=models.Q(
+                    status__in=["trial", "active", "suspended", "deleted"]
+                ),
                 name="org_status_chk",
             ),
         ]
@@ -79,7 +100,9 @@ class Membership(models.Model):
         on_delete=models.CASCADE,
         related_name="tenancy_memberships",
     )
-    role = models.CharField(max_length=20, choices=Role.choices, default=Role.MEMBER)
+    role = models.CharField(
+        max_length=20, choices=Role.choices, default=Role.MEMBER
+    )
     invited_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         null=True,
@@ -96,14 +119,20 @@ class Membership(models.Model):
         app_label = "tenancy"
         db_table = "tenancy_membership"
         constraints = [
-            models.UniqueConstraint(fields=("tenant_id", "user"), name="membership_unique"),
+            models.UniqueConstraint(
+                fields=("tenant_id", "user"), name="membership_unique"
+            ),
             models.CheckConstraint(
-                condition=models.Q(role__in=["owner", "admin", "member", "viewer", "external"]),
+                condition=models.Q(
+                    role__in=["owner", "admin", "member", "viewer", "external"]
+                ),
                 name="membership_role_chk",
             ),
         ]
         indexes = [
-            models.Index(fields=["tenant_id", "role"], name="idx_membership_tenant_role"),
+            models.Index(
+                fields=["tenant_id", "role"], name="idx_membership_tenant_role"
+            ),
         ]
 
     def __str__(self) -> str:
