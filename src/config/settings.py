@@ -295,12 +295,11 @@ MODULE_SHOP_PRODUCT_NAME = "risk-hub"
 MODULE_SHOP_CATALOGUE = {
     "risk": {
         "name": "Risikobewertung",
-        "description": (
-            "Gefährdungsbeurteilungen erstellen"
-            " und verwalten"
-        ),
+        "description": ("Gefährdungsbeurteilungen erstellen und verwalten"),
         "included_in_plans": [
-            "professional", "business", "enterprise",
+            "professional",
+            "business",
+            "enterprise",
         ],
         "standalone_bookable": True,
         "trial_days": 14,
@@ -308,12 +307,11 @@ MODULE_SHOP_CATALOGUE = {
     },
     "dsb": {
         "name": "Datenschutz",
-        "description": (
-            "Verarbeitungsverzeichnis, DSFA,"
-            " Datenschutzvorfälle"
-        ),
+        "description": ("Verarbeitungsverzeichnis, DSFA, Datenschutzvorfälle"),
         "included_in_plans": [
-            "professional", "business", "enterprise",
+            "professional",
+            "business",
+            "enterprise",
         ],
         "standalone_bookable": True,
         "trial_days": 14,
@@ -321,12 +319,11 @@ MODULE_SHOP_CATALOGUE = {
     },
     "gbu": {
         "name": "Gefährdungsbeurteilung",
-        "description": (
-            "Grundlegende Gefährdungsbeurteilungen"
-            " nach ArbSchG"
-        ),
+        "description": ("Grundlegende Gefährdungsbeurteilungen nach ArbSchG"),
         "included_in_plans": [
-            "starter", "professional", "business",
+            "starter",
+            "professional",
+            "business",
             "enterprise",
         ],
         "standalone_bookable": True,
@@ -335,12 +332,10 @@ MODULE_SHOP_CATALOGUE = {
     },
     "ex": {
         "name": "Explosionsschutz",
-        "description": (
-            "Ex-Schutz-Dokument, Zoneneinteilung,"
-            " Zündquellenanalyse"
-        ),
+        "description": ("Ex-Schutz-Dokument, Zoneneinteilung, Zündquellenanalyse"),
         "included_in_plans": [
-            "business", "enterprise",
+            "business",
+            "enterprise",
         ],
         "standalone_bookable": True,
         "trial_days": 14,
@@ -348,12 +343,10 @@ MODULE_SHOP_CATALOGUE = {
     },
     "substances": {
         "name": "Gefahrstoffe",
-        "description": (
-            "Gefahrstoffkataster,"
-            " Betriebsanweisungen"
-        ),
+        "description": ("Gefahrstoffkataster, Betriebsanweisungen"),
         "included_in_plans": [
-            "business", "enterprise",
+            "business",
+            "enterprise",
         ],
         "standalone_bookable": True,
         "trial_days": 14,
@@ -361,12 +354,11 @@ MODULE_SHOP_CATALOGUE = {
     },
     "documents": {
         "name": "Dokumente",
-        "description": (
-            "Dokumentenmanagement für"
-            " Arbeitsschutz-Unterlagen"
-        ),
+        "description": ("Dokumentenmanagement für Arbeitsschutz-Unterlagen"),
         "included_in_plans": [
-            "professional", "business", "enterprise",
+            "professional",
+            "business",
+            "enterprise",
         ],
         "standalone_bookable": False,
         "trial_days": 0,
@@ -374,12 +366,11 @@ MODULE_SHOP_CATALOGUE = {
     },
     "actions": {
         "name": "Maßnahmen",
-        "description": (
-            "Maßnahmentracking und"
-            " Wirksamkeitskontrolle"
-        ),
+        "description": ("Maßnahmentracking und Wirksamkeitskontrolle"),
         "included_in_plans": [
-            "professional", "business", "enterprise",
+            "professional",
+            "business",
+            "enterprise",
         ],
         "standalone_bookable": False,
         "trial_days": 0,
@@ -387,12 +378,10 @@ MODULE_SHOP_CATALOGUE = {
     },
     "brandschutz": {
         "name": "Brandschutz",
-        "description": (
-            "Brandschutzordnung,"
-            " Flucht- und Rettungspläne"
-        ),
+        "description": ("Brandschutzordnung, Flucht- und Rettungspläne"),
         "included_in_plans": [
-            "business", "enterprise",
+            "business",
+            "enterprise",
         ],
         "standalone_bookable": True,
         "trial_days": 14,
