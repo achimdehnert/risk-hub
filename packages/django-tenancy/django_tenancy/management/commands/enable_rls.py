@@ -33,28 +33,6 @@ CAST_MAP = {
     "AutoField": "bigint",
 }
 
-RLS_POLICY_TEMPLATE = """
--- Enable RLS on {table}
-ALTER TABLE {table} ENABLE ROW LEVEL SECURITY;
-
--- Policy: rows visible when app.tenant_id matches or is not set
-CREATE POLICY tenant_isolation_{safe_name} ON {table}
-    FOR ALL
-    USING (
-        tenant_id = NULLIF(
-            current_setting('app.tenant_id', true), ''
-        )::{cast_type}
-        OR current_setting('app.tenant_id', true) IS NULL
-        OR current_setting('app.tenant_id', true) = ''
-    );
-"""
-
-DISABLE_TEMPLATE = """
--- Disable RLS on {table}
-DROP POLICY IF EXISTS tenant_isolation_{safe_name} ON {table};
-ALTER TABLE {table} DISABLE ROW LEVEL SECURITY;
-"""
-
 
 def _get_tenant_models():
     """Yield (model, db_table, cast_type) for models with tenant_id."""
@@ -81,6 +59,30 @@ def _get_tenant_models():
 def _safe_name(table: str) -> str:
     """Convert table name to a safe policy identifier."""
     return table.replace(".", "_").replace("-", "_")
+
+
+def _build_enable_statements(table: str, safe_name: str, cast_type: str) -> list[str]:
+    """Return SQL statements to enable RLS on a table."""
+    return [
+        f"ALTER TABLE {table} ENABLE ROW LEVEL SECURITY",
+        (
+            f"CREATE POLICY tenant_isolation_{safe_name} ON {table} "
+            f"FOR ALL "
+            f"USING ("
+            f"tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::{cast_type} "
+            f"OR current_setting('app.tenant_id', true) IS NULL "
+            f"OR current_setting('app.tenant_id', true) = ''"
+            f")"
+        ),
+    ]
+
+
+def _build_disable_statements(table: str, safe_name: str) -> list[str]:
+    """Return SQL statements to disable RLS on a table."""
+    return [
+        f"DROP POLICY IF EXISTS tenant_isolation_{safe_name} ON {table}",
+        f"ALTER TABLE {table} DISABLE ROW LEVEL SECURITY",
+    ]
 
 
 class Command(BaseCommand):
@@ -128,8 +130,8 @@ class Command(BaseCommand):
                 )
                 return
 
-        template = DISABLE_TEMPLATE if disable else RLS_POLICY_TEMPLATE
         action = "Disable" if disable else "Enable"
+        errors = 0
 
         self.stdout.write(
             self.style.MIGRATE_HEADING(
@@ -139,32 +141,38 @@ class Command(BaseCommand):
 
         for model, table, cast_type in tables:
             safe = _safe_name(table)
-            sql = template.format(
-                table=table,
-                safe_name=safe,
-                cast_type=cast_type,
-            )
+
+            if disable:
+                statements = _build_disable_statements(table, safe)
+            else:
+                statements = _build_enable_statements(table, safe, cast_type)
 
             label = f"{model._meta.app_label}.{model.__name__}"
             self.stdout.write(f"  {label} ({table}) → cast ::{cast_type}")
 
             if dry_run:
-                self.stdout.write(self.style.SQL_KEYWORD(sql))
+                for stmt in statements:
+                    self.stdout.write(self.style.SQL_KEYWORD(f"  {stmt};"))
             else:
-                self._execute_sql(sql, table, action)
+                with connection.cursor() as cursor:
+                    for stmt in statements:
+                        try:
+                            cursor.execute(stmt)
+                        except Exception as exc:
+                            errors += 1
+                            self.stderr.write(
+                                self.style.ERROR(f"  ERROR on {table}: {exc}")
+                            )
+                            logger.exception("RLS %s failed for %s", action, table)
 
         if not dry_run:
-            self.stdout.write(self.style.SUCCESS(f"\n{action}d RLS on {len(tables)} table(s)."))
-
-    def _execute_sql(self, sql, table, action):
-        """Execute SQL statements one by one."""
-        statements = [
-            s.strip() for s in sql.split(";") if s.strip() and not s.strip().startswith("--")
-        ]
-        with connection.cursor() as cursor:
-            for stmt in statements:
-                try:
-                    cursor.execute(stmt)
-                except Exception as exc:
-                    self.stderr.write(self.style.ERROR(f"  ERROR on {table}: {exc}"))
-                    logger.exception("RLS %s failed for %s", action, table)
+            if errors:
+                self.stderr.write(
+                    self.style.ERROR(
+                        f"\n{action}d RLS with {errors} error(s) on {len(tables)} table(s)."
+                    )
+                )
+            else:
+                self.stdout.write(
+                    self.style.SUCCESS(f"\n{action}d RLS on {len(tables)} table(s).")
+                )
