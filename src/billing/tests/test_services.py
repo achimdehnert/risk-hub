@@ -25,14 +25,6 @@ def org(db):
     )
 
 
-@pytest.fixture
-def dt_org(db, org):
-    from django_tenancy.models import Organization as DtOrg
-
-    obj, _ = DtOrg.objects.get_or_create(slug=org.slug, defaults={"name": org.name})
-    return obj
-
-
 @pytest.mark.django_db
 class TestGetOrCreateCustomer:
     def test_returns_existing_customer_id(self, org):
@@ -71,11 +63,11 @@ class TestActivateSubscription:
 
 @pytest.mark.django_db
 class TestSuspendSubscription:
-    def test_suspends_active_modules(self, org, dt_org):
+    def test_suspends_active_modules(self, org):
         from django_tenancy.module_models import ModuleSubscription
 
         ModuleSubscription.objects.create(
-            organization_id=dt_org.pk,
+            organization_id=org.pk,
             tenant_id=org.tenant_id,
             module="gbu",
             status=ModuleSubscription.Status.ACTIVE,
