@@ -13,7 +13,7 @@ python manage.py collectstatic --noinput
 
 if [ "$1" = "web" ]; then
     echo "Running migrations..."
-    python manage.py migrate --noinput
+    python manage.py migrate --noinput --fake-initial
 
     echo "Seeding GBU reference data..."
     python manage.py seed_all_gbu || echo "WARNING: GBU seed failed (non-fatal)"
