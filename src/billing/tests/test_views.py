@@ -5,8 +5,8 @@ from __future__ import annotations
 from unittest.mock import patch
 
 import pytest
-from django.test import RequestFactory
 from django.contrib.auth import get_user_model
+from django.test import RequestFactory
 
 from billing.views import checkout_cancel, checkout_success, stripe_webhook
 
