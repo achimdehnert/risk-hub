@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     "ai_analysis",
     "dsb",
     "gbu",
-    "billing",
     "brandschutz",
 ]
 
@@ -85,7 +84,6 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "common.context_processors.tenant_context",
-                "billing.context_processors.billing_context",
             ],
         },
     }
@@ -194,19 +192,6 @@ EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
 EMAIL_HOST_PASSWORD = read_secret("EMAIL_HOST_PASSWORD", default="")
 EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
 DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@schutztat.de")
-
-# Stripe Billing
-STRIPE_SECRET_KEY = read_secret("STRIPE_SECRET_KEY", default="")
-STRIPE_PUBLISHABLE_KEY = read_secret("STRIPE_PUBLISHABLE_KEY", default="")
-STRIPE_WEBHOOK_SECRET = read_secret("STRIPE_WEBHOOK_SECRET", default="")
-
-# Stripe Price IDs (set per environment)
-STRIPE_PRICE_STARTER_MONTHLY = os.getenv("STRIPE_PRICE_STARTER_MONTHLY", "")
-STRIPE_PRICE_STARTER_ANNUAL = os.getenv("STRIPE_PRICE_STARTER_ANNUAL", "")
-STRIPE_PRICE_PROFESSIONAL_MONTHLY = os.getenv("STRIPE_PRICE_PROFESSIONAL_MONTHLY", "")
-STRIPE_PRICE_PROFESSIONAL_ANNUAL = os.getenv("STRIPE_PRICE_PROFESSIONAL_ANNUAL", "")
-STRIPE_PRICE_BUSINESS_MONTHLY = os.getenv("STRIPE_PRICE_BUSINESS_MONTHLY", "")
-STRIPE_PRICE_BUSINESS_ANNUAL = os.getenv("STRIPE_PRICE_BUSINESS_ANNUAL", "")
 
 # billing-hub internal API (ADR-118)
 BILLING_INTERNAL_SECRET = read_secret("BILLING_INTERNAL_SECRET", default="")
