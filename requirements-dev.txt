@@ -1,6 +1,8 @@
 # requirements-dev.txt — ADR-090: dev/test dependencies
 # Production deps included via -r
 -r requirements.txt
+# Override platform's django-tenancy with risk-hub's own (UUID PK, tenancy_organization table)
+./packages/django-tenancy
 pytest>=8.0,<10.0
 pytest-django>=4.8,<5.0
 pytest-cov>=5.0,<7.0
