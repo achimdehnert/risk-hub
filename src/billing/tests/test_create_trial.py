@@ -2,17 +2,18 @@
 
 from __future__ import annotations
 
+from io import StringIO
+
 import pytest
 from django.core.management import call_command
 from django.core.management.base import CommandError
-from io import StringIO
 
 
 @pytest.mark.django_db
 class TestCreateTrialCommand:
     def test_creates_trial_for_valid_slug(self):
-        from tenancy.models import Organization
         from django_tenancy.module_models import ModuleSubscription
+        from tenancy.models import Organization
 
         org = Organization.objects.create(
             name="Trial Org",
@@ -39,8 +40,8 @@ class TestCreateTrialCommand:
             call_command("create_trial", "--slug", "nonexistent-slug")
 
     def test_idempotent_second_run(self):
-        from tenancy.models import Organization
         from django_tenancy.module_models import ModuleSubscription
+        from tenancy.models import Organization
 
         Organization.objects.create(
             name="Idempotent Org",

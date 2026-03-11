@@ -8,12 +8,10 @@ from __future__ import annotations
 
 import hashlib
 import hmac
-import json
 import logging
 import time
 import uuid
-from datetime import datetime
-from typing import Optional
+from datetime import datetime, timedelta
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -87,7 +85,7 @@ class ActivatePayload(Schema):
     email: str
     plan: str
     modules: list[str] = []
-    trial_ends_at: Optional[datetime] = None
+    trial_ends_at: datetime | None = None
 
 
 class DeactivatePayload(Schema):
@@ -219,7 +217,6 @@ def deactivate(
     suspend_subscription(org)
 
     now = timezone.now()
-    from datetime import timedelta
     org.status = Organization.Status.SUSPENDED
     org.suspended_at = now
     org.is_readonly = True

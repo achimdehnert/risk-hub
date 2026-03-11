@@ -9,10 +9,10 @@ from django.conf import settings
 from django.utils import timezone
 from django_tenancy.models import Organization as DtOrg
 from django_tenancy.module_models import ModuleSubscription
-from tenancy.models import Organization
 
 from billing.constants import PLAN_MODULES
 from billing.models import StripeCustomer, StripeSubscription
+from tenancy.models import Organization
 
 logger = logging.getLogger(__name__)
 
@@ -162,7 +162,9 @@ def sync_subscription_from_stripe(
             ),
             "cancel_at_period_end": stripe_subscription.get("cancel_at_period_end", False),
             "canceled_at": (
-                timezone.datetime.fromtimestamp(stripe_subscription["canceled_at"], tz=timezone.utc)
+                timezone.datetime.fromtimestamp(
+                    stripe_subscription["canceled_at"], tz=timezone.utc
+                )
                 if stripe_subscription.get("canceled_at")
                 else None
             ),
