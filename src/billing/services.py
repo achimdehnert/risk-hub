@@ -103,19 +103,20 @@ def activate_subscription(
     stripe_subscription_id: str,
     stripe_price_id: str,
 ) -> None:
-    """Activate ModuleSubscriptions for all modules included in the plan.
+    """Activate ModuleSubscriptions for all modules included in the plan."""
+    from django_tenancy.models import Organization as DtOrg
 
-    Uses organization.pk (UUID) directly as organization_id since
-    tenancy.Organization and django_tenancy.Organization share the same
-    DB table (tenancy_organization) with UUID primary key.
-    """
     modules = PLAN_MODULES.get(plan_code, [])
+    dt_org, _ = DtOrg.objects.get_or_create(
+        slug=organization.slug,
+        defaults={"name": organization.name},
+    )
     for module in modules:
         ModuleSubscription.objects.update_or_create(
             tenant_id=organization.tenant_id,
             module=module,
             defaults={
-                "organization_id": organization.pk,
+                "organization_id": dt_org.pk,
                 "status": ModuleSubscription.Status.ACTIVE,
                 "plan_code": plan_code,
                 "activated_at": timezone.now(),
