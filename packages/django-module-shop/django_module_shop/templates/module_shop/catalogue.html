@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Module — {{ tenant.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 class="mb-4">Module verwalten</h1>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div class="row g-4">
+    {% for module in modules %}
+        <div class="col-md-6 col-lg-4">
+            <div class="card h-100 {% if module.is_active %}border-success{% elif module.is_bookable %}border-primary{% else %}border-secondary{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h5 class="card-title mb-0">{{ module.name }}</h5>
+                        {% if module.status == "active" %}
+                            <span class="badge bg-success">Aktiv</span>
+                        {% elif module.status == "included" %}
+                            <span class="badge bg-info">Im Plan</span>
+                        {% elif module.status == "available" %}
+                            <span class="badge bg-primary">Verfügbar</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Gesperrt</span>
+                        {% endif %}
+                    </div>
+                    <p class="card-text text-muted">{{ module.description }}</p>
+                    {% if module.trial_days and not module.is_active %}
+                        <p class="small text-info mb-2">{{ module.trial_days }} Tage kostenlos testen</p>
+                    {% endif %}
+                </div>
+                <div class="card-footer bg-transparent">
+                    <a href="{% url 'module_shop:detail' module.code %}" class="btn btn-sm {% if module.is_active %}btn-outline-success{% elif module.is_bookable %}btn-outline-primary{% else %}btn-outline-secondary{% endif %} w-100">
+                        Details
+                    </a>
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="alert alert-info">Keine Module konfiguriert.</div>
+        </div>
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ module.name }} — Module{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'module_shop:catalogue' %}">Module</a>
+            </li>
+            <li class="breadcrumb-item active">{{ module.name }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <h2 class="mb-0">{{ module.name }}</h2>
+                        {% if module.status == "active" %}
+                            <span class="badge bg-success fs-6">Aktiv</span>
+                        {% elif module.status == "included" %}
+                            <span class="badge bg-info fs-6">Im Plan enthalten</span>
+                        {% elif module.status == "available" %}
+                            <span class="badge bg-primary fs-6">Verfügbar</span>
+                        {% else %}
+                            <span class="badge bg-secondary fs-6">Nicht verfügbar</span>
+                        {% endif %}
+                    </div>
+
+                    <p class="lead">{{ module.description }}</p>
+
+                    {% if module.trial_days and not module.is_active %}
+                    <div class="alert alert-info">
+                        <strong>{{ module.trial_days }} Tage kostenlos testen</strong> —
+                        Keine Kreditkarte erforderlich.
+                    </div>
+                    {% endif %}
+
+                    {% if module.included_in_plan and not module.is_active %}
+                    <div class="alert alert-success">
+                        Dieses Modul ist in Ihrem aktuellen Plan enthalten.
+                        Kontaktieren Sie den Support zur Aktivierung.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-body">
+                    {% if module.is_active %}
+                        <h5 class="text-success mb-3">Modul aktiv</h5>
+                        <form method="post" action="{% url 'module_shop:cancel' module.code %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger w-100"
+                                    onclick="return confirm('Modul wirklich kündigen?')">
+                                Modul kündigen
+                            </button>
+                        </form>
+                    {% elif module.is_bookable %}
+                        <h5 class="text-primary mb-3">Jetzt aktivieren</h5>
+                        <form method="post" action="{% url 'module_shop:activate' module.code %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-primary w-100">
+                                {% if module.trial_days %}
+                                    {{ module.trial_days }} Tage kostenlos testen
+                                {% else %}
+                                    Modul aktivieren
+                                {% endif %}
+                            </button>
+                        </form>
+                    {% else %}
+                        <h5 class="text-muted mb-3">Nicht verfügbar</h5>
+                        <p class="text-muted small">
+                            Dieses Modul ist in Ihrem aktuellen Plan nicht enthalten.
+                            Upgraden Sie Ihren Plan für Zugang.
+                        </p>
+                        <a href="/billing/" class="btn btn-outline-primary w-100">
+                            Plan upgraden
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <a href="{% url 'module_shop:catalogue' %}" class="btn btn-link mt-3">
+                ← Zurück zur Übersicht
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

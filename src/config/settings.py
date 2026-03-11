@@ -279,3 +279,123 @@ STRIPE_PRICE_BUSINESS_ANNUAL = os.getenv("STRIPE_PRICE_BUSINESS_ANNUAL", "")
 BILLING_INTERNAL_SECRET = read_secret("BILLING_INTERNAL_SECRET", default="")
 BILLING_HMAC_SECRET = read_secret("BILLING_HMAC_SECRET", default="")
 BILLING_HMAC_SECRET_PREV = read_secret("BILLING_HMAC_SECRET_PREV", default="")
+
+# billing-hub URLs (ADR-137 Module-Shop)
+BILLING_HUB_CHECKOUT_URL = os.getenv(
+    "BILLING_HUB_CHECKOUT_URL",
+    "https://billing.iil.pet/checkout",
+)
+BILLING_HUB_CANCEL_URL = os.getenv(
+    "BILLING_HUB_CANCEL_URL",
+    "https://billing.iil.pet/cancel",
+)
+MODULE_SHOP_PRODUCT_NAME = "risk-hub"
+
+# Module-Shop Catalogue (ADR-137 Phase 3)
+MODULE_SHOP_CATALOGUE = {
+    "risk": {
+        "name": "Risikobewertung",
+        "description": (
+            "Gefährdungsbeurteilungen erstellen"
+            " und verwalten"
+        ),
+        "included_in_plans": [
+            "professional", "business", "enterprise",
+        ],
+        "standalone_bookable": True,
+        "trial_days": 14,
+        "icon": "shield-alert",
+    },
+    "dsb": {
+        "name": "Datenschutz",
+        "description": (
+            "Verarbeitungsverzeichnis, DSFA,"
+            " Datenschutzvorfälle"
+        ),
+        "included_in_plans": [
+            "professional", "business", "enterprise",
+        ],
+        "standalone_bookable": True,
+        "trial_days": 14,
+        "icon": "shield-check",
+    },
+    "gbu": {
+        "name": "Gefährdungsbeurteilung",
+        "description": (
+            "Grundlegende Gefährdungsbeurteilungen"
+            " nach ArbSchG"
+        ),
+        "included_in_plans": [
+            "starter", "professional", "business",
+            "enterprise",
+        ],
+        "standalone_bookable": True,
+        "trial_days": 14,
+        "icon": "clipboard-list",
+    },
+    "ex": {
+        "name": "Explosionsschutz",
+        "description": (
+            "Ex-Schutz-Dokument, Zoneneinteilung,"
+            " Zündquellenanalyse"
+        ),
+        "included_in_plans": [
+            "business", "enterprise",
+        ],
+        "standalone_bookable": True,
+        "trial_days": 14,
+        "icon": "flame",
+    },
+    "substances": {
+        "name": "Gefahrstoffe",
+        "description": (
+            "Gefahrstoffkataster,"
+            " Betriebsanweisungen"
+        ),
+        "included_in_plans": [
+            "business", "enterprise",
+        ],
+        "standalone_bookable": True,
+        "trial_days": 14,
+        "icon": "flask-conical",
+    },
+    "documents": {
+        "name": "Dokumente",
+        "description": (
+            "Dokumentenmanagement für"
+            " Arbeitsschutz-Unterlagen"
+        ),
+        "included_in_plans": [
+            "professional", "business", "enterprise",
+        ],
+        "standalone_bookable": False,
+        "trial_days": 0,
+        "icon": "file-text",
+    },
+    "actions": {
+        "name": "Maßnahmen",
+        "description": (
+            "Maßnahmentracking und"
+            " Wirksamkeitskontrolle"
+        ),
+        "included_in_plans": [
+            "professional", "business", "enterprise",
+        ],
+        "standalone_bookable": False,
+        "trial_days": 0,
+        "icon": "check-square",
+    },
+    "brandschutz": {
+        "name": "Brandschutz",
+        "description": (
+            "Brandschutzordnung,"
+            " Flucht- und Rettungspläne"
+        ),
+        "included_in_plans": [
+            "business", "enterprise",
+        ],
+        "standalone_bookable": True,
+        "trial_days": 14,
+        "icon": "fire-extinguisher",
+    },
+}

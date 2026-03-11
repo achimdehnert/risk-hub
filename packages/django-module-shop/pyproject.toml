@@ -1,0 +1,17 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "django-module-shop"
+version = "0.1.0"
+description = "Self-Service Module Shop for django-tenancy (ADR-137)"
+requires-python = ">=3.11"
+dependencies = ["django>=5.0"]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "tests.settings"
+pythonpath = ["."]
+
+[tool.ruff]
+line-length = 79

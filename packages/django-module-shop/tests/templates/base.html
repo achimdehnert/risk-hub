@@ -1,0 +1,6 @@
+<!DOCTYPE html>
+<html><head><title>{% block title %}Test{% endblock %}</title></head>
+<body>
+{% if messages %}{% for message in messages %}<div>{{ message }}</div>{% endfor %}{% endif %}
+{% block content %}{% endblock %}
+</body></html>

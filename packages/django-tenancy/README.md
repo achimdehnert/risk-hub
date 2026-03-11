@@ -51,6 +51,58 @@ class MyModel(models.Model):
 MyModel.objects.for_tenant(request.tenant_id)
 ```
 
+## ADR-137: TenantManager (auto-filter)
+
+```python
+from django_tenancy.managers import TenantManager
+
+class MyModel(models.Model):
+    tenant_id = models.UUIDField(db_index=True)
+    objects = TenantManager()
+
+# In request context → auto-filtered by middleware tenant:
+MyModel.objects.all()
+
+# Explicit (Celery, management commands):
+MyModel.objects.for_tenant(tenant_uuid)
+
+# Admin / cross-tenant reports:
+MyModel.objects.unscoped()
+```
+
+## ADR-137: Row-Level Security (Phase 2)
+
+### Setup (once per database)
+
+```bash
+# 1. Create separate DB roles
+python manage.py setup_rls_roles --dry-run   # preview
+python manage.py setup_rls_roles \
+    --app-user=risk_hub \
+    --app-password=<secret>
+
+# 2. Enable RLS on all tenant tables
+python manage.py enable_rls --dry-run        # preview
+python manage.py enable_rls                  # execute
+
+# Single table:
+python manage.py enable_rls --table=risk_assessment
+
+# Remove RLS:
+python manage.py enable_rls --disable
+```
+
+### DB Role Separation
+
+| Role | Used by | RLS |
+|------|---------|-----|
+| `<db>_admin` (table owner) | migrate, createsuperuser | exempt |
+| `<db>_app` (non-owner) | gunicorn, celery | **active** |
+
+After `setup_rls_roles`, update `DATABASE_URL` for
+gunicorn/celery to use the app-user. Keep the admin-user
+for migrations.
+
 ## Critical Rule
 
 `Organization.id != Organization.tenant_id` — **always** use `org.tenant_id` for data isolation.
