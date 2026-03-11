@@ -15,7 +15,6 @@ from dsb.breach_workflow import advance_breach_workflow, send_initial_breach_con
 from dsb.models import Breach, Mandate
 from dsb.models.breach import BreachStatus
 
-
 # =============================================================================
 # FIXTURES
 # =============================================================================

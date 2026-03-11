@@ -20,7 +20,6 @@ from billing.constants import PLAN_MODULES
 from identity.models import User
 from tenancy.models import Membership, Organization
 
-
 ALL_MODULES = PLAN_MODULES.get("business", [])
 
 

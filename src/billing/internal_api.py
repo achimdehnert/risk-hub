@@ -194,9 +194,7 @@ def activate(request: HttpRequest, payload: ActivatePayload) -> ActivateResponse
 
 
 @router.post("/deactivate", response=DeactivateResponse)
-def deactivate(
-    request: HttpRequest, payload: DeactivatePayload
-) -> DeactivateResponse:
+def deactivate(request: HttpRequest, payload: DeactivatePayload) -> DeactivateResponse:
     """Suspend all active modules for a tenant. Set read-only + GDPR delete date.
 
     Called by billing-hub after:
@@ -209,9 +207,7 @@ def deactivate(
     try:
         org = Organization.objects.get(tenant_id=tenant_id)
     except Organization.DoesNotExist:
-        logger.warning(
-            "[internal_api] deactivate: tenant=%s not found", tenant_id
-        )
+        logger.warning("[internal_api] deactivate: tenant=%s not found", tenant_id)
         return DeactivateResponse(status="not_found", tenant_id=str(tenant_id))
 
     suspend_subscription(org)

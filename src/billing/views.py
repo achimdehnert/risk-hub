@@ -12,12 +12,12 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from tenancy.models import Organization
 
 from billing.constants import get_price_id
 from billing.models import BillingEvent
 from billing.services import create_checkout_session, create_portal_session
 from billing.webhooks import EVENT_HANDLERS
+from tenancy.models import Organization
 
 logger = logging.getLogger(__name__)
 

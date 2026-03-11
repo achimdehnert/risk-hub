@@ -45,7 +45,6 @@ def fixture_org(db):
 @pytest.fixture
 def concept(db, fixture_org):
     from brandschutz.models import FireProtectionConcept
-
     from tenancy.models import Site
 
     site = Site.objects.create(

@@ -17,9 +17,9 @@ from django.core.management.base import BaseCommand, CommandError
 from django.utils import timezone
 from django_tenancy.models import Organization as DtOrg
 from django_tenancy.module_models import ModuleSubscription
-from tenancy.models import Organization
 
 from billing.constants import PLAN_MODULES
+from tenancy.models import Organization
 
 logger = logging.getLogger(__name__)
 

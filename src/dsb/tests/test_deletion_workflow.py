@@ -14,7 +14,6 @@ from dsb.deletion_workflow import advance_workflow, send_initial_confirmation
 from dsb.models import Mandate
 from dsb.models.deletion_request import DeletionRequest, DeletionRequestStatus
 
-
 # =============================================================================
 # FIXTURES
 # =============================================================================

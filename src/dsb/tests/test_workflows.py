@@ -22,7 +22,6 @@ from dsb.models import Breach, Mandate
 from dsb.models.breach import BreachStatus
 from dsb.models.deletion_request import DeletionRequest, DeletionRequestStatus
 
-
 # =============================================================================
 # FIXTURES
 # =============================================================================

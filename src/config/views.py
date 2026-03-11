@@ -122,6 +122,7 @@ def _provision_trial_tenant(user, plan: str, modules_csv: str) -> None:
     """Create Organization + Membership + ModuleSubscriptions for a new trial user."""
     from django.utils import timezone
     from django_tenancy.module_models import ModuleMembership, ModuleSubscription
+
     from tenancy.models import Membership, Organization
 
     slug = user.username.lower().replace(" ", "-")[:50]
@@ -313,8 +314,8 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
 @login_required
 def tenant_pick(request: HttpRequest, slug: str) -> HttpResponse:
     """Set tenant context to chosen org and redirect to dashboard."""
-    from tenancy.models import Organization
     from common.context import set_db_tenant, set_tenant
+    from tenancy.models import Organization
 
     try:
         org = Organization.objects.get(slug=slug)

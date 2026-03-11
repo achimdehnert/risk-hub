@@ -6,7 +6,6 @@ import pytest
 
 from reporting.models import ExportJob, RetentionPolicy
 
-
 TENANT_ID = uuid.uuid4()
 
 

@@ -136,9 +136,7 @@ def test_api_key_isolated_by_tenant(db, tenant_a_id, tenant_b_id, user_a):
 @pytest.mark.django_db
 def test_tenant_id_filter_returns_only_own_objects(db, tenant_a_id, tenant_b_id):
     """filter(tenant_id=...) gibt ausschließlich eigene Objekte zurück."""
-    from tenancy.models import Organization
-
-    from tenancy.models import Site
+    from tenancy.models import Organization, Site
 
     org_a = Organization.objects.create(tenant_id=tenant_a_id, name="OrgA2", slug="org-a2")
     org_b = Organization.objects.create(tenant_id=tenant_b_id, name="OrgB2", slug="org-b2")

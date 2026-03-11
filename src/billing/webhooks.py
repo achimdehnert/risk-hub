@@ -2,11 +2,8 @@
 
 from __future__ import annotations
 
-import logging
-
 import datetime
-
-from tenancy.models import Organization
+import logging
 
 from billing.models import StripeSubscription
 from billing.services import (
@@ -14,6 +11,7 @@ from billing.services import (
     suspend_subscription,
     sync_subscription_from_stripe,
 )
+from tenancy.models import Organization
 
 logger = logging.getLogger(__name__)
 

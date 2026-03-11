@@ -13,6 +13,7 @@ from django.core.management.base import CommandError
 class TestCreateTrialCommand:
     def test_creates_trial_for_valid_slug(self):
         from django_tenancy.module_models import ModuleSubscription
+
         from tenancy.models import Organization
 
         org = Organization.objects.create(
@@ -41,6 +42,7 @@ class TestCreateTrialCommand:
 
     def test_idempotent_second_run(self):
         from django_tenancy.module_models import ModuleSubscription
+
         from tenancy.models import Organization
 
         Organization.objects.create(

@@ -12,7 +12,6 @@ Adding a new view? Add its URL to the relevant URLS list below.
 
 import pytest
 
-
 # ─── Module URL lists ─────────────────────────────────────────────────────────
 
 DASHBOARD_URLS = [
