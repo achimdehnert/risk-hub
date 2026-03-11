@@ -22,7 +22,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
 # Paths that must bypass tenant middleware (import in middleware)
-HEALTH_PATHS = frozenset({"/livez/", "/healthz/"})
+HEALTH_PATHS = frozenset({"/livez/", "/healthz/", "/readyz/"})
 
 
 @csrf_exempt
