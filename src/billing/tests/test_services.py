@@ -64,12 +64,10 @@ class TestActivateSubscription:
 @pytest.mark.django_db
 class TestSuspendSubscription:
     def test_suspends_active_modules(self, org):
-        from django_tenancy.models import Organization as DtOrg
         from django_tenancy.module_models import ModuleSubscription
 
-        dt_org, _ = DtOrg.objects.get_or_create(slug=org.slug, defaults={"name": org.name})
         ModuleSubscription.objects.create(
-            organization_id=dt_org.pk,
+            organization_id=org.pk,
             tenant_id=org.tenant_id,
             module="gbu",
             status=ModuleSubscription.Status.ACTIVE,

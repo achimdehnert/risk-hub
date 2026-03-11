@@ -152,19 +152,7 @@ def smoke_membership(db, smoke_org, smoke_user):
 
 
 @pytest.fixture
-def _dt_org(db, smoke_org):
-    """django_tenancy.Organization proxy for ModuleSubscription FK (BigInt PK)."""
-    from django_tenancy.models import Organization as DtOrg
-
-    obj, _ = DtOrg.objects.get_or_create(
-        slug=smoke_org.slug,
-        defaults={"name": smoke_org.name},
-    )
-    return obj
-
-
-@pytest.fixture
-def smoke_modules(db, smoke_org, smoke_user, smoke_membership, _dt_org):
+def smoke_modules(db, smoke_org, smoke_user, smoke_membership):
     """All business modules active for smoke_org + smoke_user has admin membership."""
     from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 
@@ -173,7 +161,7 @@ def smoke_modules(db, smoke_org, smoke_user, smoke_membership, _dt_org):
             tenant_id=smoke_org.tenant_id,
             module=module,
             defaults={
-                "organization_id": _dt_org.pk,
+                "organization_id": smoke_org.pk,
                 "status": ModuleSubscription.Status.ACTIVE,
                 "plan_code": "business",
             },

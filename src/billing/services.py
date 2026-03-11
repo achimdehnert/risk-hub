@@ -104,19 +104,13 @@ def activate_subscription(
     stripe_price_id: str,
 ) -> None:
     """Activate ModuleSubscriptions for all modules included in the plan."""
-    from django_tenancy.models import Organization as DtOrg
-
     modules = PLAN_MODULES.get(plan_code, [])
-    dt_org, _ = DtOrg.objects.get_or_create(
-        slug=organization.slug,
-        defaults={"name": organization.name},
-    )
     for module in modules:
         ModuleSubscription.objects.update_or_create(
             tenant_id=organization.tenant_id,
             module=module,
             defaults={
-                "organization_id": dt_org.pk,
+                "organization_id": organization.pk,
                 "status": ModuleSubscription.Status.ACTIVE,
                 "plan_code": plan_code,
                 "activated_at": timezone.now(),

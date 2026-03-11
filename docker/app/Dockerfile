@@ -30,7 +30,7 @@ RUN pip install --no-cache-dir -U pip setuptools wheel \
 RUN pip install --no-cache-dir hatchling hatch-vcs flit_core \
     && git config --global url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf "https://github.com/" \
     && git clone --depth=1 --filter=blob:none https://github.com/achimdehnert/platform.git /tmp/platform 2>/dev/null || true \
-    && (pip install --no-cache-dir /tmp/platform/packages/django-tenancy 2>&1 && echo "OK: django-tenancy") || echo "SKIP: django-tenancy" \
+    && echo "SKIP: platform django-tenancy (risk-hub uses its own)" \
     && (pip install --no-cache-dir /tmp/platform/packages/platform-context 2>&1 && echo "OK: platform-context") || echo "SKIP: platform-context" \
     && (pip install --no-cache-dir /tmp/platform/packages/django-module-shop 2>&1 && echo "OK: django-module-shop") || echo "SKIP: django-module-shop" \
     && grep 'git+https://github.com/achimdehnert/nl2cad' /app/requirements.txt > /tmp/nl2cad-pkgs.txt \
@@ -45,14 +45,15 @@ RUN pip install --no-cache-dir hatchling hatch-vcs flit_core \
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
-COPY src /app/src
 COPY packages /app/packages
+COPY src /app/src
 WORKDIR /app/src
 
 ENV PYTHONPATH=/app/src
 
-# Override platform's django-tenancy with risk-hub's own version (UUID PK, tenancy_organization table)
-RUN pip install --no-cache-dir /app/packages/django-tenancy 2>&1 && echo "OK: risk-hub django-tenancy" || echo "SKIP: risk-hub django-tenancy"
+# Install risk-hub's own django-tenancy (UUID PK, tenancy_organization table)
+RUN pip install --no-cache-dir /app/packages/django-tenancy 2>&1 \
+    && echo "OK: risk-hub django-tenancy" || echo "SKIP: risk-hub django-tenancy"
 
 # Collect static files at build time (non-fatal if private packages missing)
 RUN DJANGO_SETTINGS_MODULE=config.settings_build \

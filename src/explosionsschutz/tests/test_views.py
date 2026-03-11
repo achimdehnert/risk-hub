@@ -60,15 +60,19 @@ def fixture_test_user():
 @pytest.fixture
 def fixture_module_sub(db, fixture_tenant_id):
     """ModuleSubscription for 'ex' module so require_module passes."""
-    from django_tenancy.models import Organization as DtOrg
     from django_tenancy.module_models import ModuleSubscription
 
-    dt_org, _ = DtOrg.objects.get_or_create(slug="ex-test-org", defaults={"name": "EX Test Org"})
+    from tenancy.models import Organization
+
+    org, _ = Organization.objects.get_or_create(
+        slug="ex-test-org",
+        defaults={"name": "EX Test Org", "tenant_id": fixture_tenant_id},
+    )
     sub, _ = ModuleSubscription.objects.get_or_create(
         tenant_id=fixture_tenant_id,
         module="ex",
         defaults={
-            "organization_id": dt_org.pk,
+            "organization_id": org.pk,
             "status": ModuleSubscription.Status.ACTIVE,
             "plan_code": "business",
         },

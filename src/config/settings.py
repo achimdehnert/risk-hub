@@ -121,7 +121,7 @@ TENANT_RESERVED_SUBDOMAINS = [
     for s in os.getenv("TENANT_RESERVED_SUBDOMAINS", "www").split(",")
     if s.strip()
 ]
-TENANT_MODEL = "django_tenancy.Organization"
+TENANT_MODEL = "tenancy.Organization"
 TENANT_SLUG_FIELD = "slug"
 TENANT_ID_FIELD = "tenant_id"
 

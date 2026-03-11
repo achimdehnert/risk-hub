@@ -23,6 +23,7 @@ import uuid
 from django.conf import settings
 from django.db import models
 
+# settings.TENANT_MODEL is used by ModuleSubscription FK (resolved at class load time)
 from .managers import TenantManager
 
 
@@ -46,10 +47,12 @@ class ModuleSubscription(models.Model):
         SUSPENDED = "suspended", "Suspended"
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     organization = models.ForeignKey(
-        "django_tenancy.Organization",
+        settings.TENANT_MODEL,
         on_delete=models.CASCADE,
         related_name="module_subscriptions",
     )
@@ -149,7 +152,9 @@ class ModuleMembership(models.Model):
         VIEWER = "viewer", "Viewer"
 
     id = models.UUIDField(
-        primary_key=True, default=uuid.uuid4, editable=False,
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     user = models.ForeignKey(
