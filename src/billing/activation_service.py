@@ -9,7 +9,6 @@ import logging
 import uuid
 from datetime import timedelta
 
-from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.utils.crypto import get_random_string
