@@ -47,9 +47,7 @@ def verify_request_dual_secret(
     max_age_seconds: int = 300,
 ) -> bool:
     """Verify with dual-secret support for rotation (ADR-118)."""
-    if verify_request(
-        timestamp_header, signature_header, body, primary_secret, max_age_seconds
-    ):
+    if verify_request(timestamp_header, signature_header, body, primary_secret, max_age_seconds):
         return True
     if secondary_secret:
         return verify_request(

@@ -204,7 +204,9 @@ def test_should_suspend_existing_org(api_client):
         "reason": "trial_expired",
     }
     result = _post(
-        api_client, ENDPOINT_DEACTIVATE, deactivate_payload,
+        api_client,
+        ENDPOINT_DEACTIVATE,
+        deactivate_payload,
     )
 
     assert result["status_code"] == 200
@@ -245,7 +247,9 @@ def test_should_accept_previous_secret(api_client, settings):
         "modules": ["gbu"],
     }
     result = _post_with_secret(
-        api_client, ENDPOINT_ACTIVATE, payload,
+        api_client,
+        ENDPOINT_ACTIVATE,
+        payload,
         "old-secret-2025",
     )
     assert result["status_code"] == 200

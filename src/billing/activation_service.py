@@ -46,7 +46,9 @@ def activate_tenant(
         created = False
         # Reactivate if previously deactivated
         if org.is_readonly or org.status == Organization.Status.SUSPENDED:
-            org.status = Organization.Status.ACTIVE if not trial_ends_at else Organization.Status.TRIAL
+            org.status = (
+                Organization.Status.ACTIVE if not trial_ends_at else Organization.Status.TRIAL
+            )
             org.is_readonly = False
             org.deactivation_reason = ""
             org.gdpr_delete_at = None
@@ -77,9 +79,7 @@ def activate_tenant(
         name=email.split("@")[0],
         status=Organization.Status.TRIAL if trial_ends_at else Organization.Status.ACTIVE,
         plan_code=plan,
-        trial_ends_at=(
-            timezone.datetime.fromisoformat(trial_ends_at) if trial_ends_at else None
-        ),
+        trial_ends_at=(timezone.datetime.fromisoformat(trial_ends_at) if trial_ends_at else None),
     )
     logger.info("[activation] Created org %s slug=%s (tenant=%s)", org.pk, slug, tid)
 
