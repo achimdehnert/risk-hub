@@ -65,7 +65,6 @@ markers = [
     "e2e: Playwright end-to-end tests (require --playwright flag)",
 ]
 env = [
-    "DATABASE_URL=sqlite:///test_e2e.db",
     "DJANGO_ALLOW_ASYNC_UNSAFE=true",
 ]
 
