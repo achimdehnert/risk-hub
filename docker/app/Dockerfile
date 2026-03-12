@@ -55,11 +55,10 @@ ENV PYTHONPATH=/app/src
 RUN pip install --no-cache-dir /app/packages/django-tenancy 2>&1 \
     && echo "OK: risk-hub django-tenancy" || echo "SKIP: risk-hub django-tenancy"
 
-# Collect static files at build time (non-fatal if private packages missing)
+# ADR-083: Collect static files with build-safe settings (no dummy env vars, no || true)
 RUN DJANGO_SETTINGS_MODULE=config.settings_build \
-    SECRET_KEY=build-only-not-used-in-prod \
-    python manage.py collectstatic --noinput 2>&1 || echo "collectstatic skipped"
-RUN chown -R app:app /app/src/staticfiles 2>/dev/null || true
+    python manage.py collectstatic --noinput
+RUN chown -R 1000:1000 /app/src/staticfiles
 
 # Create non-root user (ADR-022)
 RUN groupadd --gid 1000 app && \
