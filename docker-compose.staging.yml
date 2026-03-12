@@ -130,7 +130,7 @@ services:
     volumes:
       - risk_hub_staging_media:/app/media
     healthcheck:
-      test: ["CMD-SHELL", "grep -q outbox.publisher /proc/1/cmdline"]
+      test: ["CMD-SHELL", "grep -rq outbox.publisher /proc/[0-9]*/cmdline 2>/dev/null"]
       interval: 30s
       timeout: 5s
       retries: 3
