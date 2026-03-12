@@ -16,11 +16,19 @@ from django.core.management.base import BaseCommand
 from django.utils import timezone
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 
-from billing.constants import PLAN_MODULES
 from identity.models import User
 from tenancy.models import Membership, Organization
 
-ALL_MODULES = PLAN_MODULES.get("business", [])
+ALL_MODULES = [
+    "risk",
+    "ex",
+    "substances",
+    "dsb",
+    "gbu",
+    "documents",
+    "actions",
+    "brandschutz",
+]
 
 
 class Command(BaseCommand):
