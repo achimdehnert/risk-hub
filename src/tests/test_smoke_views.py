@@ -69,15 +69,9 @@ TENANCY_URLS = [
     "/tenants/",
 ]
 
-BILLING_URLS = [
-    "/billing/",
-    "/billing/success/",
-    "/billing/cancel/",
-]
+BILLING_URLS = []  # billing/ app removed in ADR-137 Phase 4.3
 
-MODULE_SHOP_URLS = [
-    "/billing/modules/",
-]
+MODULE_SHOP_URLS = []  # billing/ app removed in ADR-137 Phase 4.3
 
 PUBLIC_URLS = [
     "/",
@@ -96,8 +90,6 @@ ALL_AUTHENTICATED_URLS = (
     + NOTIFICATIONS_URLS
     + BRANDSCHUTZ_URLS
     + TENANCY_URLS
-    + BILLING_URLS
-    + MODULE_SHOP_URLS
 )
 
 
