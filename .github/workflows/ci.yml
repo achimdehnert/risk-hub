@@ -353,7 +353,8 @@ jobs:
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
             docker compose -f docker-compose.staging.yml down --remove-orphans 2>/dev/null || true && \
-            docker compose -f docker-compose.staging.yml up -d --remove-orphans
+            docker compose -f docker-compose.staging.yml rm -f 2>/dev/null || true && \
+            docker compose -f docker-compose.staging.yml up -d --force-recreate --remove-orphans
           "
 
       - name: Wait for Staging Liveness (max 150s)
