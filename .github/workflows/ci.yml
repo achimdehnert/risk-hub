@@ -260,8 +260,9 @@ jobs:
           set -euo pipefail
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
-            docker compose -p risk-hub-prod -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true && \
-            docker compose -p risk-hub-prod -f docker-compose.prod.yml up -d --remove-orphans
+            docker rm -f risk_hub_web risk_hub_worker 2>/dev/null || true && \
+            docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true && \
+            docker compose -f docker-compose.prod.yml up -d --force-recreate --remove-orphans
           "
 
       - name: Wait for Liveness (max 150s)
@@ -410,9 +411,10 @@ jobs:
           echo "Rolling back to ${{ vars.DEPLOY_IMAGE }}:${PREV_SHA}..."
           ssh ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} "
             cd ${{ vars.DEPLOY_SERVER_PATH }} && \
+            docker rm -f risk_hub_web risk_hub_worker 2>/dev/null || true && \
             docker pull ${{ vars.DEPLOY_IMAGE }}:${PREV_SHA} && \
             IMAGE_TAG=${PREV_SHA} docker compose -f docker-compose.prod.yml \
-              up -d --no-deps --force-recreate \
+              up -d --no-deps --force-recreate --remove-orphans \
               ${{ vars.DEPLOY_WEB_SERVICE }} ${{ vars.DEPLOY_APP_NAME }}-worker
           "
 
