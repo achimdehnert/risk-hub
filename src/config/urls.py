@@ -31,6 +31,7 @@ urlpatterns = [
     path("readyz/", readiness, name="readyz"),
     path("", home),
     path("dashboard/", include("dashboard.urls")),
+        path("oidc/", include("mozilla_django_oidc.urls")),
     path("admin/", admin.site.urls),
     path("accounts/login/", tenant_login, name="login"),
     path("accounts/register/", register, name="register"),
