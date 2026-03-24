@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Dokumente hochladen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto py-8 px-4">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Dokumente hochladen</h1>
+        <a href="{% url 'documents:document_list' %}"
+           class="text-sm text-gray-500 hover:text-gray-700">← Zurück</a>
+    </div>
+
+    {% if messages %}
+    <div class="mb-4">
+        {% for message in messages %}
+        <div class="p-3 rounded-lg text-sm
+            {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200
+            {% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200
+            {% else %}bg-yellow-50 text-yellow-800 border border-yellow-200{% endif %}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <form method="post"
+          enctype="multipart/form-data"
+          hx-post="{% url 'documents:bulk_upload' %}"
+          hx-target="#upload-results"
+          hx-swap="innerHTML"
+          hx-indicator="#upload-spinner"
+          class="space-y-6">
+        {% csrf_token %}
+
+        <!-- Kategorie -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Kategorie</label>
+            <div class="flex flex-wrap gap-2" id="category-chips">
+                {% for value, label in categories %}
+                <label class="cursor-pointer">
+                    <input type="radio" name="category" value="{{ value }}"
+                           class="sr-only peer"
+                           {% if value == "general" %}checked{% endif %}>
+                    <span class="inline-flex items-center px-3 py-1.5 rounded-full text-sm
+                                 border border-gray-300 bg-white text-gray-700
+                                 peer-checked:bg-orange-100 peer-checked:border-orange-500
+                                 peer-checked:text-orange-800 hover:bg-gray-50
+                                 transition-colors">
+                        {{ label }}
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Dropzone -->
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-2">Dateien</label>
+            <div id="dropzone"
+                 class="border-2 border-dashed border-gray-300 rounded-xl p-8
+                        text-center cursor-pointer hover:border-orange-400
+                        hover:bg-orange-50/30 transition-colors"
+                 onclick="document.getElementById('file-input').click()">
+                <div class="flex flex-col items-center gap-2">
+                    <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor"
+                         viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                    <p class="text-sm text-gray-600">
+                        <span class="font-medium text-orange-600">Dateien auswählen</span>
+                        oder hierher ziehen
+                    </p>
+                    <p class="text-xs text-gray-400">PDF, Excel, Bilder — max. 25 MB pro Datei</p>
+                </div>
+            </div>
+            <input id="file-input" type="file" name="files" multiple
+                   class="hidden" accept=".pdf,.xlsx,.xls,.doc,.docx,.png,.jpg,.jpeg">
+        </div>
+
+        <!-- File List -->
+        <div id="file-list" class="hidden">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium text-gray-700">Ausgewählte Dateien</span>
+                <button type="button" onclick="clearFiles()"
+                        class="text-xs text-red-500 hover:text-red-700">Alle entfernen</button>
+            </div>
+            <ul id="file-items" class="space-y-1 text-sm text-gray-600"></ul>
+        </div>
+
+        <!-- Submit -->
+        <div class="flex items-center gap-3">
+            <button type="submit" id="submit-btn" disabled
+                    class="px-5 py-2.5 bg-orange-600 text-white rounded-lg font-medium
+                           hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed
+                           transition-colors">
+                Hochladen
+            </button>
+            <div id="upload-spinner" class="htmx-indicator flex items-center gap-2 text-sm text-gray-500">
+                <svg class="animate-spin h-4 w-4" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10"
+                            stroke="currentColor" stroke-width="4" fill="none"/>
+                    <path class="opacity-75" fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                </svg>
+                Wird hochgeladen…
+            </div>
+        </div>
+    </form>
+
+    <!-- Results (HTMX target) -->
+    <div id="upload-results" class="mt-6"></div>
+</div>
+
+<script>
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('file-input');
+const fileList = document.getElementById('file-list');
+const fileItems = document.getElementById('file-items');
+const submitBtn = document.getElementById('submit-btn');
+
+['dragenter','dragover'].forEach(e => {
+    dropzone.addEventListener(e, ev => {
+        ev.preventDefault();
+        dropzone.classList.add('border-orange-400','bg-orange-50/30');
+    });
+});
+['dragleave','drop'].forEach(e => {
+    dropzone.addEventListener(e, ev => {
+        ev.preventDefault();
+        dropzone.classList.remove('border-orange-400','bg-orange-50/30');
+    });
+});
+dropzone.addEventListener('drop', ev => {
+    fileInput.files = ev.dataTransfer.files;
+    updateFileList();
+});
+fileInput.addEventListener('change', updateFileList);
+
+function updateFileList() {
+    const files = fileInput.files;
+    fileItems.innerHTML = '';
+    if (files.length === 0) {
+        fileList.classList.add('hidden');
+        submitBtn.disabled = true;
+        return;
+    }
+    fileList.classList.remove('hidden');
+    submitBtn.disabled = false;
+    for (const f of files) {
+        const size = f.size < 1024*1024
+            ? (f.size/1024).toFixed(0) + ' KB'
+            : (f.size/1024/1024).toFixed(1) + ' MB';
+        const li = document.createElement('li');
+        li.className = 'flex items-center justify-between py-1 px-2 bg-gray-50 rounded';
+        li.innerHTML = `<span class="truncate">${f.name}</span>
+                        <span class="text-xs text-gray-400 ml-2 shrink-0">${size}</span>`;
+        fileItems.appendChild(li);
+    }
+}
+
+function clearFiles() {
+    fileInput.value = '';
+    updateFileList();
+}
+</script>
+{% endblock %}

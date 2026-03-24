@@ -9,6 +9,7 @@ app_name = "documents"
 urlpatterns = [
     path("", views.document_list, name="document_list"),
     path("upload/", views.document_upload, name="upload"),
+    path("upload-bulk/", views.document_bulk_upload, name="bulk_upload"),
     path(
         "<uuid:document_id>/",
         views.document_detail,

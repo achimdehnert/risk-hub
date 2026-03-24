@@ -100,6 +100,66 @@ def document_upload(request: HttpRequest) -> HttpResponse:
     )
 
 
+def document_bulk_upload(request: HttpRequest) -> HttpResponse:
+    """Bulk upload multiple documents with shared category."""
+    err = _require_tenant(request)
+    if err:
+        return err
+
+    if request.method == "POST":
+        category = request.POST.get("category", "general")
+        files = request.FILES.getlist("files")
+
+        if not files:
+            messages.error(request, "Keine Dateien ausgewählt.")
+            return render(
+                request,
+                "documents/bulk_upload.html",
+                {"categories": Document.Category.choices},
+            )
+
+        results = []
+        for file in files:
+            title = file.name.rsplit(".", 1)[0] if "." in file.name else file.name
+            try:
+                version = upload_document(
+                    title=title,
+                    category=category,
+                    file=file,
+                    tenant_id=request.tenant_id,
+                    user_id=getattr(request.user, "id", None),
+                )
+                results.append({"name": file.name, "ok": True, "version": version})
+            except Exception as exc:
+                results.append({"name": file.name, "ok": False, "error": str(exc)})
+
+        ok_count = sum(1 for r in results if r["ok"])
+        fail_count = len(results) - ok_count
+
+        if fail_count == 0:
+            messages.success(request, f"{ok_count} Dokument(e) hochgeladen.")
+        else:
+            messages.warning(
+                request,
+                f"{ok_count} hochgeladen, {fail_count} fehlgeschlagen.",
+            )
+
+        if request.headers.get("HX-Request"):
+            return render(
+                request,
+                "documents/partials/upload_results.html",
+                {"results": results},
+            )
+
+        return redirect("documents:document_list")
+
+    return render(
+        request,
+        "documents/bulk_upload.html",
+        {"categories": Document.Category.choices},
+    )
+
+
 def document_download(
     request: HttpRequest,
     version_id: UUID,

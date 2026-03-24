@@ -15,6 +15,11 @@ class Document(models.Model):
         ARBEITSSICHERHEIT = "arbeitssicherheit", "Arbeitssicherheit"
         NACHWEIS = "nachweis", "Nachweis"
         GENERAL = "general", "Allgemein"
+        SDB = "sdb", "Sicherheitsdatenblatt"
+        GEFAEHRDUNGSBEURTEILUNG = "gefaehrdungsbeurteilung", "Gefährdungsbeurteilung"
+        BETRIEBSANWEISUNG = "betriebsanweisung", "Betriebsanweisung"
+        UNTERWEISUNG = "unterweisung", "Unterweisungsnachweis"
+        PRUEFBERICHT = "pruefbericht", "Prüfbericht"
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
