@@ -143,9 +143,9 @@ class SubstanceImportForm(forms.Form):
 
     import_file = forms.FileField(
         label="Import-Datei",
-        help_text="CSV oder JSON mit Gefahrstoffdaten",
+        help_text="Excel, PDF, Word, CSV oder JSON mit Gefahrstoffdaten",
         widget=forms.FileInput(
-            attrs={"class": "form-input", "accept": ".csv,.json,.xlsx,.xls"}
+            attrs={"class": "form-input", "accept": ".csv,.json,.xlsx,.xls,.pdf,.docx"}
         ),
     )
 

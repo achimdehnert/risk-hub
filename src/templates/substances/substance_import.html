@@ -78,15 +78,27 @@
             <h3 class="text-sm font-medium text-blue-800 mb-2">Unterstützte Formate</h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-blue-700">
                 <div>
-                    <p class="font-medium">CSV (Semikolon-getrennt)</p>
+                    <p class="font-medium">📊 Excel (.xlsx)</p>
                     <p class="text-xs text-blue-600 mt-1">
-                        Spalten: name; cas; trade_name; signal_word; h_statements; p_statements; storage_class; is_cmr
+                        Erste Zeile = Spaltenüberschriften (name, cas, h_statements, ...)
                     </p>
                 </div>
                 <div>
-                    <p class="font-medium">JSON (Array of Objects)</p>
+                    <p class="font-medium">📄 PDF</p>
                     <p class="text-xs text-blue-600 mt-1">
-                        [{&quot;name&quot;:&quot;Aceton&quot;, &quot;cas&quot;:&quot;67-64-1&quot;, &quot;h_statements&quot;:[&quot;H225&quot;,&quot;H319&quot;], ...}]
+                        Tabellen werden automatisch erkannt und extrahiert
+                    </p>
+                </div>
+                <div>
+                    <p class="font-medium">📝 Word (.docx)</p>
+                    <p class="text-xs text-blue-600 mt-1">
+                        Erste Tabelle im Dokument wird gelesen
+                    </p>
+                </div>
+                <div>
+                    <p class="font-medium">📋 CSV / JSON</p>
+                    <p class="text-xs text-blue-600 mt-1">
+                        CSV (Semikolon-getrennt) oder JSON (Array of Objects)
                     </p>
                 </div>
             </div>
@@ -110,11 +122,11 @@
                         <span class="font-medium text-orange-600">Datei auswählen</span>
                         oder hierher ziehen
                     </p>
-                    <p class="text-xs text-gray-400">CSV oder JSON — max. 10 MB</p>
+                    <p class="text-xs text-gray-400">Excel, PDF, Word, CSV oder JSON — max. 10 MB</p>
                 </div>
             </div>
             <input id="id_import_file" type="file" name="import_file"
-                   class="hidden" accept=".csv,.json">
+                   class="hidden" accept=".csv,.json,.xlsx,.xls,.pdf,.docx">
         </div>
 
         <!-- Selected File Display -->

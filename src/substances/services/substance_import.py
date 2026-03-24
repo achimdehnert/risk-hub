@@ -316,6 +316,186 @@ class SubstanceImportService:
         logger.info("CSV-Import: %d Zeilen gelesen", len(records))
         return self._import_records(records, dry_run=dry_run)
 
+    def import_from_xlsx(
+        self,
+        file_obj,
+        *,
+        dry_run: bool = False,
+    ) -> ImportStats:
+        """Import substances from an Excel (.xlsx) file.
+
+        Reads the first sheet. First row = headers (same as CSV columns).
+        """
+        import openpyxl
+
+        wb = openpyxl.load_workbook(file_obj, read_only=True, data_only=True)
+        ws = wb.active
+        rows = list(ws.iter_rows(values_only=True))
+        wb.close()
+
+        if not rows:
+            raise ValueError("Excel-Datei ist leer")
+
+        headers = [str(h or "").strip().lower() for h in rows[0]]
+        records = []
+        for row in rows[1:]:
+            raw = dict(zip(headers, row))
+            record = {
+                "name": str(raw.get("name") or "").strip(),
+                "cas": str(raw.get("cas") or "").strip(),
+                "ec": str(raw.get("ec") or "").strip(),
+                "trade_name": str(raw.get("trade_name") or raw.get("handelsname") or "").strip(),
+                "description": str(raw.get("description") or raw.get("beschreibung") or "").strip(),
+                "signal_word": str(raw.get("signal_word") or raw.get("signalwort") or "none").strip().lower(),
+                "storage_class": str(raw.get("storage_class") or raw.get("lagerklasse") or "").strip(),
+                "is_cmr": str(raw.get("is_cmr") or raw.get("cmr") or "").strip().lower() in ("true", "1", "ja", "yes"),
+                "temperature_class": str(raw.get("temperature_class") or "").strip(),
+                "explosion_group": str(raw.get("explosion_group") or "").strip(),
+            }
+            # Numeric fields
+            for num_field in ("flash_point_c", "ignition_temperature_c",
+                              "lower_explosion_limit", "upper_explosion_limit",
+                              "vapor_density"):
+                val = raw.get(num_field)
+                if val is not None:
+                    try:
+                        record[num_field] = float(val)
+                    except (ValueError, TypeError):
+                        pass
+
+            # Semicolon-separated list fields
+            for list_field in ("h_statements", "p_statements", "pictograms"):
+                val = str(raw.get(list_field) or "").strip()
+                if val:
+                    record[list_field] = [c.strip() for c in val.split(";") if c.strip()]
+
+            if record["name"]:
+                records.append(record)
+
+        logger.info("Excel-Import: %d Zeilen gelesen", len(records))
+        return self._import_records(records, dry_run=dry_run)
+
+    def import_from_docx(
+        self,
+        file_obj,
+        *,
+        dry_run: bool = False,
+    ) -> ImportStats:
+        """Import substances from a Word (.docx) file.
+
+        Reads the first table in the document. First row = headers.
+        """
+        import docx
+
+        doc = docx.Document(file_obj)
+        if not doc.tables:
+            raise ValueError("Kein Tabelle im Word-Dokument gefunden")
+
+        table = doc.tables[0]
+        rows = [[cell.text.strip() for cell in row.cells] for row in table.rows]
+
+        if not rows:
+            raise ValueError("Tabelle ist leer")
+
+        headers = [h.lower().replace(" ", "_") for h in rows[0]]
+        records = []
+        for row in rows[1:]:
+            raw = dict(zip(headers, row))
+            record = {
+                "name": (raw.get("name") or raw.get("stoffname") or "").strip(),
+                "cas": (raw.get("cas") or raw.get("cas-nummer") or raw.get("cas_nummer") or "").strip(),
+                "ec": (raw.get("ec") or "").strip(),
+                "trade_name": (raw.get("trade_name") or raw.get("handelsname") or "").strip(),
+                "description": (raw.get("description") or raw.get("beschreibung") or raw.get("verwendung") or "").strip(),
+                "signal_word": (raw.get("signal_word") or raw.get("signalwort") or "none").strip().lower(),
+                "storage_class": (raw.get("storage_class") or raw.get("lagerklasse") or "").strip(),
+                "is_cmr": (raw.get("is_cmr") or raw.get("cmr") or "").strip().lower() in ("true", "1", "ja", "yes"),
+            }
+            # Semicolon-separated list fields
+            for list_field in ("h_statements", "p_statements", "pictograms"):
+                alt_names = {"h_statements": ["h-sätze", "h_sätze", "h-saetze"],
+                             "p_statements": ["p-sätze", "p_sätze", "p-saetze"],
+                             "pictograms": ["piktogramme", "ghs"]}
+                val = raw.get(list_field, "")
+                if not val:
+                    for alt in alt_names.get(list_field, []):
+                        val = raw.get(alt, "")
+                        if val:
+                            break
+                if val:
+                    record[list_field] = [c.strip() for c in val.replace(",", ";").split(";") if c.strip()]
+
+            if record["name"]:
+                records.append(record)
+
+        logger.info("DOCX-Import: %d Zeilen gelesen", len(records))
+        return self._import_records(records, dry_run=dry_run)
+
+    def import_from_pdf(
+        self,
+        file_obj,
+        *,
+        dry_run: bool = False,
+    ) -> ImportStats:
+        """Import substances from a PDF file.
+
+        Extracts tables using pdfplumber. First row = headers.
+        Falls back to text extraction if no tables found.
+        """
+        import pdfplumber
+
+        content = file_obj.read()
+        if isinstance(content, str):
+            raise ValueError("PDF muss als Binärdatei übergeben werden")
+
+        import io
+        pdf = pdfplumber.open(io.BytesIO(content))
+        all_rows = []
+        for page in pdf.pages:
+            tables = page.extract_tables()
+            for table in tables:
+                all_rows.extend(table)
+        pdf.close()
+
+        if not all_rows:
+            raise ValueError(
+                "Keine Tabellen in PDF gefunden. "
+                "Bitte Excel oder CSV verwenden."
+            )
+
+        # First row with content = headers
+        headers = [str(h or "").strip().lower().replace(" ", "_") for h in all_rows[0]]
+        records = []
+        for row in all_rows[1:]:
+            if not any(cell for cell in row):
+                continue
+            raw = dict(zip(headers, [str(c or "").strip() for c in row]))
+            record = {
+                "name": (raw.get("name") or raw.get("stoffname") or raw.get("bezeichnung") or "").strip(),
+                "cas": (raw.get("cas") or raw.get("cas-nummer") or raw.get("cas_nummer") or raw.get("cas-nr.") or "").strip(),
+                "trade_name": (raw.get("trade_name") or raw.get("handelsname") or "").strip(),
+                "signal_word": (raw.get("signal_word") or raw.get("signalwort") or "none").strip().lower(),
+                "storage_class": (raw.get("storage_class") or raw.get("lagerklasse") or "").strip(),
+                "is_cmr": (raw.get("is_cmr") or raw.get("cmr") or "").strip().lower() in ("true", "1", "ja", "yes"),
+            }
+            for list_field in ("h_statements", "p_statements"):
+                alt_names = {"h_statements": ["h-sätze", "h_sätze", "h-saetze", "h-sätze"],
+                             "p_statements": ["p-sätze", "p_sätze", "p-saetze", "p-sätze"]}
+                val = raw.get(list_field, "")
+                if not val:
+                    for alt in alt_names.get(list_field, []):
+                        val = raw.get(alt, "")
+                        if val:
+                            break
+                if val:
+                    record[list_field] = [c.strip() for c in val.replace(",", ";").replace(" ", ";").split(";") if c.strip()]
+
+            if record["name"]:
+                records.append(record)
+
+        logger.info("PDF-Import: %d Zeilen gelesen", len(records))
+        return self._import_records(records, dry_run=dry_run)
+
     def import_from_upload(
         self,
         file_obj,
@@ -325,7 +505,7 @@ class SubstanceImportService:
     ) -> ImportStats:
         """Import from an uploaded file (auto-detect format by extension).
 
-        Supported: .json, .csv
+        Supported: .json, .csv, .xlsx, .xls, .docx, .pdf
         """
         ext = Path(filename).suffix.lower()
 
@@ -337,8 +517,14 @@ class SubstanceImportService:
             return self.import_from_records(records, dry_run=dry_run)
         elif ext == ".csv":
             return self.import_from_csv(file_obj, dry_run=dry_run)
+        elif ext in (".xlsx", ".xls"):
+            return self.import_from_xlsx(file_obj, dry_run=dry_run)
+        elif ext == ".docx":
+            return self.import_from_docx(file_obj, dry_run=dry_run)
+        elif ext == ".pdf":
+            return self.import_from_pdf(file_obj, dry_run=dry_run)
         else:
             raise ValueError(
                 f"Nicht unterstütztes Dateiformat: {ext}. "
-                "Erlaubt: .csv, .json"
+                "Erlaubt: .csv, .json, .xlsx, .docx, .pdf"
             )
