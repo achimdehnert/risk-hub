@@ -44,7 +44,7 @@ jobs:
         run: |
           pip install -U pip
           pip install -r requirements.txt
-          pip install pytest pytest-django factory-boy pytest-env
+          pip install pytest pytest-django factory-boy pytest-env pytest-mock
           pip install packages/django-tenancy 2>/dev/null || true
 
       - name: Lint with ruff
