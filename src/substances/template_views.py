@@ -470,3 +470,74 @@ class PartyListView(View):
                 "selected_type": party_type,
             },
         )
+
+
+class SubstanceImportView(View):
+    """Gefahrstoff-Import aus CSV/JSON-Dateien."""
+
+    template_name = "substances/substance_import.html"
+
+    def get(self, request):
+        from .forms import SubstanceImportForm
+
+        form = SubstanceImportForm()
+        return render(request, self.template_name, {"form": form})
+
+    def post(self, request):
+        from .forms import SubstanceImportForm
+        from .services.substance_import import SubstanceImportService
+
+        form = SubstanceImportForm(request.POST, request.FILES)
+        if not form.is_valid():
+            return render(request, self.template_name, {"form": form})
+
+        tenant_id = getattr(request, "tenant_id", None)
+        user_id = request.user.id if request.user.is_authenticated else None
+        upload = request.FILES["import_file"]
+        dry_run = form.cleaned_data.get("dry_run", False)
+
+        service = SubstanceImportService(
+            tenant_id=tenant_id,
+            user_id=user_id,
+        )
+
+        try:
+            stats = service.import_from_upload(
+                file_obj=upload,
+                filename=upload.name,
+                dry_run=dry_run,
+            )
+        except ValueError as e:
+            messages.error(request, str(e))
+            return render(request, self.template_name, {"form": form})
+        except Exception:
+            import logging
+
+            logging.getLogger(__name__).exception("Import failed")
+            messages.error(request, "Import fehlgeschlagen — bitte Dateiformat prüfen.")
+            return render(request, self.template_name, {"form": form})
+
+        if dry_run:
+            msg = (
+                f"Dry Run: {stats.total} Stoffe geprüft. "
+                f"{stats.skipped} OK, {len(stats.errors)} Fehler."
+            )
+            if stats.errors:
+                msg += " Fehler: " + "; ".join(stats.errors[:5])
+            messages.info(request, msg)
+        else:
+            msg = (
+                f"Import abgeschlossen: {stats.created} neu, "
+                f"{stats.updated} aktualisiert."
+            )
+            if stats.errors:
+                msg += f" {len(stats.errors)} Fehler: " + "; ".join(stats.errors[:5])
+                messages.warning(request, msg)
+            else:
+                messages.success(request, msg)
+
+        return render(
+            request,
+            self.template_name,
+            {"form": SubstanceImportForm(), "stats": stats},
+        )

@@ -28,4 +28,6 @@ urlpatterns = [
     path("parties/", template_views.PartyListView.as_view(), name="party-list"),
     # HTMX Partials
     path("search/", template_views.SubstanceSearchView.as_view(), name="search"),
+    # Import
+    path("import/", template_views.SubstanceImportView.as_view(), name="import"),
 ]

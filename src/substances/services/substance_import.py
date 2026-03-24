@@ -255,3 +255,90 @@ class SubstanceImportService:
         valid_signals = {c.value for c in SdsRevision.SignalWord}
         if signal not in valid_signals:
             raise ValueError(f"Ungültiges Signalwort: {signal}")
+
+
+    def import_from_csv(
+        self,
+        file_obj,
+        *,
+        dry_run: bool = False,
+    ) -> ImportStats:
+        """Import substances from a CSV file.
+
+        Expected columns: name, cas, ec, trade_name, description,
+        signal_word, h_statements (semicolon-separated),
+        p_statements (semicolon-separated), pictograms (semicolon-separated),
+        storage_class, is_cmr, flash_point_c, ignition_temperature_c,
+        lower_explosion_limit, upper_explosion_limit, temperature_class,
+        explosion_group, vapor_density
+        """
+        import csv
+        import io
+
+        content = file_obj.read()
+        if isinstance(content, bytes):
+            content = content.decode("utf-8-sig")
+
+        reader = csv.DictReader(io.StringIO(content), delimiter=";")
+        records = []
+        for row in reader:
+            record = {
+                "name": (row.get("name") or "").strip(),
+                "cas": (row.get("cas") or "").strip(),
+                "ec": (row.get("ec") or "").strip(),
+                "trade_name": (row.get("trade_name") or "").strip(),
+                "description": (row.get("description") or "").strip(),
+                "signal_word": (row.get("signal_word") or "none").strip().lower(),
+                "storage_class": (row.get("storage_class") or "").strip(),
+                "is_cmr": (row.get("is_cmr") or "").strip().lower() in ("true", "1", "ja", "yes"),
+                "temperature_class": (row.get("temperature_class") or "").strip(),
+                "explosion_group": (row.get("explosion_group") or "").strip(),
+            }
+            # Numeric fields
+            for num_field in ("flash_point_c", "ignition_temperature_c",
+                              "lower_explosion_limit", "upper_explosion_limit",
+                              "vapor_density"):
+                val = (row.get(num_field) or "").strip()
+                if val:
+                    try:
+                        record[num_field] = float(val.replace(",", "."))
+                    except ValueError:
+                        pass
+
+            # Semicolon-separated list fields
+            for list_field in ("h_statements", "p_statements", "pictograms"):
+                raw = (row.get(list_field) or "").strip()
+                if raw:
+                    record[list_field] = [c.strip() for c in raw.split(";") if c.strip()]
+
+            records.append(record)
+
+        logger.info("CSV-Import: %d Zeilen gelesen", len(records))
+        return self._import_records(records, dry_run=dry_run)
+
+    def import_from_upload(
+        self,
+        file_obj,
+        filename: str,
+        *,
+        dry_run: bool = False,
+    ) -> ImportStats:
+        """Import from an uploaded file (auto-detect format by extension).
+
+        Supported: .json, .csv
+        """
+        ext = Path(filename).suffix.lower()
+
+        if ext == ".json":
+            content = file_obj.read()
+            if isinstance(content, bytes):
+                content = content.decode("utf-8")
+            records = json.loads(content)
+            return self.import_from_records(records, dry_run=dry_run)
+        elif ext == ".csv":
+            return self.import_from_csv(file_obj, dry_run=dry_run)
+        else:
+            raise ValueError(
+                f"Nicht unterstütztes Dateiformat: {ext}. "
+                "Erlaubt: .csv, .json"
+            )

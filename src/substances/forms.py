@@ -136,3 +136,23 @@ class PartyForm(forms.ModelForm):
             "address": forms.Textarea(attrs={"class": "form-textarea", "rows": 3}),
             "website": forms.URLInput(attrs={"class": "form-input", "placeholder": "https://..."}),
         }
+
+
+class SubstanceImportForm(forms.Form):
+    """Form für Gefahrstoff-Import aus Dateien."""
+
+    import_file = forms.FileField(
+        label="Import-Datei",
+        help_text="CSV oder JSON mit Gefahrstoffdaten",
+        widget=forms.FileInput(
+            attrs={"class": "form-input", "accept": ".csv,.json,.xlsx,.xls"}
+        ),
+    )
+
+    dry_run = forms.BooleanField(
+        label="Nur prüfen (Dry Run)",
+        required=False,
+        initial=False,
+        help_text="Validiert die Daten ohne Import",
+        widget=forms.CheckboxInput(attrs={"class": "form-checkbox"}),
+    )

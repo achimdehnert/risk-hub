@@ -20,6 +20,11 @@
             <p class="mt-1 text-sm text-gray-500">Übersicht und Verwaltung von Gefahrstoffen nach GefStoffV</p>
         </div>
         <div class="flex space-x-3">
+            <a href="{% url 'substances:import' %}" 
+               class="inline-flex items-center px-4 py-2 bg-white text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                Importieren
+            </a>
             <a href="{% url 'substances:create' %}" 
                class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
                 <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
@@ -179,7 +184,12 @@
             <div class="px-6 py-8 text-center text-gray-500">
                 <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-4 text-gray-300"></i>
                 <p>Noch keine Gefahrstoffe angelegt</p>
-                <a href="{% url 'substances:create' %}" class="mt-2 text-orange-600 hover:text-orange-700">
+                <a href="{% url 'substances:import' %}" 
+               class="inline-flex items-center px-4 py-2 bg-white text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                Importieren
+            </a>
+            <a href="{% url 'substances:create' %}" class="mt-2 text-orange-600 hover:text-orange-700">
                     Ersten Gefahrstoff anlegen →
                 </a>
             </div>
