@@ -1,0 +1,26 @@
+<div class="space-y-2">
+    {% for r in results %}
+    <div class="flex items-center gap-2 py-2 px-3 rounded-lg text-sm
+        {% if r.ok %}bg-green-50 text-green-800{% else %}bg-red-50 text-red-800{% endif %}">
+        {% if r.ok %}
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+        </svg>
+        <span class="truncate">{{ r.name }}</span>
+        <span class="text-xs text-green-600 ml-auto shrink-0">v{{ r.version.version }}</span>
+        {% else %}
+        <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+        <span class="truncate">{{ r.name }}</span>
+        <span class="text-xs text-red-600 ml-auto shrink-0">{{ r.error }}</span>
+        {% endif %}
+    </div>
+    {% endfor %}
+    <div class="pt-3">
+        <a href="{% url 'documents:document_list' %}"
+           class="text-sm text-orange-600 hover:text-orange-800 font-medium">
+            → Alle Dokumente anzeigen
+        </a>
+    </div>
+</div>
