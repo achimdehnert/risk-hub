@@ -149,6 +149,14 @@ class SubstanceImportForm(forms.Form):
         ),
     )
 
+    use_ai = forms.BooleanField(
+        label="KI-Extraktion nutzen",
+        required=False,
+        initial=True,
+        help_text="KI erkennt Gefahrstoffe automatisch — auch bei unstrukturierten Dokumenten",
+        widget=forms.CheckboxInput(attrs={"class": "form-checkbox"}),
+    )
+
     dry_run = forms.BooleanField(
         label="Nur prüfen (Dry Run)",
         required=False,

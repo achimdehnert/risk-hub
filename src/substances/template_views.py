@@ -473,7 +473,7 @@ class PartyListView(View):
 
 
 class SubstanceImportView(View):
-    """Gefahrstoff-Import aus CSV/JSON-Dateien."""
+    """Gefahrstoff-Import aus beliebigen Dokumenten — mit optionalem KI-Support."""
 
     template_name = "substances/substance_import.html"
 
@@ -495,18 +495,42 @@ class SubstanceImportView(View):
         user_id = request.user.id if request.user.is_authenticated else None
         upload = request.FILES["import_file"]
         dry_run = form.cleaned_data.get("dry_run", False)
+        use_ai = form.cleaned_data.get("use_ai", False)
 
         service = SubstanceImportService(
             tenant_id=tenant_id,
             user_id=user_id,
         )
 
+        ai_preview = None
         try:
-            stats = service.import_from_upload(
-                file_obj=upload,
-                filename=upload.name,
-                dry_run=dry_run,
-            )
+            if use_ai:
+                # KI-gestützte Extraktion
+                from .services.ai_extraction import ai_extract_substances
+
+                records = ai_extract_substances(
+                    file_obj=upload,
+                    filename=upload.name,
+                    tenant_id=tenant_id,
+                )
+                if dry_run:
+                    # Show AI preview without importing
+                    ai_preview = records
+                    stats = None
+                    messages.info(
+                        request,
+                        f"KI hat {len(records)} Gefahrstoffe erkannt. "
+                        "Prüfen Sie die Ergebnisse und importieren Sie ohne Dry Run.",
+                    )
+                else:
+                    stats = service.import_from_records(records, dry_run=False)
+            else:
+                # Strukturierter Import (CSV/Excel Spalten-Mapping)
+                stats = service.import_from_upload(
+                    file_obj=upload,
+                    filename=upload.name,
+                    dry_run=dry_run,
+                )
         except ValueError as e:
             messages.error(request, str(e))
             return render(request, self.template_name, {"form": form})
@@ -517,27 +541,32 @@ class SubstanceImportView(View):
             messages.error(request, "Import fehlgeschlagen — bitte Dateiformat prüfen.")
             return render(request, self.template_name, {"form": form})
 
-        if dry_run:
-            msg = (
-                f"Dry Run: {stats.total} Stoffe geprüft. "
-                f"{stats.skipped} OK, {len(stats.errors)} Fehler."
-            )
-            if stats.errors:
-                msg += " Fehler: " + "; ".join(stats.errors[:5])
-            messages.info(request, msg)
-        else:
-            msg = (
-                f"Import abgeschlossen: {stats.created} neu, "
-                f"{stats.updated} aktualisiert."
-            )
-            if stats.errors:
-                msg += f" {len(stats.errors)} Fehler: " + "; ".join(stats.errors[:5])
-                messages.warning(request, msg)
+        if stats and not ai_preview:
+            if dry_run:
+                msg = (
+                    f"Dry Run: {stats.total} Stoffe geprüft. "
+                    f"{stats.skipped} OK, {len(stats.errors)} Fehler."
+                )
+                if stats.errors:
+                    msg += " Fehler: " + "; ".join(stats.errors[:5])
+                messages.info(request, msg)
             else:
-                messages.success(request, msg)
+                msg = (
+                    f"Import abgeschlossen: {stats.created} neu, "
+                    f"{stats.updated} aktualisiert."
+                )
+                if stats.errors:
+                    msg += f" {len(stats.errors)} Fehler: " + "; ".join(stats.errors[:5])
+                    messages.warning(request, msg)
+                else:
+                    messages.success(request, msg)
 
         return render(
             request,
             self.template_name,
-            {"form": SubstanceImportForm(), "stats": stats},
+            {
+                "form": SubstanceImportForm(),
+                "stats": stats,
+                "ai_preview": ai_preview,
+            },
         )
