@@ -67,7 +67,7 @@ class LookupResult:
     def to_import_record(self) -> dict:
         """Konvertiert in Format für SubstanceImportService.import_from_records()."""
         return {
-            "name": self.name,
+            "name": self.name or self.iupac_name,
             "cas": self.cas,
             "ec": self.ec_number,
             "trade_name": "",
@@ -110,6 +110,8 @@ class SubstanceLookupService:
             return LookupResult()
         result = self._pubchem_get_ghs(cid)
         result.cas = cas
+        if not result.name:
+            result.name = self._pubchem_get_name(cid)
         return result
 
     def lookup_by_name(self, name: str) -> LookupResult:
@@ -157,6 +159,31 @@ class SubstanceLookupService:
         except Exception:
             logger.exception("PubChem CAS resolve failed for '%s'", cas)
         return None
+
+    def _pubchem_get_name(self, cid: int) -> str:
+        """Fetch common name from PubChem synonyms."""
+        url = (
+            f"{PUBCHEM_BASE}/pug/compound/cid/{cid}"
+            f"/synonyms/JSON"
+        )
+        try:
+            resp = self.session.get(url, timeout=self.timeout)
+            if resp.status_code != 200:
+                return ""
+            data = resp.json()
+            info_list = (
+                data.get("InformationList", {})
+                .get("Information", [])
+            )
+            if info_list:
+                synonyms = info_list[0].get("Synonym", [])
+                if synonyms:
+                    return synonyms[0]
+        except Exception:
+            logger.exception(
+                "PubChem synonyms failed for CID %d", cid
+            )
+        return ""
 
     def _pubchem_get_ghs(self, cid: int) -> LookupResult:
         """Fetch GHS classification data from PubChem PUG View."""
