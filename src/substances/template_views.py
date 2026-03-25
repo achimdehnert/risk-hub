@@ -473,7 +473,7 @@ class PartyListView(View):
 
 
 class SubstanceImportView(View):
-    """Gefahrstoff-Import aus beliebigen Dokumenten — mit optionalem KI-Support."""
+    """Gefahrstoff-Import: Upload → KI-Vorschau → Auswahl → Übernahme."""
 
     template_name = "substances/substance_import.html"
 
@@ -484,28 +484,32 @@ class SubstanceImportView(View):
         return render(request, self.template_name, {"form": form})
 
     def post(self, request):
+        import json
+        import logging
+
         from .forms import SubstanceImportForm
         from .services.substance_import import SubstanceImportService
 
+        logger = logging.getLogger(__name__)
+        tenant_id = getattr(request, "tenant_id", None)
+        user_id = request.user.id if request.user.is_authenticated else None
+
+        # Step 2: User confirmed import of selected substances
+        if "confirm_import" in request.POST:
+            return self._handle_confirm(request, tenant_id, user_id, logger)
+
+        # Step 1: File upload → extract → preview
         form = SubstanceImportForm(request.POST, request.FILES)
         if not form.is_valid():
             return render(request, self.template_name, {"form": form})
 
-        tenant_id = getattr(request, "tenant_id", None)
-        user_id = request.user.id if request.user.is_authenticated else None
         upload = request.FILES["import_file"]
-        dry_run = form.cleaned_data.get("dry_run", False)
         use_ai = form.cleaned_data.get("use_ai", False)
 
-        service = SubstanceImportService(
-            tenant_id=tenant_id,
-            user_id=user_id,
-        )
+        service = SubstanceImportService(tenant_id=tenant_id, user_id=user_id)
 
-        ai_preview = None
         try:
             if use_ai:
-                # KI-gestützte Extraktion
                 from .services.ai_extraction import ai_extract_substances
 
                 records = ai_extract_substances(
@@ -513,31 +517,14 @@ class SubstanceImportView(View):
                     filename=upload.name,
                     tenant_id=tenant_id,
                 )
-                if dry_run:
-                    # Show AI preview without importing
-                    ai_preview = records
-                    stats = None
-                    messages.info(
-                        request,
-                        f"KI hat {len(records)} Gefahrstoffe erkannt. "
-                        "Prüfen Sie die Ergebnisse und importieren Sie ohne Dry Run.",
-                    )
-                else:
-                    stats = service.import_from_records(records, dry_run=False)
             else:
-                # Strukturierter Import (CSV/Excel Spalten-Mapping)
-                stats = service.import_from_upload(
-                    file_obj=upload,
-                    filename=upload.name,
-                    dry_run=dry_run,
-                )
+                # Strukturierter Import — auch als Preview
+                records = self._structured_extract(service, upload)
         except ValueError as e:
             messages.error(request, str(e))
-            return render(request, self.template_name, {"form": form})
+            return render(request, self.template_name, {"form": SubstanceImportForm()})
         except RuntimeError as e:
-            import logging
-
-            logging.getLogger(__name__).exception("Import failed")
+            logger.exception("Import failed")
             err_msg = str(e)
             if "AuthenticationError" in err_msg or "api_key" in err_msg:
                 messages.error(
@@ -547,40 +534,128 @@ class SubstanceImportView(View):
                 )
             else:
                 messages.error(request, f"Import fehlgeschlagen: {err_msg[:200]}")
-            return render(request, self.template_name, {"form": form})
+            return render(request, self.template_name, {"form": SubstanceImportForm()})
         except Exception:
-            import logging
-
-            logging.getLogger(__name__).exception("Import failed")
+            logger.exception("Import failed")
             messages.error(request, "Import fehlgeschlagen — bitte Dateiformat prüfen.")
-            return render(request, self.template_name, {"form": form})
+            return render(request, self.template_name, {"form": SubstanceImportForm()})
 
-        if stats and not ai_preview:
-            if dry_run:
-                msg = (
-                    f"Dry Run: {stats.total} Stoffe geprüft. "
-                    f"{stats.skipped} OK, {len(stats.errors)} Fehler."
-                )
-                if stats.errors:
-                    msg += " Fehler: " + "; ".join(stats.errors[:5])
-                messages.info(request, msg)
-            else:
-                msg = (
-                    f"Import abgeschlossen: {stats.created} neu, "
-                    f"{stats.updated} aktualisiert."
-                )
-                if stats.errors:
-                    msg += f" {len(stats.errors)} Fehler: " + "; ".join(stats.errors[:5])
-                    messages.warning(request, msg)
-                else:
-                    messages.success(request, msg)
+        if not records:
+            messages.warning(request, "Keine Gefahrstoffe im Dokument erkannt.")
+            return render(request, self.template_name, {"form": SubstanceImportForm()})
 
+        # Show preview for user selection
+        records_json = json.dumps(records, ensure_ascii=False)
+        messages.info(
+            request,
+            f"{len(records)} Gefahrstoff{'e' if len(records) != 1 else ''} erkannt. "
+            "Wählen Sie die zu importierenden Stoffe aus.",
+        )
         return render(
             request,
             self.template_name,
             {
                 "form": SubstanceImportForm(),
-                "stats": stats,
-                "ai_preview": ai_preview,
+                "ai_preview": records,
+                "records_json": records_json,
             },
         )
+
+    def _handle_confirm(self, request, tenant_id, user_id, logger):
+        """Step 2: Import selected substances from preview."""
+        import json
+
+        from .forms import SubstanceImportForm
+        from .services.substance_import import SubstanceImportService
+
+        raw = request.POST.get("records_json", "[]")
+        selected = request.POST.getlist("selected")
+
+        try:
+            all_records = json.loads(raw)
+        except json.JSONDecodeError:
+            messages.error(request, "Fehler beim Lesen der Vorschau-Daten.")
+            return render(request, self.template_name, {"form": SubstanceImportForm()})
+
+        # Filter to selected indices
+        selected_indices = set()
+        for s in selected:
+            try:
+                selected_indices.add(int(s))
+            except ValueError:
+                pass
+
+        if not selected_indices:
+            messages.warning(request, "Keine Stoffe ausgewählt.")
+            records_json = json.dumps(all_records, ensure_ascii=False)
+            return render(
+                request,
+                self.template_name,
+                {
+                    "form": SubstanceImportForm(),
+                    "ai_preview": all_records,
+                    "records_json": records_json,
+                },
+            )
+
+        records_to_import = [
+            r for i, r in enumerate(all_records) if i in selected_indices
+        ]
+
+        service = SubstanceImportService(tenant_id=tenant_id, user_id=user_id)
+        try:
+            stats = service.import_from_records(records_to_import, dry_run=False)
+        except Exception:
+            logger.exception("Import confirm failed")
+            messages.error(request, "Import fehlgeschlagen.")
+            return render(request, self.template_name, {"form": SubstanceImportForm()})
+
+        msg = (
+            f"Import abgeschlossen: {stats.created} neu, "
+            f"{stats.updated} aktualisiert."
+        )
+        if stats.errors:
+            msg += f" {len(stats.errors)} Fehler: " + "; ".join(stats.errors[:5])
+            messages.warning(request, msg)
+        else:
+            messages.success(request, msg)
+
+        return render(
+            request,
+            self.template_name,
+            {"form": SubstanceImportForm(), "stats": stats},
+        )
+
+    @staticmethod
+    def _structured_extract(service, upload):
+        """Extract records from structured file without importing."""
+        import csv
+        import io
+        import json
+        from pathlib import Path
+
+        ext = Path(upload.name).suffix.lower()
+        content = upload.read()
+
+        if ext == ".json":
+            if isinstance(content, bytes):
+                content = content.decode("utf-8")
+            return json.loads(content)
+        elif ext == ".csv":
+            if isinstance(content, bytes):
+                content = content.decode("utf-8-sig")
+            reader = csv.DictReader(io.StringIO(content), delimiter=";")
+            return [dict(row) for row in reader]
+        elif ext in (".xlsx", ".xls"):
+            import openpyxl
+
+            wb = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+            ws = wb.active
+            rows = list(ws.iter_rows(values_only=True))
+            wb.close()
+            if not rows:
+                return []
+            headers = [str(h or "").strip().lower() for h in rows[0]]
+            return [dict(zip(headers, [str(c or "") for c in row])) for row in rows[1:]]
+        else:
+            raise ValueError(f"Format {ext} ohne KI nicht unterstützt.")

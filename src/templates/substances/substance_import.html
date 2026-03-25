@@ -187,60 +187,137 @@
     </form>
 
     {% if ai_preview %}
-    <div class="mb-6 bg-white rounded-lg shadow overflow-hidden">
-        <div class="px-6 py-4 border-b border-purple-200 bg-purple-50">
-            <h2 class="text-lg font-medium text-purple-900">
-                🤖 KI-Vorschau: {{ ai_preview|length }} Gefahrstoff{{ ai_preview|length|pluralize:"e" }} erkannt
-            </h2>
-            <p class="text-sm text-purple-600 mt-1">
-                Prüfen Sie die Ergebnisse. Starten Sie den Import erneut ohne "Dry Run" um zu importieren.
-            </p>
+    <form method="post" id="confirm-form">
+        {% csrf_token %}
+        <input type="hidden" name="confirm_import" value="1">
+        <input type="hidden" name="records_json" value="{{ records_json }}">
+
+        <div class="mb-6 bg-white rounded-lg shadow overflow-hidden">
+            <div class="px-6 py-4 border-b border-purple-200 bg-purple-50">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-lg font-medium text-purple-900">
+                            {{ ai_preview|length }} Gefahrstoff{{ ai_preview|length|pluralize:"e" }} erkannt
+                        </h2>
+                        <p class="text-sm text-purple-600 mt-1">
+                            Wählen Sie die Stoffe aus, die importiert werden sollen.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <button type="button" onclick="toggleAll()" id="toggle-btn"
+                                class="px-3 py-1.5 text-sm text-purple-700 bg-purple-100 rounded-lg hover:bg-purple-200">
+                            Alle abwählen
+                        </button>
+                        <span id="selected-count" class="text-sm font-medium text-purple-800">
+                            {{ ai_preview|length }} ausgewählt
+                        </span>
+                    </div>
+                </div>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-4 py-3 text-center w-10">
+                                <input type="checkbox" id="select-all" checked
+                                       onchange="toggleAll(this.checked)"
+                                       class="form-checkbox h-4 w-4 text-purple-600 rounded border-gray-300">
+                            </th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stoffname</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CAS</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Signalwort</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">H-Sätze</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CMR</th>
+                            <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lagerklasse</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200">
+                        {% for substance in ai_preview %}
+                        <tr class="{% cycle '' 'bg-gray-50' %} hover:bg-purple-50/50 cursor-pointer substance-row"
+                            onclick="toggleRow(this)">
+                            <td class="px-4 py-3 text-center">
+                                <input type="checkbox" name="selected" value="{{ forloop.counter0 }}" checked
+                                       class="substance-cb form-checkbox h-4 w-4 text-purple-600 rounded border-gray-300"
+                                       onclick="event.stopPropagation(); updateCount()">
+                            </td>
+                            <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ substance.name }}</td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ substance.cas|default:"-" }}</td>
+                            <td class="px-4 py-3 text-sm">
+                                {% if substance.signal_word == "danger" %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Gefahr</span>
+                                {% elif substance.signal_word == "warning" %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Achtung</span>
+                                {% else %}
+                                <span class="text-gray-400">-</span>
+                                {% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">
+                                {% for h in substance.h_statements %}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-50 text-red-700 mr-1">{{ h }}</span>
+                                {% empty %}-{% endfor %}
+                            </td>
+                            <td class="px-4 py-3 text-sm">
+                                {% if substance.is_cmr %}
+                                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">CMR</span>
+                                {% else %}-{% endif %}
+                            </td>
+                            <td class="px-4 py-3 text-sm text-gray-600">{{ substance.storage_class|default:"-" }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                <span class="text-sm text-gray-500" id="import-hint">
+                    <span id="selected-count-bottom">{{ ai_preview|length }}</span> von {{ ai_preview|length }} Stoffen ausgewählt
+                </span>
+                <div class="flex items-center gap-3">
+                    <a href="{% url 'substances:import' %}"
+                       class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 text-sm">
+                        Abbrechen
+                    </a>
+                    <button type="submit" id="import-selected-btn"
+                            class="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium
+                                   hover:bg-green-700 transition-colors text-sm
+                                   disabled:opacity-40 disabled:cursor-not-allowed">
+                        Ausgewählte importieren
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">#</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stoffname</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CAS</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Signalwort</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">H-Sätze</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">CMR</th>
-                        <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lagerklasse</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-gray-200">
-                    {% for substance in ai_preview %}
-                    <tr class="{% cycle '' 'bg-gray-50' %}">
-                        <td class="px-4 py-3 text-sm text-gray-500">{{ forloop.counter }}</td>
-                        <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ substance.name }}</td>
-                        <td class="px-4 py-3 text-sm text-gray-600">{{ substance.cas|default:"-" }}</td>
-                        <td class="px-4 py-3 text-sm">
-                            {% if substance.signal_word == "danger" %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">Gefahr</span>
-                            {% elif substance.signal_word == "warning" %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Achtung</span>
-                            {% else %}
-                            <span class="text-gray-400">-</span>
-                            {% endif %}
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-600">
-                            {% for h in substance.h_statements %}
-                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-red-50 text-red-700 mr-1">{{ h }}</span>
-                            {% empty %}-{% endfor %}
-                        </td>
-                        <td class="px-4 py-3 text-sm">
-                            {% if substance.is_cmr %}
-                            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">CMR</span>
-                            {% else %}-{% endif %}
-                        </td>
-                        <td class="px-4 py-3 text-sm text-gray-600">{{ substance.storage_class|default:"-" }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+    </form>
+
+    <script>
+    function toggleRow(tr) {
+        const cb = tr.querySelector('.substance-cb');
+        cb.checked = !cb.checked;
+        updateCount();
+    }
+    function toggleAll(state) {
+        const cbs = document.querySelectorAll('.substance-cb');
+        if (state === undefined) {
+            const allChecked = [...cbs].every(c => c.checked);
+            state = !allChecked;
+        }
+        cbs.forEach(cb => cb.checked = state);
+        document.getElementById('select-all').checked = state;
+        updateCount();
+    }
+    function updateCount() {
+        const cbs = document.querySelectorAll('.substance-cb');
+        const checked = [...cbs].filter(c => c.checked).length;
+        const total = cbs.length;
+        document.getElementById('selected-count').textContent = checked + ' ausgewählt';
+        document.getElementById('selected-count-bottom').textContent = checked;
+        document.getElementById('import-selected-btn').disabled = checked === 0;
+        document.getElementById('select-all').checked = checked === total;
+        document.getElementById('select-all').indeterminate = checked > 0 && checked < total;
+        // Update button text
+        const btn = document.getElementById('import-selected-btn');
+        btn.textContent = checked === total ? 'Alle importieren' : checked + ' Stoffe importieren';
+    }
+    </script>
     {% endif %}
 
     <!-- CSV Template Download -->
