@@ -20,6 +20,11 @@
             <p class="mt-1 text-sm text-gray-500">Übersicht und Verwaltung von Gefahrstoffen nach GefStoffV</p>
         </div>
         <div class="flex space-x-3">
+            <a href="{% url 'substances:lookup' %}" 
+               class="inline-flex items-center px-4 py-2 bg-white text-blue-600 border border-blue-300 rounded-lg hover:bg-blue-50">
+                <i data-lucide="search" class="w-4 h-4 mr-2"></i>
+                Datenbank-Suche
+            </a>
             <a href="{% url 'substances:import' %}" 
                class="inline-flex items-center px-4 py-2 bg-white text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50">
                 <i data-lucide="upload" class="w-4 h-4 mr-2"></i>

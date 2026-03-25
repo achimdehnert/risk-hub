@@ -1,0 +1,252 @@
+{% extends "base.html" %}
+{% block title %}Gefahrstoff-Datenbank{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Gefahrstoff-Datenbank</h1>
+        <a href="{% url 'substances:home' %}" class="text-sm text-gray-500 hover:text-gray-700">
+            &larr; Zurück
+        </a>
+    </div>
+
+    <!-- Messages -->
+    {% for message in messages %}
+    <div class="mb-4 p-4 rounded-lg {% if message.tags == 'success' %}bg-green-50 text-green-800 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-800 border border-red-200{% elif message.tags == 'warning' %}bg-yellow-50 text-yellow-800 border border-yellow-200{% else %}bg-blue-50 text-blue-800 border border-blue-200{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+
+    <!-- Info -->
+    <div class="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
+        <h3 class="font-semibold text-blue-900 mb-2">Externe Datenquellen</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div class="flex items-start gap-2">
+                <span class="text-lg">🔬</span>
+                <div>
+                    <span class="font-medium text-blue-800">PubChem (NIH)</span>
+                    <p class="text-blue-600">Molekulardaten, GHS-Klassifizierung</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-2">
+                <span class="text-lg">🇪🇺</span>
+                <div>
+                    <span class="font-medium text-blue-800">ECHA C&amp;L</span>
+                    <p class="text-blue-600">EU-Notifikationen, CLP-Einstufung</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-2">
+                <span class="text-lg">⚗️</span>
+                <div>
+                    <span class="font-medium text-blue-800">H/P-Sätze</span>
+                    <p class="text-blue-600">Deutsche Übersetzungen, CMR-Erkennung</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <form method="get" class="mb-8">
+        <div class="flex gap-3">
+            <div class="flex-1 relative">
+                <input type="text" name="q" value="{{ query }}"
+                       placeholder="CAS-Nummer (z.B. 67-64-1) oder Stoffname (z.B. Aceton, Toluene)..."
+                       class="w-full px-4 py-3 border border-gray-300 rounded-lg text-lg
+                              focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                              placeholder-gray-400"
+                       autofocus>
+                <div class="absolute right-3 top-3 text-gray-400">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+            </div>
+            <button type="submit"
+                    class="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium
+                           hover:bg-blue-700 transition-colors">
+                Suchen
+            </button>
+        </div>
+        <p class="mt-2 text-sm text-gray-500">
+            Suche in PubChem + ECHA C&amp;L Inventory. Ergebnisse können direkt als Gefahrstoff übernommen werden.
+        </p>
+    </form>
+
+    {% if result %}
+    <!-- Result Card -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+        <!-- Header -->
+        <div class="px-6 py-4 bg-gradient-to-r from-green-50 to-emerald-50 border-b border-green-200">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h2 class="text-xl font-bold text-gray-900">{{ result.data.name|default:result.data.iupac_name }}</h2>
+                    <p class="text-sm text-gray-600 mt-1">
+                        {% if result.data.iupac_name %}IUPAC: {{ result.data.iupac_name }} · {% endif %}
+                        Quelle: {{ result.data.source }}
+                        {% if result.data.pubchem_cid %} · CID {{ result.data.pubchem_cid }}{% endif %}
+                    </p>
+                </div>
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
+                    Gefunden
+                </span>
+            </div>
+        </div>
+
+        <div class="p-6">
+            <!-- Basic Info Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <dt class="text-xs font-medium text-gray-500 uppercase">CAS-Nr.</dt>
+                    <dd class="text-lg font-mono font-bold text-gray-900">{{ result.data.cas|default:"-" }}</dd>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Summenformel</dt>
+                    <dd class="text-lg font-mono text-gray-900">{{ result.data.molecular_formula|default:"-" }}</dd>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Molmasse</dt>
+                    <dd class="text-lg text-gray-900">{{ result.data.molecular_weight|default:"-" }} g/mol</dd>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-3">
+                    <dt class="text-xs font-medium text-gray-500 uppercase">Signalwort</dt>
+                    <dd class="text-lg">
+                        {% if result.data.signal_word == "danger" %}
+                        <span class="font-bold text-red-700">GEFAHR</span>
+                        {% elif result.data.signal_word == "warning" %}
+                        <span class="font-bold text-yellow-700">ACHTUNG</span>
+                        {% else %}
+                        <span class="text-gray-400">-</span>
+                        {% endif %}
+                    </dd>
+                </div>
+            </div>
+
+            <!-- GHS Classification -->
+            {% if result.data.h_statements %}
+            <div class="mb-6">
+                <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">H-Sätze (Gefahrenhinweise)</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for h in result.data.h_statements %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-medium bg-red-50 text-red-800 border border-red-200">
+                        {{ h }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if result.data.ghs_descriptions %}
+            <div class="mb-6">
+                <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">Gefahrenhinweise (deutsch)</h3>
+                <ul class="space-y-1 text-sm">
+                    {% for desc in result.data.ghs_descriptions %}
+                    <li class="flex items-start gap-2">
+                        <span class="text-red-500 mt-0.5">●</span>
+                        <span class="text-gray-700">{{ desc }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if result.data.p_statements %}
+            <div class="mb-6">
+                <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">P-Sätze (Sicherheitshinweise)</h3>
+                <div class="flex flex-wrap gap-2">
+                    {% for p in result.data.p_statements %}
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-medium bg-blue-50 text-blue-800 border border-blue-200">
+                        {{ p }}
+                    </span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- CMR + ECHA -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                {% if result.data.is_cmr %}
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <span class="inline-flex items-center gap-2 text-red-800 font-bold">
+                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
+                        </svg>
+                        CMR-Stoff erkannt
+                    </span>
+                    <p class="text-sm text-red-600 mt-1">Krebserzeugend, mutagen oder reproduktionstoxisch</p>
+                </div>
+                {% endif %}
+
+                {% if result.data.echa_notifications %}
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                    <span class="text-sm font-medium text-indigo-800">
+                        ECHA C&amp;L: {{ result.data.echa_notifications }} Notifikationen
+                    </span>
+                    {% if result.data.echa_summary %}
+                    <p class="text-xs text-indigo-600 mt-1">{{ result.data.echa_summary|truncatewords:30 }}</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Import Action -->
+            <form method="post" class="border-t border-gray-200 pt-4 mt-4">
+                {% csrf_token %}
+                <input type="hidden" name="record_json" value="{{ result.record_json }}">
+                <div class="flex items-center justify-between">
+                    <p class="text-sm text-gray-500">
+                        Stoff in die Gefahrstoff-Datenbank übernehmen?
+                    </p>
+                    <button type="submit"
+                            class="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium
+                                   hover:bg-green-700 transition-colors inline-flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Als Gefahrstoff übernehmen
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    {% elif query %}
+    <!-- No Results -->
+    <div class="bg-gray-50 rounded-lg p-8 text-center">
+        <div class="text-4xl mb-3">🔍</div>
+        <p class="text-gray-600 text-lg">Kein Ergebnis für "{{ query }}"</p>
+        <p class="text-gray-500 text-sm mt-2">
+            Versuchen Sie eine CAS-Nummer (z.B. 67-64-1) oder den englischen Stoffnamen.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Quick Links -->
+    <div class="mt-8 grid grid-cols-2 md:grid-cols-4 gap-3">
+        {% for cas, name in quick_examples %}
+        <a href="?q={{ cas }}" class="block p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-colors text-center">
+            <span class="text-sm font-medium text-gray-900">{{ name }}</span>
+            <span class="block text-xs text-gray-500 font-mono mt-1">{{ cas }}</span>
+        </a>
+        {% empty %}
+        <a href="?q=67-64-1" class="block p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-colors text-center">
+            <span class="text-sm font-medium text-gray-900">Aceton</span>
+            <span class="block text-xs text-gray-500 font-mono mt-1">67-64-1</span>
+        </a>
+        <a href="?q=108-88-3" class="block p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-colors text-center">
+            <span class="text-sm font-medium text-gray-900">Toluol</span>
+            <span class="block text-xs text-gray-500 font-mono mt-1">108-88-3</span>
+        </a>
+        <a href="?q=1310-73-2" class="block p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-colors text-center">
+            <span class="text-sm font-medium text-gray-900">Natriumhydroxid</span>
+            <span class="block text-xs text-gray-500 font-mono mt-1">1310-73-2</span>
+        </a>
+        <a href="?q=7664-93-9" class="block p-3 bg-white border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/50 transition-colors text-center">
+            <span class="text-sm font-medium text-gray-900">Schwefelsäure</span>
+            <span class="block text-xs text-gray-500 font-mono mt-1">7664-93-9</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -659,3 +659,94 @@ class SubstanceImportView(View):
             return [dict(zip(headers, [str(c or "") for c in row])) for row in rows[1:]]
         else:
             raise ValueError(f"Format {ext} ohne KI nicht unterstützt.")
+
+
+class SubstanceLookupView(View):
+    """Gefahrstoff-Lookup aus externen Datenbanken (PubChem, ECHA C&L)."""
+
+    template_name = "substances/substance_lookup.html"
+
+    def get(self, request):
+        query = request.GET.get("q", "").strip()
+        result = None
+        if query:
+            result = self._do_lookup(query, request)
+        return render(
+            request,
+            self.template_name,
+            {"query": query, "result": result},
+        )
+
+    def post(self, request):
+        """Import eines Lookup-Ergebnisses als Gefahrstoff."""
+        import json
+        import logging
+
+        from .services.substance_import import SubstanceImportService
+
+        logger = logging.getLogger(__name__)
+        raw = request.POST.get("record_json", "{}")
+
+        try:
+            record = json.loads(raw)
+        except json.JSONDecodeError:
+            messages.error(request, "Ungültige Daten.")
+            return redirect("substances:lookup")
+
+        if not record.get("name"):
+            messages.error(request, "Kein Stoffname vorhanden.")
+            return redirect("substances:lookup")
+
+        tenant_id = getattr(request, "tenant_id", None)
+        user_id = request.user.id if request.user.is_authenticated else None
+
+        service = SubstanceImportService(
+            tenant_id=tenant_id, user_id=user_id
+        )
+        try:
+            stats = service.import_from_records([record], dry_run=False)
+        except Exception:
+            logger.exception("Lookup import failed")
+            messages.error(request, "Import fehlgeschlagen.")
+            return redirect("substances:lookup")
+
+        if stats.created:
+            messages.success(
+                request,
+                f"'{record['name']}' erfolgreich importiert.",
+            )
+        elif stats.updated:
+            messages.info(
+                request,
+                f"'{record['name']}' aktualisiert.",
+            )
+        else:
+            msg = "Import ohne Änderung."
+            if stats.errors:
+                msg += f" Fehler: {stats.errors[0]}"
+            messages.warning(request, msg)
+
+        return redirect("substances:lookup")
+
+    def _do_lookup(self, query, request):
+        """Execute lookup and return result dict for template."""
+        import json
+
+        from .services.substance_lookup import SubstanceLookupService
+
+        svc = SubstanceLookupService()
+        result = svc.lookup(query)
+
+        if not result.found:
+            messages.info(
+                request,
+                f"Keine Ergebnisse für '{query}' in externen Datenbanken.",
+            )
+            return None
+
+        return {
+            "data": result,
+            "record_json": json.dumps(
+                result.to_import_record(), ensure_ascii=False
+            ),
+        }

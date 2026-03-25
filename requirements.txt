@@ -40,3 +40,4 @@ nl2cad-gaeb @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packag
 mozilla-django-oidc>=4.0
 openpyxl>=3.1
 pdfplumber>=0.11
+requests>=2.31

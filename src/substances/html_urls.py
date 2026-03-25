@@ -30,4 +30,6 @@ urlpatterns = [
     path("search/", template_views.SubstanceSearchView.as_view(), name="search"),
     # Import
     path("import/", template_views.SubstanceImportView.as_view(), name="import"),
+    # Lookup (externe Datenbanken)
+    path("lookup/", template_views.SubstanceLookupView.as_view(), name="lookup"),
 ]
