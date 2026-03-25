@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}Risikobewertungen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Risikobewertungen</h1>
+            <p class="text-sm text-gray-500 mt-1">Übersicht aller Risikobewertungen</p>
+        </div>
+    </div>
+
+    <!-- Create Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Neue Bewertung</h2>
+        <form method="post" class="flex flex-wrap gap-3 items-end">
+            {% csrf_token %}
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs text-gray-500 mb-1">Titel</label>
+                <input type="text" name="title" required placeholder="Risikobewertung..."
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">Kategorie</label>
+                <select name="category"
+                        class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
+                    <option value="general">Allgemein</option>
+                    <option value="chemical">Chemisch</option>
+                    <option value="physical">Physikalisch</option>
+                    <option value="biological">Biologisch</option>
+                    <option value="ergonomic">Ergonomisch</option>
+                </select>
+            </div>
+            <button type="submit"
+                    class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                Erstellen
+            </button>
+        </form>
+    </div>
+
+    <!-- Assessment List -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        {% if assessments %}
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 text-left text-gray-500">
+                    <th class="py-3 px-6">Titel</th>
+                    <th class="py-3 px-3">Kategorie</th>
+                    <th class="py-3 px-3">Status</th>
+                    <th class="py-3 px-3">Erstellt</th>
+                    <th class="py-3 px-3"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in assessments %}
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                    <td class="py-3 px-6">
+                        <a href="{% url 'risk:assessment_detail' a.id %}" class="font-medium text-gray-900 hover:text-orange-600">
+                            {{ a.title }}
+                        </a>
+                    </td>
+                    <td class="py-3 px-3">
+                        <span class="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded">{{ a.get_category_display|default:a.category }}</span>
+                    </td>
+                    <td class="py-3 px-3">
+                        <span class="text-xs px-2 py-1 rounded
+                            {% if a.status == 'approved' %}bg-green-100 text-green-700
+                            {% elif a.status == 'draft' %}bg-gray-100 text-gray-600
+                            {% elif a.status == 'in_review' %}bg-yellow-100 text-yellow-700
+                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                            {{ a.get_status_display|default:a.status }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-gray-500">{{ a.created_at|date:"d.m.Y" }}</td>
+                    <td class="py-3 px-3">
+                        <a href="{% url 'risk:assessment_detail' a.id %}" class="text-orange-600 hover:text-orange-700 text-xs">
+                            Details →
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-12 text-gray-500">
+            <i data-lucide="clipboard-list" class="w-10 h-10 mx-auto text-gray-300 mb-3"></i>
+            <p class="font-medium">Keine Risikobewertungen</p>
+            <p class="text-sm mt-1">Erstelle oben die erste Bewertung.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

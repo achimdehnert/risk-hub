@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ assessment.title }} — Risikobewertung{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <nav class="text-sm text-gray-500 mb-2">
+                <a href="{% url 'risk:assessment_list' %}" class="hover:text-gray-700">Risikobewertungen</a>
+                <span class="mx-2">/</span>
+                <span>{{ assessment.title|truncatechars:30 }}</span>
+            </nav>
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl font-bold text-gray-900">{{ assessment.title }}</h1>
+                <span class="text-xs px-2 py-1 rounded
+                    {% if assessment.status == 'approved' %}bg-green-100 text-green-700
+                    {% elif assessment.status == 'draft' %}bg-gray-100 text-gray-600
+                    {% elif assessment.status == 'in_review' %}bg-yellow-100 text-yellow-700
+                    {% else %}bg-gray-100 text-gray-600{% endif %}">
+                    {{ assessment.get_status_display|default:assessment.status }}
+                </span>
+            </div>
+        </div>
+        {% if assessment.status != 'approved' %}
+        <form method="post" action="{% url 'risk:assessment_approve' assessment.id %}">
+            {% csrf_token %}
+            <button type="submit"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                Freigeben
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Details -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Kategorie</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ assessment.get_category_display|default:assessment.category }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Status</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ assessment.get_status_display|default:assessment.status }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Erstellt</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ assessment.created_at|date:"d.m.Y H:i" }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Aktualisiert</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ assessment.updated_at|date:"d.m.Y H:i" }}</p>
+            </div>
+        </div>
+        {% if assessment.description %}
+        <div class="mt-6 pt-6 border-t border-gray-100">
+            <p class="text-xs text-gray-500 uppercase tracking-wider mb-2">Beschreibung</p>
+            <p class="text-sm text-gray-700">{{ assessment.description }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Back Link -->
+    <a href="{% url 'risk:assessment_list' %}" class="text-sm text-gray-500 hover:text-gray-700">
+        ← Zurück zur Übersicht
+    </a>
+</div>
+{% endblock %}
