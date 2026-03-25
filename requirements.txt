@@ -30,8 +30,7 @@ iil-django-tenancy>=0.1.0
 iil-aifw>=0.5.0,<1
 iil-promptfw>=0.5.1,<1
 iil-authoringfw>=0.3.0,<1
-# Safety Framework
-riskfw==0.1.0
+# Safety Framework — riskfw inlined in src/riskfw/ (ADR-146 Phase 1)
 # CAD / BIM
 nl2cad-core @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-core
 nl2cad-areas @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-areas
