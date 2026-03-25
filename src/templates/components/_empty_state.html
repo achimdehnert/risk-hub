@@ -1,6 +1,7 @@
-{# Shared empty state component
-   Usage: {% include "components/_empty_state.html" with icon="map-pin" title="Keine Bereiche" message="Erstelle deinen ersten Bereich" %}
-#}
+{% comment %}
+Shared empty state component
+Usage: include "components/_empty_state.html" with icon="map-pin" title="Keine Bereiche" message="..."
+{% endcomment %}
 <div class="text-center py-12 text-gray-500">
     <i data-lucide="{{ icon|default:'inbox' }}" class="w-12 h-12 mx-auto text-gray-300 mb-3"></i>
     <p class="font-medium text-gray-700">{{ title }}</p>
