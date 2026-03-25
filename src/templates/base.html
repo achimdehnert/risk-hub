@@ -27,48 +27,46 @@
                     <span class="font-bold text-orange-600 text-lg">Schutztat</span>
                 </a>
                 <div class="hidden md:flex ml-10 space-x-4">
-                    {% block nav_items %}
                     {% if "ex" in active_modules %}
-                    <a href="/ex/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <a href="/ex/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':4' == '/ex/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Explosionsschutz
                     </a>
                     {% endif %}
                     {% if "ex" in active_modules or "substances" in active_modules %}
-                    <a href="/substances/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <a href="/substances/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':12' == '/substances/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Gefahrstoffe
                     </a>
                     {% endif %}
                     {% if "risk" in active_modules %}
-                    <a href="/risk/assessments/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <a href="/risk/assessments/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':6' == '/risk/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Risikobewertung
                     </a>
                     {% endif %}
                     {% if "documents" in active_modules %}
-                    <a href="/documents/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <a href="/documents/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':11' == '/documents/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Dokumente
                     </a>
                     {% endif %}
                     {% if "dsb" in active_modules %}
-                    <a href="/dsb/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <a href="/dsb/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/dsb/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Datenschutz
                     </a>
                     {% endif %}
                     {% if "gbu" in active_modules %}
-                    <a href="/gbu/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <a href="/gbu/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/gbu/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         GBU
                     </a>
                     {% endif %}
                     {% if "brandschutz" in active_modules %}
-                    <a href="/brandschutz/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <a href="/brandschutz/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':13' == '/brandschutz/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Brandschutz
                     </a>
                     {% endif %}
                     {% if user.is_staff %}
-                    <a href="/tenants/" class="px-3 py-2 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <a href="/tenants/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':9' == '/tenants/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Mandanten
                     </a>
                     {% endif %}
-                    {% endblock %}
                 </div>
             </div>
             <div class="flex items-center space-x-4">
