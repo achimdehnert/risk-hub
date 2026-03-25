@@ -174,8 +174,20 @@
             </div>
             {% endif %}
 
-            <!-- GHS Classification -->
-            {% if result.data.h_statements %}
+            <!-- GHS Classification: H-Sätze mit Beschreibungen -->
+            {% if result.data.ghs_descriptions %}
+            <div>
+                <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">H-Sätze (Gefahrenhinweise)</h3>
+                <ul class="space-y-1.5 text-sm">
+                    {% for desc in result.data.ghs_descriptions %}
+                    <li class="flex items-start gap-2 bg-red-50 border border-red-100 rounded-lg px-3 py-1.5">
+                        <span class="font-mono font-bold text-red-700 whitespace-nowrap">{{ desc|truncatechars:4 }}</span>
+                        <span class="text-gray-700">{{ desc }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% elif result.data.h_statements %}
             <div>
                 <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">H-Sätze (Gefahrenhinweise)</h3>
                 <div class="flex flex-wrap gap-2">
@@ -183,20 +195,6 @@
                     <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-medium bg-red-50 text-red-800 border border-red-200">{{ h }}</span>
                     {% endfor %}
                 </div>
-            </div>
-            {% endif %}
-
-            {% if result.data.ghs_descriptions %}
-            <div>
-                <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">Gefahrenhinweise (deutsch)</h3>
-                <ul class="space-y-1 text-sm">
-                    {% for desc in result.data.ghs_descriptions %}
-                    <li class="flex items-start gap-2">
-                        <span class="text-red-500 mt-0.5">-</span>
-                        <span class="text-gray-700">{{ desc }}</span>
-                    </li>
-                    {% endfor %}
-                </ul>
             </div>
             {% endif %}
 

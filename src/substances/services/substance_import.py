@@ -150,24 +150,75 @@ class SubstanceImportService:
         """Create or update a single substance. Returns True if created."""
         name = record["name"]
 
+        defaults = {
+            "trade_name": record.get("trade_name") or "",
+            "description": record.get("description") or "",
+            "status": Substance.Status.ACTIVE,
+            "storage_class": record.get("storage_class") or "",
+            "is_cmr": bool(record.get("is_cmr")),
+            "flash_point_c": record.get("flash_point_c"),
+            "ignition_temperature_c": record.get(
+                "ignition_temperature_c"
+            ),
+            "lower_explosion_limit": record.get(
+                "lower_explosion_limit"
+            ),
+            "upper_explosion_limit": record.get(
+                "upper_explosion_limit"
+            ),
+            "temperature_class": (
+                record.get("temperature_class") or ""
+            ),
+            "explosion_group": (
+                record.get("explosion_group") or ""
+            ),
+            "vapor_density": record.get("vapor_density"),
+            "created_by": self.user_id,
+            # GESTIS-Daten
+            "boiling_point_c": record.get("boiling_point_c"),
+            "melting_point_c": record.get("melting_point_c"),
+            "density": record.get("density") or "",
+            "molecular_formula": (
+                record.get("molecular_formula") or ""
+            ),
+            "molecular_weight": (
+                record.get("molecular_weight") or ""
+            ),
+            "agw": record.get("agw") or "",
+            "wgk": record.get("wgk") or "",
+            "first_aid": record.get("first_aid") or "",
+            "protective_measures": (
+                record.get("protective_measures") or ""
+            ),
+            "storage_info": (
+                record.get("storage_info") or ""
+            ),
+            "fire_protection": (
+                record.get("fire_protection") or ""
+            ),
+            "disposal": record.get("disposal") or "",
+            "spill_response": (
+                record.get("spill_response") or ""
+            ),
+            "regulations": (
+                record.get("regulations") or ""
+            ),
+            "gestis_zvg": (
+                record.get("gestis_zvg") or ""
+            ),
+            "gestis_url": (
+                record.get("gestis_url") or ""
+            ),
+        }
+        # Remove None values for optional fields
+        defaults = {
+            k: v for k, v in defaults.items()
+            if v is not None
+        }
         substance, created = Substance.objects.update_or_create(
             tenant_id=self.tenant_id,
             name=name,
-            defaults={
-                "trade_name": record.get("trade_name") or "",
-                "description": record.get("description") or "",
-                "status": Substance.Status.ACTIVE,
-                "storage_class": record.get("storage_class") or "",
-                "is_cmr": bool(record.get("is_cmr")),
-                "flash_point_c": record.get("flash_point_c"),
-                "ignition_temperature_c": record.get("ignition_temperature_c"),
-                "lower_explosion_limit": record.get("lower_explosion_limit"),
-                "upper_explosion_limit": record.get("upper_explosion_limit"),
-                "temperature_class": record.get("temperature_class") or "",
-                "explosion_group": record.get("explosion_group") or "",
-                "vapor_density": record.get("vapor_density"),
-                "created_by": self.user_id,
-            },
+            defaults=defaults,
         )
 
         self._upsert_identifiers(substance, record)

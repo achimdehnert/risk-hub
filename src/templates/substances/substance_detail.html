@@ -158,6 +158,76 @@
             </div>
             {% endif %}
 
+            <!-- Physikalische Daten (GESTIS) -->
+            {% if substance.molecular_formula or substance.boiling_point_c or substance.melting_point_c or substance.density %}
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">
+                        <i data-lucide="beaker" class="w-5 h-5 inline mr-2 text-blue-500"></i>
+                        Physikalische Daten
+                    </h2>
+                </div>
+                <div class="px-6 py-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {% if substance.molecular_formula %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Summenformel</dt>
+                        <dd class="mt-1 text-sm font-mono text-gray-900">{{ substance.molecular_formula }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if substance.molecular_weight %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Molmasse</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ substance.molecular_weight }} g/mol</dd>
+                    </div>
+                    {% endif %}
+                    {% if substance.melting_point_c %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Schmelzpunkt</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ substance.melting_point_c }} °C</dd>
+                    </div>
+                    {% endif %}
+                    {% if substance.boiling_point_c %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Siedepunkt</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ substance.boiling_point_c }} °C</dd>
+                    </div>
+                    {% endif %}
+                    {% if substance.density %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Dichte</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ substance.density }}</dd>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Arbeitsschutz (GESTIS) -->
+            {% if substance.agw or substance.wgk %}
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">
+                        <i data-lucide="shield" class="w-5 h-5 inline mr-2 text-amber-500"></i>
+                        Arbeitsschutz
+                    </h2>
+                </div>
+                <div class="px-6 py-4 space-y-4">
+                    {% if substance.agw %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Arbeitsplatzgrenzwert (TRGS 900)</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ substance.agw|truncatewords:50 }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if substance.wgk %}
+                    <div>
+                        <dt class="text-sm font-medium text-gray-500">Wassergefährdungsklasse</dt>
+                        <dd class="mt-1 text-sm text-gray-900">{{ substance.wgk|truncatewords:30 }}</dd>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- Aktuelles SDS -->
             {% if current_sds %}
             <div class="bg-white rounded-lg shadow">
@@ -199,7 +269,7 @@
                             {% for h in current_sds.hazard_statements.all %}
                             <li class="text-sm">
                                 <span class="font-mono font-medium text-red-600">{{ h.code }}</span>
-                                {{ h.text_de }}
+                                <span class="text-gray-700">{{ h.text_de }}</span>
                             </li>
                             {% endfor %}
                         </ul>
@@ -214,13 +284,89 @@
                             {% for p in current_sds.precautionary_statements.all %}
                             <li class="text-sm">
                                 <span class="font-mono font-medium text-blue-600">{{ p.code }}</span>
-                                {{ p.text_de }}
+                                <span class="text-gray-700">{{ p.text_de }}</span>
                             </li>
                             {% endfor %}
                         </ul>
                     </div>
                     {% endif %}
                 </div>
+            </div>
+            {% endif %}
+
+            <!-- Schutzmaßnahmen (GESTIS) -->
+            {% if substance.first_aid or substance.protective_measures or substance.storage_info or substance.fire_protection %}
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">
+                        <i data-lucide="hard-hat" class="w-5 h-5 inline mr-2 text-green-500"></i>
+                        Schutzmaßnahmen
+                    </h2>
+                </div>
+                <div class="px-6 py-4 space-y-3">
+                    {% if substance.first_aid %}
+                    <details class="border border-green-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-green-800 bg-green-50 hover:bg-green-100 rounded-lg">Erste Hilfe</summary>
+                        <div class="px-4 pb-3 pt-2 text-sm text-gray-700 whitespace-pre-line">{{ substance.first_aid|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if substance.protective_measures %}
+                    <details class="border border-blue-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-blue-800 bg-blue-50 hover:bg-blue-100 rounded-lg">Technische &amp; persönliche Schutzmaßnahmen</summary>
+                        <div class="px-4 pb-3 pt-2 text-sm text-gray-700 whitespace-pre-line">{{ substance.protective_measures|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if substance.storage_info %}
+                    <details class="border border-yellow-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-yellow-800 bg-yellow-50 hover:bg-yellow-100 rounded-lg">Lagerung</summary>
+                        <div class="px-4 pb-3 pt-2 text-sm text-gray-700 whitespace-pre-line">{{ substance.storage_info|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if substance.fire_protection %}
+                    <details class="border border-red-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-red-800 bg-red-50 hover:bg-red-100 rounded-lg">Brand- und Explosionsschutz</summary>
+                        <div class="px-4 pb-3 pt-2 text-sm text-gray-700 whitespace-pre-line">{{ substance.fire_protection|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if substance.spill_response %}
+                    <details class="border border-purple-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-purple-800 bg-purple-50 hover:bg-purple-100 rounded-lg">Freisetzung / Leckage</summary>
+                        <div class="px-4 pb-3 pt-2 text-sm text-gray-700 whitespace-pre-line">{{ substance.spill_response|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if substance.disposal %}
+                    <details class="border border-gray-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-gray-800 bg-gray-50 hover:bg-gray-100 rounded-lg">Entsorgung</summary>
+                        <div class="px-4 pb-3 pt-2 text-sm text-gray-700 whitespace-pre-line">{{ substance.disposal|truncatewords:50 }}</div>
+                    </details>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Vorschriften (GESTIS) -->
+            {% if substance.regulations %}
+            <div class="bg-white rounded-lg shadow">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-lg font-medium text-gray-900">
+                        <i data-lucide="scale" class="w-5 h-5 inline mr-2 text-indigo-500"></i>
+                        Vorschriften &amp; Regelwerke
+                    </h2>
+                </div>
+                <div class="px-6 py-4">
+                    <div class="text-sm text-gray-700 whitespace-pre-line">{{ substance.regulations }}</div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- GESTIS Link -->
+            {% if substance.gestis_url %}
+            <div class="flex items-center gap-3 text-sm">
+                <a href="{{ substance.gestis_url }}" target="_blank" rel="noopener"
+                   class="text-blue-600 hover:text-blue-800 inline-flex items-center gap-1">
+                    <i data-lucide="external-link" class="w-4 h-4"></i>
+                    GESTIS Volltext
+                </a>
             </div>
             {% endif %}
         </div>

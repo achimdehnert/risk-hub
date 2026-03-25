@@ -107,24 +107,63 @@ class LookupResult:
 
     def to_import_record(self) -> dict:
         """Konvertiert für SubstanceImportService."""
+        import json as _json
+
         return {
             "name": self.name or self.iupac_name,
             "cas": self.cas,
             "ec": self.ec_number,
             "trade_name": "",
-            "description": self.iupac_name or self.chemical_char,
+            "description": (
+                self.iupac_name or self.chemical_char
+            ),
             "signal_word": self.signal_word,
             "h_statements": self.h_statements,
             "p_statements": self.p_statements,
             "pictograms": self.pictograms,
             "is_cmr": self.is_cmr,
             "storage_class": "",
-            "flash_point_c": self._parse_temp(self.flash_point),
+            "flash_point_c": self._parse_temp(
+                self.flash_point
+            ),
             "ignition_temperature_c": self._parse_temp(
                 self.ignition_temp
             ),
             "temperature_class": self.temp_class,
             "explosion_group": self.explosion_group,
+            # GESTIS-Daten
+            "boiling_point_c": self._parse_temp(
+                self.boiling_point
+            ),
+            "melting_point_c": self._parse_temp(
+                self.melting_point
+            ),
+            "density": self.density or "",
+            "molecular_formula": (
+                self.molecular_formula or ""
+            ),
+            "molecular_weight": (
+                self.molecular_weight or ""
+            ),
+            "agw": self.agw or "",
+            "wgk": self.wgk or "",
+            "first_aid": self.first_aid or "",
+            "protective_measures": (
+                self.protective_measures or ""
+            ),
+            "storage_info": self.storage or "",
+            "fire_protection": (
+                self.fire_protection or ""
+            ),
+            "disposal": self.disposal or "",
+            "spill_response": (
+                self.spill_response or ""
+            ),
+            "regulations": _json.dumps(
+                self.regulations, ensure_ascii=False
+            ),
+            "gestis_zvg": self.gestis_zvg or "",
+            "gestis_url": self.gestis_url or "",
         }
 
     @staticmethod
@@ -175,31 +214,44 @@ class SubstanceLookupService:
 
     def _gestis_lookup(self, query: str) -> LookupResult:
         """Search GESTIS by name or CAS, fetch full article."""
-        zvg = self._gestis_search(query)
-        if not zvg:
+        search_hit = self._gestis_search(query)
+        if not search_hit:
             return LookupResult()
 
+        zvg = search_hit["zvg_nr"]
         logger.info("GESTIS article: ZVG %s", zvg)
         url = f"{GESTIS_API}/article/de/{zvg}"
-        headers = {"Authorization": f"Bearer {GESTIS_KEY}"}
+        headers = {
+            "Authorization": f"Bearer {GESTIS_KEY}"
+        }
         try:
             resp = self.session.get(
-                url, headers=headers, timeout=self.timeout
+                url, headers=headers,
+                timeout=self.timeout,
             )
             if resp.status_code != 200:
-                logger.warning("GESTIS article %s: %d", zvg, resp.status_code)
+                logger.warning(
+                    "GESTIS article %s: %d",
+                    zvg, resp.status_code,
+                )
                 return LookupResult()
             data = resp.json()
         except Exception:
-            logger.exception("GESTIS article failed: %s", zvg)
+            logger.exception(
+                "GESTIS article failed: %s", zvg
+            )
             return LookupResult()
 
         result = LookupResult(
             found=True,
             source="GESTIS (DGUV)",
             name=data.get("name", ""),
+            cas=search_hit.get("cas_nr", ""),
             gestis_zvg=zvg,
-            gestis_url=f"https://gestis.dguv.de/data?name={zvg}",
+            gestis_url=(
+                "https://gestis.dguv.de/data"
+                f"?name={zvg}"
+            ),
         )
 
         # Parse chapters
@@ -214,35 +266,48 @@ class SubstanceLookupService:
         self._parse_gestis_chapters(chapters, result)
         return result
 
-    def _gestis_search(self, query: str) -> Optional[str]:
-        """Search GESTIS → return ZVG number."""
+    def _gestis_search(
+        self, query: str
+    ) -> Optional[dict]:
+        """Search GESTIS → return search hit dict."""
+        if not hasattr(self, "_gestis_cache"):
+            self._gestis_cache = None
         url = f"{GESTIS_API}/search/de"
-        headers = {"Authorization": f"Bearer {GESTIS_KEY}"}
-        params = {"query": query, "exact": "true"}
+        headers = {
+            "Authorization": f"Bearer {GESTIS_KEY}"
+        }
         try:
-            resp = self.session.get(
-                url, headers=headers, params=params,
-                timeout=self.timeout,
-            )
-            if resp.status_code != 200:
-                return None
-            items = resp.json()
-            if not isinstance(items, list) or not items:
+            if self._gestis_cache is None:
+                resp = self.session.get(
+                    url, headers=headers,
+                    timeout=self.timeout + 10,
+                )
+                if resp.status_code != 200:
+                    return None
+                self._gestis_cache = resp.json()
+            items = self._gestis_cache
+            if not isinstance(items, list):
                 return None
             # Exact CAS match
             if CAS_PATTERN.match(query):
                 for item in items:
                     if item.get("cas_nr") == query:
-                        return item.get("zvg_nr")
-            # Exact name match (case-insensitive)
+                        return item
+            # Exact name match
             ql = query.lower()
             for item in items:
-                if (item.get("name") or "").lower() == ql:
-                    return item.get("zvg_nr")
-            # First result as fallback
-            return items[0].get("zvg_nr")
+                nm = (item.get("name") or "").lower()
+                if nm == ql:
+                    return item
+            # Partial name match
+            for item in items:
+                nm = (item.get("name") or "").lower()
+                if ql in nm:
+                    return item
         except Exception:
-            logger.exception("GESTIS search failed: %s", query)
+            logger.exception(
+                "GESTIS search failed: %s", query
+            )
         return None
 
     def _parse_gestis_chapters(
@@ -260,15 +325,34 @@ class SubstanceLookupService:
         # Chemical characterization (0305)
         if "0305" in chapters:
             result.chemical_char = s(chapters["0305"])[:500]
+        # Identification (0100) — CAS, EC
+        if "0100" in chapters:
+            txt = s(chapters["0100"])
+            cas_m = re.search(
+                r"CAS Nr:\s*(\d{1,7}-\d{2}-\d)", txt
+            )
+            if cas_m and not result.cas:
+                result.cas = cas_m.group(1)
+            ec_m = re.search(
+                r"EG Nr:\s*([\d-]+)", txt
+            )
+            if ec_m:
+                result.ec_number = ec_m.group(1)
+
         # Molecular formula (0400)
         if "0400" in chapters:
             txt = s(chapters["0400"])
-            mw = re.search(r"Molare Masse:\s*([\d.,]+)", txt)
+            mw = re.search(
+                r"Molare Masse:\s*([\d.,]+)", txt
+            )
             if mw:
                 result.molecular_weight = mw.group(1)
-            mf = re.search(r"^([A-Z][A-Za-z0-9 ]+)", txt)
+            # Formula: first token like C3H6O
+            mf = re.match(
+                r"([A-Z][A-Za-z0-9]+)", txt
+            )
             if mf:
-                result.molecular_formula = mf.group(1).strip()
+                result.molecular_formula = mf.group(1)
 
         # Physical properties
         if "0602" in chapters:
