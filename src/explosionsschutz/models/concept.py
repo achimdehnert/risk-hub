@@ -88,7 +88,9 @@ class ExplosionConcept(models.Model):
     assessment_id = models.UUIDField(
         null=True, blank=True, db_index=True, help_text="FK zu risk.Assessment (optional)"
     )
-    substance_id = models.UUIDField(db_index=True, help_text="FK zu substances.Substance (UUID)")
+    substance_id = models.UUIDField(
+        null=True, blank=True, db_index=True, help_text="FK zu substances.Substance (UUID)"
+    )
     substance_name = models.CharField(
         max_length=255, blank=True, default="", help_text="Cached Stoffname für Anzeige"
     )

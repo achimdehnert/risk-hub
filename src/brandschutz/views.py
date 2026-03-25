@@ -9,6 +9,7 @@ from django.views import View
 
 from common.tenant import require_tenant as _require_tenant
 
+from .forms import FireProtectionConceptForm
 from .models import (
     EscapeRoute,
     FireExtinguisher,
@@ -57,6 +58,59 @@ class ConceptDetailView(View):
                 "measures": measures,
             },
         )
+
+
+class ConceptCreateView(View):
+    """Brandschutzkonzept erstellen."""
+
+    template_name = "brandschutz/concept_form.html"
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        form = FireProtectionConceptForm(tenant_id=request.tenant_id)
+        return render(request, self.template_name, {"form": form, "title": "Neues Brandschutzkonzept"})
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        form = FireProtectionConceptForm(request.POST, tenant_id=request.tenant_id)
+        if form.is_valid():
+            concept = form.save(commit=False)
+            concept.tenant_id = request.tenant_id
+            concept.created_by_id = request.user.pk if request.user.is_authenticated else None
+            concept.save()
+            messages.success(request, f"Brandschutzkonzept '{concept.title}' angelegt.")
+            return redirect("brandschutz:concept-detail", pk=concept.pk)
+        return render(request, self.template_name, {"form": form, "title": "Neues Brandschutzkonzept"})
+
+
+class ConceptEditView(View):
+    """Brandschutzkonzept bearbeiten."""
+
+    template_name = "brandschutz/concept_form.html"
+
+    def get(self, request: HttpRequest, pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        concept = get_object_or_404(FireProtectionConcept, pk=pk, tenant_id=request.tenant_id)
+        form = FireProtectionConceptForm(instance=concept, tenant_id=request.tenant_id)
+        return render(request, self.template_name, {"form": form, "title": concept.title, "concept": concept})
+
+    def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        concept = get_object_or_404(FireProtectionConcept, pk=pk, tenant_id=request.tenant_id)
+        form = FireProtectionConceptForm(request.POST, instance=concept, tenant_id=request.tenant_id)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Brandschutzkonzept '{concept.title}' aktualisiert.")
+            return redirect("brandschutz:concept-detail", pk=concept.pk)
+        return render(request, self.template_name, {"form": form, "title": concept.title, "concept": concept})
 
 
 class ExtinguisherListView(View):

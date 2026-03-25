@@ -8,10 +8,16 @@ app_name = "brandschutz"
 
 urlpatterns = [
     path("", views.ConceptListView.as_view(), name="concept-list"),
+    path("new/", views.ConceptCreateView.as_view(), name="concept-create"),
     path(
         "<uuid:pk>/",
         views.ConceptDetailView.as_view(),
         name="concept-detail",
+    ),
+    path(
+        "<uuid:pk>/edit/",
+        views.ConceptEditView.as_view(),
+        name="concept-edit",
     ),
     path(
         "extinguishers/",

@@ -22,6 +22,10 @@
                 <i data-lucide="door-open" class="w-4 h-4 mr-2"></i>
                 Fluchtwege
             </a>
+            <a href="{% url 'brandschutz:concept-create' %}" class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Neues Konzept
+            </a>
         </div>
     </div>
 
@@ -88,7 +92,11 @@
         <div class="col-span-full bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
             <i data-lucide="flame" class="w-16 h-16 mx-auto text-gray-300 mb-4"></i>
             <h3 class="font-medium text-gray-900 mb-2">Keine Brandschutzkonzepte vorhanden</h3>
-            <p class="text-gray-500">Brandschutzkonzepte werden über das Admin-Interface angelegt.</p>
+            <p class="text-gray-500 mb-4">Erstellen Sie Ihr erstes Brandschutzkonzept für einen Standort.</p>
+            <a href="{% url 'brandschutz:concept-create' %}" class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+                <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+                Neues Brandschutzkonzept
+            </a>
         </div>
         {% endfor %}
     </div>

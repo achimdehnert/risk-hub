@@ -674,10 +674,10 @@ class AreaDxfUploadView(View):
                 for r in dxf_model.rooms
             ],
             "din277": {
-                "ngf_m2": round(din_result.ngf_m2, 2),
-                "nf_m2": round(din_result.nf_m2, 2),
-                "vf_m2": round(din_result.vf_m2, 2),
-                "ff_m2": round(din_result.ff_m2, 2),
+                "ngf_m2": round(din_result.netto_grundflaeche_m2, 2),
+                "nf_m2": round(din_result.nutzungsflaeche_m2, 2),
+                "vf_m2": round(din_result.verkehrsflaeche_m2, 2),
+                "tf_m2": round(din_result.technische_flaeche_m2, 2),
             },
         }
 
