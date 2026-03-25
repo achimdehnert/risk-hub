@@ -743,6 +743,15 @@ class AreaDxfUploadView(View):
         area.dxf_file = dxf_file
         area.dxf_analysis_json = analysis
         area.brandschutz_analysis_json = None  # Neu analysieren nach Upload
+
+        # SVG-Preview generieren
+        try:
+            from .services.svg_export import generate_svg_for_area
+
+            generate_svg_for_area(area)
+        except Exception as exc:
+            logger.warning("[AreaDxfUpload] SVG-Generierung: %s", exc)
+
         area.save()
 
         logger.info(

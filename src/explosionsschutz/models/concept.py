@@ -39,6 +39,12 @@ class Area(models.Model):
         blank=True,
         help_text="Ergebnis der nl2cad-core/areas DXF-Analyse (Räume, Flächen)",
     )
+    dxf_svg = models.FileField(
+        upload_to="areas/svg/",
+        null=True,
+        blank=True,
+        help_text="SVG-Preview generiert aus DXF via ezdxf",
+    )
     brandschutz_analysis_json = models.JSONField(
         null=True,
         blank=True,

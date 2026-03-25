@@ -78,6 +78,15 @@
             </button>
         </div>
 
+        <!-- SVG Preview -->
+        {% if area.dxf_svg %}
+        <div class="p-6 border-b border-gray-100 bg-gray-50">
+            <div class="max-w-3xl mx-auto bg-white rounded-lg border border-gray-200 p-4 overflow-auto" style="max-height: 500px;">
+                <img src="{{ area.dxf_svg.url }}" alt="Grundriss {{ area.name }}" class="w-full h-auto" />
+            </div>
+        </div>
+        {% endif %}
+
         <!-- DIN277 Kennzahlen -->
         {% if dxf_data.din277 %}
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b border-gray-100">
