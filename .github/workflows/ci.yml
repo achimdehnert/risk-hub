@@ -23,6 +23,7 @@ jobs:
           pip install -r requirements.txt
           pip install -e packages/django-tenancy || true
           pip install -r requirements-test.txt || true
+          pip install ruff pytest-env
 
       - name: Ruff check
         working-directory: src
