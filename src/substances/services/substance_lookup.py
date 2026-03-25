@@ -371,10 +371,14 @@ class SubstanceLookupService:
             if m:
                 result.density = f"{m.group(1)} g/cm³"
         if "0607" in chapters:
-            m = re.search(r"(-?\d+(?:[.,]\d+)?)\s*°C",
-                          s(chapters["0607"]))
+            m = re.search(
+                r"([<>≤≥]?\s*-?\d+(?:[.,]\d+)?)\s*°C",
+                s(chapters["0607"]),
+            )
             if m:
-                result.flash_point = f"{m.group(1)} °C"
+                result.flash_point = (
+                    f"{m.group(1).strip()} °C"
+                )
         if "0608" in chapters:
             txt = s(chapters["0608"])
             m = re.search(r"(-?\d+(?:[.,]\d+)?)\s*°C", txt)
