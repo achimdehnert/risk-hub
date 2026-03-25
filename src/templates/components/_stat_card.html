@@ -1,8 +1,9 @@
-{# Shared stat card component
-   Usage: {% include "components/_stat_card.html" with icon="map-pin" value=42 label="Bereiche" color="blue" %}
-   color: blue | orange | red | green | purple | gray
-   Optional: url (makes card clickable), badge_text, badge_color, sub_badges
-#}
+{% comment %}
+Shared stat card component
+Usage: include "components/_stat_card.html" with icon="map-pin" value=42 label="Bereiche" color="blue"
+color: blue | orange | red | green | purple | gray
+Optional: url (makes card clickable), badge_text, badge_color, sub_badges
+{% endcomment %}
 {% with color|default:"blue" as c %}
 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6{% if url %} hover:shadow-md transition-shadow{% endif %}"
      data-testid="stat-card-{{ label|slugify }}">
