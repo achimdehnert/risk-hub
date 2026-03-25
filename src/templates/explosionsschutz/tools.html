@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Berechnungstools - Explosionsschutz{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-center">
+        <div>
+            <nav class="text-sm text-gray-500 mb-2">
+                <a href="{% url 'explosionsschutz:home' %}" class="hover:text-gray-700">Explosionsschutz</a>
+                <span class="mx-2">/</span>
+                <span>Berechnungstools</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900">Berechnungstools</h1>
+            <p class="text-gray-500 mt-1">Zonenberechnung, Geräteprüfung und Lüftungsanalyse</p>
+        </div>
+    </div>
+
+    <!-- Tool Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Zone Calculation -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="calculator" class="w-5 h-5 text-orange-600"></i>
+                </div>
+                <h2 class="text-lg font-semibold text-gray-900">Zonenberechnung</h2>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">
+                Berechne Ex-Zonen basierend auf Stoffeigenschaften, Freisetzungsquellen und Lüftungsbedingungen.
+            </p>
+            <div class="text-sm text-gray-500">
+                {{ substance_count }} Stoffe verfügbar
+            </div>
+        </div>
+
+        <!-- Equipment Check -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="check-circle" class="w-5 h-5 text-blue-600"></i>
+                </div>
+                <h2 class="text-lg font-semibold text-gray-900">Geräteprüfung</h2>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">
+                Prüfe ob Betriebsmittel für die jeweilige Ex-Zone zugelassen sind (EPL, Zündschutzart, Temperaturklasse).
+            </p>
+        </div>
+
+        <!-- Ventilation Analysis -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition">
+            <div class="flex items-center gap-3 mb-4">
+                <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <i data-lucide="wind" class="w-5 h-5 text-green-600"></i>
+                </div>
+                <h2 class="text-lg font-semibold text-gray-900">Lüftungsanalyse</h2>
+            </div>
+            <p class="text-sm text-gray-600 mb-4">
+                Analysiere Lüftungsbedingungen und deren Einfluss auf die Zonenausdehnung.
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}<script>lucide.createIcons();</script>{% endblock %}

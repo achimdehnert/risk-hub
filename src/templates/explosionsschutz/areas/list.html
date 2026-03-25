@@ -92,7 +92,7 @@
                 {% empty %}
                 <tr>
                     <td colspan="6">
-                        {% include "components/_empty_state.html" with icon="map-pin" title="Keine Bereiche vorhanden" message="Erstelle deinen ersten Betriebsbereich" action_url="/ex/areas/new/" action_label="Neuer Bereich" %}
+                        {% include "components/_empty_state.html" with icon="map-pin" title="Keine Bereiche vorhanden" message="Erstelle deinen ersten Betriebsbereich" action_url="{% url 'explosionsschutz:area-create' %}" action_label="Neuer Bereich" %}
                     </td>
                 </tr>
                 {% endfor %}

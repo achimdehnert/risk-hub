@@ -16,6 +16,7 @@ def pytest_configure():
 
 
 @pytest.fixture(autouse=True)
-def enable_db_access_for_all_tests(db):
-    """Aktiviert DB-Zugriff für alle Tests"""
-    pass
+def enable_db_access_for_all_tests(request):
+    """Aktiviert DB-Zugriff für alle Tests (außer unit-markierte)."""
+    if "unit" not in request.keywords:
+        request.getfixturevalue("db")

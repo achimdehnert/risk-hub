@@ -1,12 +1,15 @@
-# src/explosionsschutz/services.py
+# src/explosionsschutz/services/__init__.py
 """
-Explosionsschutz Service Layer (v5)
+Explosionsschutz Service Layer (v6)
 
 Alle Mutationen laufen über diesen Service Layer:
 - Command DTOs für typsichere Eingaben
 - @transaction.atomic für Konsistenz
 - emit_audit_event() für Compliance
 - OutboxMessage für async Verarbeitung
+
+Sub-Module:
+- zone_classification: Regelbasierte Zoneneinteilung nach TRGS 721
 """
 
 from dataclasses import dataclass
@@ -18,7 +21,7 @@ from django.utils import timezone
 
 from permissions.authz import require_permission
 
-from .models import (
+from ..models import (
     Area,
     Equipment,
     EquipmentATEXCheck,

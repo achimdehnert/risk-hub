@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>{{ concept.title }}</title>
+  <style>
+    /* string() für Kopfzeile */
+    h1 { string-set: doc-title content(); }
+  </style>
+</head>
+<body>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# DECKBLATT #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div style="text-align:center; padding-top: 60pt;">
+  <p style="font-size:9pt; color:#666; letter-spacing:1pt; text-transform:uppercase;">
+    Explosionsschutzdokument gemäß §&nbsp;6 Gefahrstoffverordnung (GefStoffV)
+  </p>
+  <h1 style="font-size:18pt; color:#1a3560; border:none; padding:0; margin:24pt 0 8pt;">
+    {{ concept.title }}
+  </h1>
+  <p style="font-size:11pt; color:#444;">Version {{ concept.version }}</p>
+  {% if concept.document_number %}
+  <p style="font-size:9pt; color:#888;">Dok.-Nr.: {{ concept.document_number }}</p>
+  {% endif %}
+  <hr style="margin: 32pt 0; border-color:#1a3560;">
+  <table style="width:360pt; margin:0 auto; font-size:10pt; border:none;">
+    <tr>
+      <td style="border:none; font-weight:bold; width:120pt;">Betreiber / Auftraggeber:</td>
+      <td style="border:none;">{{ area.location_description|default:"—" }}</td>
+    </tr>
+    <tr>
+      <td style="border:none; font-weight:bold;">Betriebsbereich:</td>
+      <td style="border:none;">{{ area.name }} ({{ area.code }})</td>
+    </tr>
+    <tr>
+      <td style="border:none; font-weight:bold;">Verfasser:</td>
+      <td style="border:none;">{{ concept.author_name|default:"—" }}</td>
+    </tr>
+    {% if concept.approved_by_name %}
+    <tr>
+      <td style="border:none; font-weight:bold;">Freigegeben durch:</td>
+      <td style="border:none;">
+        {{ concept.approved_by_name }}
+        {% if concept.approved_at %} ({{ concept.approved_at|date:"d.m.Y" }}){% endif %}
+      </td>
+    </tr>
+    {% endif %}
+    <tr>
+      <td style="border:none; font-weight:bold;">Erstellt:</td>
+      <td style="border:none;">{{ concept.created_at|date:"d.m.Y" }}</td>
+    </tr>
+    {% if concept.next_review_date %}
+    <tr>
+      <td style="border:none; font-weight:bold;">Nächste Überprüfung:</td>
+      <td style="border:none;">{{ concept.next_review_date|date:"d.m.Y" }}</td>
+    </tr>
+    {% endif %}
+  </table>
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# REVISIONSLISTE #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>Revisionsliste</h1>
+<table>
+  <thead>
+    <tr><th>Kapitel</th><th>Ausgabe vom</th><th>Ersetzt durch</th><th>Bemerkung / Begründung</th><th>Bearbeiter</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Gesamtes Dokument</td>
+      <td>{{ concept.created_at|date:"d.m.Y" }}</td>
+      <td>—</td>
+      <td>{{ concept.version }} – Erststellung</td>
+      <td>{{ concept.author_name|default:"—" }}</td>
+    </tr>
+  </tbody>
+</table>
+
+<div style="margin-top:16pt; font-size:9pt; color:#555; border:1px solid #ccc; padding:8pt;">
+  <strong>Vorbemerkung:</strong>
+  Das vorliegende Explosionsschutzdokument ist keine abgeschlossene Dokumentation.
+  Es bedarf bei Änderung der betrieblichen und/oder technischen Gegebenheiten sowie
+  der organisatorischen Voraussetzungen einer Fortschreibung dieser Aufzeichnung.
+  Das Dokument dient dem schriftlichen Nachweis über die Ergebnisse der
+  Gefährdungsbeurteilung nach §&nbsp;6 GefStoffV basierend auf §&nbsp;5 ArbSchG.
+</div>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# A – BETRIEBSBEREICH & VERANTWORTLICHKEITEN #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>A. Angaben des Betriebsbereichs und Verantwortlichkeiten</h1>
+<table>
+  <tr><th style="width:30%">Eigenschaft</th><th>Wert</th></tr>
+  <tr><td>Betreiber</td><td>{{ area.location_description|default:"—" }}</td></tr>
+  <tr><td>Betriebsbereich / Anlage</td><td>{{ area.name }} ({{ area.code }})</td></tr>
+  <tr><td>Beschreibung</td><td>{{ area.description|default:"—" }}</td></tr>
+  <tr><td>Gesamtverantwortlicher</td><td>{{ concept.responsible_name|default:"—" }}</td></tr>
+</table>
+<p style="font-size:9pt; color:#555;">
+  Die Gesamtverantwortung für diesen Bereich trägt der zuständige Kostenstellenleiter/in.
+  Er/Sie ist für die Umsetzung der festgelegten Maßnahmen im Betrieb und für den sicheren
+  Zustand der Anlagentechnik (Wartung, Instandhaltung und Prüfungen) verantwortlich.
+</p>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# C – RECHTLICHE GRUNDLAGEN #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<h1>C. Rechtliche Grundlagen</h1>
+<p>Dieses Explosionsschutzdokument basiert auf folgenden Rechtsgrundlagen und Normen:</p>
+<table>
+  <thead>
+    <tr><th>Norm / Regelwerk</th><th>Titel</th></tr>
+  </thead>
+  <tbody>
+    {% for doc in verification_docs %}
+    <tr>
+      <td>{{ doc.get_document_type_display }}</td>
+      <td>{{ doc.title }}</td>
+    </tr>
+    {% endfor %}
+    {# Immer diese Mindestgrundlagen #}
+    <tr><td>GefStoffV</td><td>Gefahrstoffverordnung §&nbsp;6, §&nbsp;14</td></tr>
+    <tr><td>BetrSichV</td><td>Betriebssicherheitsverordnung §&nbsp;5, §§&nbsp;14–16</td></tr>
+    <tr><td>TRGS 720</td><td>Gefährliche explosionsfähige Gemische – Allgemeines</td></tr>
+    <tr><td>TRGS 721</td><td>Gefährliche explosionsfähige Atmosphäre (Teile 1–4)</td></tr>
+    <tr><td>TRGS 722</td><td>Vermeidung oder Einschränkung gefährlicher explosionsfähiger Atmosphäre</td></tr>
+    <tr><td>TRGS 723</td><td>Vermeidung der Entzündung gefährlicher explosionsfähiger Gemische</td></tr>
+    <tr><td>TRGS 724</td><td>Maßnahmen des konstruktiven Explosionsschutzes</td></tr>
+    <tr><td>TRGS 725</td><td>MSR-Einrichtungen im Rahmen von Explosionsschutzmaßnahmen</td></tr>
+    <tr><td>DIN EN 1127-1:2019</td><td>Explosionsfähige Atmosphären – Explosionsschutz (13 Zündquellen)</td></tr>
+  </tbody>
+</table>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# 1 – ANLAGENBESCHREIBUNG #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>1. Anlagenbeschreibung / Verfahrensbeschreibung</h1>
+{% if concept.process_description %}
+  <p>{{ concept.process_description|linebreaksbr }}</p>
+{% else %}
+  <p><em>(keine Beschreibung erfasst)</em></p>
+{% endif %}
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# 2 – GEFÄHRDUNGSBEURTEILUNG #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>2. Gefährdungsbeurteilung nach § 6 GefStoffV</h1>
+
+<h2>2.1 Prüfung auf Ersatzstoffe (Substitutionsprüfung)</h2>
+<table>
+  <tr>
+    <th style="width:60%">Maßnahme</th>
+    <th>Ergebnis</th>
+  </tr>
+  <tr>
+    <td>Die Einsatzmöglichkeit weniger gefährlicher Stoffe wurde geprüft.</td>
+    <td><strong>{{ concept.substitute_check_status|title|default:"Nicht geprüft" }}</strong></td>
+  </tr>
+  {% if concept.substitute_check_notes %}
+  <tr>
+    <td colspan="2"><em>Begründung: {{ concept.substitute_check_notes }}</em></td>
+  </tr>
+  {% endif %}
+</table>
+
+<h2>2.2 Freisetzungsquellen</h2>
+<table>
+  <tr><th style="width:35%">Parameter</th><th>Wert</th></tr>
+  <tr><td>Medium</td><td>{{ concept.get_release_source_type_display|default:"—" }}</td></tr>
+  <tr><td>Freisetzungsgrad (TRGS 721)</td><td>{{ concept.get_release_grade_display|default:"—" }}</td></tr>
+  <tr><td>Atmosphären-Typ</td><td>{{ concept.get_atmosphere_type_display|default:"—" }}</td></tr>
+</table>
+{% if concept.release_description %}
+<p>{{ concept.release_description|linebreaksbr }}</p>
+{% endif %}
+
+<h2>2.3 Zündquellenbewertung nach EN 1127-1</h2>
+{% for zone in zones %}
+<h3>Zone {{ zone.zone_type }}: {{ zone.name }}</h3>
+<table>
+  <thead>
+    <tr>
+      <th style="width:4%">#</th>
+      <th style="width:35%">Zündquelle</th>
+      <th style="width:10%">Vorhanden</th>
+      <th style="width:10%">Wirksam</th>
+      <th>Schutzmaßnahmen / Begründung</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for a in zone.ignition_assessments.all %}
+    <tr>
+      <td>{{ a.ignition_source }}</td>
+      <td>{{ a.get_ignition_source_display }}</td>
+      <td style="text-align:center;">{% if a.is_present %}✓{% else %}—{% endif %}</td>
+      <td style="text-align:center;">
+        {% if a.is_effective %}
+          <span class="status-effective">✗ ja</span>
+        {% else %}
+          <span class="status-not-present">nein</span>
+        {% endif %}
+      </td>
+      <td>{{ a.mitigation|default:"—" }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% empty %}
+<p><em>Keine Zonen definiert.</em></p>
+{% endfor %}
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# 3 – EXPLOSIONSSCHUTZKONZEPT #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>3. Explosionsschutzkonzept und Umsetzung der Schutzmaßnahmen</h1>
+
+<h2>3.1 Primäre Schutzmaßnahmen (Vermeidung explosionsfähiger Atmosphäre)</h2>
+{% for m in measures_primary %}
+<table>
+  <tr>
+    <th style="width:30%">Maßnahme</th>
+    <td><strong>{{ m.title }}</strong></td>
+  </tr>
+  <tr>
+    <th>Beschreibung</th>
+    <td>{{ m.description|linebreaksbr }}</td>
+  </tr>
+  {% if m.justification %}
+  <tr>
+    <th>Begründung / Nachweis</th>
+    <td>{{ m.justification }}</td>
+  </tr>
+  {% endif %}
+  {% if m.safety_function %}
+  <tr>
+    <th>MSR-Sicherheitsfunktion</th>
+    <td>{{ m.safety_function }}</td>
+  </tr>
+  {% endif %}
+  <tr>
+    <th>Status</th>
+    <td>{{ m.get_status_display }}</td>
+  </tr>
+</table>
+{% empty %}
+<p><em>Keine primären Schutzmaßnahmen dokumentiert.</em></p>
+{% endfor %}
+
+<h2>3.2 Sekundäre Schutzmaßnahmen (Zündquellenvermeidung)</h2>
+{% for m in measures_secondary %}
+<table>
+  <tr><th style="width:30%">Maßnahme</th><td><strong>{{ m.title }}</strong></td></tr>
+  <tr><th>Beschreibung</th><td>{{ m.description|linebreaksbr }}</td></tr>
+  {% if m.safety_function %}
+  <tr><th>MSR-Sicherheitsfunktion</th><td>{{ m.safety_function }}</td></tr>
+  {% endif %}
+</table>
+{% empty %}
+<p><em>Keine sekundären Schutzmaßnahmen dokumentiert.</em></p>
+{% endfor %}
+
+<h2>3.3 Konstruktive Schutzmaßnahmen (Schadensminimierung)</h2>
+{% for m in measures_constructive %}
+<p><strong>{{ m.title }}:</strong> {{ m.description }}</p>
+{% empty %}
+<p><em>Keine konstruktiven Schutzmaßnahmen dokumentiert.</em></p>
+{% endfor %}
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# 4 – ZONENEINTEILUNG #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>4. Zoneneinteilung</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Zone</th>
+      <th>Bezeichnung</th>
+      <th>Lage</th>
+      <th>Ausdehnung</th>
+      <th>Lüftung</th>
+      <th>Begründung / Norm</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for zone in zones %}
+    <tr>
+      <td>
+        <span class="badge-zone-{{ zone.zone_type }}">Zone {{ zone.zone_type }}</span>
+      </td>
+      <td>{{ zone.name }}</td>
+      <td>{{ zone.location_in_area|default:"—" }}</td>
+      <td>
+        {% if zone.extent_radius_m %}r = {{ zone.extent_radius_m }} m{% endif %}
+        {% if zone.extent_height_m %}h = {{ zone.extent_height_m }} m{% endif %}
+        {{ zone.extent_description|truncatechars:80 }}
+      </td>
+      <td>{{ zone.get_ventilation_type_display }}</td>
+      <td>
+        {{ zone.justification|truncatechars:120 }}
+        {% if zone.trgs_reference %}<br><em>({{ zone.trgs_reference }})</em>{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# 5 – ARBEITSMITTEL / BETRIEBSMITTEL #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>5. Arbeitsmittel (Betriebsmittel mit ATEX-Kennzeichnung)</h1>
+<table>
+  <thead>
+    <tr>
+      <th>Inventar-Nr.</th>
+      <th>Bezeichnung</th>
+      <th>Hersteller</th>
+      <th>ATEX-Kennzeichnung</th>
+      <th>Zone(n)</th>
+      <th>Nächste Prüfung</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for eq in equipment %}
+    <tr>
+      <td>{{ eq.inventory_number|default:"—" }}</td>
+      <td>{{ eq.name }}</td>
+      <td>{{ eq.manufacturer|default:"—" }}</td>
+      <td><code>{{ eq.atex_marking }}</code></td>
+      <td>
+        {% for zone in eq.zones.all %}
+          <span class="badge-zone-{{ zone.zone_type }}">{{ zone.zone_type }}</span>
+        {% empty %}—{% endfor %}
+      </td>
+      <td>
+        {% if eq.next_inspection_date %}
+          {{ eq.next_inspection_date|date:"d.m.Y" }}
+          {% if eq.inspection_status.value == 'overdue' %}
+            <span style="color:red;"> ⚠ überfällig</span>
+          {% endif %}
+        {% else %}—{% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# 6 – ORGANISATORISCHE MASSNAHMEN #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<h1>6. Organisatorische Maßnahmen</h1>
+{% for m in measures_organisational %}
+<p><strong>{{ m.title }}:</strong> {{ m.description }}</p>
+{% empty %}
+<p><em>Keine organisatorischen Maßnahmen erfasst.</em></p>
+{% endfor %}
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# 7 – WIRKSAMKEITSPRÜFUNGEN #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>7. Prüfung der Explosionssicherheit / Wirksamkeitsprüfungen</h1>
+{% for eq in equipment %}
+  {% if eq.inspections.all %}
+  <h3>{{ eq.name }}</h3>
+  <table>
+    <thead>
+      <tr><th>Datum</th><th>Prüfart</th><th>Prüfer</th><th>Ergebnis</th><th>Mängel</th><th>Nächste Prüfung</th></tr>
+    </thead>
+    <tbody>
+      {% for insp in eq.inspections.all|slice:":5" %}
+      <tr>
+        <td>{{ insp.performed_date|date:"d.m.Y"|default:insp.scheduled_date|date:"d.m.Y" }}</td>
+        <td>{{ insp.get_inspection_type_display }}</td>
+        <td>{{ insp.performed_by_name|default:insp.external_inspector|default:"—" }}</td>
+        <td>{{ insp.get_result_display|default:"—" }}</td>
+        <td>{{ insp.findings|truncatechars:80|default:"—" }}</td>
+        <td>{{ insp.next_inspection_date|date:"d.m.Y"|default:"—" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% endif %}
+{% endfor %}
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# 8 – MINDESTVORSCHRIFTEN (Anhang 1 GefStoffV Nr. 1) #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>8. Einhaltung der Mindestvorschriften gemäß Anhang 1 GefStoffV</h1>
+<table>
+  <thead>
+    <tr><th style="width:60%">Anforderung</th><th>Erfüllt</th><th>Bemerkung</th></tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Gefährdungsbeurteilung nach §&nbsp;6 GefStoffV durchgeführt</td>
+      <td>✓</td>
+      <td>vorliegendes Dokument</td>
+    </tr>
+    <tr>
+      <td>Substitutionsprüfung nach GefStoffV §&nbsp;6(2)</td>
+      <td>✓</td>
+      <td>{{ concept.substitute_check_status }}</td>
+    </tr>
+    <tr>
+      <td>Zoneneinteilung nach TRGS 721</td>
+      <td>{% if zones %}✓{% else %}—{% endif %}</td>
+      <td>{{ zones|length }} Zone(n) klassifiziert</td>
+    </tr>
+    <tr>
+      <td>Zündquellenbewertung nach EN 1127-1</td>
+      <td>{% if zones %}✓{% else %}—{% endif %}</td>
+      <td>13 Zündquellenarten je Zone bewertet</td>
+    </tr>
+    <tr>
+      <td>Betriebsmittel ATEX-konform (passende Kategorie)</td>
+      <td>{% if equipment %}✓{% else %}—{% endif %}</td>
+      <td>{{ equipment|length }} Betriebsmittel erfasst</td>
+    </tr>
+    <tr>
+      <td>Koordinierung bei Arbeitsstätten mehrerer Arbeitgeber</td>
+      <td>—</td>
+      <td>nicht zutreffend / separat geregelt</td>
+    </tr>
+  </tbody>
+</table>
+
+{# ══════════════════════════════════════════════════════════════════════ #}
+{# 9 – FREIGABE #}
+{# ══════════════════════════════════════════════════════════════════════ #}
+<div class="section-break"></div>
+<h1>9. Freigabe des Dokuments</h1>
+<div class="approval-box">
+  <table style="border:none;">
+    <tr>
+      <th style="border:none; background:none; color:#333; width:30%">Rolle</th>
+      <th style="border:none; background:none; color:#333;">Name</th>
+      <th style="border:none; background:none; color:#333;">Datum</th>
+      <th style="border:none; background:none; color:#333;">Unterschrift</th>
+    </tr>
+    <tr>
+      <td style="border:none;">Verfasser</td>
+      <td style="border:none;">{{ concept.author_name|default:"—" }}</td>
+      <td style="border:none;">{{ concept.created_at|date:"d.m.Y" }}</td>
+      <td style="border:none;"><span class="signature-line">&nbsp;</span></td>
+    </tr>
+    <tr>
+      <td style="border:none;">Verantwortlicher</td>
+      <td style="border:none;">{{ concept.responsible_name|default:"—" }}</td>
+      <td style="border:none;">—</td>
+      <td style="border:none;"><span class="signature-line">&nbsp;</span></td>
+    </tr>
+    {% if concept.approved_by_name %}
+    <tr>
+      <td style="border:none;">Freigabe</td>
+      <td style="border:none;">{{ concept.approved_by_name }}</td>
+      <td style="border:none;">{{ concept.approved_at|date:"d.m.Y" }}</td>
+      <td style="border:none;"><span class="signature-line">&nbsp;</span></td>
+    </tr>
+    {% endif %}
+  </table>
+  {% if concept.approval_notes %}
+  <p style="margin-top:8pt; font-style:italic;">{{ concept.approval_notes }}</p>
+  {% endif %}
+</div>
+
+<p style="margin-top:24pt; font-size:8pt; color:#888; text-align:center;">
+  Erstellt mit Schutztat / risk-hub | Erzeugt am: {{ generated_at|date:"d.m.Y H:i" }} Uhr
+</p>
+
+</body>
+</html>
