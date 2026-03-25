@@ -31,7 +31,7 @@ jobs:
       - name: Run tests (incl. URL audit)
         working-directory: src
         env:
-          DJANGO_SETTINGS_MODULE: config.settings.test
+          DJANGO_SETTINGS_MODULE: config.settings_test
           SECRET_KEY: test-secret-key-for-ci
           USE_POSTGRES: "0"
         run: |
