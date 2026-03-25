@@ -23,23 +23,30 @@ INSTALLED_APPS = [  # noqa: F405
 
 DEBUG = False
 
-_db = urlparse(
-    os.environ.get(
-        "DATABASE_URL",
-        "postgresql://test:test@localhost:5432/risk_hub_ci",
-    )
-)
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": _db.path.lstrip("/"),
-        "USER": _db.username,
-        "PASSWORD": _db.password,
-        "HOST": _db.hostname,
-        "PORT": str(_db.port or 5432),
+if os.environ.get("USE_POSTGRES", "1") == "0":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": ":memory:",
+        }
     }
-}
+else:
+    _db = urlparse(
+        os.environ.get(
+            "DATABASE_URL",
+            "postgresql://test:test@localhost:5432/risk_hub_ci",
+        )
+    )
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": _db.path.lstrip("/"),
+            "USER": _db.username,
+            "PASSWORD": _db.password,
+            "HOST": _db.hostname,
+            "PORT": str(_db.port or 5432),
+        }
+    }
 
 PASSWORD_HASHERS = [
     "django.contrib.auth.hashers.MD5PasswordHasher",
