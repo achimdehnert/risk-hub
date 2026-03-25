@@ -10,6 +10,8 @@ from .models import (
     Equipment,
     EquipmentType,
     ExplosionConcept,
+    Inspection,
+    ProtectionMeasure,
     ZoneDefinition,
 )
 
@@ -226,6 +228,100 @@ class ZoneCalculationForm(forms.Form):
                 "placeholder": "Optionale Hinweise zur Berechnung...",
             }
         ),
+    )
+
+
+class ProtectionMeasureForm(forms.ModelForm):
+    """Form für Schutzmaßnahmen (HTMX inline add)"""
+
+    class Meta:
+        model = ProtectionMeasure
+        fields = ["category", "title", "description", "due_date"]
+        widgets = {
+            "category": forms.Select(attrs={"class": _INPUT_CSS}),
+            "title": forms.TextInput(
+                attrs={"class": _INPUT_CSS, "placeholder": "Titel der Maßnahme"}
+            ),
+            "description": forms.Textarea(
+                attrs={"class": _INPUT_CSS, "rows": 2, "placeholder": "Beschreibung..."}
+            ),
+            "due_date": forms.DateInput(attrs={"class": _INPUT_CSS, "type": "date"}),
+        }
+
+
+class InspectionForm(forms.ModelForm):
+    """Form für Prüfungserfassung"""
+
+    class Meta:
+        model = Inspection
+        fields = [
+            "inspection_type",
+            "inspection_date",
+            "inspector_name",
+            "inspector_organization",
+            "result",
+            "findings",
+            "recommendations",
+            "certificate_number",
+        ]
+        widgets = {
+            "inspection_type": forms.Select(attrs={"class": _INPUT_CSS}),
+            "inspection_date": forms.DateInput(attrs={"class": _INPUT_CSS, "type": "date"}),
+            "inspector_name": forms.TextInput(
+                attrs={"class": _INPUT_CSS, "placeholder": "Name des Prüfers"}
+            ),
+            "inspector_organization": forms.TextInput(
+                attrs={"class": _INPUT_CSS, "placeholder": "z.B. ZÜS, TÜV"}
+            ),
+            "result": forms.Select(attrs={"class": _INPUT_CSS}),
+            "findings": forms.Textarea(
+                attrs={"class": _INPUT_CSS, "rows": 3, "placeholder": "Feststellungen..."}
+            ),
+            "recommendations": forms.Textarea(
+                attrs={"class": _INPUT_CSS, "rows": 2, "placeholder": "Empfehlungen..."}
+            ),
+            "certificate_number": forms.TextInput(
+                attrs={"class": _INPUT_CSS, "placeholder": "Bescheinigungsnummer"}
+            ),
+        }
+
+
+class ZoneProposalForm(forms.Form):
+    """Form für regelbasierte Zonenvorschlag (TRGS 721 Engine)"""
+
+    RELEASE_GRADE_CHOICES = [
+        ("continuous", "Ständig (continuous)"),
+        ("primary", "Gelegentlich im Normalbetrieb (primary)"),
+        ("secondary", "Selten / nur bei Störung (secondary)"),
+    ]
+
+    VENTILATION_CHOICES = [
+        ("none", "Keine Lüftung"),
+        ("natural", "Natürliche Lüftung"),
+        ("technical_dilution", "Technische Lüftung (Verdünnung)"),
+        ("local_exhaust", "Objektabsaugung"),
+        ("inertization", "Inertisierung"),
+    ]
+
+    ATMOSPHERE_CHOICES = [
+        ("gas", "Gas/Dampf"),
+        ("dust", "Staub"),
+    ]
+
+    release_grade = forms.ChoiceField(
+        label="Freisetzungsgrad",
+        choices=RELEASE_GRADE_CHOICES,
+        widget=forms.Select(attrs={"class": _INPUT_CSS}),
+    )
+    ventilation_type = forms.ChoiceField(
+        label="Lüftungsart",
+        choices=VENTILATION_CHOICES,
+        widget=forms.Select(attrs={"class": _INPUT_CSS}),
+    )
+    atmosphere_type = forms.ChoiceField(
+        label="Atmosphärentyp",
+        choices=ATMOSPHERE_CHOICES,
+        widget=forms.Select(attrs={"class": _INPUT_CSS}),
     )
 
 

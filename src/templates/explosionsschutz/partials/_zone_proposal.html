@@ -1,0 +1,55 @@
+{% load i18n %}
+<div id="zone-proposal">
+    <form hx-post="{% url 'explosionsschutz:htmx-zone-proposal' %}"
+          hx-target="#zone-proposal"
+          hx-swap="outerHTML"
+          class="p-4 bg-white border border-gray-200 rounded-lg">
+        <h4 class="text-sm font-semibold text-gray-700 mb-3">
+            Zonenvorschlag nach TRGS 721
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
+            {% for field in form %}
+            <div>
+                <label class="block text-xs text-gray-500 mb-1">{{ field.label }}</label>
+                {{ field }}
+            </div>
+            {% endfor %}
+        </div>
+        <button type="submit"
+                class="px-4 py-2 bg-orange-600 text-white text-sm rounded-lg hover:bg-orange-700">
+            Vorschlag berechnen
+        </button>
+    </form>
+
+    {% if proposal %}
+    <div class="mt-4 p-4 rounded-lg border
+        {% if proposal.confidence == 'high' %}bg-green-50 border-green-200
+        {% elif proposal.confidence == 'medium' %}bg-yellow-50 border-yellow-200
+        {% else %}bg-red-50 border-red-200{% endif %}">
+        <div class="flex items-start gap-4">
+            <div class="text-center">
+                <div class="text-2xl font-bold
+                    {% if proposal.zone_type == 'none' %}text-green-700
+                    {% elif proposal.zone_type == '0' or proposal.zone_type == '20' %}text-red-700
+                    {% elif proposal.zone_type == '1' or proposal.zone_type == '21' %}text-orange-700
+                    {% else %}text-yellow-700{% endif %}">
+                    {% if proposal.zone_type == 'none' %}Keine Zone{% else %}Zone {{ proposal.zone_type }}{% endif %}
+                </div>
+                <span class="text-xs px-2 py-1 rounded
+                    {% if proposal.confidence == 'high' %}bg-green-100 text-green-700
+                    {% elif proposal.confidence == 'medium' %}bg-yellow-100 text-yellow-700
+                    {% else %}bg-red-100 text-red-700{% endif %}">
+                    Konfidenz: {{ proposal.confidence }}
+                </span>
+            </div>
+            <div class="flex-1">
+                <p class="text-sm text-gray-700">{{ proposal.justification }}</p>
+                <p class="text-xs text-gray-400 mt-2">Referenz: {{ proposal.trgs_reference }}</p>
+                {% if proposal.ventilation_reduction %}
+                <p class="text-xs text-blue-600 mt-1">ℹ️ Lüftungsreduktion — Wirksamkeitsnachweis erforderlich</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>

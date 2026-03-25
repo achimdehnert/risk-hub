@@ -17,14 +17,20 @@ from .forms import (
     ConceptDxfImportForm,
     EquipmentForm,
     ExplosionConceptForm,
+    InspectionForm,
+    ProtectionMeasureForm,
     ZoneCalculationForm,
+    ZoneDefinitionForm,
+    ZoneProposalForm,
 )
 from .models import (
     Area,
     Equipment,
     ExplosionConcept,
+    IgnitionSource,
     Inspection,
     MeasureCatalog,
+    ProtectionMeasure,
     ReferenceStandard,
     ZoneCalculationResult,
     ZoneDefinition,
@@ -1110,3 +1116,261 @@ class AreaBrandschutzView(View):
             len(result.maengel),
         )
         return redirect("explosionsschutz:area-brandschutz", pk=area.pk)
+
+
+# =============================================================================
+# HTMX PARTIALS — Zone / Measure / Ignition inline management
+# =============================================================================
+
+
+class HtmxAddZoneView(View):
+    """
+    HTMX: Zone inline zu Concept hinzufügen.
+    POST → Zone erstellen, Partial mit aktueller Zonenliste zurückgeben.
+    """
+
+    partial_template = "explosionsschutz/partials/_zone_list.html"
+
+    def post(self, request, concept_pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=concept_pk)
+
+        form = ZoneDefinitionForm(request.POST)
+        if form.is_valid():
+            zone = form.save(commit=False)
+            zone.tenant_id = tenant_id
+            zone.concept = concept
+            zone.save()
+
+        zones = concept.zones.all()
+        zone_form = ZoneDefinitionForm()
+        return render(
+            request,
+            self.partial_template,
+            {"concept": concept, "zones": zones, "zone_form": zone_form},
+        )
+
+
+class HtmxDeleteZoneView(View):
+    """HTMX: Zone löschen, aktualisierte Liste zurückgeben."""
+
+    partial_template = "explosionsschutz/partials/_zone_list.html"
+
+    def delete(self, request, zone_pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        zone = get_object_or_404(ZoneDefinition.objects.filter(base_filter), pk=zone_pk)
+        concept = zone.concept
+        zone.delete()
+
+        zones = concept.zones.all()
+        zone_form = ZoneDefinitionForm()
+        return render(
+            request,
+            self.partial_template,
+            {"concept": concept, "zones": zones, "zone_form": zone_form},
+        )
+
+
+class HtmxAddMeasureView(View):
+    """
+    HTMX: Schutzmaßnahme inline zu Concept hinzufügen.
+    POST → Measure erstellen, Partial mit aktueller Liste zurückgeben.
+    """
+
+    partial_template = "explosionsschutz/partials/_measure_list.html"
+
+    def post(self, request, concept_pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=concept_pk)
+
+        form = ProtectionMeasureForm(request.POST)
+        if form.is_valid():
+            measure = form.save(commit=False)
+            measure.tenant_id = tenant_id
+            measure.concept = concept
+            measure.save()
+
+        measures = concept.measures.all()
+        measure_form = ProtectionMeasureForm()
+        return render(
+            request,
+            self.partial_template,
+            {"concept": concept, "measures": measures, "measure_form": measure_form},
+        )
+
+
+class HtmxDeleteMeasureView(View):
+    """HTMX: Maßnahme löschen, aktualisierte Liste zurückgeben."""
+
+    partial_template = "explosionsschutz/partials/_measure_list.html"
+
+    def delete(self, request, measure_pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        measure = get_object_or_404(ProtectionMeasure.objects.filter(base_filter), pk=measure_pk)
+        concept = measure.concept
+        measure.delete()
+
+        measures = concept.measures.all()
+        measure_form = ProtectionMeasureForm()
+        return render(
+            request,
+            self.partial_template,
+            {"concept": concept, "measures": measures, "measure_form": measure_form},
+        )
+
+
+class HtmxIgnitionAssessmentView(View):
+    """
+    HTMX: Zündquellenbewertung für eine Zone.
+    GET  → Formular mit 13 Zündquellen
+    POST → Bewertung speichern via Service Layer
+    """
+
+    partial_template = "explosionsschutz/partials/_ignition_assessment.html"
+
+    def get(self, request, zone_pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        zone = get_object_or_404(ZoneDefinition.objects.filter(base_filter), pk=zone_pk)
+
+        assessments = {
+            a.ignition_source: a for a in zone.ignition_assessments.all()
+        }
+        sources = [
+            {
+                "value": choice[0],
+                "label": choice[1],
+                "assessment": assessments.get(choice[0]),
+            }
+            for choice in IgnitionSource.choices
+        ]
+
+        return render(
+            request,
+            self.partial_template,
+            {"zone": zone, "sources": sources},
+        )
+
+    def post(self, request, zone_pk):
+        from .services import AssessIgnitionSourceCmd, assess_ignition_source
+
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        zone = get_object_or_404(ZoneDefinition.objects.filter(base_filter), pk=zone_pk)
+        user_id = getattr(request.user, "id", None)
+
+        ignition_source = request.POST.get("ignition_source")
+        if ignition_source:
+            cmd = AssessIgnitionSourceCmd(
+                zone_id=zone.pk,
+                ignition_source=ignition_source,
+                is_present=request.POST.get("is_present") == "on",
+                is_effective=request.POST.get("is_effective") == "on",
+                mitigation=request.POST.get("mitigation", ""),
+            )
+            assess_ignition_source(cmd, tenant_id=tenant_id, user_id=user_id)
+
+        assessments = {
+            a.ignition_source: a for a in zone.ignition_assessments.all()
+        }
+        sources = [
+            {
+                "value": choice[0],
+                "label": choice[1],
+                "assessment": assessments.get(choice[0]),
+            }
+            for choice in IgnitionSource.choices
+        ]
+
+        return render(
+            request,
+            self.partial_template,
+            {"zone": zone, "sources": sources, "saved": True},
+        )
+
+
+class HtmxZoneProposalView(View):
+    """
+    HTMX: Zonenvorschlag basierend auf TRGS 721 Regelmatrix.
+    POST → ZoneClassificationEngine aufrufen, Ergebnis als Partial.
+    """
+
+    partial_template = "explosionsschutz/partials/_zone_proposal.html"
+
+    def get(self, request):
+        form = ZoneProposalForm()
+        return render(request, self.partial_template, {"form": form, "proposal": None})
+
+    def post(self, request):
+        from .services.zone_classification import ZoneClassificationEngine
+
+        form = ZoneProposalForm(request.POST)
+        proposal = None
+        if form.is_valid():
+            engine = ZoneClassificationEngine()
+            proposal = engine.propose(
+                release_grade=form.cleaned_data["release_grade"],
+                ventilation_type=form.cleaned_data["ventilation_type"],
+                atmosphere_type=form.cleaned_data["atmosphere_type"],
+            )
+
+        return render(
+            request,
+            self.partial_template,
+            {"form": form, "proposal": proposal},
+        )
+
+
+class InspectionCreateView(View):
+    """Prüfung erfassen für ein Betriebsmittel"""
+
+    template_name = "explosionsschutz/equipment/inspection_form.html"
+
+    def get(self, request, equipment_pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        equipment = get_object_or_404(
+            Equipment.objects.filter(base_filter).select_related("equipment_type"),
+            pk=equipment_pk,
+        )
+        form = InspectionForm()
+        return render(
+            request,
+            self.template_name,
+            {"equipment": equipment, "form": form, "title": f"Prüfung: {equipment}"},
+        )
+
+    def post(self, request, equipment_pk):
+        from .services import CreateInspectionCmd, create_inspection
+
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        equipment = get_object_or_404(
+            Equipment.objects.filter(base_filter).select_related("equipment_type"),
+            pk=equipment_pk,
+        )
+        form = InspectionForm(request.POST)
+        if form.is_valid():
+            cmd = CreateInspectionCmd(
+                equipment_id=equipment.pk,
+                inspection_type=form.cleaned_data["inspection_type"],
+                inspection_date=str(form.cleaned_data["inspection_date"]),
+                inspector_name=form.cleaned_data["inspector_name"],
+                result=form.cleaned_data["result"],
+                findings=form.cleaned_data.get("findings", ""),
+                recommendations=form.cleaned_data.get("recommendations", ""),
+                certificate_number=form.cleaned_data.get("certificate_number", ""),
+            )
+            user_id = getattr(request.user, "id", None)
+            create_inspection(cmd, tenant_id=tenant_id, user_id=user_id)
+            messages.success(request, "Prüfung erfolgreich erfasst.")
+            return redirect("explosionsschutz:equipment-detail-html", pk=equipment.pk)
+        return render(
+            request,
+            self.template_name,
+            {"equipment": equipment, "form": form, "title": f"Prüfung: {equipment}"},
+        )

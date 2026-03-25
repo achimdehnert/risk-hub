@@ -28,6 +28,13 @@ from .template_views import (
     EquipmentDetailView,
     EquipmentListView,
     HomeView,
+    HtmxAddMeasureView,
+    HtmxAddZoneView,
+    HtmxDeleteMeasureView,
+    HtmxDeleteZoneView,
+    HtmxIgnitionAssessmentView,
+    HtmxZoneProposalView,
+    InspectionCreateView,
     ToolsView,
     ZoneCalculateView,
 )
@@ -110,4 +117,41 @@ urlpatterns = [
     ),
     # Tools
     path("tools/", ToolsView.as_view(), name="tools"),
+    # Inspection
+    path(
+        "equipment/<uuid:equipment_pk>/inspect/",
+        InspectionCreateView.as_view(),
+        name="inspection-create",
+    ),
+    # HTMX Partials
+    path(
+        "htmx/concepts/<uuid:concept_pk>/zones/add/",
+        HtmxAddZoneView.as_view(),
+        name="htmx-zone-add",
+    ),
+    path(
+        "htmx/zones/<uuid:zone_pk>/delete/",
+        HtmxDeleteZoneView.as_view(),
+        name="htmx-zone-delete",
+    ),
+    path(
+        "htmx/concepts/<uuid:concept_pk>/measures/add/",
+        HtmxAddMeasureView.as_view(),
+        name="htmx-measure-add",
+    ),
+    path(
+        "htmx/measures/<uuid:measure_pk>/delete/",
+        HtmxDeleteMeasureView.as_view(),
+        name="htmx-measure-delete",
+    ),
+    path(
+        "htmx/zones/<uuid:zone_pk>/ignition/",
+        HtmxIgnitionAssessmentView.as_view(),
+        name="htmx-ignition-assessment",
+    ),
+    path(
+        "htmx/zone-proposal/",
+        HtmxZoneProposalView.as_view(),
+        name="htmx-zone-proposal",
+    ),
 ]

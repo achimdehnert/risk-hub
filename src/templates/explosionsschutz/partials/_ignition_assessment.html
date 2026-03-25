@@ -1,0 +1,48 @@
+{% load i18n %}
+<div id="ignition-panel">
+    <div class="bg-white border border-gray-200 rounded-lg p-4">
+        <h4 class="text-sm font-semibold text-gray-700 mb-1">
+            Zündquellenbewertung: {{ zone.name }}
+        </h4>
+        <p class="text-xs text-gray-400 mb-4">13 Zündquellen nach EN 1127-1</p>
+
+        {% if saved %}
+        <div class="mb-3 p-2 bg-green-50 text-green-700 text-xs rounded border border-green-200">
+            Bewertung gespeichert.
+        </div>
+        {% endif %}
+
+        <div class="space-y-2">
+            {% for source in sources %}
+            <form hx-post="{% url 'explosionsschutz:htmx-ignition-assessment' zone_pk=zone.pk %}"
+                  hx-target="#ignition-panel"
+                  hx-swap="outerHTML"
+                  class="flex items-center gap-3 p-2 rounded {% if source.assessment.is_effective %}bg-red-50{% elif source.assessment.is_present %}bg-yellow-50{% else %}bg-gray-50{% endif %}">
+                <input type="hidden" name="ignition_source" value="{{ source.value }}">
+                <span class="w-6 text-xs font-mono text-gray-400">{{ source.value }}</span>
+                <span class="flex-1 text-sm">{{ source.label }}</span>
+                <label class="flex items-center gap-1 text-xs">
+                    <input type="checkbox" name="is_present"
+                           {% if source.assessment.is_present %}checked{% endif %}
+                           class="rounded border-gray-300">
+                    Vorh.
+                </label>
+                <label class="flex items-center gap-1 text-xs">
+                    <input type="checkbox" name="is_effective"
+                           {% if source.assessment.is_effective %}checked{% endif %}
+                           class="rounded border-gray-300">
+                    Wirksam
+                </label>
+                <input type="text" name="mitigation"
+                       value="{% if source.assessment %}{{ source.assessment.mitigation }}{% endif %}"
+                       placeholder="Schutzmaßnahme..."
+                       class="w-48 px-2 py-1 text-xs border border-gray-200 rounded">
+                <button type="submit"
+                        class="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                    ✓
+                </button>
+            </form>
+            {% endfor %}
+        </div>
+    </div>
+</div>
