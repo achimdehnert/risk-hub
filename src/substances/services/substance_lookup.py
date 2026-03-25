@@ -19,7 +19,6 @@ import html
 import logging
 import re
 from dataclasses import dataclass, field
-from typing import Optional
 
 import requests
 
@@ -59,7 +58,7 @@ class LookupResult:
     iupac_name: str = ""
     molecular_formula: str = ""
     molecular_weight: str = ""
-    pubchem_cid: Optional[int] = None
+    pubchem_cid: int | None = None
     gestis_zvg: str = ""
 
     # GHS
@@ -72,12 +71,12 @@ class LookupResult:
 
     # Zusatzdaten
     is_cmr: bool = False
-    flash_point: Optional[str] = None
-    boiling_point: Optional[str] = None
-    melting_point: Optional[str] = None
-    density: Optional[str] = None
-    ignition_temp: Optional[str] = None
-    explosion_limits: Optional[str] = None
+    flash_point: str | None = None
+    boiling_point: str | None = None
+    melting_point: str | None = None
+    density: str | None = None
+    ignition_temp: str | None = None
+    explosion_limits: str | None = None
     temp_class: str = ""
     explosion_group: str = ""
     physical_state: str = ""
@@ -169,7 +168,7 @@ class LookupResult:
         }
 
     @staticmethod
-    def _parse_temp(val: Optional[str]) -> Optional[float]:
+    def _parse_temp(val: str | None) -> float | None:
         if not val:
             return None
         m = re.search(r"(-?\d+(?:[.,]\d+)?)", val)
@@ -270,7 +269,7 @@ class SubstanceLookupService:
 
     def _gestis_search(
         self, query: str
-    ) -> Optional[dict]:
+    ) -> dict | None:
         """Search GESTIS → return search hit dict."""
         if not hasattr(self, "_gestis_cache"):
             self._gestis_cache = None
@@ -518,7 +517,7 @@ class SubstanceLookupService:
     # PubChem API
     # =========================================================================
 
-    def _pubchem_resolve_name(self, name: str) -> Optional[int]:
+    def _pubchem_resolve_name(self, name: str) -> int | None:
         """Resolve substance name → PubChem CID."""
         url = f"{PUBCHEM_BASE}/pug/compound/name/{requests.utils.quote(name)}/property/MolecularFormula,MolecularWeight/JSON"
         try:
@@ -533,7 +532,7 @@ class SubstanceLookupService:
             logger.exception("PubChem name resolve failed for '%s'", name)
         return None
 
-    def _pubchem_resolve_cas(self, cas: str) -> Optional[int]:
+    def _pubchem_resolve_cas(self, cas: str) -> int | None:
         """Resolve CAS number → PubChem CID."""
         url = f"{PUBCHEM_BASE}/pug/compound/name/{cas}/property/MolecularFormula,MolecularWeight/JSON"
         try:

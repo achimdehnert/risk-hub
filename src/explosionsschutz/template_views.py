@@ -589,7 +589,7 @@ class ConceptValidateView(View):
             concept.status = ExplosionConcept.Status.IN_REVIEW
             concept.is_validated = True
             concept.validated_by = request.user
-            concept.validated_at = dt.datetime.now(tz=dt.timezone.utc)
+            concept.validated_at = dt.datetime.now(tz=dt.UTC)
             concept.save(
                 update_fields=["status", "is_validated", "validated_by", "validated_at"]
             )
