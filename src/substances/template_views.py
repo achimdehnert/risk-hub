@@ -534,6 +534,20 @@ class SubstanceImportView(View):
         except ValueError as e:
             messages.error(request, str(e))
             return render(request, self.template_name, {"form": form})
+        except RuntimeError as e:
+            import logging
+
+            logging.getLogger(__name__).exception("Import failed")
+            err_msg = str(e)
+            if "AuthenticationError" in err_msg or "api_key" in err_msg:
+                messages.error(
+                    request,
+                    "KI-Service nicht verfügbar — API-Key fehlt. "
+                    "Bitte ohne KI-Extraktion versuchen oder Admin kontaktieren.",
+                )
+            else:
+                messages.error(request, f"Import fehlgeschlagen: {err_msg[:200]}")
+            return render(request, self.template_name, {"form": form})
         except Exception:
             import logging
 
