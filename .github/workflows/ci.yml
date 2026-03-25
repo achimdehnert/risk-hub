@@ -52,5 +52,8 @@ jobs:
           pip install ruff
           ruff check src/ --exit-zero
 
+      - name: Check template block consistency
+        run: bash scripts/check_template_blocks.sh src/templates src/templates/base.html
+
       - name: Run tests
         run: python -m pytest --tb=short -q
