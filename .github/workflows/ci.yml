@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  test:
+    name: "Lint + Test"
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: src
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install -r ../requirements.txt
+          pip install -r ../requirements-test.txt
+
+      - name: Install local packages
+        run: |
+          pip install -e ../packages/django-tenancy || true
+
+      - name: Ruff check
+        run: ruff check . --output-format=github
+
+      - name: Run tests (incl. URL audit)
+        env:
+          DJANGO_SETTINGS_MODULE: config.settings.test
+          SECRET_KEY: test-secret-key-for-ci
+          USE_POSTGRES: "0"
+        run: |
+          pytest --tb=short -q \
+            -m "not integration and not contract and not slow"
