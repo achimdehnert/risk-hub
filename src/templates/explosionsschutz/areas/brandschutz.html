@@ -63,6 +63,93 @@
         {% include "components/_stat_card.html" with icon="alert-triangle" value=analyse.maengel_count label="Mängel gesamt" color=analyse.hat_kritische_maengel|yesno:"red,green" badge_text=analyse.kritische_maengel_count|stringformat:"s"|add:" kritisch" badge_color="red" %}
     </div>
 
+    <!-- DXF-Daten -->
+    {% if dxf_data %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="file-code" class="w-5 h-5 text-indigo-500"></i>
+                <h2 class="text-lg font-semibold text-gray-900">DXF-Daten</h2>
+                <span class="text-sm text-gray-400">({{ dxf_data.rooms_count }} Räume, {{ dxf_data.layers_count }} Layer)</span>
+            </div>
+            <button data-toggle="dxf-details" class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
+                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                Details
+            </button>
+        </div>
+
+        <!-- DIN277 Kennzahlen -->
+        {% if dxf_data.din277 %}
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 border-b border-gray-100">
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">NGF (Netto)</p>
+                <p class="text-xl font-semibold text-gray-900">{{ dxf_data.din277.ngf_m2 }} m²</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">NF (Nutzung)</p>
+                <p class="text-xl font-semibold text-gray-900">{{ dxf_data.din277.nf_m2 }} m²</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">VF (Verkehr)</p>
+                <p class="text-xl font-semibold text-gray-900">{{ dxf_data.din277.vf_m2 }} m²</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">TF (Technik)</p>
+                <p class="text-xl font-semibold text-gray-900">{{ dxf_data.din277.tf_m2 }} m²</p>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Metadaten -->
+        <div class="px-6 py-3 border-b border-gray-100 flex flex-wrap gap-4 text-sm text-gray-500">
+            {% if dxf_data.dxf_version %}
+            <span><strong>DXF-Version:</strong> {{ dxf_data.dxf_version }}</span>
+            {% endif %}
+            <span><strong>Gesamtfläche:</strong> {{ dxf_data.total_area_m2 }} m²</span>
+            <span><strong>Layer:</strong> {{ dxf_data.layers_count }}</span>
+            <span><strong>Räume:</strong> {{ dxf_data.rooms_count }}</span>
+        </div>
+
+        <!-- Raumliste (collapsible) -->
+        <div id="dxf-details" class="hidden">
+            {% if dxf_data.rooms %}
+            <table class="w-full text-sm">
+                <thead>
+                    <tr class="border-b border-gray-200 text-left text-gray-500">
+                        <th class="py-2 px-6">Raum</th>
+                        <th class="py-2 px-3">Layer</th>
+                        <th class="py-2 px-3 text-right">Fläche</th>
+                        <th class="py-2 px-3 text-right">Umfang</th>
+                        <th class="py-2 px-3">DIN 277</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for room in dxf_data.rooms %}
+                    <tr class="border-b border-gray-50 hover:bg-gray-50">
+                        <td class="py-2 px-6 font-medium text-gray-900">{{ room.name }}</td>
+                        <td class="py-2 px-3 text-gray-500">
+                            <code class="text-xs bg-gray-100 px-1 py-0.5 rounded">{{ room.layer }}</code>
+                        </td>
+                        <td class="py-2 px-3 text-right">{{ room.area_m2 }} m²</td>
+                        <td class="py-2 px-3 text-right text-gray-500">{{ room.perimeter_m }} m</td>
+                        <td class="py-2 px-3">
+                            {% if room.din277_code %}
+                            <span class="text-xs bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded">{{ room.din277_code }}</span>
+                            {% else %}
+                            <span class="text-gray-300">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <p class="px-6 py-4 text-sm text-gray-400">Keine Räume erkannt.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Kritische Mängel Alert -->
     {% if analyse.hat_kritische_maengel %}
     <div class="bg-red-50 border border-red-200 rounded-lg p-4">

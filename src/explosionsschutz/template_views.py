@@ -1110,12 +1110,14 @@ class AreaBrandschutzView(View):
         area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
 
         analyse = area.brandschutz_analysis_json
+        dxf_data = area.dxf_analysis_json
         return render(
             request,
             self.template_name,
             {
                 "area": area,
                 "analyse": analyse,
+                "dxf_data": dxf_data,
                 "has_dxf": bool(area.dxf_file),
             },
         )
