@@ -24,7 +24,9 @@ from .template_views import (
     ConceptCreateView,
     ConceptDetailView,
     ConceptDxfImportView,
+    ConceptEditView,
     ConceptListView,
+    ConceptValidateView,
     EquipmentCreateView,
     EquipmentDetailView,
     EquipmentListView,
@@ -74,6 +76,8 @@ urlpatterns = [
     path("concepts/new/", ConceptCreateView.as_view(), name="concept-new"),
     path("concepts/create/", ConceptCreateView.as_view(), name="concept-create"),
     path("concepts/<uuid:pk>/", ConceptDetailView.as_view(), name="concept-detail-html"),
+    path("concepts/<uuid:pk>/edit/", ConceptEditView.as_view(), name="concept-edit"),
+    path("concepts/<uuid:pk>/validate/", ConceptValidateView.as_view(), name="concept-validate"),
     # Equipment
     path("equipment/", EquipmentListView.as_view(), name="equipment-list-html"),
     path("equipment/create/", EquipmentCreateView.as_view(), name="equipment-create"),

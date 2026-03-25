@@ -542,6 +542,61 @@ class ConceptCreateView(View):
         )
 
 
+class ConceptEditView(View):
+    """Konzept bearbeiten"""
+
+    template_name = "explosionsschutz/concepts/form.html"
+
+    def get(self, request, pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        concept = get_object_or_404(ExplosionConcept, pk=pk, tenant_id=tenant_id)
+        form = ExplosionConceptForm(instance=concept, tenant_id=tenant_id)
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": f"Konzept bearbeiten: {concept.title}",
+                "concept": concept,
+            },
+        )
+
+    def post(self, request, pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        concept = get_object_or_404(ExplosionConcept, pk=pk, tenant_id=tenant_id)
+        form = ExplosionConceptForm(request.POST, instance=concept, tenant_id=tenant_id)
+        if form.is_valid():
+            form.save()
+            return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": f"Konzept bearbeiten: {concept.title}",
+                "concept": concept,
+            },
+        )
+
+
+class ConceptValidateView(View):
+    """Konzept validieren (Status → in_review)"""
+
+    def post(self, request, pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        concept = get_object_or_404(ExplosionConcept, pk=pk, tenant_id=tenant_id)
+        if concept.status == ExplosionConcept.Status.DRAFT:
+            concept.status = ExplosionConcept.Status.IN_REVIEW
+            concept.is_validated = True
+            concept.validated_by = request.user
+            concept.validated_at = dt.datetime.now(tz=dt.timezone.utc)
+            concept.save(
+                update_fields=["status", "is_validated", "validated_by", "validated_at"]
+            )
+            messages.success(request, f'Konzept "{concept.title}" zur Prüfung freigegeben.')
+        return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
+
+
 class EquipmentCreateView(View):
     """Equipment erstellen"""
 
