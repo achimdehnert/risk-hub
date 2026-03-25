@@ -43,19 +43,19 @@
             <!-- Tab Nav -->
             <div class="border-b border-gray-200 bg-white">
                 <nav class="flex -mb-px px-2" id="org-tabs">
-                    <button onclick="showTab('tab-members')" data-tab="tab-members"
-                            class="tab-btn active-tab px-5 py-3 text-sm font-medium border-b-2 border-orange-500 text-orange-600">
+                    <button data-tab-target="tab-members"
+                            class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-orange-500 text-orange-600">
                         <i data-lucide="users" class="w-4 h-4 inline mr-1"></i>
                         Benutzer
                         <span class="ml-1.5 bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{{ memberships|length }}</span>
                     </button>
-                    <button onclick="showTab('tab-modules')" data-tab="tab-modules"
+                    <button data-tab-target="tab-modules"
                             class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                         <i data-lucide="puzzle" class="w-4 h-4 inline mr-1"></i>
                         Module
                         <span class="ml-1.5 bg-gray-100 text-gray-600 text-xs px-1.5 py-0.5 rounded-full">{{ subscriptions|length }}</span>
                     </button>
-                    <button onclick="showTab('tab-sites')" data-tab="tab-sites"
+                    <button data-tab-target="tab-sites"
                             class="tab-btn px-5 py-3 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300">
                         <i data-lucide="map-pin" class="w-4 h-4 inline mr-1"></i>
                         Standorte
@@ -188,17 +188,19 @@
 
 {% block extra_scripts %}
 <script>
-function showTab(tabId) {
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('hidden'));
-    document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('border-orange-500', 'text-orange-600');
-        b.classList.add('border-transparent', 'text-gray-500');
+document.getElementById("org-tabs").addEventListener("click", function(e) {
+    var btn = e.target.closest("[data-tab-target]");
+    if (!btn) return;
+    var tabId = btn.dataset.tabTarget;
+    document.querySelectorAll(".tab-panel").forEach(function(p) { p.classList.add("hidden"); });
+    document.querySelectorAll(".tab-btn").forEach(function(b) {
+        b.classList.remove("border-orange-500", "text-orange-600");
+        b.classList.add("border-transparent", "text-gray-500");
     });
-    document.getElementById(tabId).classList.remove('hidden');
-    const btn = document.querySelector('[data-tab="' + tabId + '"]');
-    btn.classList.remove('border-transparent', 'text-gray-500');
-    btn.classList.add('border-orange-500', 'text-orange-600');
-}
+    document.getElementById(tabId).classList.remove("hidden");
+    btn.classList.remove("border-transparent", "text-gray-500");
+    btn.classList.add("border-orange-500", "text-orange-600");
+});
 lucide.createIcons();
 </script>
 {% endblock %}
