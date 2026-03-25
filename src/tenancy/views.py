@@ -19,7 +19,7 @@ from tenancy.forms import (
 )
 from tenancy.models import Membership, Organization
 
-_ALL_MODULES = ["risk", "dsb", "ex", "substances"]
+_ALL_MODULES = ["risk", "dsb", "ex", "substances", "gbu", "documents", "actions", "brandschutz"]
 
 
 def _require_staff(request: HttpRequest) -> bool:
