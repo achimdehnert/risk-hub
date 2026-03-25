@@ -1,76 +1,16 @@
-{# Billing status widget — include in dashboard template #}
-{# Usage: {% include 'billing/dashboard_widget.html' with subscription=stripe_sub %} #}
+{# Billing status widget — uses active_modules from context processor (ModuleSubscription) #}
+{# active_modules is a set of module codes with status "trial" or "active" #}
 
-{% if subscription %}
-    {% if subscription.status == 'trialing' %}
-    <div class="alert d-flex align-items-center gap-3 mb-4"
-         style="background:rgba(232,93,4,0.08); border:1px solid rgba(232,93,4,0.25); border-radius:12px;">
-        <i class="bi bi-clock-history fs-4" style="color:#e85d04; flex-shrink:0;"></i>
-        <div class="flex-grow-1">
-            <strong>Trial aktiv</strong> &mdash;
-            {% if subscription.current_period_end %}
-                läuft ab am <strong>{{ subscription.current_period_end|date:"d.m.Y" }}</strong>.
-            {% else %}
-                14-Tage-Testphase.
-            {% endif %}
-            Jetzt upgraden und alle Funktionen dauerhaft nutzen.
-        </div>
-        <a href="/billing/checkout/?plan=professional"
-           class="btn btn-sm fw-bold text-nowrap"
-           style="background:#e85d04; color:#fff; border-radius:8px;">
-            Jetzt upgraden
-        </a>
-    </div>
-
-    {% elif subscription.status == 'past_due' %}
-    <div class="alert alert-danger d-flex align-items-center gap-3 mb-4" style="border-radius:12px;">
-        <i class="bi bi-exclamation-triangle-fill fs-4 flex-shrink-0"></i>
-        <div class="flex-grow-1">
-            <strong>Zahlung fehlgeschlagen</strong> &mdash;
-            Bitte aktualisieren Sie Ihre Zahlungsmethode, um Unterbrechungen zu vermeiden.
-        </div>
-        <a href="/billing/portal/" class="btn btn-sm btn-danger fw-bold text-nowrap" style="border-radius:8px;">
-            Jetzt beheben
-        </a>
-    </div>
-
-    {% elif subscription.status == 'canceled' %}
-    <div class="alert alert-warning d-flex align-items-center gap-3 mb-4" style="border-radius:12px;">
-        <i class="bi bi-x-circle-fill fs-4 flex-shrink-0"></i>
-        <div class="flex-grow-1">
-            <strong>Abonnement beendet</strong> &mdash;
-            Ihr Zugang wurde deaktiviert. Jetzt neu starten.
-        </div>
-        <a href="/#pricing" class="btn btn-sm btn-warning fw-bold text-nowrap" style="border-radius:8px;">
-            Plan wählen
-        </a>
-    </div>
-
-    {% elif subscription.cancel_at_period_end %}
-    <div class="alert alert-warning d-flex align-items-center gap-3 mb-4" style="border-radius:12px;">
-        <i class="bi bi-calendar-x fs-4 flex-shrink-0"></i>
-        <div class="flex-grow-1">
-            <strong>Kündigung zum {{ subscription.current_period_end|date:"d.m.Y" }}</strong> &mdash;
-            Sie können die Kündigung bis dahin rückgängig machen.
-        </div>
-        <a href="/billing/portal/" class="btn btn-sm btn-warning fw-bold text-nowrap" style="border-radius:8px;">
-            Abo verwalten
-        </a>
-    </div>
-    {% endif %}
-
-{% else %}
-    {# No subscription — show upsell banner for unsubscribed tenants #}
-    <div class="alert d-flex align-items-center gap-3 mb-4"
-         style="background:rgba(232,93,4,0.06); border:1px solid rgba(232,93,4,0.2); border-radius:12px;">
-        <i class="bi bi-rocket-takeoff fs-4" style="color:#e85d04; flex-shrink:0;"></i>
-        <div class="flex-grow-1">
-            <strong>Noch kein aktiver Plan</strong> &mdash;
+{% if not active_modules %}
+    {# No active module subscriptions — show upsell banner #}
+    <div class="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-6 flex items-center gap-3">
+        <i data-lucide="rocket" class="w-5 h-5 text-orange-500 flex-shrink-0"></i>
+        <div class="flex-grow">
+            <strong class="text-gray-900">Noch kein aktiver Plan</strong> &mdash;
             Wählen Sie ein Abonnement und schalten Sie alle Module frei.
         </div>
-        <a href="/#pricing"
-           class="btn btn-sm fw-bold text-nowrap"
-           style="background:#e85d04; color:#fff; border-radius:8px;">
+        <a href="https://billing.iil.pet/?product=risk-hub"
+           class="px-3 py-1.5 bg-orange-500 text-white text-sm font-semibold rounded-lg hover:bg-orange-600 whitespace-nowrap">
             Pläne ansehen
         </a>
     </div>
