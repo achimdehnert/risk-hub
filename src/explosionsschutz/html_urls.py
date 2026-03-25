@@ -31,6 +31,7 @@ from .template_views import (
     EquipmentDetailView,
     EquipmentListView,
     HomeView,
+    HtmxAddDocumentView,
     HtmxAddMeasureView,
     HtmxAddZoneView,
     HtmxDeleteMeasureView,
@@ -149,6 +150,11 @@ urlpatterns = [
         "htmx/measures/<uuid:measure_pk>/delete/",
         HtmxDeleteMeasureView.as_view(),
         name="htmx-measure-delete",
+    ),
+    path(
+        "htmx/concepts/<uuid:concept_pk>/documents/add/",
+        HtmxAddDocumentView.as_view(),
+        name="htmx-document-add",
     ),
     path(
         "htmx/zones/<uuid:zone_pk>/ignition/",

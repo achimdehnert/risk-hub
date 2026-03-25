@@ -12,6 +12,7 @@ from .models import (
     ExplosionConcept,
     Inspection,
     ProtectionMeasure,
+    VerificationDocument,
     ZoneDefinition,
 )
 
@@ -338,3 +339,23 @@ class ConceptDxfImportForm(forms.Form):
         ),
         help_text="Max. 50 MB. Ex-Zonen-Layer werden automatisch erkannt.",
     )
+
+
+class VerificationDocumentForm(forms.ModelForm):
+    """Form für Nachweisdokumente (HTMX inline add)"""
+
+    class Meta:
+        model = VerificationDocument
+        fields = ["title", "document_type", "file", "issued_by"]
+        widgets = {
+            "title": forms.TextInput(
+                attrs={"class": _INPUT_CSS, "placeholder": "Dokumenttitel"}
+            ),
+            "document_type": forms.Select(attrs={"class": _INPUT_CSS}),
+            "file": forms.ClearableFileInput(
+                attrs={"class": _INPUT_CSS, "accept": ".pdf,.jpg,.png,.docx"}
+            ),
+            "issued_by": forms.TextInput(
+                attrs={"class": _INPUT_CSS, "placeholder": "Aussteller"}
+            ),
+        }

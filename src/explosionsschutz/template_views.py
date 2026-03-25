@@ -19,6 +19,7 @@ from .forms import (
     ExplosionConceptForm,
     InspectionForm,
     ProtectionMeasureForm,
+    VerificationDocumentForm,
     ZoneCalculationForm,
     ZoneDefinitionForm,
     ZoneProposalForm,
@@ -307,6 +308,9 @@ class ConceptDetailView(View):
                 "measures": measures,
                 "documents": documents,
                 "active_approval": active_approval,
+                "zone_form": ZoneDefinitionForm(),
+                "measure_form": ProtectionMeasureForm(),
+                "document_form": VerificationDocumentForm(),
             },
         )
 
@@ -1275,6 +1279,42 @@ class HtmxDeleteMeasureView(View):
             request,
             self.partial_template,
             {"concept": concept, "measures": measures, "measure_form": measure_form},
+        )
+
+
+class HtmxAddDocumentView(View):
+    """
+    HTMX: Nachweisdokument inline zu Concept hinzufügen.
+    POST → Document erstellen, Partial mit aktueller Liste zurückgeben.
+    """
+
+    partial_template = "explosionsschutz/partials/_document_list.html"
+
+    def post(self, request, concept_pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        concept = get_object_or_404(
+            ExplosionConcept.objects.filter(base_filter), pk=concept_pk
+        )
+
+        form = VerificationDocumentForm(request.POST, request.FILES)
+        if form.is_valid():
+            doc = form.save(commit=False)
+            doc.tenant_id = tenant_id
+            doc.concept = concept
+            doc.uploaded_by = request.user
+            doc.save()
+
+        documents = concept.documents.all()
+        document_form = VerificationDocumentForm()
+        return render(
+            request,
+            self.partial_template,
+            {
+                "concept": concept,
+                "documents": documents,
+                "document_form": document_form,
+            },
         )
 
 
