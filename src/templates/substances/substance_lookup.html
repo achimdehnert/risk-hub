@@ -23,6 +23,13 @@
         <h3 class="font-semibold text-blue-900 mb-2">Externe Datenquellen</h3>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
             <div class="flex items-start gap-2">
+                <span class="text-lg">🏛️</span>
+                <div>
+                    <span class="font-medium text-blue-800">GESTIS (DGUV)</span>
+                    <p class="text-blue-600">Vorschriften, Schutzmaßnahmen, AGW</p>
+                </div>
+            </div>
+            <div class="flex items-start gap-2">
                 <span class="text-lg">🔬</span>
                 <div>
                     <span class="font-medium text-blue-800">PubChem (NIH)</span>
@@ -34,13 +41,6 @@
                 <div>
                     <span class="font-medium text-blue-800">ECHA C&amp;L</span>
                     <p class="text-blue-600">EU-Notifikationen, CLP-Einstufung</p>
-                </div>
-            </div>
-            <div class="flex items-start gap-2">
-                <span class="text-lg">⚗️</span>
-                <div>
-                    <span class="font-medium text-blue-800">H/P-Sätze</span>
-                    <p class="text-blue-600">Deutsche Übersetzungen, CMR-Erkennung</p>
                 </div>
             </div>
         </div>
@@ -94,9 +94,9 @@
             </div>
         </div>
 
-        <div class="p-6">
+        <div class="p-6 space-y-6">
             <!-- Basic Info Grid -->
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-gray-50 rounded-lg p-3">
                     <dt class="text-xs font-medium text-gray-500 uppercase">CAS-Nr.</dt>
                     <dd class="text-lg font-mono font-bold text-gray-900">{{ result.data.cas|default:"-" }}</dd>
@@ -123,27 +123,76 @@
                 </div>
             </div>
 
+            <!-- Physical Properties (GESTIS) -->
+            {% if result.data.flash_point or result.data.boiling_point or result.data.melting_point or result.data.density %}
+            <div>
+                <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">Physikalische Eigenschaften</h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {% if result.data.melting_point %}
+                    <div class="bg-blue-50 rounded-lg p-2.5">
+                        <dt class="text-xs text-blue-600">Schmelzpunkt</dt>
+                        <dd class="font-medium text-blue-900">{{ result.data.melting_point }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if result.data.boiling_point %}
+                    <div class="bg-blue-50 rounded-lg p-2.5">
+                        <dt class="text-xs text-blue-600">Siedepunkt</dt>
+                        <dd class="font-medium text-blue-900">{{ result.data.boiling_point }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if result.data.flash_point %}
+                    <div class="bg-orange-50 rounded-lg p-2.5">
+                        <dt class="text-xs text-orange-600">Flammpunkt</dt>
+                        <dd class="font-medium text-orange-900">{{ result.data.flash_point }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if result.data.ignition_temp %}
+                    <div class="bg-orange-50 rounded-lg p-2.5">
+                        <dt class="text-xs text-orange-600">Zündtemperatur</dt>
+                        <dd class="font-medium text-orange-900">{{ result.data.ignition_temp }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if result.data.density %}
+                    <div class="bg-blue-50 rounded-lg p-2.5">
+                        <dt class="text-xs text-blue-600">Dichte</dt>
+                        <dd class="font-medium text-blue-900">{{ result.data.density }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if result.data.temp_class %}
+                    <div class="bg-orange-50 rounded-lg p-2.5">
+                        <dt class="text-xs text-orange-600">Temperaturklasse</dt>
+                        <dd class="font-medium text-orange-900">{{ result.data.temp_class }}</dd>
+                    </div>
+                    {% endif %}
+                    {% if result.data.explosion_group %}
+                    <div class="bg-orange-50 rounded-lg p-2.5">
+                        <dt class="text-xs text-orange-600">Explosionsgruppe</dt>
+                        <dd class="font-medium text-orange-900">{{ result.data.explosion_group }}</dd>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <!-- GHS Classification -->
             {% if result.data.h_statements %}
-            <div class="mb-6">
+            <div>
                 <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">H-Sätze (Gefahrenhinweise)</h3>
                 <div class="flex flex-wrap gap-2">
                     {% for h in result.data.h_statements %}
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-medium bg-red-50 text-red-800 border border-red-200">
-                        {{ h }}
-                    </span>
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-medium bg-red-50 text-red-800 border border-red-200">{{ h }}</span>
                     {% endfor %}
                 </div>
             </div>
             {% endif %}
 
             {% if result.data.ghs_descriptions %}
-            <div class="mb-6">
+            <div>
                 <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">Gefahrenhinweise (deutsch)</h3>
                 <ul class="space-y-1 text-sm">
                     {% for desc in result.data.ghs_descriptions %}
                     <li class="flex items-start gap-2">
-                        <span class="text-red-500 mt-0.5">●</span>
+                        <span class="text-red-500 mt-0.5">-</span>
                         <span class="text-gray-700">{{ desc }}</span>
                     </li>
                     {% endfor %}
@@ -151,64 +200,121 @@
             </div>
             {% endif %}
 
-            {% if result.data.p_statements %}
-            <div class="mb-6">
-                <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">P-Sätze (Sicherheitshinweise)</h3>
-                <div class="flex flex-wrap gap-2">
-                    {% for p in result.data.p_statements %}
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-sm font-medium bg-blue-50 text-blue-800 border border-blue-200">
-                        {{ p }}
-                    </span>
-                    {% endfor %}
+            <!-- CMR + AGW -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% if result.data.is_cmr %}
+                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+                    <span class="font-bold text-red-800">CMR-Stoff erkannt</span>
+                    <p class="text-sm text-red-600 mt-1">Krebserzeugend, mutagen oder reproduktionstoxisch</p>
+                </div>
+                {% endif %}
+                {% if result.data.agw %}
+                <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <span class="text-sm font-semibold text-amber-800">Arbeitsplatzgrenzwert (TRGS 900)</span>
+                    <p class="text-sm text-amber-700 mt-1">{{ result.data.agw|truncatewords:40 }}</p>
+                </div>
+                {% endif %}
+                {% if result.data.wgk %}
+                <div class="bg-cyan-50 border border-cyan-200 rounded-lg p-4">
+                    <span class="text-sm font-semibold text-cyan-800">Wassergefährdungsklasse</span>
+                    <p class="text-sm text-cyan-700 mt-1">{{ result.data.wgk|truncatewords:30 }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Vorschriften / Regelwerke -->
+            {% if result.data.regulations %}
+            <div>
+                <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">Vorschriften &amp; Regelwerke</h3>
+                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                    <ul class="space-y-1.5 text-sm">
+                        {% for reg in result.data.regulations %}
+                        <li class="flex items-start gap-2">
+                            <span class="text-indigo-500 mt-0.5 font-mono text-xs">&#167;</span>
+                            <span class="text-indigo-800">{{ reg }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
                 </div>
             </div>
             {% endif %}
 
-            <!-- CMR + ECHA -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                {% if result.data.is_cmr %}
-                <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-                    <span class="inline-flex items-center gap-2 text-red-800 font-bold">
-                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 6a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 6zm0 9a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/>
-                        </svg>
-                        CMR-Stoff erkannt
-                    </span>
-                    <p class="text-sm text-red-600 mt-1">Krebserzeugend, mutagen oder reproduktionstoxisch</p>
-                </div>
-                {% endif %}
-
-                {% if result.data.echa_notifications %}
-                <div class="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-                    <span class="text-sm font-medium text-indigo-800">
-                        ECHA C&amp;L: {{ result.data.echa_notifications }} Notifikationen
-                    </span>
-                    {% if result.data.echa_summary %}
-                    <p class="text-xs text-indigo-600 mt-1">{{ result.data.echa_summary|truncatewords:30 }}</p>
+            <!-- Schutzmaßnahmen (GESTIS) -->
+            {% if result.data.first_aid or result.data.protective_measures or result.data.storage %}
+            <div>
+                <h3 class="text-sm font-semibold text-gray-700 uppercase mb-3">Schutzmaßnahmen</h3>
+                <div class="space-y-3">
+                    {% if result.data.first_aid %}
+                    <details class="bg-green-50 border border-green-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-green-800 hover:bg-green-100 rounded-lg">Erste Hilfe</summary>
+                        <div class="px-4 pb-3 text-sm text-green-700 whitespace-pre-line">{{ result.data.first_aid|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if result.data.protective_measures %}
+                    <details class="bg-blue-50 border border-blue-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-blue-800 hover:bg-blue-100 rounded-lg">Technische &amp; persönliche Schutzmaßnahmen</summary>
+                        <div class="px-4 pb-3 text-sm text-blue-700 whitespace-pre-line">{{ result.data.protective_measures|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if result.data.storage %}
+                    <details class="bg-yellow-50 border border-yellow-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-yellow-800 hover:bg-yellow-100 rounded-lg">Lagerung</summary>
+                        <div class="px-4 pb-3 text-sm text-yellow-700 whitespace-pre-line">{{ result.data.storage|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if result.data.fire_protection %}
+                    <details class="bg-red-50 border border-red-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-red-800 hover:bg-red-100 rounded-lg">Brand- und Explosionsschutz</summary>
+                        <div class="px-4 pb-3 text-sm text-red-700 whitespace-pre-line">{{ result.data.fire_protection|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if result.data.spill_response %}
+                    <details class="bg-purple-50 border border-purple-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-purple-800 hover:bg-purple-100 rounded-lg">Freisetzung / Leckage</summary>
+                        <div class="px-4 pb-3 text-sm text-purple-700 whitespace-pre-line">{{ result.data.spill_response|truncatewords:80 }}</div>
+                    </details>
+                    {% endif %}
+                    {% if result.data.transport %}
+                    <details class="bg-gray-50 border border-gray-200 rounded-lg">
+                        <summary class="px-4 py-2.5 cursor-pointer text-sm font-medium text-gray-800 hover:bg-gray-100 rounded-lg">Transportvorschriften</summary>
+                        <div class="px-4 pb-3 text-sm text-gray-700 whitespace-pre-line">{{ result.data.transport|truncatewords:50 }}</div>
+                    </details>
                     {% endif %}
                 </div>
-                {% endif %}
             </div>
+            {% endif %}
 
-            <!-- Import Action -->
-            <form method="post" class="border-t border-gray-200 pt-4 mt-4">
-                {% csrf_token %}
-                <input type="hidden" name="record_json" value="{{ result.record_json }}">
-                <div class="flex items-center justify-between">
-                    <p class="text-sm text-gray-500">
-                        Stoff in die Gefahrstoff-Datenbank übernehmen?
-                    </p>
+            <!-- GESTIS Link + Import -->
+            <div class="border-t border-gray-200 pt-4 flex items-center justify-between flex-wrap gap-3">
+                <div class="flex items-center gap-3">
+                    {% if result.data.gestis_url %}
+                    <a href="{{ result.data.gestis_url }}" target="_blank" rel="noopener"
+                       class="text-sm text-blue-600 hover:text-blue-800 inline-flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        GESTIS Volltext
+                    </a>
+                    {% endif %}
+                    {% if result.data.pubchem_cid %}
+                    <a href="https://pubchem.ncbi.nlm.nih.gov/compound/{{ result.data.pubchem_cid }}" target="_blank" rel="noopener"
+                       class="text-sm text-blue-600 hover:text-blue-800 inline-flex items-center gap-1">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                        PubChem
+                    </a>
+                    {% endif %}
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="record_json" value="{{ result.record_json }}">
                     <button type="submit"
                             class="px-5 py-2.5 bg-green-600 text-white rounded-lg font-medium
                                    hover:bg-green-700 transition-colors inline-flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                  d="M12 4v16m8-8H4"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
                         </svg>
                         Als Gefahrstoff übernehmen
                     </button>
-                </div>
-            </form>
+                </form>
+            </div>
         </div>
     </div>
     {% elif query %}
