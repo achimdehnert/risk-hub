@@ -1065,7 +1065,7 @@ class AreaBrandschutzView(View):
         import logging
         import tempfile
 
-        from nl2cad.brandschutz.analyzer import BrandschutzAnalyzer
+        from brandschutz.analyzer import BrandschutzAnalyzer
 
         logger = logging.getLogger(__name__)
         tenant_id = getattr(request, "tenant_id", None)

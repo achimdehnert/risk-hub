@@ -858,7 +858,8 @@ def import_zones_from_dxf(
 
     import ezdxf
     from ezdxf.lldxf.const import DXFError
-    from nl2cad.brandschutz.analyzer import BrandschutzAnalyzer
+
+    from brandschutz.analyzer import BrandschutzAnalyzer
 
     if len(dxf_bytes) > DXF_MAX_BYTES:
         raise ValidationError(f"DXF zu gross: {len(dxf_bytes):,} Bytes (max {DXF_MAX_BYTES:,})")
