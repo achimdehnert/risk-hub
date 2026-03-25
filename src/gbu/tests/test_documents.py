@@ -14,7 +14,13 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-weasyprint = pytest.importorskip("weasyprint", reason="WeasyPrint system libs not available")
+try:
+    import weasyprint  # noqa: F401
+except OSError:
+    pytest.skip(
+        "WeasyPrint system libs not available",
+        allow_module_level=True,
+    )
 
 # ── Hilfsfunktionen ──────────────────────────────────────────────────────────
 
