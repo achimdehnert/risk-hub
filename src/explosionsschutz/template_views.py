@@ -686,19 +686,36 @@ class AreaDxfUploadView(View):
                 },
             )
 
-        if not dxf_file.name.lower().endswith(".dxf"):
+        fname_lower = dxf_file.name.lower()
+        if not fname_lower.endswith((".dxf", ".dwg")):
             return render(
                 request,
                 self.template_name,
                 {
                     "area": area,
-                    "error": "Nur .dxf Dateien sind erlaubt.",
+                    "error": "Nur .dxf oder .dwg Dateien sind erlaubt.",
                 },
             )
 
+        raw_bytes = dxf_file.read()
+
+        # DWG → DXF Konvertierung
+        if fname_lower.endswith(".dwg"):
+            try:
+                from .services.dwg_converter import dwg_to_dxf
+
+                raw_bytes = dwg_to_dxf(raw_bytes, dxf_file.name)
+                logger.info("[AreaDxfUpload] DWG→DXF: %s", dxf_file.name)
+            except RuntimeError as exc:
+                return render(
+                    request,
+                    self.template_name,
+                    {"area": area, "error": str(exc)},
+                )
+
         try:
             parser = DXFParser()
-            dxf_model = parser.parse_bytes(dxf_file.read(), dxf_file.name)
+            dxf_model = parser.parse_bytes(raw_bytes, dxf_file.name)
         except Exception as exc:
             logger.warning("[AreaDxfUpload] Parse-Fehler %s: %s", area.code, exc)
             return render(
