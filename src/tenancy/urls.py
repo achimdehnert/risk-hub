@@ -61,4 +61,6 @@ urlpatterns = [
         views.module_membership_revoke,
         name="module-membership-revoke",
     ),
+    # Site management
+    path("sites/new/", views.site_create, name="site-create"),
 ]

@@ -559,3 +559,44 @@ def _ensure_role_assignment(
         scope=scope,
         created_by_user_id=user.pk,
     )
+
+
+# -----------------------------------------------------------------------
+# Site CRUD
+# -----------------------------------------------------------------------
+
+
+@login_required
+def site_create(request: HttpRequest) -> HttpResponse:
+    """Create a new site for the current tenant."""
+    from tenancy.forms import SiteForm
+
+    tenant_id = getattr(request, "tenant_id", None)
+    if not tenant_id:
+        return render(request, "403.html", status=403)
+
+    org = Organization.objects.filter(tenant_id=tenant_id).first()
+
+    if request.method == "POST":
+        form = SiteForm(request.POST)
+        if form.is_valid():
+            site = form.save(commit=False)
+            site.tenant_id = tenant_id
+            site.organization = org
+            site.save()
+            next_url = request.GET.get("next", "")
+            if next_url:
+                return redirect(next_url)
+            return redirect("tenancy:org-detail", pk=org.pk)
+    else:
+        form = SiteForm()
+
+    return render(
+        request,
+        "tenancy/site_form.html",
+        {
+            "form": form,
+            "title": "Neuen Standort anlegen",
+            "org": org,
+        },
+    )

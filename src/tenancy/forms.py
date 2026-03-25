@@ -5,7 +5,7 @@ from django.utils.text import slugify
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 
 from identity.models import User
-from tenancy.models import Membership, Organization
+from tenancy.models import Membership, Organization, Site
 
 _TW_INPUT = (
     "block w-full rounded-md border-gray-300 shadow-sm "
@@ -14,6 +14,22 @@ _TW_INPUT = (
 )
 _TW_SELECT = _TW_INPUT
 _TW_TEXTAREA = _TW_INPUT + " h-24"
+
+
+class SiteForm(forms.ModelForm):
+    """Form für Standorte."""
+
+    class Meta:
+        model = Site
+        fields = ["name", "address"]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={"class": _TW_INPUT, "placeholder": "z.B. Hauptstandort"}
+            ),
+            "address": forms.Textarea(
+                attrs={"class": _TW_TEXTAREA, "placeholder": "Adresse...", "rows": 2}
+            ),
+        }
 
 
 class OrganizationForm(forms.ModelForm):

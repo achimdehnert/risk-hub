@@ -41,11 +41,24 @@
         {% endif %}
 
         <div>
-            <label for="id_site" class="block text-sm font-medium text-gray-700 mb-1">
-                Standort *
-            </label>
+            <div class="flex justify-between items-center mb-1">
+                <label for="id_site" class="block text-sm font-medium text-gray-700">
+                    Standort *
+                </label>
+                <a href="{% url 'tenancy:site-create' %}?next={% url 'brandschutz:concept-create' %}"
+                   class="text-xs text-orange-600 hover:text-orange-700 font-medium">
+                    + Standort erstellen
+                </a>
+            </div>
             {{ form.site }}
+            {% if not form.site.field.queryset.exists %}
+            <p class="mt-1 text-sm text-amber-600">
+                <i data-lucide="alert-triangle" class="w-3 h-3 inline mr-1"></i>
+                Noch keine Standorte vorhanden — bitte zuerst einen Standort anlegen.
+            </p>
+            {% else %}
             <p class="mt-1 text-sm text-gray-500">Standort, für den das Konzept gilt</p>
+            {% endif %}
         </div>
 
         <div>

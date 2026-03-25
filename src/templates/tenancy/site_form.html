@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6 max-w-xl mx-auto">
+    <div>
+        <nav class="text-sm text-gray-500 mb-2">
+            <span>Standortverwaltung</span>
+            <span class="mx-2">/</span>
+            <span>Neuer Standort</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+                {{ field }}
+                {% if field.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <div class="flex justify-between items-center pt-4">
+                <a href="javascript:history.back()" class="text-sm text-gray-500 hover:text-gray-700">Abbrechen</a>
+                <button type="submit"
+                        class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                    Standort anlegen
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
