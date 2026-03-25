@@ -37,9 +37,11 @@ def _strip_html(text: str) -> str:
     """Remove HTML tags and normalize whitespace."""
     if not text:
         return ""
-    text = html.unescape(text)
+    # Remove HTML tags BEFORE unescaping entities
     text = re.sub(r"<br\s*/?>", "\n", text)
     text = re.sub(r"<[^>]+>", " ", text)
+    # Now unescape &lt; &gt; &amp; etc.
+    text = html.unescape(text)
     return re.sub(r"\s+", " ", text).strip()
 
 
