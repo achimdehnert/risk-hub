@@ -66,6 +66,11 @@
                 <i data-lucide="layout-grid" class="w-5 h-5 mr-2 text-red-600"></i>
                 Brandabschnitte ({{ sections|length }})
             </h2>
+            <a href="{% url 'brandschutz:section-create' concept.pk %}"
+               class="inline-flex items-center px-3 py-1.5 bg-orange-500 text-white text-sm rounded-lg hover:bg-orange-600">
+                <i data-lucide="plus" class="w-4 h-4 mr-1"></i>
+                Brandabschnitt erstellen
+            </a>
         </div>
         <div class="divide-y divide-gray-100">
             {% for section in sections %}

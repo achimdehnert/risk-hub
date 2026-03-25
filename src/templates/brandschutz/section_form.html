@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Neuer Brandabschnitt — {{ concept.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- Header -->
+    <div>
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="{% url 'brandschutz:concept-list' %}" class="hover:text-gray-700">Brandschutz</a>
+            <span class="mx-2">/</span>
+            <a href="{% url 'brandschutz:concept-detail' concept.pk %}" class="hover:text-gray-700">{{ concept.title }}</a>
+            <span class="mx-2">/</span>
+            <span>Neuer Brandabschnitt</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">Neuer Brandabschnitt</h1>
+        <p class="mt-1 text-sm text-gray-500">für {{ concept.title }} — {{ concept.site.name }}</p>
+    </div>
+
+    <!-- Form -->
+    <form method="post" class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+        {% csrf_token %}
+
+        {% if form.errors %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div class="flex items-center text-red-700">
+                <i data-lucide="alert-circle" class="w-5 h-5 mr-2"></i>
+                <span class="font-medium">Bitte korrigiere die Fehler:</span>
+            </div>
+            <ul class="mt-2 text-sm text-red-600 list-disc list-inside">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                    <li>{{ field.label }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Name + Etage -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="id_name" class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+                {{ form.name }}
+            </div>
+            <div>
+                <label for="id_floor" class="block text-sm font-medium text-gray-700 mb-1">Etage</label>
+                {{ form.floor }}
+            </div>
+        </div>
+
+        <!-- Fläche + Bauklasse -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="id_area_sqm" class="block text-sm font-medium text-gray-700 mb-1">Fläche (m²)</label>
+                {{ form.area_sqm }}
+            </div>
+            <div>
+                <label for="id_construction_class" class="block text-sm font-medium text-gray-700 mb-1">Gebäudeklasse</label>
+                {{ form.construction_class }}
+            </div>
+        </div>
+
+        <!-- Personen + Brandlast -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label for="id_max_occupancy" class="block text-sm font-medium text-gray-700 mb-1">Max. Personen</label>
+                {{ form.max_occupancy }}
+            </div>
+            <div>
+                <label for="id_fire_load_mj_m2" class="block text-sm font-medium text-gray-700 mb-1">Brandlast (MJ/m²)</label>
+                {{ form.fire_load_mj_m2 }}
+            </div>
+        </div>
+
+        <!-- Checkboxen -->
+        <div class="flex items-center gap-8">
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+                {{ form.has_sprinkler }}
+                <span>Sprinkleranlage vorhanden</span>
+            </label>
+            <label class="flex items-center gap-2 text-sm text-gray-700">
+                {{ form.has_smoke_detector }}
+                <span>Rauchmelder vorhanden</span>
+            </label>
+        </div>
+
+        <!-- Notizen -->
+        <div>
+            <label for="id_notes" class="block text-sm font-medium text-gray-700 mb-1">Anmerkungen</label>
+            {{ form.notes }}
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <a href="{% url 'brandschutz:concept-detail' concept.pk %}"
+               class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                Abbrechen
+            </a>
+            <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                <i data-lucide="plus" class="w-4 h-4 inline mr-1"></i>
+                Brandabschnitt anlegen
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

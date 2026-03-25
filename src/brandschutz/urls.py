@@ -20,6 +20,11 @@ urlpatterns = [
         name="concept-edit",
     ),
     path(
+        "<uuid:concept_pk>/sections/new/",
+        views.SectionCreateView.as_view(),
+        name="section-create",
+    ),
+    path(
         "extinguishers/",
         views.ExtinguisherListView.as_view(),
         name="extinguisher-list",

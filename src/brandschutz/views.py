@@ -9,7 +9,7 @@ from django.views import View
 
 from common.tenant import require_tenant as _require_tenant
 
-from .forms import FireProtectionConceptForm
+from .forms import FireProtectionConceptForm, FireSectionForm
 from .models import (
     EscapeRoute,
     FireExtinguisher,
@@ -198,3 +198,53 @@ class MeasureUpdateView(View):
                 {"measure": measure},
             )
         return redirect("brandschutz:concept-detail", pk=measure.concept_id)
+
+
+class SectionCreateView(View):
+    """Brandabschnitt zu einem Konzept hinzufügen."""
+
+    template_name = "brandschutz/section_form.html"
+
+    def get(self, request: HttpRequest, concept_pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        concept = get_object_or_404(
+            FireProtectionConcept,
+            pk=concept_pk,
+            tenant_id=request.tenant_id,
+        )
+        form = FireSectionForm()
+        return render(
+            request,
+            self.template_name,
+            {"form": form, "concept": concept},
+        )
+
+    def post(self, request: HttpRequest, concept_pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        concept = get_object_or_404(
+            FireProtectionConcept,
+            pk=concept_pk,
+            tenant_id=request.tenant_id,
+        )
+        form = FireSectionForm(request.POST)
+        if form.is_valid():
+            section = form.save(commit=False)
+            section.tenant_id = request.tenant_id
+            section.concept = concept
+            section.save()
+            messages.success(
+                request,
+                f"Brandabschnitt '{section.name}' angelegt.",
+            )
+            return redirect(
+                "brandschutz:concept-detail", pk=concept.pk
+            )
+        return render(
+            request,
+            self.template_name,
+            {"form": form, "concept": concept},
+        )
