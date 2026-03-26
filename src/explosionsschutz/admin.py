@@ -17,6 +17,9 @@ from .models import (
     Area,
     Equipment,
     EquipmentType,
+    ExConceptDocument,
+    ExConceptTemplateStore,
+    ExFilledTemplate,
     ExplosionConcept,
     Inspection,
     MeasureCatalog,
@@ -733,3 +736,33 @@ class ZoneIgnitionSourceAssessmentAdmin(TenantAwareAdmin):
         )
 
     is_effective_badge.short_description = "Wirksam"
+
+
+# ── Concept Templates (ADR-147) ─────────────────────────────────
+
+
+@admin.register(ExConceptDocument)
+class ExConceptDocumentAdmin(admin.ModelAdmin):
+    list_display = ["title", "concept", "scope", "status", "created_at"]
+    list_filter = ["status", "scope"]
+    search_fields = ["title", "source_filename"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+    raw_id_fields = ["concept"]
+
+
+@admin.register(ExConceptTemplateStore)
+class ExConceptTemplateStoreAdmin(admin.ModelAdmin):
+    list_display = ["name", "scope", "version", "is_master", "source", "created_at"]
+    list_filter = ["scope", "source", "is_master"]
+    search_fields = ["name", "framework"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+    raw_id_fields = ["source_document"]
+
+
+@admin.register(ExFilledTemplate)
+class ExFilledTemplateAdmin(admin.ModelAdmin):
+    list_display = ["name", "concept", "status", "created_at"]
+    list_filter = ["status"]
+    search_fields = ["name"]
+    readonly_fields = ["id", "created_at", "updated_at"]
+    raw_id_fields = ["concept", "template"]
