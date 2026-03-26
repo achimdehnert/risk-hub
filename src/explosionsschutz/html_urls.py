@@ -13,6 +13,14 @@ from .export_views import (
     ConceptPreviewView,
     ZoneMapView,
 )
+from .concept_template_views import (
+    ExConceptDocAnalyzeView,
+    ExDocumentUploadView,
+    ExFilledTemplateEditView,
+    ExFilledTemplateLLMPrefillView,
+    ExFilledTemplatePDFView,
+    ExTemplateSelectView,
+)
 from .template_views import (
     AreaBrandschutzView,
     AreaCreateView,
@@ -165,5 +173,36 @@ urlpatterns = [
         "htmx/zone-proposal/",
         HtmxZoneProposalView.as_view(),
         name="htmx-zone-proposal",
+    ),
+    # ── Concept Templates (ADR-147) ─────────────────────────────
+    path(
+        "concepts/<uuid:concept_pk>/documents/upload/",
+        ExDocumentUploadView.as_view(),
+        name="ex-document-upload",
+    ),
+    path(
+        "concept-doc/<uuid:pk>/analyze/",
+        ExConceptDocAnalyzeView.as_view(),
+        name="ex-concept-doc-analyze",
+    ),
+    path(
+        "concepts/<uuid:concept_pk>/templates/",
+        ExTemplateSelectView.as_view(),
+        name="ex-template-select",
+    ),
+    path(
+        "filled/<uuid:pk>/edit/",
+        ExFilledTemplateEditView.as_view(),
+        name="ex-filled-template-edit",
+    ),
+    path(
+        "filled/<uuid:pk>/llm-prefill/",
+        ExFilledTemplateLLMPrefillView.as_view(),
+        name="ex-filled-template-llm-prefill",
+    ),
+    path(
+        "filled/<uuid:pk>/pdf/",
+        ExFilledTemplatePDFView.as_view(),
+        name="ex-filled-template-pdf",
     ),
 ]

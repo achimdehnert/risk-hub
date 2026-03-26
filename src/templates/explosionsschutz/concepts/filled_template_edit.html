@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}{{ filled.name }} bearbeiten{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-gray-500">
+        <a href="{% url 'explosionsschutz:concept-list-html' %}" class="hover:text-gray-700">Explosionsschutz</a>
+        <span class="mx-2">/</span>
+        <a href="{% url 'explosionsschutz:concept-detail-html' concept.pk %}" class="hover:text-gray-700">{{ concept.title }}</a>
+        <span class="mx-2">/</span>
+        <span>{{ filled.name }}</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ filled.name }}</h1>
+            <p class="text-sm text-gray-500 mt-1">
+                Template: {{ template_name_display }}
+                &mdash; Status: <span class="font-medium">{{ filled.get_status_display }}</span>
+                &mdash; Zuletzt bearbeitet: {{ filled.updated_at|date:"d.m.Y H:i" }}
+            </p>
+        </div>
+        <div class="flex items-center space-x-2">
+            <a href="{% url 'explosionsschutz:ex-template-select' concept.pk %}"
+               class="inline-flex items-center px-3 py-1.5 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg">
+                <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
+                Zurück
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        {% for section in sections %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h2 class="text-lg font-semibold text-gray-900">
+                    <span class="text-violet-600 mr-2">{{ section.order }}.</span>
+                    {{ section.title }}
+                </h2>
+            </div>
+            <div class="px-6 py-4 space-y-4">
+                {% for field_info in section.fields %}
+                <div class="group">
+                    <div class="flex items-center justify-between mb-1">
+                        <label for="id_{{ field_info.key }}" class="block text-sm font-medium text-gray-700">
+                            {{ field_info.bound_field.label }}
+                            {% if field_info.bound_field.field.required %}
+                            <span class="text-red-500">*</span>
+                            {% endif %}
+                        </label>
+                        {% if field_info.llm_prefill and field_info.llm_hint %}
+                        <button type="button"
+                                class="llm-prefill-btn inline-flex items-center px-2 py-0.5 text-xs font-medium text-violet-600 bg-violet-50 rounded hover:bg-violet-100 opacity-0 group-hover:opacity-100 transition-opacity"
+                                data-field-key="{{ field_info.key }}"
+                                data-llm-hint="{{ field_info.llm_hint }}"
+                                data-filled-pk="{{ filled.pk }}"
+                                title="{{ field_info.llm_hint }}">
+                            <i data-lucide="sparkles" class="w-3 h-3 mr-1"></i>
+                            KI-Vorschlag
+                        </button>
+                        {% endif %}
+                    </div>
+                    <div id="field-wrapper-{{ field_info.key }}">
+                        {{ field_info.bound_field }}
+                    </div>
+                    {% if field_info.bound_field.help_text %}
+                    <p class="mt-1 text-xs text-gray-500">{{ field_info.bound_field.help_text }}</p>
+                    {% endif %}
+                    {% if field_info.bound_field.errors %}
+                    <p class="mt-1 text-xs text-red-600">{{ field_info.bound_field.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endfor %}
+
+        <!-- Save buttons -->
+        <div class="flex items-center justify-between bg-white rounded-xl shadow-sm border border-gray-200 px-6 py-4">
+            <div class="text-sm text-gray-500">
+                Alle Felder können jederzeit bearbeitet und gespeichert werden.
+            </div>
+            <div class="flex items-center space-x-3">
+                <a href="{% url 'explosionsschutz:ex-filled-template-pdf' filled.pk %}"
+                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                    <i data-lucide="file-down" class="w-4 h-4 mr-2"></i>
+                    PDF herunterladen
+                </a>
+                <button type="submit"
+                        class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                    <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                    Speichern
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Style all form inputs
+    document.querySelectorAll('form input[type="text"], form input[type="number"], form input[type="date"], form select, form textarea').forEach(function(el) {
+        el.classList.add('w-full', 'px-3', 'py-2', 'border', 'border-gray-300', 'rounded-lg', 'focus:ring-2', 'focus:ring-violet-500', 'focus:border-violet-500', 'text-sm');
+    });
+    document.querySelectorAll('form input[type="checkbox"]').forEach(function(el) {
+        el.classList.add('h-4', 'w-4', 'text-violet-600', 'border-gray-300', 'rounded', 'focus:ring-violet-500');
+    });
+
+    // LLM Prefill buttons
+    document.querySelectorAll('.llm-prefill-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var fieldKey = this.dataset.fieldKey;
+            var llmHint = this.dataset.llmHint;
+            var filledPk = this.dataset.filledPk;
+            var wrapper = document.getElementById('field-wrapper-' + fieldKey);
+            var originalBtn = this;
+
+            originalBtn.disabled = true;
+            originalBtn.innerHTML = '<svg class="w-3 h-3 mr-1 animate-spin" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/><path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> Lädt...';
+
+            var formData = new FormData();
+            formData.append('field_key', fieldKey);
+            formData.append('llm_hint', llmHint);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            fetch('{% url "explosionsschutz:ex-filled-template-llm-prefill" filled.pk %}', {
+                method: 'POST',
+                body: formData,
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            })
+            .then(function(response) { return response.text(); })
+            .then(function(html) {
+                wrapper.innerHTML = html;
+                wrapper.querySelectorAll('input, textarea, select').forEach(function(el) {
+                    el.classList.add('w-full', 'px-3', 'py-2', 'border', 'rounded-lg', 'focus:ring-2', 'focus:ring-violet-500', 'text-sm');
+                });
+                originalBtn.disabled = false;
+                originalBtn.innerHTML = '<i data-lucide="sparkles" class="w-3 h-3 mr-1"></i> KI-Vorschlag';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            })
+            .catch(function() {
+                originalBtn.disabled = false;
+                originalBtn.innerHTML = '<i data-lucide="sparkles" class="w-3 h-3 mr-1"></i> KI-Vorschlag';
+                if (typeof lucide !== 'undefined') lucide.createIcons();
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
