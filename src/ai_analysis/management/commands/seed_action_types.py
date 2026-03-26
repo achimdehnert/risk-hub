@@ -84,6 +84,13 @@ class Command(BaseCommand):
                 2000,
                 0.2,
             ),
+            (
+                "concept_analysis",
+                "Concept Document Analysis",
+                "LLM-based structure analysis of uploaded concept PDFs (ADR-147).",
+                4000,
+                0.2,
+            ),
         ]
         for code, name, description, max_tokens, temperature in actions_data:
             a, created = AIActionType.objects.update_or_create(
