@@ -9,7 +9,12 @@ Only the risk-hub-specific parts are defined here:
 import logging
 from uuid import UUID
 
-from concept_templates.contrib.django.tasks import make_extract_and_analyze_task
+try:
+    from concept_templates.contrib.django.tasks import make_extract_and_analyze_task
+
+    _HAS_CONCEPT_TEMPLATES = True
+except ImportError:
+    _HAS_CONCEPT_TEMPLATES = False
 
 from explosionsschutz.models import ExConceptDocument
 
@@ -67,9 +72,12 @@ def _get_pdf_bytes(concept_doc, tenant_id: UUID) -> bytes | None:
 
 
 # ── Task (created via factory) ──────────────────────────────────
-extract_and_analyze_task = make_extract_and_analyze_task(
-    model_class=ExConceptDocument,
-    get_pdf_bytes=_get_pdf_bytes,
-    llm_fn=_llm_sync_wrapper,
-    task_name="explosionsschutz.tasks.extract_and_analyze",
-)
+if _HAS_CONCEPT_TEMPLATES:
+    extract_and_analyze_task = make_extract_and_analyze_task(
+        model_class=ExConceptDocument,
+        get_pdf_bytes=_get_pdf_bytes,
+        llm_fn=_llm_sync_wrapper,
+        task_name="explosionsschutz.tasks.extract_and_analyze",
+    )
+else:
+    extract_and_analyze_task = None
