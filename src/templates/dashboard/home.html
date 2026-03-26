@@ -67,6 +67,29 @@
         </div>
         {% endif %}
 
+        <!-- SDS-Bibliothek (ADR-012) -->
+        {% if "ex" in active_modules or "substances" in active_modules %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                <i data-lucide="file-search" class="w-5 h-5 inline text-blue-500 mr-1"></i>
+                <a href="/sds/" class="hover:text-blue-600">SDS-Bibliothek</a>
+            </h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {% include "components/_stat_card.html" with icon="alert-triangle" value=kpis.sds_review_required label="Safety-Critical" color=kpis.sds_review_required|yesno:"red,gray" %}
+                {% include "components/_stat_card.html" with icon="alert-circle" value=kpis.sds_update_available label="Updates verfügbar" color=kpis.sds_update_available|yesno:"yellow,gray" %}
+                {% include "components/_stat_card.html" with icon="clock" value=kpis.sds_overdue label="überfällig" color=kpis.sds_overdue|yesno:"red,gray" %}
+                {% include "components/_stat_card.html" with icon="check-circle" value=kpis.sds_active_usages label="Aktive SDS" color="green" %}
+            </div>
+            {% if kpis.sds_review_required or kpis.sds_update_available %}
+            <div class="mt-4 text-right">
+                <a href="/sds/" class="text-sm text-blue-600 hover:underline">
+                    Compliance-Dashboard öffnen &rarr;
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
         <!-- Risikobewertung -->
         {% if "risk" in active_modules %}
         <div class="bg-white rounded-lg shadow p-6">
@@ -151,6 +174,9 @@
                 </a>
                 <a href="{% url 'substances:home' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="flask-conical" class="w-4 h-4"></i> Gefahrstoffe
+                </a>
+                <a href="/sds/" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                    <i data-lucide="file-search" class="w-4 h-4"></i> SDS-Bibliothek
                 </a>
                 {% endif %}
                 {% if "dsb" in active_modules %}

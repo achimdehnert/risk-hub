@@ -34,6 +34,12 @@ class ComplianceKPI:
     sds_outdated: int = 0
     site_inventory_items: int = 0
 
+    # SDS-Bibliothek (ADR-012)
+    sds_review_required: int = 0
+    sds_update_available: int = 0
+    sds_active_usages: int = 0
+    sds_overdue: int = 0
+
     # Risikobewertung
     assessments_total: int = 0
     assessments_open: int = 0
@@ -64,7 +70,7 @@ class RecentActivity:
 
 
 def _count_site_inventory(tf) -> int:
-    """Count SiteInventoryItem entries safely (returns 0 if model unavailable)."""
+    """Count SiteInventoryItem entries safely."""
     try:
         from substances.models import SiteInventoryItem
 
@@ -124,11 +130,42 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
 
     actions_qs = ActionItem.objects.filter(tf)
 
+    # --- SDS-Bibliothek (ADR-012) ---
+    sds_review_required = 0
+    sds_update_available = 0
+    sds_active_usages = 0
+    sds_overdue = 0
+    try:
+        from global_sds.sds_usage import (
+            SdsUsage,
+            SdsUsageStatus,
+        )
+
+        su_qs = SdsUsage.objects.filter(tf)
+        sds_review_required = su_qs.filter(
+            status=SdsUsageStatus.REVIEW_REQUIRED,
+        ).count()
+        sds_update_available = su_qs.filter(
+            status=SdsUsageStatus.UPDATE_AVAILABLE,
+        ).count()
+        sds_active_usages = su_qs.filter(
+            status=SdsUsageStatus.ACTIVE,
+        ).count()
+        sds_overdue = su_qs.filter(
+            review_deadline__lt=today,
+            status__in=[
+                SdsUsageStatus.REVIEW_REQUIRED,
+                SdsUsageStatus.UPDATE_AVAILABLE,
+            ],
+        ).count()
+    except Exception:
+        pass
+
     # --- Brandschutz ---
     fire_concepts_total = 0
     fire_concepts_active = 0
-    fire_extinguishers_overdue = 0
-    fire_escape_routes_defect = 0
+    fire_ext_overdue = 0
+    fire_escape_defect = 0
     try:
         from brandschutz.models import (
             EscapeRoute,
@@ -136,10 +173,19 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
             FireProtectionConcept,
         )
 
-        fire_concepts_total = FireProtectionConcept.objects.filter(tf).count()
-        fire_concepts_active = FireProtectionConcept.objects.filter(tf, status="active").count()
-        fire_extinguishers_overdue = FireExtinguisher.objects.filter(tf, status="overdue").count()
-        fire_escape_routes_defect = EscapeRoute.objects.filter(tf, status="defect").count()
+        fc_qs = FireProtectionConcept.objects.filter(tf)
+        fire_concepts_total = fc_qs.count()
+        fire_concepts_active = fc_qs.filter(
+            status="active",
+        ).count()
+        fire_ext_overdue = (
+            FireExtinguisher.objects
+            .filter(tf, status="overdue").count()
+        )
+        fire_escape_defect = (
+            EscapeRoute.objects
+            .filter(tf, status="defect").count()
+        )
     except Exception:
         pass
 
@@ -181,10 +227,14 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
         .count(),
         notifications_unread=notifs.count(),
         notifications_critical=notifs.filter(severity="critical").count(),
+        sds_review_required=sds_review_required,
+        sds_update_available=sds_update_available,
+        sds_active_usages=sds_active_usages,
+        sds_overdue=sds_overdue,
         fire_concepts_total=fire_concepts_total,
         fire_concepts_active=fire_concepts_active,
-        fire_extinguishers_overdue=fire_extinguishers_overdue,
-        fire_escape_routes_defect=fire_escape_routes_defect,
+        fire_extinguishers_overdue=fire_ext_overdue,
+        fire_escape_routes_defect=fire_escape_defect,
     )
 
 
