@@ -19,8 +19,8 @@ from django.views.decorators.http import require_GET, require_POST
 from global_sds.forms import DeferUpdateForm, GlobalSdsUploadForm
 from global_sds.models import GlobalSdsRevision, SdsRevisionDiffRecord
 from global_sds.sds_usage import SdsUsage, SdsUsageStatus
-from global_sds.services.usage_service import SdsUsageService
 from global_sds.services.upload_pipeline import SdsUploadPipeline
+from global_sds.services.usage_service import SdsUsageService
 
 logger = logging.getLogger(__name__)
 

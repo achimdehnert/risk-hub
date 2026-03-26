@@ -13,7 +13,6 @@ from django.db.models import Q
 
 from global_sds.querysets import SdsRevisionQuerySet
 
-
 # ─────────────────────────────────────────────────────────────────────
 # Impact-Klassifizierung (§6.1)
 # ─────────────────────────────────────────────────────────────────────

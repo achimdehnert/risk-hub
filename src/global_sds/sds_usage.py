@@ -10,7 +10,6 @@ niemals direkt GlobalSdsRevision.
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
-
 from django_tenancy.managers import TenantManager
 
 from global_sds.models import GlobalSdsRevision
