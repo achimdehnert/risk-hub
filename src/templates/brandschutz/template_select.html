@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Template auswählen — {{ concept.title }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Breadcrumb -->
+    <nav class="text-sm text-gray-500">
+        <a href="{% url 'brandschutz:concept-list' %}" class="hover:text-gray-700">Brandschutz</a>
+        <span class="mx-2">/</span>
+        <a href="{% url 'brandschutz:concept-detail' concept.pk %}" class="hover:text-gray-700">{{ concept.title }}</a>
+        <span class="mx-2">/</span>
+        <span>Template auswählen</span>
+    </nav>
+
+    <h1 class="text-2xl font-bold text-gray-900">Template für Konzept auswählen</h1>
+    <p class="text-gray-600">Wählen Sie ein bestehendes Template oder erstellen Sie eines aus einer Dokumentanalyse.</p>
+
+    <!-- Existing filled templates -->
+    {% if filled_templates %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i data-lucide="file-edit" class="w-5 h-5 mr-2 text-blue-600"></i>
+                Begonnene Dokumente ({{ filled_templates|length }})
+            </h2>
+        </div>
+        <div class="divide-y divide-gray-100">
+            {% for ft in filled_templates %}
+            <div class="px-6 py-4 flex items-center justify-between">
+                <div>
+                    <p class="font-medium text-gray-900">{{ ft.name }}</p>
+                    <p class="text-xs text-gray-500">
+                        {{ ft.get_status_display }} &mdash; {{ ft.updated_at|date:"d.m.Y H:i" }}
+                    </p>
+                </div>
+                <a href="{% url 'brandschutz:filled-template-edit' ft.pk %}"
+                   class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700">
+                    <i data-lucide="edit-3" class="w-4 h-4 mr-1"></i>
+                    Weiter bearbeiten
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Available Templates -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <i data-lucide="layout-template" class="w-5 h-5 mr-2 text-violet-600"></i>
+                    Vorhandene Templates
+                </h2>
+            </div>
+            {% if templates %}
+            <div class="divide-y divide-gray-100">
+                {% for tmpl in templates %}
+                <form method="post" class="px-6 py-4 flex items-center justify-between">
+                    {% csrf_token %}
+                    <input type="hidden" name="template_id" value="{{ tmpl.pk }}">
+                    <div>
+                        <p class="font-medium text-gray-900">{{ tmpl.name }}</p>
+                        <p class="text-xs text-gray-500">
+                            v{{ tmpl.version }} &mdash; {{ tmpl.get_source_display }}
+                            {% if tmpl.framework %}&mdash; {{ tmpl.framework }}{% endif %}
+                        </p>
+                    </div>
+                    <button type="submit"
+                            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-violet-700 bg-violet-50 rounded-lg hover:bg-violet-100">
+                        <i data-lucide="check" class="w-4 h-4 mr-1"></i>
+                        Auswählen
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="px-6 py-8 text-center text-gray-500">
+                <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 text-gray-300"></i>
+                <p>Noch keine Templates vorhanden.</p>
+                <p class="text-xs mt-1">Laden Sie ein PDF hoch und lassen Sie es analysieren.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Analyzed Documents → Convert to Template -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                    <i data-lucide="brain" class="w-5 h-5 mr-2 text-amber-600"></i>
+                    Aus Dokumentanalyse erstellen
+                </h2>
+            </div>
+            {% if analyzed_docs %}
+            <div class="divide-y divide-gray-100">
+                {% for cdoc in analyzed_docs %}
+                <form method="post" class="px-6 py-4 flex items-center justify-between">
+                    {% csrf_token %}
+                    <input type="hidden" name="doc_id" value="{{ cdoc.pk }}">
+                    <div>
+                        <p class="font-medium text-gray-900">{{ cdoc.title }}</p>
+                        <p class="text-xs text-gray-500">
+                            {{ cdoc.page_count }} Seiten
+                            {% if cdoc.analysis_confidence %}&mdash; Konfidenz {{ cdoc.analysis_confidence|floatformat:0 }}%{% endif %}
+                        </p>
+                    </div>
+                    <button type="submit"
+                            class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-amber-700 bg-amber-50 rounded-lg hover:bg-amber-100">
+                        <i data-lucide="sparkles" class="w-4 h-4 mr-1"></i>
+                        Template erstellen
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="px-6 py-8 text-center text-gray-500">
+                <i data-lucide="scan-search" class="w-8 h-8 mx-auto mb-2 text-gray-300"></i>
+                <p>Keine analysierten Dokumente.</p>
+                <p class="text-xs mt-1">
+                    <a href="{% url 'brandschutz:concept-detail' concept.pk %}" class="text-violet-600 hover:underline">
+                        Zurück zum Konzept
+                    </a> und ein PDF hochladen.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="flex justify-start">
+        <a href="{% url 'brandschutz:concept-detail' concept.pk %}"
+           class="inline-flex items-center px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+            <i data-lucide="arrow-left" class="w-4 h-4 mr-1"></i>
+            Zurück zum Konzept
+        </a>
+    </div>
+</div>
+{% endblock %}

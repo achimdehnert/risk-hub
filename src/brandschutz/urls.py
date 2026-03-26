@@ -49,4 +49,20 @@ urlpatterns = [
         views.ConceptDocAnalyzeView.as_view(),
         name="concept-doc-analyze",
     ),
+    # Phase E: Template-Auswahl + Formular + KI-Vorausfüllung
+    path(
+        "<uuid:concept_pk>/templates/",
+        views.TemplateSelectView.as_view(),
+        name="template-select",
+    ),
+    path(
+        "filled/<uuid:pk>/edit/",
+        views.FilledTemplateEditView.as_view(),
+        name="filled-template-edit",
+    ),
+    path(
+        "filled/<uuid:pk>/llm-prefill/",
+        views.FilledTemplateLLMPrefillView.as_view(),
+        name="filled-template-llm-prefill",
+    ),
 ]

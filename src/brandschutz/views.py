@@ -13,7 +13,9 @@ from documents.models import Document
 from .forms import FireProtectionConceptForm, FireSectionForm
 from .models import (
     ConceptDocument,
+    ConceptTemplateStore,
     EscapeRoute,
+    FilledTemplate,
     FireExtinguisher,
     FireProtectionConcept,
     FireProtectionMeasure,
@@ -425,4 +427,268 @@ class ConceptDocAnalyzeView(View):
         return redirect(
             "brandschutz:concept-detail",
             pk=concept_doc.concept_id,
+        )
+
+
+# ── Phase E: Template-Auswahl, Formular, Speichern ─────────────
+
+
+class TemplateSelectView(View):
+    """Choose or create a template for a concept (ADR-147 Phase E)."""
+
+    template_name = "brandschutz/template_select.html"
+
+    def get(self, request: HttpRequest, concept_pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        concept = get_object_or_404(
+            FireProtectionConcept,
+            pk=concept_pk,
+            tenant_id=request.tenant_id,
+        )
+        # Available templates: tenant-specific + analyzed from docs
+        templates = ConceptTemplateStore.objects.filter(
+            tenant_id=request.tenant_id,
+            scope="brandschutz",
+        )
+        # Analyzed docs that could become templates
+        analyzed_docs = concept.concept_documents.filter(
+            status="analyzed",
+            deleted_at__isnull=True,
+        )
+        # Existing filled templates for this concept
+        filled = concept.filled_templates.order_by("-updated_at")
+
+        return render(request, self.template_name, {
+            "concept": concept,
+            "templates": templates,
+            "analyzed_docs": analyzed_docs,
+            "filled_templates": filled,
+        })
+
+    def post(self, request: HttpRequest, concept_pk: UUID) -> HttpResponse:
+        """Create a FilledTemplate from selected template or analyzed doc."""
+        err = _require_tenant(request)
+        if err:
+            return err
+        concept = get_object_or_404(
+            FireProtectionConcept,
+            pk=concept_pk,
+            tenant_id=request.tenant_id,
+        )
+
+        template_id = request.POST.get("template_id")
+        doc_id = request.POST.get("doc_id")
+
+        if template_id:
+            tmpl = get_object_or_404(
+                ConceptTemplateStore,
+                pk=template_id,
+                tenant_id=request.tenant_id,
+            )
+        elif doc_id:
+            # Promote analyzed ConceptDocument to a stored template
+            cdoc = get_object_or_404(
+                ConceptDocument,
+                pk=doc_id,
+                tenant_id=request.tenant_id,
+                status="analyzed",
+            )
+            tmpl = ConceptTemplateStore.objects.create(
+                tenant_id=request.tenant_id,
+                name=f"Aus Analyse: {cdoc.title}",
+                scope=cdoc.scope or "brandschutz",
+                source="analyzed",
+                source_document=cdoc,
+                template_json=cdoc.template_json,
+            )
+        else:
+            messages.error(request, "Kein Template ausgewählt.")
+            return redirect(
+                "brandschutz:template-select",
+                concept_pk=concept.pk,
+            )
+
+        # Create the filled template instance
+        filled = FilledTemplate.objects.create(
+            tenant_id=request.tenant_id,
+            concept=concept,
+            template=tmpl,
+            name=f"{concept.name} — {tmpl.name}",
+        )
+        return redirect(
+            "brandschutz:filled-template-edit",
+            pk=filled.pk,
+        )
+
+
+class FilledTemplateEditView(View):
+    """Edit a filled template with dynamic form (ADR-147 Phase E)."""
+
+    template_name = "brandschutz/filled_template_edit.html"
+
+    def _get_filled(self, request, pk):
+        err = _require_tenant(request)
+        if err:
+            return None, err
+        filled = get_object_or_404(
+            FilledTemplate,
+            pk=pk,
+            tenant_id=request.tenant_id,
+        )
+        return filled, None
+
+    def _build_form(self, filled, data=None):
+        import json
+
+        from concept_templates.contrib.django.form_generator import (
+            build_template_form,
+        )
+        from concept_templates.schemas import ConceptTemplate
+
+        template_data = json.loads(filled.template.template_json)
+        ct = ConceptTemplate(**template_data)
+        FormClass = build_template_form(ct)
+
+        # Load existing values as initial
+        initial = {}
+        if filled.values_json and filled.values_json != "{}":
+            values = json.loads(filled.values_json)
+            for section_name, fields in values.items():
+                for field_name, value in fields.items():
+                    initial[f"{section_name}__{field_name}"] = value
+
+        if data is not None:
+            return FormClass(data), ct
+        return FormClass(initial=initial), ct
+
+    def get(self, request: HttpRequest, pk: UUID) -> HttpResponse:
+        filled, err = self._get_filled(request, pk)
+        if err:
+            return err
+        form, ct = self._build_form(filled)
+
+        from concept_templates.contrib.django.form_generator import (
+            get_sections_with_fields,
+        )
+
+        sections = get_sections_with_fields(form)
+        return render(request, self.template_name, {
+            "filled": filled,
+            "concept": filled.concept,
+            "form": form,
+            "sections": sections,
+            "template_name_display": ct.name,
+        })
+
+    def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
+        filled, err = self._get_filled(request, pk)
+        if err:
+            return err
+        form, ct = self._build_form(filled, data=request.POST)
+
+        if form.is_valid():
+            import json
+
+            from concept_templates.contrib.django.form_generator import (
+                extract_values,
+            )
+
+            values = extract_values(form)
+            filled.values_json = json.dumps(values, ensure_ascii=False)
+            filled.save(update_fields=["values_json", "updated_at"])
+            messages.success(request, "Werte gespeichert.")
+            return redirect(
+                "brandschutz:filled-template-edit",
+                pk=filled.pk,
+            )
+
+        from concept_templates.contrib.django.form_generator import (
+            get_sections_with_fields,
+        )
+
+        sections = get_sections_with_fields(form)
+        return render(request, self.template_name, {
+            "filled": filled,
+            "concept": filled.concept,
+            "form": form,
+            "sections": sections,
+            "template_name_display": ct.name,
+        })
+
+
+class FilledTemplateLLMPrefillView(View):
+    """HTMX endpoint: AI-prefill a single field (ADR-147 Phase E)."""
+
+    def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return HttpResponse("Unauthorized", status=401)
+        filled = get_object_or_404(
+            FilledTemplate,
+            pk=pk,
+            tenant_id=request.tenant_id,
+        )
+        field_key = request.POST.get("field_key", "")
+        llm_hint = request.POST.get("llm_hint", "")
+
+        if not field_key or not llm_hint:
+            return HttpResponse("Missing field_key or llm_hint", status=400)
+
+        # Build context from existing values
+        import json
+
+        context_text = ""
+        if filled.values_json and filled.values_json != "{}":
+            values = json.loads(filled.values_json)
+            for section, fields in values.items():
+                for fname, fval in fields.items():
+                    if fval:
+                        context_text += f"{fname}: {fval}\n"
+
+        # Also include extracted text from concept documents
+        concept_docs = filled.concept.concept_documents.filter(
+            status="analyzed",
+            deleted_at__isnull=True,
+        )
+        for cdoc in concept_docs[:2]:
+            if cdoc.extracted_text:
+                context_text += f"\n--- {cdoc.title} ---\n"
+                context_text += cdoc.extracted_text[:3000]
+
+        system_prompt = (
+            "Du bist ein Experte für Brandschutzkonzepte. "
+            "Fülle das angeforderte Feld basierend auf dem Kontext aus. "
+            "Antworte NUR mit dem Feldwert, keine Erklärung."
+        )
+        user_prompt = (
+            f"Kontext:\n{context_text[:4000]}\n\n"
+            f"Aufgabe: {llm_hint}\n\n"
+            f"Feld: {field_key}\n"
+            f"Wert:"
+        )
+
+        try:
+            from ai_analysis.llm_client import llm_complete_sync
+
+            result = llm_complete_sync(
+                prompt=user_prompt,
+                system=system_prompt,
+                action_code="concept_analysis",
+                temperature=0.3,
+                max_tokens=500,
+            )
+            value = result.strip()
+        except Exception as exc:
+            import logging
+            logging.getLogger(__name__).warning(
+                "LLM prefill failed for %s: %s", field_key, exc,
+            )
+            value = ""
+
+        return HttpResponse(
+            f'<input type="text" name="{field_key}" value="{value}" '
+            f'class="w-full px-3 py-2 border border-green-300 rounded-lg '
+            f'bg-green-50 focus:ring-2 focus:ring-violet-500" />',
         )

@@ -510,3 +510,120 @@ class ConceptDocument(models.Model):
     @property
     def has_template(self) -> bool:
         return bool(self.template_json)
+
+
+class ConceptTemplateStore(models.Model):
+    """Persistiertes Konzept-Template (ADR-147 Phase E).
+
+    Wird erstellt aus:
+    - LLM-Analyse eines ConceptDocument (template_json → hier persistiert)
+    - Built-in Frameworks (brandschutz_mbo, exschutz_trgs720)
+    - Manueller Merge mehrerer Analysen
+    """
+
+    class TemplateSource(models.TextChoices):
+        ANALYZED = "analyzed", "Aus Dokumentanalyse"
+        BUILTIN = "builtin", "Framework-Vorlage"
+        MERGED = "merged", "Zusammengeführt"
+        MANUAL = "manual", "Manuell erstellt"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True)
+    name = models.CharField(max_length=200)
+    scope = models.CharField(max_length=30, default="brandschutz")
+    version = models.CharField(max_length=20, default="1.0")
+    is_master = models.BooleanField(default=False)
+    framework = models.CharField(max_length=100, blank=True, default="")
+    source = models.CharField(
+        max_length=20,
+        choices=TemplateSource.choices,
+        default=TemplateSource.ANALYZED,
+    )
+    source_document = models.ForeignKey(
+        ConceptDocument,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="generated_templates",
+    )
+    template_json = models.TextField(
+        help_text="Serialisiertes ConceptTemplate (Pydantic JSON)",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "brandschutz_concept_template_store"
+        verbose_name = "Konzept-Template"
+        verbose_name_plural = "Konzept-Templates"
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(
+                fields=["tenant_id", "scope"],
+                name="ix_bs_ctmpl_tenant_scope",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} v{self.version} ({self.get_source_display()})"
+
+
+class FilledTemplate(models.Model):
+    """Ausgefülltes Template für ein Brandschutzkonzept (ADR-147 Phase E).
+
+    Enthält die vom Benutzer (und optional KI) eingetragenen Werte
+    für ein ConceptTemplateStore. Daraus wird das finale Dokument generiert.
+    """
+
+    class FillStatus(models.TextChoices):
+        DRAFT = "draft", "Entwurf"
+        REVIEW = "review", "In Prüfung"
+        APPROVED = "approved", "Freigegeben"
+        EXPORTED = "exported", "Exportiert"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True)
+    concept = models.ForeignKey(
+        FireProtectionConcept,
+        on_delete=models.CASCADE,
+        related_name="filled_templates",
+    )
+    template = models.ForeignKey(
+        ConceptTemplateStore,
+        on_delete=models.PROTECT,
+        related_name="filled_instances",
+    )
+    name = models.CharField(max_length=240)
+    values_json = models.TextField(
+        default="{}",
+        help_text="JSON: {section_name: {field_name: value}}",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=FillStatus.choices,
+        default=FillStatus.DRAFT,
+        db_index=True,
+    )
+    generated_pdf_key = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="S3-Pfad des generierten PDFs",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "brandschutz_filled_template"
+        verbose_name = "Ausgefülltes Template"
+        verbose_name_plural = "Ausgefüllte Templates"
+        ordering = ["-updated_at"]
+        indexes = [
+            models.Index(
+                fields=["tenant_id", "status"],
+                name="ix_bs_ftmpl_tenant_status",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.get_status_display()})"

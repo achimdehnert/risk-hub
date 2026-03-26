@@ -193,6 +193,21 @@
         </div>
     </div>
 
+    <!-- Template-Dokument erstellen (ADR-147 Phase E) -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900 flex items-center">
+                <i data-lucide="file-edit" class="w-5 h-5 mr-2 text-blue-600"></i>
+                Konzept-Dokument erstellen
+            </h2>
+            <a href="{% url 'brandschutz:template-select' concept.pk %}"
+               class="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
+                <i data-lucide="layout-template" class="w-4 h-4 mr-1"></i>
+                Template auswählen
+            </a>
+        </div>
+    </div>
+
     <!-- Konzept-Analyse (ADR-147 Phase C) -->
     {% if concept_docs %}
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
