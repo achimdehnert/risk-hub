@@ -29,10 +29,10 @@ iil-aifw>=0.5.0,<1
 iil-promptfw>=0.5.1,<1
 iil-authoringfw>=0.3.0,<1
 # Concept Templates — ADR-147 (PDF extraction + LLM structure analysis)
-iil-concept-templates[llm,pdf]>=0.2.0
+# iil-concept-templates[llm,pdf]>=0.2.0  # TODO: uncomment when published to PyPI
 # Safety Framework — riskfw inlined in src/riskfw/ (ADR-146 Phase 1)
 # CAD / BIM — nl2cad-core mono-distribution (ADR-146 Phase 2)
-nl2cad-core[gaeb]>=0.2.0
+# nl2cad-core[gaeb]>=0.2.0  # TODO: uncomment when published to PyPI
 mozilla-django-oidc>=4.0
 openpyxl>=3.1
 pdfplumber>=0.11
