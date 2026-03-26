@@ -1,17 +1,17 @@
 {% extends "base.html" %}
-{% block title %}GBU Compliance-\u00dcbersicht{% endblock %}
+{% block title %}GBU Compliance-Übersicht{% endblock %}
 
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-8">
 
   <div class="flex items-center justify-between mb-6">
     <div>
-      <h1 class="text-2xl font-bold text-gray-900">GBU Compliance-\u00dcbersicht</h1>
-      <p class="text-sm text-gray-500 mt-1">Fristen gem\u00e4\u00df GefStoffV \u00a76 / TRGS 400</p>
+      <h1 class="text-2xl font-bold text-gray-900">GBU Compliance-Übersicht</h1>
+      <p class="text-sm text-gray-500 mt-1">Fristen gemäß GefStoffV §6 / TRGS 400</p>
     </div>
     <a href="{% url 'gbu:activity-list' %}"
        class="text-sm text-gray-500 hover:text-gray-700">
-      \u2190 Alle T\u00e4tigkeiten
+      ← Alle Tätigkeiten
     </a>
   </div>
 
@@ -25,12 +25,12 @@
 
     <div class="bg-white rounded-xl border {% if summary.due_soon > 0 %}border-yellow-300{% else %}border-gray-200{% endif %} p-4 text-center">
       <p class="text-3xl font-bold {% if summary.due_soon > 0 %}text-yellow-600{% else %}text-gray-900{% endif %}">{{ summary.due_soon }}</p>
-      <p class="text-xs text-gray-500 mt-1">F\u00e4llig in 30 Tagen</p>
+      <p class="text-xs text-gray-500 mt-1">Fällig in 30 Tagen</p>
     </div>
 
     <div class="bg-white rounded-xl border {% if summary.overdue > 0 %}border-red-300{% else %}border-gray-200{% endif %} p-4 text-center">
       <p class="text-3xl font-bold {% if summary.overdue > 0 %}text-red-600{% else %}text-gray-900{% endif %}">{{ summary.overdue }}</p>
-      <p class="text-xs text-gray-500 mt-1">\u00dcberf\u00e4llig</p>
+      <p class="text-xs text-gray-500 mt-1">Überfällig</p>
     </div>
 
     <div class="bg-white rounded-xl border {% if summary.outdated > 0 %}border-orange-300{% else %}border-gray-200{% endif %} p-4 text-center">
@@ -40,21 +40,21 @@
 
   </div>
 
-  {# ─ \u00dcberf\u00e4llige Pr\u00fcfungen ───────────────────────────────── #}
+  {# ─ Überfällige Prüfungen ───────────────────────────────── #}
   {% if overdue_list %}
   <div class="mb-8">
     <h2 class="text-sm font-semibold text-red-700 uppercase tracking-wide mb-3 flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
-      \u00dcberf\u00e4llige \u00dcberpr\u00fcfungen ({{ overdue_list|length }})
+      Überfällige Überprüfungen ({{ overdue_list|length }})
     </h2>
     <div class="bg-white rounded-xl border border-red-200 overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-red-50">
           <tr>
-            <th class="text-left px-4 py-2 text-gray-600 font-medium">T\u00e4tigkeit</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Tätigkeit</th>
             <th class="text-left px-4 py-2 text-gray-600 font-medium">Standort</th>
             <th class="text-left px-4 py-2 text-gray-600 font-medium">Gefahrstoff</th>
-            <th class="text-left px-4 py-2 text-gray-600 font-medium">F\u00e4llig seit</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Fällig seit</th>
             <th class="px-4 py-2"></th>
           </tr>
         </thead>
@@ -66,11 +66,11 @@
             <td class="px-4 py-3 text-gray-600">{{ act.sds_revision.substance.name }}</td>
             <td class="px-4 py-3">
               <span class="text-red-600 font-medium">{{ act.next_review_date|date:"d.m.Y" }}</span>
-              <span class="text-xs text-red-400 ml-1">({{ act.next_review_date|timesince }} \u00fcberschritten)</span>
+              <span class="text-xs text-red-400 ml-1">({{ act.next_review_date|timesince }} überschritten)</span>
             </td>
             <td class="px-4 py-3 text-right">
               <a href="{% url 'gbu:activity-detail' act.id %}"
-                 class="text-xs text-blue-600 hover:underline">Details \u2192</a>
+                 class="text-xs text-blue-600 hover:underline">Details →</a>
             </td>
           </tr>
           {% endfor %}
@@ -80,21 +80,21 @@
   </div>
   {% endif %}
 
-  {# ─ Bald f\u00e4llige Pr\u00fcfungen ─────────────────────────────── #}
+  {# ─ Bald fällige Prüfungen ─────────────────────────────── #}
   {% if due_soon_list %}
   <div class="mb-8">
     <h2 class="text-sm font-semibold text-yellow-700 uppercase tracking-wide mb-3 flex items-center gap-2">
       <span class="w-2 h-2 rounded-full bg-yellow-400 inline-block"></span>
-      F\u00e4llig in den n\u00e4chsten 30 Tagen ({{ due_soon_list|length }})
+      Fällig in den nächsten 30 Tagen ({{ due_soon_list|length }})
     </h2>
     <div class="bg-white rounded-xl border border-yellow-200 overflow-hidden">
       <table class="w-full text-sm">
         <thead class="bg-yellow-50">
           <tr>
-            <th class="text-left px-4 py-2 text-gray-600 font-medium">T\u00e4tigkeit</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Tätigkeit</th>
             <th class="text-left px-4 py-2 text-gray-600 font-medium">Standort</th>
             <th class="text-left px-4 py-2 text-gray-600 font-medium">Gefahrstoff</th>
-            <th class="text-left px-4 py-2 text-gray-600 font-medium">F\u00e4llig am</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Fällig am</th>
             <th class="text-left px-4 py-2 text-gray-600 font-medium">Risiko</th>
             <th class="px-4 py-2"></th>
           </tr>
@@ -122,7 +122,7 @@
             </td>
             <td class="px-4 py-3 text-right">
               <a href="{% url 'gbu:activity-detail' act.id %}"
-                 class="text-xs text-blue-600 hover:underline">Details \u2192</a>
+                 class="text-xs text-blue-600 hover:underline">Details →</a>
             </td>
           </tr>
           {% endfor %}
@@ -135,9 +135,9 @@
   {# ─ Kein Handlungsbedarf ────────────────────────────────────── #}
   {% if not overdue_list and not due_soon_list %}
   <div class="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
-    <div class="text-4xl mb-3">\u2705</div>
-    <p class="text-green-800 font-semibold">Alle GBU-\u00dcberpr\u00fcfungen sind aktuell.</p>
-    <p class="text-sm text-green-600 mt-1">Keine Fristen in den n\u00e4chsten 30 Tagen.</p>
+    <div class="text-4xl mb-3">✅</div>
+    <p class="text-green-800 font-semibold">Alle GBU-Überprüfungen sind aktuell.</p>
+    <p class="text-sm text-green-600 mt-1">Keine Fristen in den nächsten 30 Tagen.</p>
   </div>
   {% endif %}
 
