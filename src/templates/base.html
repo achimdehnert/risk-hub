@@ -37,6 +37,11 @@
                         Gefahrstoffe
                     </a>
                     {% endif %}
+                    {% if "ex" in active_modules or "substances" in active_modules %}
+                    <a href="/sds/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/sds/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                        SDS-Bibliothek
+                    </a>
+                    {% endif %}
                     {% if "risk" in active_modules %}
                     <a href="/risk/assessments/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':6' == '/risk/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Risikobewertung
