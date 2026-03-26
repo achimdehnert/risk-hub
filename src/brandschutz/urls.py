@@ -44,4 +44,9 @@ urlpatterns = [
         views.MeasureUpdateView.as_view(),
         name="measure-update",
     ),
+    path(
+        "concept-doc/<uuid:pk>/analyze/",
+        views.ConceptDocAnalyzeView.as_view(),
+        name="concept-doc-analyze",
+    ),
 ]

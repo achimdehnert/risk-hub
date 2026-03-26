@@ -12,6 +12,7 @@ from documents.models import Document
 
 from .forms import FireProtectionConceptForm, FireSectionForm
 from .models import (
+    ConceptDocument,
     EscapeRoute,
     FireExtinguisher,
     FireProtectionConcept,
@@ -65,6 +66,9 @@ class ConceptDetailView(View):
             )
             .order_by("-created_at")
         )
+        concept_docs = concept.concept_documents.filter(
+            deleted_at__isnull=True,
+        ).order_by("-created_at")
         return render(
             request,
             self.template_name,
@@ -73,6 +77,7 @@ class ConceptDetailView(View):
                 "sections": sections,
                 "measures": measures,
                 "documents": documents,
+                "concept_docs": concept_docs,
                 "doc_categories": Document.Category.choices,
             },
         )
@@ -354,6 +359,23 @@ class DocumentUploadView(View):
                 doc.scope = "brandschutz"
                 doc.save(update_fields=["concept_ref_id", "scope"])
 
+            # Create ConceptDocument + trigger async analysis for PDFs
+            if ext == ".pdf":
+                concept_doc = ConceptDocument.objects.create(
+                    tenant_id=request.tenant_id,
+                    concept=concept,
+                    title=title,
+                    scope="brandschutz",
+                    source_filename=uploaded_file.name,
+                    content_type=uploaded_file.content_type or "",
+                )
+                from brandschutz.tasks import extract_and_analyze_task
+
+                extract_and_analyze_task.delay(
+                    str(concept_doc.id),
+                    str(request.tenant_id),
+                )
+
             messages.success(
                 request,
                 f"Unterlage '{title}' hochgeladen.",
@@ -369,3 +391,38 @@ class DocumentUploadView(View):
             )
 
         return redirect("brandschutz:concept-detail", pk=concept.pk)
+
+
+class ConceptDocAnalyzeView(View):
+    """Re-trigger analysis for a ConceptDocument (ADR-147 Phase C)."""
+
+    def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        concept_doc = get_object_or_404(
+            ConceptDocument,
+            pk=pk,
+            tenant_id=request.tenant_id,
+        )
+        # Reset for re-analysis
+        concept_doc.status = "uploaded"
+        concept_doc.template_json = ""
+        concept_doc.analysis_confidence = None
+        concept_doc.error_message = ""
+        concept_doc.save(update_fields=[
+            "status", "template_json",
+            "analysis_confidence", "error_message",
+        ])
+
+        from brandschutz.tasks import extract_and_analyze_task
+
+        extract_and_analyze_task.delay(
+            str(concept_doc.id),
+            str(request.tenant_id),
+        )
+        messages.info(request, f"Analyse für '{concept_doc.title}' gestartet.")
+        return redirect(
+            "brandschutz:concept-detail",
+            pk=concept_doc.concept_id,
+        )
