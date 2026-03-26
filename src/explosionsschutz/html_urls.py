@@ -6,13 +6,6 @@ HTML-Template URLs für Explosionsschutz-Modul
 from django.urls import path
 from django.views.generic import RedirectView
 
-from .export_views import (
-    ConceptExportDocxView,
-    ConceptExportGAEBView,
-    ConceptExportPdfView,
-    ConceptPreviewView,
-    ZoneMapView,
-)
 from .concept_template_views import (
     ExConceptDocAnalyzeView,
     ExDocumentUploadView,
@@ -20,6 +13,13 @@ from .concept_template_views import (
     ExFilledTemplateLLMPrefillView,
     ExFilledTemplatePDFView,
     ExTemplateSelectView,
+)
+from .export_views import (
+    ConceptExportDocxView,
+    ConceptExportGAEBView,
+    ConceptExportPdfView,
+    ConceptPreviewView,
+    ZoneMapView,
 )
 from .template_views import (
     AreaBrandschutzView,
