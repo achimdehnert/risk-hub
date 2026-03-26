@@ -1,5 +1,6 @@
 """Django settings for Risk-Hub."""
 
+import importlib.util
 import os
 from pathlib import Path
 
@@ -331,14 +332,11 @@ SDS_IDENTITY_ASK_USER_THRESHOLD = 0.70
 AUTHENTICATION_BACKENDS = [
     "django.contrib.auth.backends.ModelBackend",
 ]
-try:
-    from importlib import import_module
-    import_module("apps.accounts.auth")
+# Add OIDC backend if module exists (find_spec avoids AppRegistryNotReady)
+if importlib.util.find_spec("apps.accounts.auth") is not None:
     AUTHENTICATION_BACKENDS.insert(
         0, "apps.accounts.auth.IILOIDCAuthenticationBackend",
     )
-except ImportError:
-    pass
 
 # --- authentik OIDC (ADR-142) ---
 OIDC_RP_CLIENT_ID = os.environ.get("OIDC_RP_CLIENT_ID", "")
