@@ -636,59 +636,80 @@ class FilledTemplateLLMPrefillView(View):
         if not field_key or not llm_hint:
             return HttpResponse("Missing field_key or llm_hint", status=400)
 
-        # Build context from existing values
         import json
 
-        context_text = ""
+        from concept_templates.prefill import prefill_field
+
+        # Existing values
+        context_values = None
         if filled.values_json and filled.values_json != "{}":
-            values = json.loads(filled.values_json)
-            for section, fields in values.items():
-                for fname, fval in fields.items():
-                    if fval:
-                        context_text += f"{fname}: {fval}\n"
+            context_values = json.loads(filled.values_json)
 
-        # Also include extracted text from concept documents
-        concept_docs = filled.concept.concept_documents.filter(
-            status="analyzed",
-            deleted_at__isnull=True,
-        )
-        for cdoc in concept_docs[:2]:
-            if cdoc.extracted_text:
-                context_text += f"\n--- {cdoc.title} ---\n"
-                context_text += cdoc.extracted_text[:3000]
-
-        system_prompt = (
-            "Du bist ein Experte für Brandschutzkonzepte. "
-            "Fülle das angeforderte Feld basierend auf dem Kontext aus. "
-            "Antworte NUR mit dem Feldwert, keine Erklärung."
-        )
-        user_prompt = (
-            f"Kontext:\n{context_text[:4000]}\n\n"
-            f"Aufgabe: {llm_hint}\n\n"
-            f"Feld: {field_key}\n"
-            f"Wert:"
+        # Extracted texts from analyzed documents
+        extracted_texts = list(
+            filled.concept.concept_documents.filter(
+                status="analyzed",
+                deleted_at__isnull=True,
+            ).values_list("extracted_text", flat=True)[:2]
         )
 
-        try:
+        def _llm_fn(system: str, user: str) -> str:
             from ai_analysis.llm_client import llm_complete_sync
-
-            result = llm_complete_sync(
-                prompt=user_prompt,
-                system=system_prompt,
+            return llm_complete_sync(
+                prompt=user,
+                system=system,
                 action_code="concept_analysis",
                 temperature=0.3,
                 max_tokens=500,
             )
-            value = result.strip()
-        except Exception as exc:
-            import logging
-            logging.getLogger(__name__).warning(
-                "LLM prefill failed for %s: %s", field_key, exc,
-            )
-            value = ""
+
+        value = prefill_field(
+            field_key=field_key,
+            llm_hint=llm_hint,
+            llm_fn=_llm_fn,
+            context_values=context_values,
+            extracted_texts=extracted_texts,
+            scope=filled.template.scope or "brandschutz",
+        )
 
         return HttpResponse(
             f'<input type="text" name="{field_key}" value="{value}" '
             f'class="w-full px-3 py-2 border border-green-300 rounded-lg '
             f'bg-green-50 focus:ring-2 focus:ring-violet-500" />',
         )
+
+
+class FilledTemplatePDFView(View):
+    """Generate and download PDF from a filled template (ADR-147 Phase E)."""
+
+    def get(self, request: HttpRequest, pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        filled = get_object_or_404(
+            FilledTemplate,
+            pk=pk,
+            tenant_id=request.tenant_id,
+        )
+
+        import json
+
+        from concept_templates.document_renderer import render_pdf
+        from concept_templates.schemas import ConceptTemplate
+
+        template_data = json.loads(filled.template.template_json)
+        ct = ConceptTemplate(**template_data)
+        values = json.loads(filled.values_json) if filled.values_json else {}
+
+        pdf_bytes = render_pdf(
+            template=ct,
+            values=values,
+            title=filled.name,
+        )
+
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        safe_name = filled.name.replace(" ", "_")[:80]
+        response["Content-Disposition"] = (
+            f'attachment; filename="{safe_name}.pdf"'
+        )
+        return response

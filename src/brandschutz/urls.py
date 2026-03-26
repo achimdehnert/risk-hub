@@ -65,4 +65,9 @@ urlpatterns = [
         views.FilledTemplateLLMPrefillView.as_view(),
         name="filled-template-llm-prefill",
     ),
+    path(
+        "filled/<uuid:pk>/pdf/",
+        views.FilledTemplatePDFView.as_view(),
+        name="filled-template-pdf",
+    ),
 ]

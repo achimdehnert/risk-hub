@@ -87,6 +87,11 @@
                 Alle Felder können jederzeit bearbeitet und gespeichert werden.
             </div>
             <div class="flex items-center space-x-3">
+                <a href="{% url 'brandschutz:filled-template-pdf' filled.pk %}"
+                   class="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200">
+                    <i data-lucide="file-down" class="w-4 h-4 mr-2"></i>
+                    PDF herunterladen
+                </a>
                 <button type="submit"
                         class="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-violet-600 rounded-lg hover:bg-violet-700">
                     <i data-lucide="save" class="w-4 h-4 mr-2"></i>
