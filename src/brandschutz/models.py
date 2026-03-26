@@ -424,3 +424,89 @@ class FireProtectionMeasure(models.Model):
             self.status not in (self.Status.IMPLEMENTED, self.Status.ACCEPTED)
             and self.due_date < timezone.now().date()
         )
+
+
+class ConceptDocument(models.Model):
+    """Unterlage zu einem Brandschutzkonzept (ADR-147 Phase B).
+
+    Speichert hochgeladene Dokumente mit Extraktionsergebnis und
+    optionalem Template-JSON aus LLM-Analyse.
+    """
+
+    class DocStatus(models.TextChoices):
+        UPLOADED = "uploaded", "Hochgeladen"
+        EXTRACTING = "extracting", "Wird extrahiert"
+        EXTRACTED = "extracted", "Text extrahiert"
+        ANALYZING = "analyzing", "Wird analysiert"
+        ANALYZED = "analyzed", "Analysiert"
+        FAILED = "failed", "Fehlgeschlagen"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    tenant_id = models.UUIDField(db_index=True)
+    concept = models.ForeignKey(
+        FireProtectionConcept,
+        on_delete=models.CASCADE,
+        related_name="concept_documents",
+    )
+    title = models.CharField(max_length=240)
+    scope = models.CharField(
+        max_length=30,
+        blank=True,
+        default="brandschutz",
+    )
+    source_filename = models.CharField(max_length=255, blank=True, default="")
+    content_type = models.CharField(max_length=120, blank=True, default="")
+    extracted_text = models.TextField(blank=True, default="")
+    extraction_warnings = models.TextField(
+        blank=True,
+        default="",
+        help_text="JSON-Liste von Warnungen aus der Extraktion",
+    )
+    page_count = models.IntegerField(null=True, blank=True)
+    template_json = models.TextField(
+        blank=True,
+        default="",
+        help_text="Serialisiertes ConceptTemplate nach LLM-Analyse",
+    )
+    analysis_confidence = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="0.0-1.0, Konfidenz der LLM-Strukturanalyse",
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=DocStatus.choices,
+        default=DocStatus.UPLOADED,
+        db_index=True,
+    )
+    error_message = models.TextField(blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        db_table = "brandschutz_concept_document"
+        verbose_name = "Konzept-Unterlage"
+        verbose_name_plural = "Konzept-Unterlagen"
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(
+                fields=["tenant_id", "status"],
+                name="ix_bs_cdoc_tenant_status",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.get_status_display()})"
+
+    @property
+    def is_deleted(self) -> bool:
+        return self.deleted_at is not None
+
+    @property
+    def has_extracted_text(self) -> bool:
+        return bool(self.extracted_text)
+
+    @property
+    def has_template(self) -> bool:
+        return bool(self.template_json)
