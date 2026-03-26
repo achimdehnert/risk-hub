@@ -29,6 +29,18 @@ class Document(models.Model):
         choices=Category.choices,
         default=Category.GENERAL,
     )
+    concept_ref_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Optional: Verknüpfung zu Brandschutz-/Explosionsschutzkonzept",
+    )
+    scope = models.CharField(
+        max_length=30,
+        blank=True,
+        default="",
+        help_text="Fachbereich: brandschutz, explosionsschutz, etc.",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

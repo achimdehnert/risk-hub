@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
 from common.tenant import require_tenant as _require_tenant
+from documents.models import Document
 
 from .forms import FireProtectionConceptForm, FireSectionForm
 from .models import (
@@ -16,6 +17,13 @@ from .models import (
     FireProtectionConcept,
     FireProtectionMeasure,
 )
+
+ALLOWED_EXTENSIONS = frozenset({
+    ".pdf", ".docx", ".doc", ".dxf", ".dwg",
+    ".jpg", ".jpeg", ".png", ".tiff", ".xlsx", ".xls",
+    ".txt", ".csv",
+})
+MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 class ConceptListView(View):
@@ -49,6 +57,14 @@ class ConceptDetailView(View):
             "escape_routes", "fire_extinguishers", "measures"
         )
         measures = concept.measures.filter(section__isnull=True)
+        documents = (
+            Document.objects.filter(
+                tenant_id=request.tenant_id,
+                concept_ref_id=concept.pk,
+                scope="brandschutz",
+            )
+            .order_by("-created_at")
+        )
         return render(
             request,
             self.template_name,
@@ -56,6 +72,8 @@ class ConceptDetailView(View):
                 "concept": concept,
                 "sections": sections,
                 "measures": measures,
+                "documents": documents,
+                "doc_categories": Document.Category.choices,
             },
         )
 
@@ -248,3 +266,106 @@ class SectionCreateView(View):
             self.template_name,
             {"form": form, "concept": concept},
         )
+
+
+class DocumentUploadView(View):
+    """Unterlage zu einem Brandschutzkonzept hochladen (ADR-147 Phase A)."""
+
+    template_name = "brandschutz/document_upload.html"
+
+    def get(self, request: HttpRequest, concept_pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        concept = get_object_or_404(
+            FireProtectionConcept,
+            pk=concept_pk,
+            tenant_id=request.tenant_id,
+        )
+        return render(
+            request,
+            self.template_name,
+            {
+                "concept": concept,
+                "categories": Document.Category.choices,
+            },
+        )
+
+    def post(self, request: HttpRequest, concept_pk: UUID) -> HttpResponse:
+        err = _require_tenant(request)
+        if err:
+            return err
+        concept = get_object_or_404(
+            FireProtectionConcept,
+            pk=concept_pk,
+            tenant_id=request.tenant_id,
+        )
+
+        uploaded_file = request.FILES.get("file")
+        title = request.POST.get("title", "").strip()
+        category = request.POST.get("category", Document.Category.GENERAL)
+
+        if not uploaded_file:
+            messages.error(request, "Bitte eine Datei auswählen.")
+            return redirect(
+                "brandschutz:document-upload", concept_pk=concept.pk
+            )
+
+        # Validate extension
+        import os
+
+        ext = os.path.splitext(uploaded_file.name)[1].lower()
+        if ext not in ALLOWED_EXTENSIONS:
+            messages.error(
+                request,
+                f"Dateityp '{ext}' nicht erlaubt.",
+            )
+            return redirect(
+                "brandschutz:document-upload", concept_pk=concept.pk
+            )
+
+        # Validate size
+        if uploaded_file.size > MAX_UPLOAD_SIZE:
+            messages.error(request, "Datei zu groß (max. 50 MB).")
+            return redirect(
+                "brandschutz:document-upload", concept_pk=concept.pk
+            )
+
+        if not title:
+            title = uploaded_file.name
+
+        # Create document via documents service
+        from documents.services import upload_document
+
+        try:
+            upload_document(
+                title=title,
+                category=category,
+                file=uploaded_file,
+                tenant_id=request.tenant_id,
+            )
+            # Update the document with concept reference
+            doc = Document.objects.filter(
+                tenant_id=request.tenant_id,
+                title=title,
+            ).first()
+            if doc:
+                doc.concept_ref_id = concept.pk
+                doc.scope = "brandschutz"
+                doc.save(update_fields=["concept_ref_id", "scope"])
+
+            messages.success(
+                request,
+                f"Unterlage '{title}' hochgeladen.",
+            )
+        except Exception as exc:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.warning("Document upload failed: %s", exc)
+            messages.error(
+                request,
+                f"Upload fehlgeschlagen: {exc}",
+            )
+
+        return redirect("brandschutz:concept-detail", pk=concept.pk)

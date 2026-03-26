@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Unterlage hochladen — {{ concept.title }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <!-- Header -->
+    <div>
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="{% url 'brandschutz:concept-list' %}" class="hover:text-gray-700">Brandschutz</a>
+            <span class="mx-2">/</span>
+            <a href="{% url 'brandschutz:concept-detail' concept.pk %}" class="hover:text-gray-700">{{ concept.title }}</a>
+            <span class="mx-2">/</span>
+            <span>Unterlage hochladen</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">Unterlage hochladen</h1>
+        <p class="mt-1 text-sm text-gray-500">für {{ concept.title }} — {{ concept.site.name }}</p>
+    </div>
+
+    <!-- Form -->
+    <form method="post" enctype="multipart/form-data"
+          class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-6">
+        {% csrf_token %}
+
+        {% if messages %}
+        <div class="space-y-2">
+            {% for message in messages %}
+            <div class="{% if message.tags == 'error' %}bg-red-50 border border-red-200 text-red-700{% else %}bg-green-50 border border-green-200 text-green-700{% endif %} rounded-lg p-4 flex items-center">
+                <i data-lucide="{% if message.tags == 'error' %}alert-circle{% else %}check-circle{% endif %}" class="w-5 h-5 mr-2"></i>
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- Titel -->
+        <div>
+            <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Titel</label>
+            <input type="text" name="title" id="title"
+                   class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
+                   placeholder="Optional — wird aus Dateiname übernommen">
+            <p class="mt-1 text-xs text-gray-400">Leer lassen für automatische Übernahme des Dateinamens.</p>
+        </div>
+
+        <!-- Kategorie -->
+        <div>
+            <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Kategorie</label>
+            <select name="category" id="category"
+                    class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
+                {% for value, label in categories %}
+                <option value="{{ value }}">{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Datei -->
+        <div>
+            <label for="file" class="block text-sm font-medium text-gray-700 mb-1">Datei *</label>
+            <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-orange-400 transition-colors"
+                 id="drop-zone">
+                <div class="space-y-1 text-center">
+                    <i data-lucide="upload-cloud" class="mx-auto h-12 w-12 text-gray-400"></i>
+                    <div class="flex text-sm text-gray-600">
+                        <label for="file"
+                               class="relative cursor-pointer rounded-md font-medium text-orange-600 hover:text-orange-500">
+                            <span>Datei auswählen</span>
+                            <input id="file" name="file" type="file" class="sr-only"
+                                   accept=".pdf,.docx,.doc,.dxf,.dwg,.jpg,.jpeg,.png,.tiff,.xlsx,.xls,.txt,.csv">
+                        </label>
+                        <p class="pl-1">oder hierher ziehen</p>
+                    </div>
+                    <p class="text-xs text-gray-500">
+                        PDF, DOCX, DXF, DWG, JPG, PNG, XLSX, CSV — max. 50 MB
+                    </p>
+                    <p id="file-name" class="text-sm font-medium text-orange-600 hidden"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <a href="{% url 'brandschutz:concept-detail' concept.pk %}"
+               class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                Abbrechen
+            </a>
+            <button type="submit" class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600">
+                <i data-lucide="upload" class="w-4 h-4 inline mr-1"></i>
+                Hochladen
+            </button>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('file');
+    const fileName = document.getElementById('file-name');
+    const dropZone = document.getElementById('drop-zone');
+
+    if (fileInput) {
+        fileInput.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                fileName.textContent = this.files[0].name;
+                fileName.classList.remove('hidden');
+            }
+        });
+    }
+
+    if (dropZone) {
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropZone.addEventListener(evt, function(e) {
+                e.preventDefault();
+                dropZone.classList.add('border-orange-400', 'bg-orange-50');
+            });
+        });
+        ['dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, function(e) {
+                e.preventDefault();
+                dropZone.classList.remove('border-orange-400', 'bg-orange-50');
+            });
+        });
+        dropZone.addEventListener('drop', function(e) {
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                fileName.textContent = e.dataTransfer.files[0].name;
+                fileName.classList.remove('hidden');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

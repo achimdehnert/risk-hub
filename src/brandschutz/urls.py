@@ -25,6 +25,11 @@ urlpatterns = [
         name="section-create",
     ),
     path(
+        "<uuid:concept_pk>/documents/upload/",
+        views.DocumentUploadView.as_view(),
+        name="document-upload",
+    ),
+    path(
         "extinguishers/",
         views.ExtinguisherListView.as_view(),
         name="extinguisher-list",
