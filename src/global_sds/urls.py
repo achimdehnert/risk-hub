@@ -1,0 +1,45 @@
+# src/global_sds/urls.py
+"""URL-Konfiguration für Global SDS Library Frontend (ADR-012)."""
+
+from django.urls import path
+
+from global_sds import views
+
+app_name = "global_sds"
+
+urlpatterns = [
+    # Compliance Dashboard (§8)
+    path(
+        "",
+        views.compliance_dashboard,
+        name="dashboard",
+    ),
+    # SDS Upload (§5)
+    path(
+        "upload/",
+        views.sds_upload,
+        name="upload",
+    ),
+    # Revision Detail
+    path(
+        "revision/<int:pk>/",
+        views.revision_detail,
+        name="revision-detail",
+    ),
+    # HTMX Partials (§8.4)
+    path(
+        "compliance/diff/<int:pk>/",
+        views.diff_panel,
+        name="diff-panel",
+    ),
+    path(
+        "compliance/adopt/<int:pk>/",
+        views.adopt_update,
+        name="adopt",
+    ),
+    path(
+        "compliance/defer/<int:pk>/",
+        views.defer_update,
+        name="defer",
+    ),
+]

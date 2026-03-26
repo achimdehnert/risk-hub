@@ -1,0 +1,56 @@
+{# HTMX Partial: Einzelne Usage-Zeile nach Adopt/Defer (Swap-Target) #}
+
+<tr class="hover:bg-gray-50 transition-colors"
+    id="usage-row-{{ usage.pk }}">
+  <td class="px-4 py-3 font-medium">{{ usage.sds_revision.substance.name }}</td>
+  <td class="px-4 py-3 text-gray-600">{{ usage.sds_revision.product_name|truncatechars:40 }}</td>
+  <td class="px-4 py-3">
+    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+      {% if usage.status == 'ACTIVE' %}bg-green-100 text-green-800
+      {% elif usage.status == 'REVIEW_REQUIRED' %}bg-red-100 text-red-800
+      {% elif usage.status == 'UPDATE_AVAILABLE' %}bg-yellow-100 text-yellow-800
+      {% elif usage.status == 'SUPERSEDED' %}bg-gray-100 text-gray-600
+      {% else %}bg-gray-100 text-gray-800{% endif %}">
+      {{ usage.get_status_display }}
+    </span>
+  </td>
+  <td class="px-4 py-3 text-xs">{{ usage.pending_update_impact|default:"—" }}</td>
+  <td class="px-4 py-3 text-xs">
+    {% if usage.review_deadline %}
+      {{ usage.review_deadline|date:"d.m.Y" }}
+    {% else %}—{% endif %}
+  </td>
+  <td class="px-4 py-3 text-right space-x-2">
+    {% if usage.status == 'REVIEW_REQUIRED' or usage.status == 'UPDATE_AVAILABLE' %}
+      <button hx-get="{% url 'global_sds:diff-panel' pk=usage.pk %}"
+              hx-target="#diff-container"
+              hx-swap="innerHTML"
+              class="text-xs text-blue-600 hover:underline">
+        Diff
+      </button>
+      <button hx-post="{% url 'global_sds:adopt' pk=usage.pk %}"
+              hx-target="#usage-row-{{ usage.pk }}"
+              hx-swap="outerHTML"
+              hx-confirm="Neue Version übernehmen?"
+              class="text-xs text-green-600 hover:underline">
+        Übernehmen
+      </button>
+      <button hx-get="{% url 'global_sds:defer' pk=usage.pk %}"
+              hx-target="#defer-modal-container"
+              hx-swap="innerHTML"
+              class="text-xs text-gray-500 hover:underline">
+        Zurückstellen
+      </button>
+    {% elif usage.status == 'ACTIVE' %}
+      <span class="text-xs text-green-600">Aktuell</span>
+    {% elif usage.status == 'SUPERSEDED' %}
+      <span class="text-xs text-gray-400">Abgelöst</span>
+    {% endif %}
+
+    {% if usage.update_deferred_reason %}
+      <span class="text-xs text-yellow-600" title="{{ usage.update_deferred_reason }}">
+        Zurückgestellt
+      </span>
+    {% endif %}
+  </td>
+</tr>

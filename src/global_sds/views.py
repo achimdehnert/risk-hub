@@ -1,0 +1,336 @@
+# src/global_sds/views.py
+"""
+Views für Global SDS Library Frontend (ADR-012).
+
+Compliance Dashboard, SDS Upload, Diff-Panel, Adopt/Defer.
+Service-Layer Pattern: Views → Services → Models.
+"""
+
+import logging
+from datetime import date, timedelta
+
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q  # noqa: F401 — used in future filters
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_GET, require_POST
+
+from global_sds.forms import DeferUpdateForm, GlobalSdsUploadForm
+from global_sds.models import GlobalSdsRevision, SdsRevisionDiffRecord
+from global_sds.sds_usage import SdsUsage, SdsUsageStatus
+from global_sds.services.usage_service import SdsUsageService
+from global_sds.services.upload_pipeline import SdsUploadPipeline
+
+logger = logging.getLogger(__name__)
+
+
+def _tenant_id(request: HttpRequest) -> str:
+    """Tenant-ID aus Request extrahieren."""
+    return str(getattr(request, "tenant_id", ""))
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Compliance Dashboard
+# ─────────────────────────────────────────────────────────────────────
+
+
+@login_required
+@require_GET
+def compliance_dashboard(request: HttpRequest) -> HttpResponse:
+    """
+    SDS Compliance Dashboard (ADR-012 §8).
+
+    KPI-Kacheln, Deadline-Ampel, Review-Tabelle.
+    """
+    tenant_id = _tenant_id(request)
+    today = date.today()
+    soon_cutoff = today + timedelta(days=14)
+
+    usages = SdsUsage.objects.filter(tenant_id=tenant_id)
+
+    # KPI-Zähler
+    critical_count = usages.filter(
+        status=SdsUsageStatus.REVIEW_REQUIRED,
+    ).count()
+    regulatory_count = usages.filter(
+        status=SdsUsageStatus.UPDATE_AVAILABLE,
+    ).count()
+    active_count = usages.filter(
+        status=SdsUsageStatus.ACTIVE,
+    ).count()
+
+    # Overdue + Soon
+    overdue = usages.filter(
+        review_deadline__lt=today,
+        status__in=[
+            SdsUsageStatus.REVIEW_REQUIRED,
+            SdsUsageStatus.UPDATE_AVAILABLE,
+        ],
+    ).select_related("sds_revision__substance").order_by(
+        "review_deadline",
+    )
+
+    due_soon = usages.filter(
+        review_deadline__gte=today,
+        review_deadline__lte=soon_cutoff,
+        status__in=[
+            SdsUsageStatus.REVIEW_REQUIRED,
+            SdsUsageStatus.UPDATE_AVAILABLE,
+        ],
+    ).select_related("sds_revision__substance").order_by(
+        "review_deadline",
+    )
+
+    pending_review = usages.filter(
+        status__in=[
+            SdsUsageStatus.REVIEW_REQUIRED,
+            SdsUsageStatus.UPDATE_AVAILABLE,
+        ],
+    ).select_related(
+        "sds_revision__substance",
+        "pending_update_revision",
+    ).order_by("review_deadline")
+
+    # GBU geflaggt (falls Modul vorhanden)
+    gbu_flagged = 0
+    try:
+        from gbu.models import HazardAssessment
+        gbu_flagged = HazardAssessment.objects.filter(
+            tenant_id=tenant_id,
+            review_required=True,
+        ).count()
+    except (ImportError, Exception):
+        pass
+
+    context = {
+        "critical_count": critical_count,
+        "regulatory_count": regulatory_count,
+        "gbu_flagged": gbu_flagged,
+        "active_count": active_count,
+        "overdue": overdue,
+        "due_soon": due_soon,
+        "pending_review": pending_review,
+        "today": today,
+    }
+
+    return render(
+        request,
+        "global_sds/compliance_dashboard.html",
+        context,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# SDS Upload (globale Pipeline)
+# ─────────────────────────────────────────────────────────────────────
+
+
+@login_required
+def sds_upload(request: HttpRequest) -> HttpResponse:
+    """SDS-PDF Upload in die globale Pipeline (ADR-012 §5)."""
+    if request.method == "GET":
+        form = GlobalSdsUploadForm()
+        return render(
+            request,
+            "global_sds/sds_upload.html",
+            {"form": form},
+        )
+
+    form = GlobalSdsUploadForm(request.POST, request.FILES)
+    if not form.is_valid():
+        return render(
+            request,
+            "global_sds/sds_upload.html",
+            {"form": form},
+        )
+
+    pdf_file = request.FILES["pdf_file"]
+    pdf_bytes = pdf_file.read()
+    tenant_id = _tenant_id(request)
+
+    # Parser aufrufen
+    try:
+        from substances.services.sds_parser import SdsParserService
+        parser = SdsParserService()
+        parse_result = parser.parse_pdf(pdf_file)
+    except (ImportError, Exception) as exc:
+        logger.warning("SDS parser error: %s", exc)
+        parse_result = {
+            "product_name": pdf_file.name.replace(".pdf", ""),
+            "parse_confidence": 0.0,
+        }
+
+    # Pipeline verarbeiten
+    pipeline = SdsUploadPipeline()
+    result = pipeline.process(
+        pdf_bytes=pdf_bytes,
+        parse_result=parse_result,
+        tenant_id=tenant_id,
+    )
+
+    messages.info(request, f"{result.outcome}: {result.message}")
+
+    if result.revision:
+        return redirect(
+            "global_sds:revision-detail",
+            pk=result.revision.pk,
+        )
+    return redirect("global_sds:dashboard")
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Revision Detail
+# ─────────────────────────────────────────────────────────────────────
+
+
+@login_required
+@require_GET
+def revision_detail(request: HttpRequest, pk: int) -> HttpResponse:
+    """Detail-Ansicht einer globalen SDS-Revision."""
+    tenant_id = _tenant_id(request)
+    revision = get_object_or_404(
+        GlobalSdsRevision.objects.visible_for_tenant(tenant_id),
+        pk=pk,
+    )
+
+    components = revision.components.all()
+    exposure_limits = revision.exposure_limits.select_related(
+        "component",
+    ).all()
+
+    usage = SdsUsage.objects.filter(
+        tenant_id=tenant_id,
+        sds_revision=revision,
+    ).first()
+
+    context = {
+        "revision": revision,
+        "substance": revision.substance,
+        "components": components,
+        "exposure_limits": exposure_limits,
+        "usage": usage,
+        "h_statements": revision.hazard_statements.all(),
+        "p_statements": revision.precautionary_statements.all(),
+        "pictograms": revision.pictograms.all(),
+    }
+
+    return render(
+        request,
+        "global_sds/revision_detail.html",
+        context,
+    )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# HTMX Partials: Diff-Panel, Adopt, Defer
+# ─────────────────────────────────────────────────────────────────────
+
+
+@login_required
+@require_GET
+def diff_panel(request: HttpRequest, pk: int) -> HttpResponse:
+    """HTMX: Diff-Panel für eine SdsUsage laden (ADR-012 §8.4)."""
+    tenant_id = _tenant_id(request)
+    usage = get_object_or_404(
+        SdsUsage,
+        pk=pk,
+        tenant_id=tenant_id,
+    )
+
+    diff_record = None
+    if usage.pending_update_revision and usage.sds_revision:
+        diff_record = SdsRevisionDiffRecord.objects.filter(
+            old_revision=usage.sds_revision,
+            new_revision=usage.pending_update_revision,
+        ).first()
+
+    context = {
+        "usage": usage,
+        "diff_record": diff_record,
+        "old_revision": usage.sds_revision,
+        "new_revision": usage.pending_update_revision,
+    }
+
+    return render(
+        request,
+        "global_sds/partials/_diff_panel.html",
+        context,
+    )
+
+
+@login_required
+@require_POST
+def adopt_update(request: HttpRequest, pk: int) -> HttpResponse:
+    """HTMX: Neue Version übernehmen (ADR-012 §8.4)."""
+    tenant_id = _tenant_id(request)
+    usage = get_object_or_404(
+        SdsUsage,
+        pk=pk,
+        tenant_id=tenant_id,
+    )
+
+    service = SdsUsageService()
+    try:
+        new_usage = service.adopt_update(usage, request.user)
+        messages.success(
+            request,
+            f"Update übernommen: {new_usage.sds_revision}",
+        )
+    except ValueError as exc:
+        messages.error(request, str(exc))
+
+    if getattr(request, "htmx", None):
+        return render(
+            request,
+            "global_sds/partials/_usage_row.html",
+            {"usage": new_usage if "new_usage" in dir() else usage},
+        )
+    return redirect("global_sds:dashboard")
+
+
+@login_required
+def defer_update(request: HttpRequest, pk: int) -> HttpResponse:
+    """HTMX: Update zurückstellen mit Pflichtbegründung."""
+    tenant_id = _tenant_id(request)
+    usage = get_object_or_404(
+        SdsUsage,
+        pk=pk,
+        tenant_id=tenant_id,
+    )
+
+    if request.method == "GET":
+        form = DeferUpdateForm()
+        return render(
+            request,
+            "global_sds/partials/_defer_modal.html",
+            {"form": form, "usage": usage},
+        )
+
+    form = DeferUpdateForm(request.POST)
+    if not form.is_valid():
+        return render(
+            request,
+            "global_sds/partials/_defer_modal.html",
+            {"form": form, "usage": usage},
+        )
+
+    service = SdsUsageService()
+    try:
+        service.defer_update(
+            usage=usage,
+            user=request.user,
+            reason=form.cleaned_data["reason"],
+            deferred_until=form.cleaned_data.get("deferred_until"),
+        )
+        messages.success(request, "Update zurückgestellt.")
+    except ValueError as exc:
+        messages.error(request, str(exc))
+
+    if getattr(request, "htmx", None):
+        return render(
+            request,
+            "global_sds/partials/_usage_row.html",
+            {"usage": usage},
+        )
+    return redirect("global_sds:dashboard")

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% block title %}SDS: {{ revision.product_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8">
+
+  <div class="flex items-center space-x-4 mb-6">
+    <a href="{% url 'global_sds:dashboard' %}" class="text-gray-400 hover:text-gray-600">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    </a>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">{{ revision.product_name }}</h1>
+      <p class="text-sm text-gray-500">
+        {{ substance.name }}
+        {% if substance.cas_number %}(CAS {{ substance.cas_number }}){% endif %}
+        — Version {{ revision.version_number|default:"—" }}
+      </p>
+    </div>
+    <span class="ml-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+      {% if revision.status == 'VERIFIED' %}bg-green-100 text-green-800
+      {% elif revision.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+      {% elif revision.status == 'SUPERSEDED' %}bg-gray-100 text-gray-800
+      {% else %}bg-red-100 text-red-800{% endif %}">
+      {{ revision.get_status_display }}
+    </span>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+
+    {# ─ Metadaten ─────────────────────────────────────────── #}
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Metadaten</h2>
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Hersteller</dt>
+          <dd class="font-medium">{{ revision.manufacturer_name|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Revisionsdatum</dt>
+          <dd class="font-medium">{{ revision.revision_date|date:"d.m.Y"|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Version</dt>
+          <dd class="font-medium">{{ revision.version_number|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Signalwort</dt>
+          <dd class="font-medium">{{ revision.signal_word|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Parser-Konfidenz</dt>
+          <dd class="font-medium">
+            {% if revision.parse_confidence %}
+              {{ revision.parse_confidence|floatformat:2 }}
+            {% else %}—{% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">SHA-256</dt>
+          <dd class="font-mono text-xs text-gray-400">{{ revision.source_hash|truncatechars:16 }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    {# ─ Regulatorische Daten ──────────────────────────────── #}
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Regulatorisch &amp; Ex-Schutz</h2>
+      <dl class="space-y-2 text-sm">
+        <div class="flex justify-between">
+          <dt class="text-gray-500">WGK</dt>
+          <dd class="font-medium">{{ revision.wgk|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Lagerklasse (TRGS 510)</dt>
+          <dd class="font-medium">{{ revision.storage_class_trgs510|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Flammpunkt</dt>
+          <dd class="font-medium">{% if revision.flash_point_c %}{{ revision.flash_point_c }} °C{% else %}—{% endif %}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">Zündtemperatur</dt>
+          <dd class="font-medium">{% if revision.ignition_temperature_c %}{{ revision.ignition_temperature_c }} °C{% else %}—{% endif %}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-gray-500">UEG / OEG</dt>
+          <dd class="font-medium">
+            {% if revision.lower_explosion_limit %}{{ revision.lower_explosion_limit }}{% else %}—{% endif %}
+            /
+            {% if revision.upper_explosion_limit %}{{ revision.upper_explosion_limit }} Vol.%{% else %}—{% endif %}
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+  </div>
+
+  {# ─ H-Sätze ─────────────────────────────────────────────── #}
+  {% if h_statements %}
+  <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">H-Sätze (Gefahrenhinweise)</h2>
+    <div class="flex flex-wrap gap-2">
+      {% for h in h_statements %}
+      <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-800 border border-red-200"
+            title="{{ h.text_de }}">
+        {{ h.code }}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─ P-Sätze ─────────────────────────────────────────────── #}
+  {% if p_statements %}
+  <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">P-Sätze (Sicherheitshinweise)</h2>
+    <div class="flex flex-wrap gap-2">
+      {% for p in p_statements %}
+      <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200"
+            title="{{ p.text_de }}">
+        {{ p.code }}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─ Inhaltsstoffe ───────────────────────────────────────── #}
+  {% if components %}
+  <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Inhaltsstoffe (Abschnitt 3.2)</h2>
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="text-left px-3 py-2 text-gray-600 font-medium">Stoff</th>
+          <th class="text-left px-3 py-2 text-gray-600 font-medium">CAS</th>
+          <th class="text-left px-3 py-2 text-gray-600 font-medium">Konzentration</th>
+          <th class="text-left px-3 py-2 text-gray-600 font-medium">M-Faktor</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        {% for comp in components %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-3 py-2 font-medium">{{ comp.chemical_name }}</td>
+          <td class="px-3 py-2 text-gray-600">{{ comp.cas_number|default:"—" }}</td>
+          <td class="px-3 py-2 text-gray-600">
+            {% if comp.concentration_min and comp.concentration_max %}
+              {{ comp.concentration_min }}–{{ comp.concentration_max }}%
+            {% elif comp.concentration_note %}
+              {{ comp.concentration_note }}
+            {% else %}—{% endif %}
+          </td>
+          <td class="px-3 py-2 text-gray-600">
+            {% if comp.m_factor_acute %}A:{{ comp.m_factor_acute }}{% endif %}
+            {% if comp.m_factor_chronic %}C:{{ comp.m_factor_chronic }}{% endif %}
+            {% if not comp.m_factor_acute and not comp.m_factor_chronic %}—{% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# ─ Tenant-Usage ─────────────────────────────────────────── #}
+  {% if usage %}
+  <div class="bg-white rounded-xl border border-gray-200 p-5 mb-6">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Ihre Nutzung</h2>
+    <dl class="grid grid-cols-2 gap-4 text-sm">
+      <div>
+        <dt class="text-gray-500">Status</dt>
+        <dd class="font-medium">{{ usage.get_status_display }}</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">Freigabe durch</dt>
+        <dd class="font-medium">{{ usage.approved_by|default:"—" }}</dd>
+      </div>
+      {% if usage.review_deadline %}
+      <div>
+        <dt class="text-gray-500">Review-Frist</dt>
+        <dd class="font-medium {% if usage.review_deadline < today %}text-red-600{% endif %}">
+          {{ usage.review_deadline|date:"d.m.Y" }}
+        </dd>
+      </div>
+      {% endif %}
+    </dl>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

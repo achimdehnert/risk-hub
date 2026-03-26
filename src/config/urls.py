@@ -25,13 +25,13 @@ handler404 = custom_404
 handler500 = custom_500
 
 urlpatterns = [
-    # Health checks (ADR-021: /livez/ liveness + /healthz/ + /readyz/ readiness)
+    # Health checks (ADR-021: /livez/ + /healthz/ + /readyz/)
     path("livez/", liveness, name="liveness"),
     path("healthz/", readiness, name="readiness"),
     path("readyz/", readiness, name="readyz"),
     path("", home),
     path("dashboard/", include("dashboard.urls")),
-        path("oidc/", include("mozilla_django_oidc.urls")),
+    path("oidc/", include("mozilla_django_oidc.urls")),
     path("admin/", admin.site.urls),
     path("accounts/login/", tenant_login, name="login"),
     path("accounts/register/", register, name="register"),
@@ -65,4 +65,5 @@ urlpatterns = [
     path("tenants/", include("tenancy.urls")),
     path("billing/modules/", include("django_module_shop.urls")),
     path("brandschutz/", include("brandschutz.urls")),
+    path("sds/", include("global_sds.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

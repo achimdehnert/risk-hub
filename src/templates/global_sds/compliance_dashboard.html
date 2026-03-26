@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+{% block title %}SDS Compliance-Dashboard{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">SDS Compliance-Dashboard</h1>
+      <p class="text-sm text-gray-500 mt-1">Überprüfungspflichten gemäß GefStoffV §7 / TRGS 400</p>
+    </div>
+    <a href="{% url 'global_sds:upload' %}"
+       class="inline-flex items-center px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 text-sm font-medium">
+      <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+      SDS hochladen
+    </a>
+  </div>
+
+  {# ─ KPI-Kacheln (ADR-012 §8.2) ──────────────────────────── #}
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+
+    <div class="bg-white rounded-xl border {% if critical_count > 0 %}border-red-300{% else %}border-gray-200{% endif %} p-4 text-center">
+      <p class="text-3xl font-bold {% if critical_count > 0 %}text-red-600{% else %}text-gray-900{% endif %}">{{ critical_count }}</p>
+      <p class="text-xs text-gray-500 mt-1">Safety-Critical</p>
+      <p class="text-xs text-gray-400">Überprüfung fällig</p>
+    </div>
+
+    <div class="bg-white rounded-xl border {% if regulatory_count > 0 %}border-yellow-300{% else %}border-gray-200{% endif %} p-4 text-center">
+      <p class="text-3xl font-bold {% if regulatory_count > 0 %}text-yellow-600{% else %}text-gray-900{% endif %}">{{ regulatory_count }}</p>
+      <p class="text-xs text-gray-500 mt-1">Regulatory</p>
+      <p class="text-xs text-gray-400">Update verfügbar</p>
+    </div>
+
+    <div class="bg-white rounded-xl border {% if gbu_flagged > 0 %}border-orange-300{% else %}border-gray-200{% endif %} p-4 text-center">
+      <p class="text-3xl font-bold {% if gbu_flagged > 0 %}text-orange-600{% else %}text-gray-900{% endif %}">{{ gbu_flagged }}</p>
+      <p class="text-xs text-gray-500 mt-1">GBU geflaggt</p>
+      <p class="text-xs text-gray-400">Review erforderlich</p>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+      <p class="text-3xl font-bold text-green-600">{{ active_count }}</p>
+      <p class="text-xs text-gray-500 mt-1">Aktuelle SDS</p>
+      <p class="text-xs text-gray-400">Freigegeben</p>
+    </div>
+
+  </div>
+
+  {# ─ Überfällige Reviews (Rot) ───────────────────────────── #}
+  {% if overdue %}
+  <div class="mb-8">
+    <h2 class="text-sm font-semibold text-red-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span>
+      Überfällig ({{ overdue|length }})
+    </h2>
+    <div class="bg-white rounded-xl border border-red-200 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-red-50">
+          <tr>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Stoff</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Produkt</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Impact</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Fällig seit</th>
+            <th class="px-4 py-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for usage in overdue %}
+          <tr class="hover:bg-red-50 transition-colors"
+              id="usage-row-{{ usage.pk }}">
+            <td class="px-4 py-3 font-medium">{{ usage.sds_revision.substance.name }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ usage.sds_revision.product_name|truncatechars:40 }}</td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                {% if usage.pending_update_impact == 'SAFETY_CRITICAL' %}bg-red-100 text-red-800
+                {% elif usage.pending_update_impact == 'REGULATORY' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ usage.pending_update_impact|default:"—" }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="text-red-600 font-medium">{{ usage.review_deadline|date:"d.m.Y" }}</span>
+              <span class="text-xs text-red-400 ml-1">({{ usage.review_deadline|timesince }} überschritten)</span>
+            </td>
+            <td class="px-4 py-3 text-right space-x-2">
+              <button hx-get="{% url 'global_sds:diff-panel' pk=usage.pk %}"
+                      hx-target="#diff-container"
+                      hx-swap="innerHTML"
+                      class="text-xs text-blue-600 hover:underline">
+                Diff
+              </button>
+              <button hx-post="{% url 'global_sds:adopt' pk=usage.pk %}"
+                      hx-target="#usage-row-{{ usage.pk }}"
+                      hx-swap="outerHTML"
+                      hx-confirm="Neue Version übernehmen?"
+                      class="text-xs text-green-600 hover:underline">
+                Übernehmen
+              </button>
+              <button hx-get="{% url 'global_sds:defer' pk=usage.pk %}"
+                      hx-target="#defer-modal-container"
+                      hx-swap="innerHTML"
+                      class="text-xs text-gray-500 hover:underline">
+                Zurückstellen
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─ Bald fällig (Amber) ─────────────────────────────────── #}
+  {% if due_soon %}
+  <div class="mb-8">
+    <h2 class="text-sm font-semibold text-yellow-700 uppercase tracking-wide mb-3 flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-yellow-400 inline-block"></span>
+      Fällig in 14 Tagen ({{ due_soon|length }})
+    </h2>
+    <div class="bg-white rounded-xl border border-yellow-200 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-yellow-50">
+          <tr>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Stoff</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Produkt</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Impact</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Fällig am</th>
+            <th class="px-4 py-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for usage in due_soon %}
+          <tr class="hover:bg-yellow-50 transition-colors"
+              id="usage-row-{{ usage.pk }}">
+            <td class="px-4 py-3 font-medium">{{ usage.sds_revision.substance.name }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ usage.sds_revision.product_name|truncatechars:40 }}</td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                {% if usage.pending_update_impact == 'SAFETY_CRITICAL' %}bg-red-100 text-red-800
+                {% elif usage.pending_update_impact == 'REGULATORY' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ usage.pending_update_impact|default:"—" }}
+              </span>
+            </td>
+            <td class="px-4 py-3">
+              <span class="font-medium text-yellow-700">{{ usage.review_deadline|date:"d.m.Y" }}</span>
+              <span class="text-xs text-gray-400 ml-1">(in {{ usage.review_deadline|timeuntil }})</span>
+            </td>
+            <td class="px-4 py-3 text-right space-x-2">
+              <button hx-get="{% url 'global_sds:diff-panel' pk=usage.pk %}"
+                      hx-target="#diff-container"
+                      hx-swap="innerHTML"
+                      class="text-xs text-blue-600 hover:underline">
+                Diff
+              </button>
+              <button hx-post="{% url 'global_sds:adopt' pk=usage.pk %}"
+                      hx-target="#usage-row-{{ usage.pk }}"
+                      hx-swap="outerHTML"
+                      hx-confirm="Neue Version übernehmen?"
+                      class="text-xs text-green-600 hover:underline">
+                Übernehmen
+              </button>
+              <button hx-get="{% url 'global_sds:defer' pk=usage.pk %}"
+                      hx-target="#defer-modal-container"
+                      hx-swap="innerHTML"
+                      class="text-xs text-gray-500 hover:underline">
+                Zurückstellen
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─ Alle ausstehenden Reviews ──────────────────────────── #}
+  {% if pending_review %}
+  <div class="mb-8">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+      Alle ausstehenden Reviews ({{ pending_review|length }})
+    </h2>
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Stoff</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Produkt</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Status</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Impact</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Frist</th>
+            <th class="px-4 py-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for usage in pending_review %}
+          <tr class="hover:bg-gray-50 transition-colors"
+              id="usage-row-{{ usage.pk }}">
+            <td class="px-4 py-3 font-medium">{{ usage.sds_revision.substance.name }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ usage.sds_revision.product_name|truncatechars:40 }}</td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                {% if usage.status == 'REVIEW_REQUIRED' %}bg-red-100 text-red-800
+                {% elif usage.status == 'UPDATE_AVAILABLE' %}bg-yellow-100 text-yellow-800
+                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                {{ usage.get_status_display }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-xs">{{ usage.pending_update_impact|default:"—" }}</td>
+            <td class="px-4 py-3 text-xs">
+              {% if usage.review_deadline %}
+                {% if usage.review_deadline < today %}
+                  <span class="text-red-600 font-medium">{{ usage.review_deadline|date:"d.m.Y" }}</span>
+                {% else %}
+                  <span>{{ usage.review_deadline|date:"d.m.Y" }}</span>
+                {% endif %}
+              {% else %}
+                —
+              {% endif %}
+            </td>
+            <td class="px-4 py-3 text-right space-x-2">
+              <button hx-get="{% url 'global_sds:diff-panel' pk=usage.pk %}"
+                      hx-target="#diff-container"
+                      hx-swap="innerHTML"
+                      class="text-xs text-blue-600 hover:underline">
+                Diff
+              </button>
+              <button hx-post="{% url 'global_sds:adopt' pk=usage.pk %}"
+                      hx-target="#usage-row-{{ usage.pk }}"
+                      hx-swap="outerHTML"
+                      hx-confirm="Neue Version übernehmen?"
+                      class="text-xs text-green-600 hover:underline">
+                Übernehmen
+              </button>
+              <button hx-get="{% url 'global_sds:defer' pk=usage.pk %}"
+                      hx-target="#defer-modal-container"
+                      hx-swap="innerHTML"
+                      class="text-xs text-gray-500 hover:underline">
+                Zurückstellen
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  {# ─ Kein Handlungsbedarf ────────────────────────────────── #}
+  {% if not overdue and not due_soon and not pending_review %}
+  <div class="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
+    <i data-lucide="check-circle" class="w-12 h-12 text-green-500 mx-auto mb-3"></i>
+    <p class="text-green-800 font-semibold">Alle SDS-Überprüfungen sind aktuell.</p>
+    <p class="text-sm text-green-600 mt-1">Keine ausstehenden Reviews oder Updates.</p>
+  </div>
+  {% endif %}
+
+  {# ─ HTMX Containers ───────────────────────────────────── #}
+  <div id="diff-container" class="mt-8"></div>
+  <div id="defer-modal-container"></div>
+
+</div>
+{% endblock %}
