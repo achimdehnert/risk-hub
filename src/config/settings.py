@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "documents",
     "reporting",
     "explosionsschutz",
+    "global_sds",
     "substances",
     "notifications",
     "dashboard",
@@ -319,6 +320,13 @@ if not DEBUG:
     SECURE_CONTENT_TYPE_NOSNIFF = True
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = "DENY"
+
+# --- Global SDS Library (ADR-012 §7.3) ---
+SDS_REVIEW_DEADLINE_DAYS = 28
+SDS_PARSER_LLM_CONFIDENCE_THRESHOLD = 0.85
+SDS_PARSER_GLOBAL_PROMOTION_THRESHOLD = 0.90
+SDS_IDENTITY_AUTO_MATCH_THRESHOLD = 0.95
+SDS_IDENTITY_ASK_USER_THRESHOLD = 0.70
 
 AUTHENTICATION_BACKENDS = [
     "apps.accounts.auth.IILOIDCAuthenticationBackend",

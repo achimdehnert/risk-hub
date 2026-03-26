@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SDS Compliance Dashboard</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap');
+
+  :root {
+    --bg: #0f1117;
+    --surface: #171b26;
+    --surface2: #1e2330;
+    --border: #2a3045;
+    --border-bright: #3d4a65;
+    --text: #e2e8f0;
+    --text-muted: #8896b0;
+    --text-dim: #4a5568;
+    --red: #ff4d4d;
+    --red-bg: rgba(255,77,77,0.08);
+    --red-border: rgba(255,77,77,0.25);
+    --amber: #f59e0b;
+    --amber-bg: rgba(245,158,11,0.08);
+    --amber-border: rgba(245,158,11,0.25);
+    --green: #10b981;
+    --green-bg: rgba(16,185,129,0.08);
+    --green-border: rgba(16,185,129,0.25);
+    --blue: #3b82f6;
+    --blue-bg: rgba(59,130,246,0.08);
+    --blue-border: rgba(59,130,246,0.25);
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  /* Layout */
+  .layout { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+
+  /* Sidebar */
+  .sidebar {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 24px 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .sidebar-logo {
+    padding: 0 20px 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
+  }
+  .sidebar-logo .mark {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .sidebar-logo .name {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+    margin-top: 2px;
+  }
+  .nav-section {
+    padding: 8px 12px 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 2px solid transparent;
+    font-size: 13px;
+  }
+  .nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+  .nav-item.active {
+    color: var(--text);
+    background: var(--blue-bg);
+    border-left-color: var(--blue);
+  }
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 500;
+    padding: 1px 6px;
+    border-radius: 10px;
+  }
+  .nav-badge.amber { background: var(--amber); color: #000; }
+
+  /* Main content */
+  .main { overflow: auto; display: flex; flex-direction: column; }
+
+  /* Top bar */
+  .topbar {
+    padding: 16px 28px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+  .topbar-title {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .topbar-sub {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 1px;
+  }
+  .topbar-actions { display: flex; gap: 8px; }
+  .btn {
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--border-bright);
+    background: var(--surface2);
+    color: var(--text);
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .btn:hover { border-color: var(--blue); color: var(--blue); }
+  .btn-primary {
+    background: var(--blue);
+    border-color: var(--blue);
+    color: white;
+  }
+  .btn-primary:hover { background: #2563eb; border-color: #2563eb; color: white; }
+
+  /* Content area */
+  .content { padding: 24px 28px; flex: 1; }
+
+  /* KPI strip */
+  .kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+  .kpi-card:hover { border-color: var(--border-bright); }
+  .kpi-card.critical { border-left: 3px solid var(--red); }
+  .kpi-card.warning { border-left: 3px solid var(--amber); }
+  .kpi-card.ok { border-left: 3px solid var(--green); }
+  .kpi-card.info { border-left: 3px solid var(--blue); }
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-size: 28px;
+    font-weight: 300;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .kpi-card.critical .kpi-value { color: var(--red); }
+  .kpi-card.warning .kpi-value { color: var(--amber); }
+  .kpi-card.ok .kpi-value { color: var(--green); }
+  .kpi-card.info .kpi-value { color: var(--blue); }
+  .kpi-sub { font-size: 11px; color: var(--text-muted); }
+
+  /* Section header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .section-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block;
+    width: 3px; height: 14px;
+    background: var(--red);
+    border-radius: 2px;
+  }
+  .section-title.amber::before { background: var(--amber); }
+  .section-title.blue::before { background: var(--blue); }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .filter-chip {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--sans);
+  }
+  .filter-chip:hover { border-color: var(--border-bright); color: var(--text); }
+  .filter-chip.active {
+    background: var(--red-bg);
+    border-color: var(--red-border);
+    color: var(--red);
+  }
+  .filter-chip.active.amber {
+    background: var(--amber-bg);
+    border-color: var(--amber-border);
+    color: var(--amber);
+  }
+  .filter-chip.active.all {
+    background: var(--blue-bg);
+    border-color: var(--blue-border);
+    color: var(--blue);
+  }
+
+  /* Review table */
+  .review-table {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .table-header {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr 0.8fr 1fr 1fr 120px;
+    padding: 10px 16px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+  }
+  .table-row {
+    display: grid;
+    grid-template-columns: 2fr 1.2fr 0.8fr 1fr 1fr 120px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    align-items: center;
+    transition: background 0.1s;
+    cursor: pointer;
+  }
+  .table-row:last-child { border-bottom: none; }
+  .table-row:hover { background: rgba(255,255,255,0.02); }
+  .table-row.selected { background: var(--blue-bg); }
+
+  .substance-name { font-weight: 500; font-size: 13px; }
+  .substance-cas {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-top: 2px;
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 500;
+    font-family: var(--mono);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  .badge.critical { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+  .badge.warning { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+  .badge.ok { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+  .badge.info { background: var(--blue-bg); color: var(--blue); border: 1px solid var(--blue-border); }
+
+  /* Deadline */
+  .deadline { font-family: var(--mono); font-size: 11px; }
+  .deadline.overdue { color: var(--red); }
+  .deadline.soon { color: var(--amber); }
+  .deadline.ok { color: var(--text-muted); }
+
+  /* H-code pills */
+  .h-codes { display: flex; gap: 4px; flex-wrap: wrap; }
+  .h-code {
+    font-family: var(--mono);
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 2px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .h-code.new {
+    background: var(--red-bg);
+    border-color: var(--red-border);
+    color: var(--red);
+  }
+
+  /* Row actions */
+  .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+  .icon-btn {
+    width: 28px; height: 28px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-bg); }
+  .icon-btn.danger:hover { border-color: var(--red); color: var(--red); background: var(--red-bg); }
+
+  /* Detail panel */
+  .detail-panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 24px;
+    display: none;
+  }
+  .detail-panel.visible { display: block; }
+  .detail-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .detail-header-title { font-weight: 500; font-size: 14px; }
+  .detail-header-sub { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .detail-body { padding: 20px; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .detail-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 10px;
+  }
+  .diff-item {
+    display: flex;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    margin-bottom: 6px;
+    font-size: 12px;
+    align-items: flex-start;
+  }
+  .diff-item.removed { background: rgba(255,77,77,0.06); border: 1px solid rgba(255,77,77,0.15); }
+  .diff-item.added { background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15); }
+  .diff-item.changed { background: rgba(245,158,11,0.06); border: 1px solid rgba(245,158,11,0.15); }
+  .diff-sign {
+    font-family: var(--mono);
+    font-size: 14px;
+    font-weight: 600;
+    flex-shrink: 0;
+    margin-top: -1px;
+  }
+  .diff-item.removed .diff-sign { color: var(--red); }
+  .diff-item.added .diff-sign { color: var(--green); }
+  .diff-item.changed .diff-sign { color: var(--amber); }
+  .diff-field { font-family: var(--mono); font-size: 11px; color: var(--text-muted); margin-bottom: 2px; }
+  .diff-value { color: var(--text); }
+  .diff-old { text-decoration: line-through; color: var(--text-muted); }
+
+  .action-bar {
+    display: flex;
+    gap: 10px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--surface2);
+    align-items: center;
+  }
+  .action-bar-label { font-size: 12px; color: var(--text-muted); margin-right: auto; }
+
+  /* Progress bar */
+  .progress-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+  .progress-label { font-size: 12px; color: var(--text-muted); width: 120px; flex-shrink: 0; }
+  .progress-bar-wrap {
+    flex: 1;
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar { height: 100%; border-radius: 2px; transition: width 0.4s; }
+  .progress-bar.red { background: var(--red); }
+  .progress-bar.amber { background: var(--amber); }
+  .progress-bar.green { background: var(--green); }
+  .progress-val {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--text-muted);
+    width: 30px;
+    text-align: right;
+  }
+
+  /* Timeline */
+  .timeline { padding-left: 16px; border-left: 1px solid var(--border); }
+  .timeline-item {
+    position: relative;
+    padding: 0 0 14px 16px;
+    font-size: 12px;
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -5px; top: 4px;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--border);
+    border: 2px solid var(--surface);
+  }
+  .timeline-item.critical::before { background: var(--red); }
+  .timeline-item.warning::before { background: var(--amber); }
+  .timeline-item.ok::before { background: var(--green); }
+  .timeline-date { font-family: var(--mono); font-size: 10px; color: var(--text-dim); margin-bottom: 2px; }
+  .timeline-text { color: var(--text-muted); }
+  .timeline-text strong { color: var(--text); font-weight: 500; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="mark">risk-hub</div>
+      <div class="name">Schutztat</div>
+    </div>
+
+    <div class="nav-section">Übersicht</div>
+    <div class="nav-item active">
+      <span class="nav-dot" style="background:var(--blue)"></span>
+      SDS Compliance
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-dot" style="background:var(--text-dim)"></span>
+      Gefahrstoffverz.
+    </div>
+
+    <div class="nav-section" style="margin-top:8px">Module</div>
+    <div class="nav-item">
+      <span class="nav-dot" style="background:var(--text-dim)"></span>
+      GBU
+      <span class="nav-badge amber">2</span>
+    </div>
+    <div class="nav-item">
+      <span class="nav-dot" style="background:var(--text-dim)"></span>
+      Explosionsschutz
+    </div>
+    <div class="nav-item">
+      <span class="nav-dot" style="background:var(--text-dim)"></span>
+      Betriebsanweis.
+    </div>
+
+    <div class="nav-section" style="margin-top:8px">Verwaltung</div>
+    <div class="nav-item">
+      <span class="nav-dot" style="background:var(--text-dim)"></span>
+      SDS-Bibliothek
+    </div>
+    <div class="nav-item">
+      <span class="nav-dot" style="background:var(--text-dim)"></span>
+      Einstellungen
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">SDS Compliance Monitor</div>
+        <div class="topbar-sub">Mankiewicz GmbH — Werk Hamburg · Letzte Prüfung: heute, 08:14</div>
+      </div>
+      <div class="topbar-actions">
+        <button class="btn">Exportieren</button>
+        <button class="btn btn-primary">SDS hochladen</button>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- KPIs -->
+      <div class="kpi-strip">
+        <div class="kpi-card critical" onclick="filterRows('critical')">
+          <div class="kpi-label">Überprüfung fällig</div>
+          <div class="kpi-value">3</div>
+          <div class="kpi-sub">Safety-Critical · max. 4 Wochen</div>
+        </div>
+        <div class="kpi-card warning" onclick="filterRows('warning')">
+          <div class="kpi-label">Update verfügbar</div>
+          <div class="kpi-value">7</div>
+          <div class="kpi-sub">Regulatory · keine Pflichtfrist</div>
+        </div>
+        <div class="kpi-card info" onclick="filterRows('gbu')">
+          <div class="kpi-label">GBU geflaggt</div>
+          <div class="kpi-value">2</div>
+          <div class="kpi-sub">Bewertung erneut nötig</div>
+        </div>
+        <div class="kpi-card ok" onclick="filterRows('ok')">
+          <div class="kpi-label">Aktuelle SDS</div>
+          <div class="kpi-value">41</div>
+          <div class="kpi-sub">Alle Versionen aktuell</div>
+        </div>
+      </div>
+
+      <!-- Critical Reviews -->
+      <div class="section-header">
+        <div class="section-title">Überprüfung erforderlich — Safety Critical</div>
+      </div>
+
+      <div class="filter-bar">
+        <button class="filter-chip active all" onclick="setFilter(this,'all')">Alle (10)</button>
+        <button class="filter-chip" onclick="setFilter(this,'critical')">Kritisch (3)</button>
+        <button class="filter-chip" onclick="setFilter(this,'warning')">Regulatory (7)</button>
+        <button class="filter-chip" onclick="setFilter(this,'overdue')">Überfällig (1)</button>
+      </div>
+
+      <div class="review-table">
+        <div class="table-header">
+          <div>Stoff / Produkt</div>
+          <div>Geänderte Felder</div>
+          <div>Impact</div>
+          <div>Neue H-Sätze</div>
+          <div>Frist</div>
+          <div></div>
+        </div>
+
+        <!-- Row 1 — OVERDUE -->
+        <div class="table-row" onclick="toggleDetail('detail-1', this)">
+          <div>
+            <div class="substance-name">2-Butoxyethanol</div>
+            <div class="substance-cas">CAS 111-76-2 · CELEROL Decklack 362-26</div>
+          </div>
+          <div>
+            <div class="h-codes">
+              <span class="h-code">Flammpunkt</span>
+              <span class="h-code">AGW</span>
+            </div>
+          </div>
+          <div><span class="badge critical">Critical</span></div>
+          <div>
+            <div class="h-codes">
+              <span class="h-code new">H331</span>
+              <span class="h-code">H302</span>
+            </div>
+          </div>
+          <div><span class="deadline overdue">12.03.2026 ↑ 14d</span></div>
+          <div class="row-actions">
+            <button class="icon-btn" title="Details" onclick="event.stopPropagation();toggleDetail('detail-1')">↗</button>
+            <button class="icon-btn danger" title="Zurückstellen" onclick="event.stopPropagation()">⏸</button>
+          </div>
+        </div>
+
+        <!-- Detail panel 1 -->
+        <div id="detail-1" class="detail-panel">
+          <div class="detail-header">
+            <div>
+              <div class="detail-header-title">Diff: SdsRevision v3 → v4 · 2-Butoxyethanol</div>
+              <div class="detail-header-sub">Mankiewicz Gebr. & Co. · Revision 03.01.2024</div>
+            </div>
+            <span class="badge critical">Überprüfung überfällig</span>
+          </div>
+          <div class="detail-body">
+            <div class="detail-grid">
+              <div>
+                <div class="detail-section-title">Geänderte Felder</div>
+                <div class="diff-item changed">
+                  <div class="diff-sign">~</div>
+                  <div>
+                    <div class="diff-field">flash_point_c</div>
+                    <div class="diff-value"><span class="diff-old">62 °C</span> → <strong>57 °C</strong></div>
+                  </div>
+                </div>
+                <div class="diff-item changed">
+                  <div class="diff-sign">~</div>
+                  <div>
+                    <div class="diff-field">agw_ppm (TRGS 900)</div>
+                    <div class="diff-value"><span class="diff-old">20 ppm</span> → <strong>10 ppm</strong></div>
+                  </div>
+                </div>
+                <div class="diff-item added">
+                  <div class="diff-sign">+</div>
+                  <div>
+                    <div class="diff-field">h_code_added</div>
+                    <div class="diff-value">H331 — Giftig bei Einatmen</div>
+                  </div>
+                </div>
+                <div class="diff-item removed">
+                  <div class="diff-sign">−</div>
+                  <div>
+                    <div class="diff-field">h_code_removed</div>
+                    <div class="diff-value">H319 — Augenreizung (entfernt)</div>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div class="detail-section-title">Betroffene Dokumente</div>
+                <div class="progress-row">
+                  <div class="progress-label">GBU (2 von 3)</div>
+                  <div class="progress-bar-wrap"><div class="progress-bar red" style="width:33%"></div></div>
+                  <div class="progress-val">1/3</div>
+                </div>
+                <div class="progress-row">
+                  <div class="progress-label">Ex-Schutz</div>
+                  <div class="progress-bar-wrap"><div class="progress-bar amber" style="width:0%"></div></div>
+                  <div class="progress-val">0/1</div>
+                </div>
+                <div class="progress-row">
+                  <div class="progress-label">Betriebsanw.</div>
+                  <div class="progress-bar-wrap"><div class="progress-bar green" style="width:100%"></div></div>
+                  <div class="progress-val">1/1</div>
+                </div>
+                <div style="margin-top:16px">
+                  <div class="detail-section-title">Verlauf</div>
+                  <div class="timeline">
+                    <div class="timeline-item critical">
+                      <div class="timeline-date">26.03.2026 · heute</div>
+                      <div class="timeline-text"><strong>Frist abgelaufen</strong> — keine Maßnahme ergriffen</div>
+                    </div>
+                    <div class="timeline-item warning">
+                      <div class="timeline-date">10.03.2026</div>
+                      <div class="timeline-text">Erinnerung gesendet an <strong>M. Schmidt</strong></div>
+                    </div>
+                    <div class="timeline-item ok">
+                      <div class="timeline-date">05.03.2026</div>
+                      <div class="timeline-text">SDS v4 verifiziert · <strong>Überprüfungspflicht ausgelöst</strong></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="action-bar">
+            <div class="action-bar-label">Pflichtbegründung bei Zurückstellung · GefStoffV §7 Abs. 7</div>
+            <button class="btn btn-primary" onclick="markDone()">GBU-Review abzeichnen</button>
+            <button class="btn" onclick="showDefer()">Zurückstellen mit Begründung</button>
+            <button class="btn">Diff exportieren</button>
+          </div>
+        </div>
+
+        <!-- Row 2 -->
+        <div class="table-row" onclick="toggleDetail('detail-2', this)">
+          <div>
+            <div class="substance-name">Reaktionsmasse CMIT/MIT (3:1)</div>
+            <div class="substance-cas">CAS 55965-84-9 · CELEROL Decklack 362-26</div>
+          </div>
+          <div>
+            <div class="h-codes">
+              <span class="h-code">H310</span>
+              <span class="h-code">M-Faktor</span>
+            </div>
+          </div>
+          <div><span class="badge critical">Critical</span></div>
+          <div>
+            <div class="h-codes">
+              <span class="h-code new">H310</span>
+            </div>
+          </div>
+          <div><span class="deadline soon">09.04.2026 · 14d</span></div>
+          <div class="row-actions">
+            <button class="icon-btn" onclick="event.stopPropagation()">↗</button>
+            <button class="icon-btn danger" onclick="event.stopPropagation()">⏸</button>
+          </div>
+        </div>
+
+        <!-- Row 3 -->
+        <div class="table-row" onclick="toggleDetail('detail-3', this)">
+          <div>
+            <div class="substance-name">1,2-Benzisothiazol-3(2H)-on</div>
+            <div class="substance-cas">CAS 2634-33-5 · Mehrere Produkte</div>
+          </div>
+          <div>
+            <div class="h-codes">
+              <span class="h-code">Konz.-Grenzwert</span>
+            </div>
+          </div>
+          <div><span class="badge critical">Critical</span></div>
+          <div>
+            <div class="h-codes">
+              <span class="h-code new">H317</span>
+            </div>
+          </div>
+          <div><span class="deadline soon">16.04.2026 · 21d</span></div>
+          <div class="row-actions">
+            <button class="icon-btn" onclick="event.stopPropagation()">↗</button>
+            <button class="icon-btn danger" onclick="event.stopPropagation()">⏸</button>
+          </div>
+        </div>
+
+        <!-- Separator -->
+        <div style="padding:8px 16px; background:var(--surface2); border-bottom:1px solid var(--border)">
+          <div class="section-title amber" style="font-size:10px">Update verfügbar — Regulatory</div>
+        </div>
+
+        <!-- Row 4 REGULATORY -->
+        <div class="table-row">
+          <div>
+            <div class="substance-name">Ammoniak</div>
+            <div class="substance-cas">CAS 1336-21-6 · CELEROL Decklack 362-26</div>
+          </div>
+          <div>
+            <div class="h-codes">
+              <span class="h-code">WGK</span>
+              <span class="h-code">Lagerklasse</span>
+            </div>
+          </div>
+          <div><span class="badge warning">Regulatory</span></div>
+          <div><span style="color:var(--text-dim);font-size:11px">—</span></div>
+          <div><span class="deadline ok">Keine Frist</span></div>
+          <div class="row-actions">
+            <button class="icon-btn" onclick="event.stopPropagation()">↗</button>
+            <button class="icon-btn" onclick="event.stopPropagation()">✓</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Defer modal (hidden by default) -->
+      <div id="defer-modal" style="display:none; background:var(--surface); border:1px solid var(--amber-border); border-radius:6px; padding:20px; margin-bottom:24px;">
+        <div style="font-size:13px; font-weight:500; margin-bottom:12px; color:var(--amber)">Zurückstellung dokumentieren — GefStoffV §7 Pflichtnachweis</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:12px;">
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px">Begründung (Pflichtfeld)</label>
+            <textarea style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:4px; color:var(--text); padding:8px; font-family:var(--sans); font-size:12px; resize:none; height:80px" placeholder="z.B. Stoff wird bis 30.06. aus dem Betrieb genommen. Neue GBU nicht mehr notwendig."></textarea>
+          </div>
+          <div>
+            <label style="font-size:11px; color:var(--text-muted); display:block; margin-bottom:4px">Zurückstellen bis</label>
+            <input type="date" style="width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:4px; color:var(--text); padding:8px; font-size:12px; font-family:var(--mono)">
+          </div>
+        </div>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-primary" onclick="document.getElementById('defer-modal').style.display='none'">Zurückstellung speichern</button>
+          <button class="btn" onclick="document.getElementById('defer-modal').style.display='none'">Abbrechen</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  function toggleDetail(id, row) {
+    const panel = document.getElementById(id);
+    const isVisible = panel.classList.contains('visible');
+    document.querySelectorAll('.detail-panel').forEach(p => p.classList.remove('visible'));
+    document.querySelectorAll('.table-row').forEach(r => r.classList.remove('selected'));
+    if (!isVisible) {
+      panel.classList.add('visible');
+      if (row) row.classList.add('selected');
+    }
+  }
+
+  function setFilter(el, type) {
+    document.querySelectorAll('.filter-chip').forEach(c => {
+      c.classList.remove('active','amber','all');
+    });
+    el.classList.add('active');
+    if (type === 'warning') el.classList.add('amber');
+    if (type === 'all') el.classList.add('all');
+  }
+
+  function filterRows(type) {
+    const chips = document.querySelectorAll('.filter-chip');
+    chips.forEach(c => c.classList.remove('active','amber','all'));
+    if (type === 'critical') { chips[1].classList.add('active'); }
+    else if (type === 'warning') { chips[2].classList.add('active','amber'); }
+    else { chips[0].classList.add('active','all'); }
+  }
+
+  function markDone() {
+    const row = document.querySelector('.table-row.selected');
+    if (row) {
+      row.querySelector('.deadline').textContent = '✓ Abgezeichnet';
+      row.querySelector('.deadline').className = 'deadline ok';
+      row.querySelector('.badge').textContent = 'Erledigt';
+      row.querySelector('.badge').className = 'badge ok';
+    }
+    document.querySelectorAll('.detail-panel').forEach(p => p.classList.remove('visible'));
+    document.querySelectorAll('.table-row').forEach(r => r.classList.remove('selected'));
+  }
+
+  function showDefer() {
+    const modal = document.getElementById('defer-modal');
+    modal.style.display = modal.style.display === 'none' ? 'block' : 'none';
+  }
+</script>
+</body>
+</html>
