@@ -329,9 +329,16 @@ SDS_IDENTITY_AUTO_MATCH_THRESHOLD = 0.95
 SDS_IDENTITY_ASK_USER_THRESHOLD = 0.70
 
 AUTHENTICATION_BACKENDS = [
-    "apps.accounts.auth.IILOIDCAuthenticationBackend",
     "django.contrib.auth.backends.ModelBackend",
 ]
+try:
+    from importlib import import_module
+    import_module("apps.accounts.auth")
+    AUTHENTICATION_BACKENDS.insert(
+        0, "apps.accounts.auth.IILOIDCAuthenticationBackend",
+    )
+except ImportError:
+    pass
 
 # --- authentik OIDC (ADR-142) ---
 OIDC_RP_CLIENT_ID = os.environ.get("OIDC_RP_CLIENT_ID", "")
