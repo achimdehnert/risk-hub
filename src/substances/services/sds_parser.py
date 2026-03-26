@@ -32,6 +32,11 @@ except ImportError:
 class SdsParseResult:
     """Ergebnis des SDS-Parsings."""
 
+    product_name: str = ""
+    manufacturer_name: str = ""
+    revision_date: str = ""  # ISO format YYYY-MM-DD
+    version_number: str = ""
+    cas_number: str = ""
     signal_word: str = "none"
     h_statements: list[str] = field(default_factory=list)
     p_statements: list[str] = field(default_factory=list)
@@ -43,6 +48,7 @@ class SdsParseResult:
     boiling_point_c: float | None = None
     vapor_pressure_hpa: float | None = None
     density_g_cm3: float | None = None
+    parse_confidence: float = 0.0
     raw_text: str = ""
 
 
@@ -84,6 +90,31 @@ class SdsParserService:
         "warning": "warning",
     }
 
+    # Metadata patterns (Section 1 + header/footer)
+    PRODUCT_NAME_PATTERN = re.compile(
+        r"(?:Handelsname|Produktname|Produktbezeichnung|Trade\s*name|Product\s*name)"
+        r"[:\s]+([^\n]{3,80})",
+        re.IGNORECASE,
+    )
+    MANUFACTURER_PATTERN = re.compile(
+        r"(?:Hersteller|Lieferant|Firma|Company|Manufacturer|Supplier)"
+        r"[:\s]+([^\n]{3,80})",
+        re.IGNORECASE,
+    )
+    REVISION_DATE_PATTERN = re.compile(
+        r"(?:Überarbeitet\s+am|Revisionsdatum|Revision\s*date|Datum\s*der\s*Überarbeitung)"
+        r"[:\s]*(\d{1,2})[./](\d{1,2})[./](\d{2,4})",
+        re.IGNORECASE,
+    )
+    VERSION_PATTERN = re.compile(
+        r"(?:Version|Fassung)[:\s]*(\d+(?:\.\d+)*)",
+        re.IGNORECASE,
+    )
+    CAS_PATTERN = re.compile(
+        r"(?:CAS)[- ]?(?:Nr\.?|Nummer|Number|No\.?)?[:\s]*(\d{2,7}-\d{2}-\d)",
+        re.IGNORECASE,
+    )
+
     def parse_pdf(self, pdf_file) -> dict:
         """
         Parst ein SDS-PDF und extrahiert relevante Informationen.
@@ -98,6 +129,11 @@ class SdsParserService:
         result = self._parse_text(text)
 
         return {
+            "product_name": result.product_name,
+            "manufacturer_name": result.manufacturer_name,
+            "revision_date": result.revision_date,
+            "version_number": result.version_number,
+            "cas_number": result.cas_number,
             "signal_word": result.signal_word,
             "h_statements": result.h_statements,
             "p_statements": result.p_statements,
@@ -106,6 +142,7 @@ class SdsParserService:
             "ignition_temperature_c": result.ignition_temperature_c,
             "lower_explosion_limit": result.lower_explosion_limit,
             "upper_explosion_limit": result.upper_explosion_limit,
+            "parse_confidence": result.parse_confidence,
         }
 
     def _extract_text(self, pdf_file) -> str:
@@ -194,7 +231,70 @@ class SdsParserService:
         result.lower_explosion_limit = self._extract_number(self.LEL_PATTERN, text)
         result.upper_explosion_limit = self._extract_number(self.UEL_PATTERN, text)
 
+        # Metadaten extrahieren (Abschnitt 1 + Header)
+        result.product_name = self._extract_string(
+            self.PRODUCT_NAME_PATTERN, text,
+        )
+        result.manufacturer_name = self._extract_string(
+            self.MANUFACTURER_PATTERN, text,
+        )
+        result.version_number = self._extract_string(
+            self.VERSION_PATTERN, text,
+        )
+
+        # CAS-Nummer
+        cas_match = self.CAS_PATTERN.search(text)
+        if cas_match:
+            result.cas_number = cas_match.group(1)
+
+        # Revisionsdatum
+        date_match = self.REVISION_DATE_PATTERN.search(text)
+        if date_match:
+            day, month, year = date_match.groups()
+            if len(year) == 2:
+                year = f"20{year}" if int(year) < 50 else f"19{year}"
+            try:
+                result.revision_date = (
+                    f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
+                )
+            except ValueError:
+                pass
+
+        # Konfidenz berechnen
+        result.parse_confidence = self._compute_confidence(result)
+
         return result
+
+    def _extract_string(
+        self, pattern: re.Pattern, text: str,
+    ) -> str:
+        """Extrahiert einen String aus Text mittels Regex."""
+        match = pattern.search(text)
+        return match.group(1).strip() if match else ""
+
+    def _compute_confidence(self, result: SdsParseResult) -> float:
+        """Berechnet Parser-Konfidenz basierend auf extrahierten Feldern."""
+        score = 0.0
+        checks = 0
+        if result.product_name:
+            score += 1.0
+        checks += 1
+        if result.manufacturer_name:
+            score += 1.0
+        checks += 1
+        if result.cas_number:
+            score += 1.0
+        checks += 1
+        if result.revision_date:
+            score += 1.0
+        checks += 1
+        if result.signal_word != "none":
+            score += 0.5
+        checks += 0.5
+        if result.h_statements:
+            score += 0.5
+        checks += 0.5
+        return round(score / checks, 2) if checks else 0.0
 
     def _extract_number(self, pattern: re.Pattern, text: str) -> float | None:
         """Extrahiert eine Zahl aus Text mittels Regex."""

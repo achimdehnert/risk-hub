@@ -264,6 +264,19 @@ class SdsUploadPipeline:
             version_number=parse_result.get(
                 "version_number", "",
             ),
+            signal_word=parse_result.get(
+                "signal_word", "",
+            ),
+            flash_point_c=parse_result.get("flash_point_c"),
+            ignition_temperature_c=parse_result.get(
+                "ignition_temperature_c",
+            ),
+            lower_explosion_limit=parse_result.get(
+                "lower_explosion_limit",
+            ),
+            upper_explosion_limit=parse_result.get(
+                "upper_explosion_limit",
+            ),
             parse_confidence=confidence,
             llm_corrections=parse_result.get(
                 "llm_corrections", [],
