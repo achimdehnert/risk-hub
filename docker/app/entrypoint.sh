@@ -23,6 +23,9 @@ if [ "$1" = "web" ]; then
     echo "Seeding GBU reference data..."
     DATABASE_URL="$MIGRATE_URL" python manage.py seed_all_gbu || echo "WARNING: GBU seed failed (non-fatal)"
 
+    echo "Seeding aifw action types (ADR-147)..."
+    DATABASE_URL="$MIGRATE_URL" python manage.py seed_action_types || echo "WARNING: aifw seed failed (non-fatal)"
+
     echo "Starting web server (gunicorn, app-user with RLS)..."
     exec gunicorn config.wsgi:application \
         --bind 0.0.0.0:8000 \
