@@ -157,26 +157,152 @@ def _detect_table(content: str) -> list[str] | None:
     return None
 
 
-def _text_to_structure(text: str) -> dict:
-    """Extrahierten Text in Template-Struktur umwandeln.
+def _detect_toc_entries(text: str) -> list[tuple[str, str]] | None:
+    """Detect TOC (Inhaltsverzeichnis) and return entries in order."""
+    toc_match = re.search(
+        r"^(Inhaltsverzeichnis|Inhalt|Table of Contents)\s*$",
+        text, re.MULTILINE | re.IGNORECASE,
+    )
+    if not toc_match:
+        return None
 
-    Delegiert an concept_templates Package falls verfügbar.
-    Fallback: Letter headings (A. B. C.) + numbered headings,
-    sequential monotonicity filter, table detection.
-    """
-    if _HAS_PKG:
-        ct = _pkg_extract(text)
-        return _template_to_dict(ct)
+    lines = text[toc_match.end():].split("\n")
+    toc_lines = []
+    non_toc = 0
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            non_toc += 1
+            if non_toc >= 3:
+                break
+            continue
+        is_toc = bool(
+            re.search(r"[.·…]{2,}", stripped)
+            or re.match(r"^[A-Z]\.\s+\S", stripped)
+            or re.match(r"^\d+(?:\.\d+)*\.?\s+\S", stripped)
+        )
+        if is_toc:
+            toc_lines.append(stripped)
+            non_toc = 0
+        else:
+            non_toc += 1
+            if non_toc >= 3:
+                break
 
-    # Fallback: full extraction with letter + number headings
+    if len(toc_lines) < 2:
+        return None
+
+    toc_text = "\n".join(toc_lines)
+    entries = []
     num_pat = re.compile(
         r"^(\d+(?:\.\d+)*\.?)\s+(.+)$", re.MULTILINE,
     )
     letter_pat = re.compile(
         r"^([A-Z])\.\s+(.+)$", re.MULTILINE,
     )
+    for m in num_pat.finditer(toc_text):
+        num = m.group(1).rstrip(".")
+        title = _clean_toc(m.group(2).strip())
+        if title:
+            entries.append((num, title, m.start()))
+    for m in letter_pat.finditer(toc_text):
+        title = _clean_toc(m.group(2).strip())
+        if title:
+            entries.append((m.group(1), title, m.start()))
+    entries.sort(key=lambda x: x[2])
+    if len(entries) < 2:
+        return None
+    return [(eid, et) for eid, et, _ in entries]
 
-    # Numeric candidates with validation
+
+def _extract_toc_first(
+    text: str, toc_entries: list[tuple[str, str]],
+) -> list[dict]:
+    """Use TOC as structure, map body content to each entry."""
+    # Find body headings
+    toc_end = len(text) // 5
+    body_pos = []
+    for eid, etitle in toc_entries:
+        prefix = re.escape(etitle[:20])
+        if eid.isalpha():
+            pat = re.compile(
+                rf"^{re.escape(eid)}\.\s+{prefix}",
+                re.MULTILINE,
+            )
+        else:
+            pat = re.compile(
+                rf"^{re.escape(eid)}\.?\s+{prefix}",
+                re.MULTILINE,
+            )
+        m = pat.search(text, toc_end)
+        if m:
+            lend = text.find("\n", m.start())
+            if lend == -1:
+                lend = len(text)
+            body_pos.append((m.start(), lend, eid, etitle))
+
+    if not body_pos:
+        return []
+
+    body_pos.sort(key=lambda x: x[0])
+    pos_map = {}
+    for start, end, eid, etitle in body_pos:
+        if eid not in pos_map:
+            pos_map[eid] = (start, end, etitle)
+
+    sections = []
+    for eid, etitle in toc_entries:
+        if eid.isalpha():
+            key = f"section_{eid.lower()}"
+        else:
+            key = f"section_{eid.replace('.', '_')}"
+        label = f"{eid}. {etitle}"
+
+        if eid not in pos_map:
+            sections.append({
+                "key": key, "label": label,
+                "fields": [{
+                    "key": "inhalt", "label": "Inhalt",
+                    "type": "textarea", "required": False,
+                }],
+            })
+            continue
+
+        hstart, hend, _ = pos_map[eid]
+        next_start = len(text)
+        for ostart, _, _, _ in body_pos:
+            if ostart > hstart:
+                next_start = ostart
+                break
+        content = text[hend:next_start].strip()
+
+        fields = []
+        table_cols = _detect_table(content)
+        if table_cols:
+            fields.append({
+                "key": "tabelle", "label": "Tabelle",
+                "type": "table", "required": False,
+                "columns": table_cols,
+            })
+        fields.append({
+            "key": "inhalt", "label": "Inhalt",
+            "type": "textarea", "required": False,
+            "default": content[:3000],
+        })
+        sections.append({
+            "key": key, "label": label, "fields": fields,
+        })
+    return sections
+
+
+def _extract_no_toc(text: str) -> list[dict]:
+    """Fallback extraction without TOC: heading detection + filters."""
+    num_pat = re.compile(
+        r"^(\d+(?:\.\d+)*\.?)\s+(.+)$", re.MULTILINE,
+    )
+    letter_pat = re.compile(
+        r"^([A-Z])\.\s+(.+)$", re.MULTILINE,
+    )
     num_cands = []
     for m in num_pat.finditer(text):
         num = m.group(1).rstrip(".")
@@ -190,7 +316,6 @@ def _text_to_structure(text: str) -> dict:
             continue
         num_cands.append((m, num, title))
 
-    # Sequential monotonicity filter
     filtered = []
     max_top = 0
     for m, num, title in num_cands:
@@ -202,76 +327,82 @@ def _text_to_structure(text: str) -> dict:
             max_top = max(max_top, top)
         filtered.append((m, num, title))
 
-    # Letter candidates
     letter_cands = []
     for m in letter_pat.finditer(text):
-        letter = m.group(1)
         title = _clean_toc(m.group(2).strip())
-        if not title:
-            continue
-        letter_cands.append((m, letter, title))
+        if title:
+            letter_cands.append((m, m.group(1), title))
 
-    # Merge sorted by position
     all_valid = sorted(
         filtered + letter_cands,
         key=lambda x: x[0].start(),
     )
-
     sections = []
-    if all_valid:
-        for i, (m, num, title) in enumerate(all_valid):
-            if num.isalpha():
-                key = f"section_{num.lower()}"
-            else:
-                key = f"section_{num.replace('.', '_')}"
-            label = f"{num}. {title}"
-
-            start = m.end()
-            end = (
-                all_valid[i + 1][0].start()
-                if i + 1 < len(all_valid)
-                else len(text)
-            )
-            content = text[start:end].strip()
-
-            # Detect table in content
-            fields = []
-            table_cols = _detect_table(content)
-            if table_cols:
-                fields.append({
-                    "key": "tabelle",
-                    "label": "Tabelle",
-                    "type": "table",
-                    "required": False,
-                    "columns": table_cols,
-                })
+    for i, (m, num, title) in enumerate(all_valid):
+        if num.isalpha():
+            key = f"section_{num.lower()}"
+        else:
+            key = f"section_{num.replace('.', '_')}"
+        start = m.end()
+        end = (
+            all_valid[i + 1][0].start()
+            if i + 1 < len(all_valid) else len(text)
+        )
+        content = text[start:end].strip()
+        fields = []
+        table_cols = _detect_table(content)
+        if table_cols:
             fields.append({
-                "key": "inhalt",
-                "label": "Inhalt",
-                "type": "textarea",
-                "required": False,
-                "default": content[:3000],
+                "key": "tabelle", "label": "Tabelle",
+                "type": "table", "required": False,
+                "columns": table_cols,
             })
-
-            sections.append({
-                "key": key,
-                "label": label,
-                "fields": fields,
-            })
-    else:
-        sections.append({
-            "key": "section_1",
-            "label": "1. Dokumentinhalt",
-            "fields": [{
-                "key": "inhalt",
-                "label": "Inhalt",
-                "type": "textarea",
-                "required": False,
-                "default": text[:5000],
-            }],
+        fields.append({
+            "key": "inhalt", "label": "Inhalt",
+            "type": "textarea", "required": False,
+            "default": content[:3000],
         })
+        sections.append({
+            "key": key, "label": f"{num}. {title}",
+            "fields": fields,
+        })
+    return sections
 
-    return {"sections": sections}
+
+def _text_to_structure(text: str) -> dict:
+    """Extrahierten Text in Template-Struktur umwandeln.
+
+    Delegiert an concept_templates Package falls verfügbar.
+    Fallback: TOC-first → heading detection with filters.
+    """
+    if _HAS_PKG:
+        ct = _pkg_extract(text)
+        return _template_to_dict(ct)
+
+    # Strategy 1: TOC-first
+    toc = _detect_toc_entries(text)
+    if toc:
+        sections = _extract_toc_first(text, toc)
+        if sections:
+            return {"sections": sections}
+
+    # Strategy 2: No TOC — heading detection
+    sections = _extract_no_toc(text)
+    if sections:
+        return {"sections": sections}
+
+    # Fallback
+    return {"sections": [{
+        "key": "section_1",
+        "label": "1. Dokumentinhalt",
+        "fields": [{
+            "key": "inhalt",
+            "label": "Inhalt",
+            "type": "textarea",
+            "required": False,
+            "default": text[:5000],
+        }],
+    }]}
 
 
 def _import_text_into_template(

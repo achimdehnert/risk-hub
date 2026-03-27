@@ -327,6 +327,12 @@ function esc(str) {
 }
 
 // ── Init ────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', render);
+// Script is at bottom of page, DOM is ready — call render directly.
+// DOMContentLoaded may have already fired.
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', render);
+} else {
+  render();
+}
 </script>
 {% endblock %}
