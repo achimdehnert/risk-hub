@@ -56,4 +56,46 @@
         </div>
     </form>
 </div>
+
+<script>
+(function() {
+    var zone = document.getElementById('drop-zone');
+    var input = zone.querySelector('input[type="file"]');
+
+    ['dragenter', 'dragover'].forEach(function(evt) {
+        zone.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            zone.classList.add('border-orange-400', 'bg-orange-50');
+        });
+    });
+
+    ['dragleave', 'drop'].forEach(function(evt) {
+        zone.addEventListener(evt, function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            zone.classList.remove('border-orange-400', 'bg-orange-50');
+        });
+    });
+
+    zone.addEventListener('drop', function(e) {
+        input.files = e.dataTransfer.files;
+        var count = e.dataTransfer.files.length;
+        var label = count === 1
+            ? e.dataTransfer.files[0].name
+            : count + ' Dateien ausgewählt';
+        var info = zone.querySelector('.drop-info');
+        if (!info) {
+            info = document.createElement('p');
+            info.className = 'drop-info text-sm text-orange-600 font-medium mt-2';
+            zone.appendChild(info);
+        }
+        info.textContent = label;
+    });
+
+    // Prevent browser from opening files when dropped outside zone
+    document.addEventListener('dragover', function(e) { e.preventDefault(); });
+    document.addEventListener('drop', function(e) { e.preventDefault(); });
+})();
+</script>
 {% endblock %}
