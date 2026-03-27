@@ -3,8 +3,10 @@
 Views handle HTTP only — business logic in services.py.
 """
 
+import json
 import logging
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,6 +14,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from common.tenant import require_tenant as _require_tenant
 from projects.models import (
     DocumentSection,
+    DocumentTemplate,
     OutputDocument,
     Project,
     ProjectDocument,
@@ -324,40 +327,49 @@ def output_document_create(
     project = get_object_or_404(
         Project, pk=pk, tenant_id=request.tenant_id,
     )
+    templates = DocumentTemplate.objects.filter(
+        tenant_id=request.tenant_id,
+        status=DocumentTemplate.Status.ACCEPTED,
+    ).order_by("kind", "name")
 
     if request.method == "POST":
-        kind = request.POST.get("kind", "")
+        template_id = request.POST.get("template_id", "")
         title = request.POST.get("title", "").strip()
 
-        if not kind or not title:
+        if not template_id or not title:
             return render(
                 request,
                 "projects/output_document_create.html",
                 {
                     "project": project,
+                    "templates": templates,
                     "kinds": DOCUMENT_KIND_META,
-                    "error": "Typ und Titel sind Pflichtfelder.",
+                    "error": "Vorlage und Titel sind Pflichtfelder.",
                     "form_data": request.POST,
                 },
             )
 
+        tmpl = get_object_or_404(
+            DocumentTemplate,
+            pk=template_id,
+            tenant_id=request.tenant_id,
+        )
+
         doc = OutputDocument.objects.create(
             tenant_id=request.tenant_id,
             project=project,
-            kind=kind,
+            template=tmpl,
+            kind=tmpl.kind or "custom",
             title=title,
             created_by=request.user,
         )
 
-        # Create default sections
-        meta = DOCUMENT_KIND_META.get(kind, {})
-        for idx, (key, sec_title) in enumerate(
-            meta.get("default_sections", []),
-        ):
+        # Create sections from template structure
+        for idx, section in enumerate(tmpl.get_sections()):
             DocumentSection.objects.create(
                 document=doc,
-                section_key=key,
-                title=sec_title,
+                section_key=section.get("key", f"s_{idx}"),
+                title=section.get("label", f"Abschnitt {idx + 1}"),
                 order=idx,
             )
 
@@ -372,6 +384,7 @@ def output_document_create(
         "projects/output_document_create.html",
         {
             "project": project,
+            "templates": templates,
             "kinds": DOCUMENT_KIND_META,
         },
     )
@@ -428,10 +441,340 @@ def section_save(
     if request.method == "POST":
         section.content = request.POST.get("content", "")
         section.is_ai_generated = False
-        section.save(update_fields=["content", "is_ai_generated", "updated_at"])
+        section.save(
+            update_fields=["content", "is_ai_generated", "updated_at"],
+        )
 
     return render(
         request,
         "projects/partials/_section_card.html",
-        {"section": section, "project": section.document.project, "doc": section.document},
+        {
+            "section": section,
+            "project": section.document.project,
+            "doc": section.document,
+        },
     )
+
+
+# ─── DocumentTemplate CRUD ──────────────────────────────────
+
+
+@login_required
+def template_list(request: HttpRequest) -> HttpResponse:
+    """List all document templates for current tenant."""
+    tenant_response = _require_tenant(request)
+    if tenant_response is not None:
+        return tenant_response
+
+    templates = DocumentTemplate.objects.filter(
+        tenant_id=request.tenant_id,
+    ).order_by("-updated_at")
+
+    return render(
+        request,
+        "projects/templates/template_list.html",
+        {"templates": templates},
+    )
+
+
+@login_required
+def template_create(request: HttpRequest) -> HttpResponse:
+    """Create a new empty document template."""
+    tenant_response = _require_tenant(request)
+    if tenant_response is not None:
+        return tenant_response
+
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        kind = request.POST.get("kind", "").strip()
+        desc = request.POST.get("description", "").strip()
+
+        if not name:
+            messages.error(request, "Name ist Pflichtfeld.")
+            return render(
+                request,
+                "projects/templates/template_create.html",
+                {"form_data": request.POST},
+            )
+
+        structure = {
+            "sections": [
+                {
+                    "key": "section_1",
+                    "label": "1. Allgemeines",
+                    "fields": [{
+                        "key": "inhalt",
+                        "label": "Inhalt",
+                        "type": "textarea",
+                        "required": False,
+                    }],
+                },
+            ],
+        }
+
+        tmpl = DocumentTemplate.objects.create(
+            tenant_id=request.tenant_id,
+            name=name,
+            kind=kind,
+            description=desc,
+            structure_json=json.dumps(
+                structure, ensure_ascii=False,
+            ),
+        )
+        messages.success(request, f"Vorlage '{name}' erstellt.")
+        return redirect(
+            "projects:template-edit", tmpl_pk=tmpl.pk,
+        )
+
+    return render(
+        request,
+        "projects/templates/template_create.html",
+    )
+
+
+@login_required
+def template_upload(request: HttpRequest) -> HttpResponse:
+    """Upload PDF to create a document template."""
+    tenant_response = _require_tenant(request)
+    if tenant_response is not None:
+        return tenant_response
+
+    if request.method == "POST":
+        pdf_file = request.FILES.get("pdf_file")
+        if not pdf_file:
+            messages.error(request, "Keine Datei ausgewählt.")
+            return render(
+                request,
+                "projects/templates/template_upload.html",
+            )
+
+        name = request.POST.get("name", "").strip()
+        if not name:
+            name = pdf_file.name.replace(".pdf", "").replace(
+                "_", " ",
+            )
+        kind = request.POST.get("kind", "").strip()
+
+        text = _extract_pdf_text(pdf_file)
+        if not text:
+            messages.warning(
+                request,
+                "Kein Text aus PDF extrahiert. "
+                "Leere Vorlage erstellt.",
+            )
+
+        structure = (
+            _text_to_structure(text)
+            if text
+            else {"sections": []}
+        )
+
+        tmpl = DocumentTemplate.objects.create(
+            tenant_id=request.tenant_id,
+            name=name,
+            kind=kind,
+            description=request.POST.get("description", ""),
+            structure_json=json.dumps(
+                structure, ensure_ascii=False,
+            ),
+            source_filename=pdf_file.name,
+            source_text=text[:50000],
+        )
+        messages.success(
+            request,
+            f"Vorlage '{name}' aus PDF erstellt "
+            f"({tmpl.section_count} Abschnitte).",
+        )
+        return redirect(
+            "projects:template-edit", tmpl_pk=tmpl.pk,
+        )
+
+    return render(
+        request,
+        "projects/templates/template_upload.html",
+    )
+
+
+@login_required
+def template_edit(
+    request: HttpRequest, tmpl_pk: int,
+) -> HttpResponse:
+    """Edit a document template's structure."""
+    tenant_response = _require_tenant(request)
+    if tenant_response is not None:
+        return tenant_response
+
+    tmpl = get_object_or_404(
+        DocumentTemplate,
+        pk=tmpl_pk,
+        tenant_id=request.tenant_id,
+    )
+
+    if request.method == "POST":
+        raw_json = request.POST.get("structure_json", "")
+        try:
+            structure = json.loads(raw_json)
+            if "sections" not in structure:
+                raise ValueError("Missing 'sections' key")
+        except (json.JSONDecodeError, ValueError) as exc:
+            messages.error(request, f"Ungültiges JSON: {exc}")
+            return render(
+                request,
+                "projects/templates/template_edit.html",
+                {
+                    "tmpl": tmpl,
+                    "structure": {"sections": []},
+                    "structure_json": raw_json,
+                },
+            )
+
+        tmpl.structure_json = json.dumps(
+            structure, ensure_ascii=False,
+        )
+        tmpl.name = request.POST.get("name", tmpl.name)
+        tmpl.description = request.POST.get(
+            "description", tmpl.description,
+        )
+        new_status = request.POST.get("status", tmpl.status)
+        if new_status in dict(DocumentTemplate.Status.choices):
+            tmpl.status = new_status
+        tmpl.save()
+
+        messages.success(request, "Vorlage gespeichert.")
+        return redirect("projects:template-list")
+
+    try:
+        structure = json.loads(tmpl.structure_json)
+    except (json.JSONDecodeError, TypeError):
+        structure = {"sections": []}
+
+    return render(
+        request,
+        "projects/templates/template_edit.html",
+        {
+            "tmpl": tmpl,
+            "structure": structure,
+            "structure_json": json.dumps(
+                structure, ensure_ascii=False, indent=2,
+            ),
+        },
+    )
+
+
+@login_required
+def template_delete(
+    request: HttpRequest, tmpl_pk: int,
+) -> HttpResponse:
+    """Delete a document template."""
+    tenant_response = _require_tenant(request)
+    if tenant_response is not None:
+        return tenant_response
+
+    tmpl = get_object_or_404(
+        DocumentTemplate,
+        pk=tmpl_pk,
+        tenant_id=request.tenant_id,
+    )
+    if request.method == "POST":
+        tmpl.delete()
+        messages.success(request, "Vorlage gelöscht.")
+    return redirect("projects:template-list")
+
+
+# ─── PDF extraction helpers (from explosionsschutz) ─────────
+
+
+def _extract_pdf_text(pdf_file) -> str:
+    """Extract text from PDF file."""
+    try:
+        import pdfplumber
+        if hasattr(pdf_file, "seek"):
+            pdf_file.seek(0)
+        parts = []
+        with pdfplumber.open(pdf_file) as pdf:
+            for page in pdf.pages:
+                t = page.extract_text()
+                if t:
+                    parts.append(t)
+        return "\n".join(parts)
+    except ImportError:
+        pass
+    except Exception as exc:
+        logger.warning("pdfplumber failed: %s", exc)
+
+    try:
+        import PyPDF2
+        if hasattr(pdf_file, "seek"):
+            pdf_file.seek(0)
+        reader = PyPDF2.PdfReader(pdf_file)
+        parts = []
+        for page in reader.pages:
+            t = page.extract_text()
+            if t:
+                parts.append(t)
+        return "\n".join(parts)
+    except ImportError:
+        pass
+    except Exception as exc:
+        logger.warning("PyPDF2 failed: %s", exc)
+
+    return ""
+
+
+def _text_to_structure(text: str) -> dict:
+    """Convert extracted PDF text to template structure."""
+    import re
+
+    sections = []
+    num_pat = re.compile(
+        r"^(\d+(?:\.\d+)*\.?)\s+(.+)$", re.MULTILINE,
+    )
+
+    matches = list(num_pat.finditer(text))
+    for i, m in enumerate(matches):
+        num = m.group(1).rstrip(".")
+        title = m.group(2).strip()
+        # Filter false headings
+        try:
+            top = int(num.split(".")[0])
+            if top > 30:
+                continue
+        except ValueError:
+            continue
+        if sum(1 for c in title if c.isalpha()) < 2:
+            continue
+
+        key = f"section_{num.replace('.', '_')}"
+        start = m.end()
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        content = text[start:end].strip()[:3000]
+
+        fields = [{
+            "key": "inhalt",
+            "label": "Inhalt",
+            "type": "textarea",
+            "required": False,
+        }]
+        if content:
+            fields[0]["default"] = content
+
+        sections.append({
+            "key": key,
+            "label": f"{num}. {title}",
+            "fields": fields,
+        })
+
+    if not sections:
+        sections = [{
+            "key": "section_1",
+            "label": "1. Dokumentinhalt",
+            "fields": [{
+                "key": "inhalt",
+                "label": "Inhalt",
+                "type": "textarea",
+                "required": False,
+                "default": text[:5000],
+            }],
+        }]
+
+    return {"sections": sections}

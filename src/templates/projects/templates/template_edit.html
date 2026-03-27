@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}{{ tmpl.name }} bearbeiten{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div>
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="{% url 'projects:template-list' %}" class="hover:text-gray-700">Dokumentvorlagen</a>
+            <span class="mx-2">/</span>
+            <span>{{ tmpl.name }}</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">{{ tmpl.name }}</h1>
+        <p class="text-sm text-gray-500 mt-1">
+            {{ tmpl.section_count }} Abschnitte · {{ tmpl.field_count }} Felder
+            {% if tmpl.source_filename %} · aus {{ tmpl.source_filename }}{% endif %}
+        </p>
+    </div>
+
+    {% if messages %}
+    {% for message in messages %}
+    <div class="rounded-lg p-4 text-sm {% if message.tags == 'success' %}bg-green-50 text-green-700 border border-green-200{% elif message.tags == 'error' %}bg-red-50 text-red-700 border border-red-200{% else %}bg-blue-50 text-blue-700 border border-blue-200{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Metadata -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                <h2 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                    <i data-lucide="settings" class="w-4 h-4 text-orange-500"></i>
+                    Einstellungen
+                </h2>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Name</label>
+                    <input type="text" name="name" value="{{ tmpl.name }}"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Beschreibung</label>
+                    <textarea name="description" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">{{ tmpl.description }}</textarea>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                    <select name="status"
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
+                        <option value="draft" {% if tmpl.status == "draft" %}selected{% endif %}>Entwurf</option>
+                        <option value="accepted" {% if tmpl.status == "accepted" %}selected{% endif %}>Akzeptiert</option>
+                        <option value="archived" {% if tmpl.status == "archived" %}selected{% endif %}>Archiviert</option>
+                    </select>
+                    <p class="text-xs text-gray-400 mt-1">Nur akzeptierte Vorlagen können für Dokumente verwendet werden.</p>
+                </div>
+
+                <button type="submit"
+                        class="w-full inline-flex items-center justify-center px-4 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600">
+                    <i data-lucide="save" class="w-4 h-4 mr-2"></i>
+                    Speichern
+                </button>
+            </div>
+
+            <!-- Structure Editor -->
+            <div class="lg:col-span-2 space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="list-tree" class="w-4 h-4 text-orange-500"></i>
+                        Gliederung (JSON)
+                    </h2>
+                    <textarea name="structure_json" rows="25" id="structure-editor"
+                              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono focus:ring-orange-500 focus:border-orange-500 bg-gray-50">{{ structure_json }}</textarea>
+                    <p class="text-xs text-gray-400 mt-2">
+                        Jeder Abschnitt hat: <code>key</code>, <code>label</code>, <code>fields[]</code>.
+                        Felder: <code>key</code>, <code>label</code>, <code>type</code> (text, textarea, table).
+                    </p>
+                </div>
+
+                <!-- Preview -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                        <i data-lucide="eye" class="w-4 h-4 text-orange-500"></i>
+                        Vorschau ({{ structure.sections|length }} Abschnitte)
+                    </h2>
+                    {% if structure.sections %}
+                    <div class="space-y-2">
+                        {% for section in structure.sections %}
+                        <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
+                            <span class="text-xs font-mono text-gray-400 w-24 flex-shrink-0 truncate">{{ section.key }}</span>
+                            <span class="text-sm font-medium text-gray-900">{{ section.label }}</span>
+                            <span class="text-xs text-gray-400 ml-auto">{{ section.fields|length }} Felder</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-sm text-gray-400">Keine Abschnitte definiert.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

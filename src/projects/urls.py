@@ -54,4 +54,30 @@ urlpatterns = [
         views.section_save,
         name="section-save",
     ),
+    # Document Templates
+    path(
+        "templates/",
+        views.template_list,
+        name="template-list",
+    ),
+    path(
+        "templates/new/",
+        views.template_create,
+        name="template-create",
+    ),
+    path(
+        "templates/upload/",
+        views.template_upload,
+        name="template-upload",
+    ),
+    path(
+        "templates/<int:tmpl_pk>/edit/",
+        views.template_edit,
+        name="template-edit",
+    ),
+    path(
+        "templates/<int:tmpl_pk>/delete/",
+        views.template_delete,
+        name="template-delete",
+    ),
 ]

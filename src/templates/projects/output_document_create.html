@@ -13,7 +13,7 @@
             <span>Dokument erstellen</span>
         </nav>
         <h1 class="text-2xl font-bold text-gray-900">Neues Dokument erstellen</h1>
-        <p class="text-sm text-gray-500 mt-1">Wählen Sie den Dokumenttyp — die Gliederung wird automatisch angelegt.</p>
+        <p class="text-sm text-gray-500 mt-1">Wählen Sie eine Dokumentvorlage — die Gliederung wird automatisch angelegt.</p>
     </div>
 
     {% if error %}
@@ -25,23 +25,43 @@
 
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-3">Dokumenttyp *</label>
+                <label class="block text-sm font-medium text-gray-700 mb-3">Dokumentvorlage *</label>
+
+                {% if templates %}
                 <div class="grid gap-3">
-                    {% for kind_code, kind_meta in kinds.items %}
+                    {% for tmpl in templates %}
                     <label class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 cursor-pointer transition">
-                        <input type="radio" name="kind" value="{{ kind_code }}"
-                               {% if form_data.kind == kind_code %}checked{% endif %}
+                        <input type="radio" name="template_id" value="{{ tmpl.pk }}"
+                               {% if form_data.template_id == tmpl.pk|stringformat:"s" %}checked{% endif %}
                                class="h-4 w-4 text-orange-500 border-gray-300 focus:ring-orange-500">
                         <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
-                            <i data-lucide="{{ kind_meta.icon }}" class="w-5 h-5 text-orange-600"></i>
+                            <i data-lucide="file-text" class="w-5 h-5 text-orange-600"></i>
                         </div>
-                        <div>
-                            <span class="text-sm font-medium text-gray-900">{{ kind_meta.label }}</span>
-                            <span class="text-xs text-gray-500 ml-2">{{ kind_meta.default_sections|length }} Abschnitte</span>
+                        <div class="min-w-0">
+                            <span class="text-sm font-medium text-gray-900">{{ tmpl.name }}</span>
+                            <div class="flex items-center gap-2 text-xs text-gray-500">
+                                {% if tmpl.kind %}
+                                <span class="px-1.5 py-0.5 rounded bg-gray-100">{{ tmpl.kind }}</span>
+                                {% endif %}
+                                <span>{{ tmpl.section_count }} Abschnitte</span>
+                            </div>
+                            {% if tmpl.description %}
+                            <p class="text-xs text-gray-400 mt-0.5 truncate">{{ tmpl.description }}</p>
+                            {% endif %}
                         </div>
                     </label>
                     {% endfor %}
                 </div>
+                {% else %}
+                <div class="bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-6 text-center">
+                    <i data-lucide="file-plus-2" class="w-8 h-8 text-gray-400 mx-auto mb-2"></i>
+                    <p class="text-sm text-gray-500 mb-2">Noch keine Dokumentvorlagen vorhanden.</p>
+                    <a href="{% url 'projects:template-list' %}"
+                       class="text-sm text-orange-600 hover:underline">
+                        Jetzt Vorlagen erstellen →
+                    </a>
+                </div>
+                {% endif %}
             </div>
 
             <div>
@@ -58,8 +78,8 @@
                class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
                 Abbrechen
             </a>
-            <button type="submit"
-                    class="inline-flex items-center px-6 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600">
+            <button type="submit" {% if not templates %}disabled{% endif %}
+                    class="inline-flex items-center px-6 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed">
                 <i data-lucide="file-plus" class="w-4 h-4 mr-2"></i>
                 Dokument erstellen
             </button>
