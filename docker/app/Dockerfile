@@ -29,13 +29,13 @@ RUN pip install --no-cache-dir -U pip setuptools wheel \
 # Install private packages via direct git clone + pip install (avoids pip resolvelib bug)
 RUN pip install --no-cache-dir hatchling hatch-vcs flit_core \
     && git config --global url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf "https://github.com/" \
-    && git clone --depth=1 --filter=blob:none https://github.com/achimdehnert/platform.git /tmp/platform 2>/dev/null || true \
+    && git clone --depth=1 https://github.com/achimdehnert/platform.git /tmp/platform 2>/dev/null || true \
     && echo "SKIP: platform django-tenancy (risk-hub uses its own)" \
     && (pip install --no-cache-dir /tmp/platform/packages/platform-context 2>&1 && echo "OK: platform-context") || echo "SKIP: platform-context" \
     && (pip install --no-cache-dir /tmp/platform/packages/django-module-shop 2>&1 && echo "OK: django-module-shop") || echo "SKIP: django-module-shop" \
     && (pip install --no-cache-dir "/tmp/platform/packages/concept-templates[llm,pdf]" 2>&1 && echo "OK: concept-templates") || echo "SKIP: concept-templates" \
     && grep 'git+https://github.com/achimdehnert/nl2cad' /app/requirements.txt > /tmp/nl2cad-pkgs.txt \
-    && git clone --depth=1 --filter=blob:none https://github.com/achimdehnert/nl2cad.git /tmp/nl2cad 2>/dev/null || true \
+    && git clone --depth=1 https://github.com/achimdehnert/nl2cad.git /tmp/nl2cad 2>/dev/null || true \
     && (pip install --no-cache-dir /tmp/nl2cad/packages/nl2cad-core 2>&1 && echo "OK: nl2cad-core") || echo "SKIP: nl2cad-core" \
     && (pip install --no-cache-dir /tmp/nl2cad/packages/nl2cad-areas 2>&1 && echo "OK: nl2cad-areas") || echo "SKIP: nl2cad-areas" \
     && (pip install --no-cache-dir /tmp/nl2cad/packages/nl2cad-brandschutz 2>&1 && echo "OK: nl2cad-brandschutz") || echo "SKIP: nl2cad-brandschutz" \
