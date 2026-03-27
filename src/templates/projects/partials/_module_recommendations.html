@@ -1,0 +1,51 @@
+<div class="space-y-3">
+    {% for rec in recommendations %}
+    <label class="flex items-start gap-3 p-3 rounded-lg border transition cursor-pointer
+                  {% if rec.recommended and rec.subscribed %}border-green-200 bg-green-50 hover:bg-green-100
+                  {% elif rec.recommended and not rec.subscribed %}border-amber-200 bg-amber-50
+                  {% else %}border-gray-200 bg-white hover:bg-gray-50{% endif %}">
+
+        {% if rec.subscribed %}
+        <input type="checkbox" name="modules" value="{{ rec.module }}"
+               {% if rec.recommended %}checked{% endif %}
+               class="mt-1 h-4 w-4 text-orange-500 border-gray-300 rounded focus:ring-orange-500">
+        {% else %}
+        <div class="mt-1 h-4 w-4 border-2 border-amber-300 rounded bg-amber-100 flex items-center justify-center"
+             title="Modul nicht gebucht">
+            <i data-lucide="lock" class="w-2.5 h-2.5 text-amber-500"></i>
+        </div>
+        {% endif %}
+
+        <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+                <i data-lucide="{{ rec.icon }}" class="w-4 h-4 {% if rec.recommended %}text-orange-500{% else %}text-gray-400{% endif %}"></i>
+                <span class="text-sm font-medium text-gray-900">{{ rec.label }}</span>
+
+                {% if rec.recommended %}
+                <span class="px-1.5 py-0.5 text-xs font-medium rounded bg-orange-100 text-orange-700">Empfohlen</span>
+                {% endif %}
+
+                {% if not rec.subscribed %}
+                <span class="px-1.5 py-0.5 text-xs font-medium rounded bg-amber-100 text-amber-700">Nicht gebucht</span>
+                {% endif %}
+            </div>
+
+            {% if rec.reason %}
+            <p class="text-xs text-gray-600 mt-1">{{ rec.reason }}</p>
+            {% endif %}
+
+            {% if rec.recommended and not rec.subscribed %}
+            <p class="text-xs text-amber-600 mt-1 flex items-center gap-1">
+                <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                Dieses Modul wird empfohlen, ist aber nicht gebucht.
+                <a href="/billing/modules/" class="underline font-medium hover:text-amber-800">Jetzt buchen →</a>
+            </p>
+            {% endif %}
+        </div>
+
+        {% if rec.recommended and rec.subscribed %}
+        <input type="hidden" name="declined_modules" value="{{ rec.module }}" disabled id="decline-{{ rec.module }}">
+        {% endif %}
+    </label>
+    {% endfor %}
+</div>

@@ -65,5 +65,6 @@ urlpatterns = [
     path("tenants/", include("tenancy.urls")),
     path("billing/modules/", include("django_module_shop.urls")),
     path("brandschutz/", include("brandschutz.urls")),
+    path("projects/", include("projects.urls")),
     path("sds/", include("global_sds.urls")),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

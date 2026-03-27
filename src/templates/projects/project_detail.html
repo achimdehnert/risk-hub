@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{{ project.name }} — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <nav class="text-sm text-gray-500 mb-2">
+                <a href="{% url 'projects:project-list' %}" class="hover:text-gray-700">Projekte</a>
+                <span class="mx-2">/</span>
+                <span>{{ project.name }}</span>
+            </nav>
+            <div class="flex items-center gap-3">
+                <h1 class="text-2xl font-bold text-gray-900">{{ project.name }}</h1>
+                {% if project.status == "active" %}
+                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-green-100 text-green-700">Aktiv</span>
+                {% elif project.status == "on_hold" %}
+                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">Pausiert</span>
+                {% elif project.status == "completed" %}
+                <span class="px-2.5 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-700">Abgeschlossen</span>
+                {% endif %}
+            </div>
+            <div class="flex flex-wrap gap-4 mt-2 text-sm text-gray-500">
+                {% if project.project_number %}
+                <span class="flex items-center gap-1">
+                    <i data-lucide="hash" class="w-3.5 h-3.5"></i>
+                    {{ project.project_number }}
+                </span>
+                {% endif %}
+                {% if project.client_name %}
+                <span class="flex items-center gap-1">
+                    <i data-lucide="building-2" class="w-3.5 h-3.5"></i>
+                    {{ project.client_name }}
+                </span>
+                {% endif %}
+                <span class="flex items-center gap-1">
+                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                    {{ project.site.name }}
+                </span>
+                <span class="flex items-center gap-1">
+                    <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                    {{ project.created_at|date:"d.m.Y" }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    {% if project.description %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-sm font-medium text-gray-500 mb-2">Projektbeschreibung</h2>
+        <p class="text-sm text-gray-700">{{ project.description }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Aktive Module -->
+    <div>
+        <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <i data-lucide="layout-grid" class="w-5 h-5 text-orange-500"></i>
+            Projekt-Module
+        </h2>
+
+        {% if module_details %}
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {% for mod in module_details %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 hover:shadow-md hover:border-orange-200 transition">
+                <div class="flex items-center gap-3 mb-3">
+                    <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <i data-lucide="{{ mod.icon }}" class="w-5 h-5 text-orange-600"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-semibold text-gray-900">{{ mod.label }}</h3>
+                        <span class="text-xs text-green-600">Aktiv</span>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-500">{{ mod.description }}</p>
+                <!-- Phase 3+: Links zu Modul-spezifischen Seiten -->
+            </div>
+            {% endfor %}
+
+            <!-- Placeholder: Unterlagen (Phase 2) -->
+            <div class="bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 p-5 flex flex-col items-center justify-center text-center">
+                <i data-lucide="upload" class="w-8 h-8 text-gray-400 mb-2"></i>
+                <h3 class="font-medium text-gray-500">Unterlagen hochladen</h3>
+                <p class="text-xs text-gray-400 mt-1">Kommt in Phase 2</p>
+            </div>
+
+            <!-- Placeholder: Ex-Dokument (Phase 4) -->
+            <div class="bg-gray-50 rounded-xl border-2 border-dashed border-gray-300 p-5 flex flex-col items-center justify-center text-center">
+                <i data-lucide="file-text" class="w-8 h-8 text-gray-400 mb-2"></i>
+                <h3 class="font-medium text-gray-500">Dokument erstellen</h3>
+                <p class="text-xs text-gray-400 mt-1">Kommt in Phase 4</p>
+            </div>
+        </div>
+        {% else %}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+            <p class="text-gray-500">Keine Module aktiviert.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if declined_modules %}
+    <div>
+        <h3 class="text-sm font-medium text-gray-500 mb-2 flex items-center gap-1">
+            <i data-lucide="x-circle" class="w-4 h-4"></i>
+            Bewusst abgelehnte Module
+        </h3>
+        <div class="flex flex-wrap gap-2">
+            {% for dm in declined_modules %}
+            <span class="px-3 py-1 text-xs rounded-lg bg-gray-100 text-gray-500 border border-gray-200"
+                  title="{{ dm.ai_reason }}">
+                {{ dm.module }}
+                {% if dm.ai_reason %}
+                <i data-lucide="info" class="w-3 h-3 inline ml-1"></i>
+                {% endif %}
+            </span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Projekte — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Projekte</h1>
+            <p class="text-sm text-gray-500 mt-1">Übersicht aller Projekte</p>
+        </div>
+        <a href="{% url 'projects:project-create' %}"
+           class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
+            <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+            Neues Projekt
+        </a>
+    </div>
+
+    {% if projects %}
+    <div class="grid gap-4">
+        {% for project in projects %}
+        <a href="{% url 'projects:project-detail' pk=project.pk %}"
+           class="block bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md hover:border-orange-200 transition">
+            <div class="flex justify-between items-start">
+                <div class="flex-1">
+                    <div class="flex items-center gap-3 mb-2">
+                        <h2 class="text-lg font-semibold text-gray-900">{{ project.name }}</h2>
+                        {% if project.status == "active" %}
+                        <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-700">Aktiv</span>
+                        {% elif project.status == "on_hold" %}
+                        <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-700">Pausiert</span>
+                        {% elif project.status == "completed" %}
+                        <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 text-blue-700">Abgeschlossen</span>
+                        {% elif project.status == "archived" %}
+                        <span class="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-100 text-gray-600">Archiviert</span>
+                        {% endif %}
+                    </div>
+                    <div class="flex flex-wrap gap-4 text-sm text-gray-500">
+                        {% if project.project_number %}
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="hash" class="w-3.5 h-3.5"></i>
+                            {{ project.project_number }}
+                        </span>
+                        {% endif %}
+                        {% if project.client_name %}
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="building-2" class="w-3.5 h-3.5"></i>
+                            {{ project.client_name }}
+                        </span>
+                        {% endif %}
+                        <span class="flex items-center gap-1">
+                            <i data-lucide="calendar" class="w-3.5 h-3.5"></i>
+                            {{ project.created_at|date:"d.m.Y" }}
+                        </span>
+                    </div>
+                    {% if project.description %}
+                    <p class="mt-2 text-sm text-gray-600 line-clamp-2">{{ project.description|truncatewords:30 }}</p>
+                    {% endif %}
+                </div>
+                <div class="flex flex-wrap gap-1 ml-4">
+                    {% for pm in project.modules.all %}
+                        {% if pm.status == "active" %}
+                        <span class="px-2 py-0.5 text-xs font-medium rounded bg-orange-50 text-orange-700 border border-orange-200">
+                            {{ pm.module }}
+                        </span>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-12 text-center">
+        <div class="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <i data-lucide="folder-plus" class="w-8 h-8 text-orange-500"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Noch keine Projekte</h3>
+        <p class="text-sm text-gray-500 mb-6">Erstellen Sie Ihr erstes Projekt, um loszulegen.</p>
+        <a href="{% url 'projects:project-create' %}"
+           class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
+            <i data-lucide="plus" class="w-5 h-5 mr-2"></i>
+            Neues Projekt erstellen
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
