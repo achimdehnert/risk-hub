@@ -874,6 +874,12 @@ def instance_edit(
                         rows.append(row)
                     row_idx += 1
                 values[skey][fkey] = rows
+            elif ftype == "boolean":
+                # Hidden "false" + checkbox "true"
+                vals = request.POST.getlist(form_key)
+                values[skey][fkey] = (
+                    "true" if "true" in vals else "false"
+                )
             else:
                 values[skey][fkey] = request.POST.get(
                     form_key, "",

@@ -181,6 +181,8 @@ function renderField(si, fi, field) {
         </div>
         ${isTable ? renderTableColumnsEditor(si, fi, cols) : ''}
         ${field.type === 'textarea' && field.default ? `<div class="text-xs text-gray-400 truncate max-w-md" title="Vorausgefüllter Inhalt">📄 ${esc(field.default.substring(0, 80))}…</div>` : ''}
+        ${field.type === 'date' ? '<div class="text-xs text-gray-400">📅 Datumsfeld (Kalender-Auswahl im Dokument)</div>' : ''}
+        ${field.type === 'boolean' ? '<div class="text-xs text-gray-400">☑ Ja/Nein-Schalter im Dokument</div>' : ''}
       </div>
       <div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
         <button type="button" onclick="moveField(${si}, ${fi}, -1)" class="text-gray-300 hover:text-gray-500 text-xs"${fi === 0 ? ' disabled' : ''}>▲</button>
