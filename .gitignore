@@ -63,3 +63,6 @@ htmlcov/
 # Misc
 *.bak
 *.tmp
+
+# IDE agent workflows (symlinked, not repo-specific)
+.windsurf/
