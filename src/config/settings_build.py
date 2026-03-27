@@ -23,7 +23,7 @@ MIDDLEWARE = [
 ]
 
 # Remove optional private packages if not installed (build without PROJECT_PAT)
-_OPTIONAL_APPS = ["platform_context", "django_module_shop", "aifw"]
+_OPTIONAL_APPS = ["platform_context", "django_module_shop", "aifw", "doc_templates"]
 INSTALLED_APPS = [  # noqa: F405
     app
     for app in INSTALLED_APPS  # noqa: F405
