@@ -16,13 +16,28 @@
         — Version {{ revision.version_number|default:"—" }}
       </p>
     </div>
-    <span class="ml-auto inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
-      {% if revision.status == 'VERIFIED' %}bg-green-100 text-green-800
-      {% elif revision.status == 'PENDING' %}bg-yellow-100 text-yellow-800
-      {% elif revision.status == 'SUPERSEDED' %}bg-gray-100 text-gray-800
-      {% else %}bg-red-100 text-red-800{% endif %}">
-      {{ revision.get_status_display }}
-    </span>
+    <div class="ml-auto flex items-center gap-3">
+      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+        {% if revision.status == 'VERIFIED' %}bg-green-100 text-green-800
+        {% elif revision.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+        {% elif revision.status == 'SUPERSEDED' %}bg-gray-100 text-gray-800
+        {% else %}bg-red-100 text-red-800{% endif %}">
+        {{ revision.get_status_display }}
+      </span>
+      <a href="{% url 'global_sds:revision-edit' pk=revision.pk %}"
+         class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium">
+        Bearbeiten
+      </a>
+      <form method="post" action="{% url 'global_sds:revision-delete' pk=revision.pk %}"
+            onsubmit="return confirm('SDS-Revision wirklich löschen?');"
+            class="inline">
+        {% csrf_token %}
+        <button type="submit"
+                class="inline-flex items-center px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium">
+          Löschen
+        </button>
+      </form>
+    </div>
   </div>
 
   <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">

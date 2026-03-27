@@ -38,9 +38,9 @@
     </div>
 
     <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
-      <p class="text-3xl font-bold text-green-600">{{ active_count }}</p>
-      <p class="text-xs text-gray-500 mt-1">Aktuelle SDS</p>
-      <p class="text-xs text-gray-400">Freigegeben</p>
+      <p class="text-3xl font-bold text-green-600">{{ total_revisions }}</p>
+      <p class="text-xs text-gray-500 mt-1">SDS Revisionen</p>
+      <p class="text-xs text-gray-400">Hochgeladen</p>
     </div>
 
   </div>
@@ -248,12 +248,70 @@
   </div>
   {% endif %}
 
+  {# ─ Alle SDS-Revisionen ─────────────────────────────────── #}
+  {% if all_revisions %}
+  <div class="mb-8">
+    <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">
+      Alle SDS-Revisionen ({{ total_revisions }})
+    </h2>
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50">
+          <tr>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Produkt</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Hersteller</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">CAS</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Version</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Status</th>
+            <th class="text-left px-4 py-2 text-gray-600 font-medium">Hochgeladen</th>
+            <th class="px-4 py-2"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for rev in all_revisions %}
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-4 py-3 font-medium">
+              <a href="{% url 'global_sds:revision-detail' pk=rev.pk %}" class="text-blue-600 hover:underline">
+                {{ rev.product_name|default:"(kein Name)"|truncatechars:40 }}
+              </a>
+            </td>
+            <td class="px-4 py-3 text-gray-600">{{ rev.manufacturer_name|default:"—" }}</td>
+            <td class="px-4 py-3 text-gray-600 text-xs">{{ rev.substance.cas_number|default:"—" }}</td>
+            <td class="px-4 py-3 text-gray-600">{{ rev.version_number|default:"—" }}</td>
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                {% if rev.status == 'VERIFIED' %}bg-green-100 text-green-800
+                {% elif rev.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                {% elif rev.status == 'SUPERSEDED' %}bg-gray-100 text-gray-800
+                {% else %}bg-red-100 text-red-800{% endif %}">
+                {{ rev.get_status_display }}
+              </span>
+            </td>
+            <td class="px-4 py-3 text-gray-400 text-xs">{{ rev.created_at|date:"d.m.Y H:i" }}</td>
+            <td class="px-4 py-3 text-right space-x-2">
+              <a href="{% url 'global_sds:revision-edit' pk=rev.pk %}"
+                 class="text-xs text-blue-600 hover:underline">Bearbeiten</a>
+              <form method="post" action="{% url 'global_sds:revision-delete' pk=rev.pk %}"
+                    onsubmit="return confirm('SDS löschen?');"
+                    class="inline">
+                {% csrf_token %}
+                <button type="submit" class="text-xs text-red-600 hover:underline">Löschen</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
   {# ─ Kein Handlungsbedarf ────────────────────────────────── #}
-  {% if not overdue and not due_soon and not pending_review %}
+  {% if not overdue and not due_soon and not pending_review and not all_revisions %}
   <div class="bg-green-50 border border-green-200 rounded-xl p-8 text-center">
     <i data-lucide="check-circle" class="w-12 h-12 text-green-500 mx-auto mb-3"></i>
-    <p class="text-green-800 font-semibold">Alle SDS-Überprüfungen sind aktuell.</p>
-    <p class="text-sm text-green-600 mt-1">Keine ausstehenden Reviews oder Updates.</p>
+    <p class="text-green-800 font-semibold">Noch keine SDS hochgeladen.</p>
+    <p class="text-sm text-green-600 mt-1">Laden Sie ein Sicherheitsdatenblatt hoch, um zu starten.</p>
   </div>
   {% endif %}
 

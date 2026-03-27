@@ -20,11 +20,21 @@ urlpatterns = [
         views.sds_upload,
         name="upload",
     ),
-    # Revision Detail
+    # Revision Detail / Edit / Delete
     path(
         "revision/<int:pk>/",
         views.revision_detail,
         name="revision-detail",
+    ),
+    path(
+        "revision/<int:pk>/edit/",
+        views.revision_edit,
+        name="revision-edit",
+    ),
+    path(
+        "revision/<int:pk>/delete/",
+        views.revision_delete,
+        name="revision-delete",
     ),
     # HTMX Partials (§8.4)
     path(

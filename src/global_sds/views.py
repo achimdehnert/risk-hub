@@ -16,7 +16,11 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_GET, require_POST
 
-from global_sds.forms import DeferUpdateForm, GlobalSdsUploadForm
+from global_sds.forms import (
+    DeferUpdateForm,
+    GlobalSdsUploadForm,
+    RevisionEditForm,
+)
 from global_sds.models import GlobalSdsRevision, SdsRevisionDiffRecord
 from global_sds.sds_usage import SdsUsage, SdsUsageStatus
 from global_sds.services.upload_pipeline import SdsUploadPipeline
@@ -48,6 +52,15 @@ def compliance_dashboard(request: HttpRequest) -> HttpResponse:
     soon_cutoff = today + timedelta(days=14)
 
     usages = SdsUsage.objects.filter(tenant_id=tenant_id)
+
+    # Alle Revisionen die dieser Tenant sehen darf
+    all_revisions = (
+        GlobalSdsRevision.objects
+        .visible_for_tenant(tenant_id)
+        .select_related("substance")
+        .order_by("-created_at")
+    )
+    total_revisions = all_revisions.count()
 
     # KPI-Zähler
     critical_count = usages.filter(
@@ -108,6 +121,8 @@ def compliance_dashboard(request: HttpRequest) -> HttpResponse:
         "regulatory_count": regulatory_count,
         "gbu_flagged": gbu_flagged,
         "active_count": active_count,
+        "total_revisions": total_revisions,
+        "all_revisions": all_revisions[:50],
         "overdue": overdue,
         "due_soon": due_soon,
         "pending_review": pending_review,
@@ -220,6 +235,69 @@ def revision_detail(request: HttpRequest, pk: int) -> HttpResponse:
         "global_sds/revision_detail.html",
         context,
     )
+
+
+# ─────────────────────────────────────────────────────────────────────
+# Revision Edit / Delete
+# ─────────────────────────────────────────────────────────────────────
+
+
+@login_required
+def revision_edit(
+    request: HttpRequest, pk: int,
+) -> HttpResponse:
+    """SDS-Revision bearbeiten (Metadaten + regulatorisch)."""
+    tenant_id = _tenant_id(request)
+    revision = get_object_or_404(
+        GlobalSdsRevision.objects.visible_for_tenant(tenant_id),
+        pk=pk,
+    )
+
+    if request.method == "GET":
+        form = RevisionEditForm(instance=revision)
+        return render(
+            request,
+            "global_sds/revision_edit.html",
+            {"form": form, "revision": revision},
+        )
+
+    form = RevisionEditForm(
+        request.POST, instance=revision,
+    )
+    if not form.is_valid():
+        return render(
+            request,
+            "global_sds/revision_edit.html",
+            {"form": form, "revision": revision},
+        )
+
+    form.save()
+    messages.success(request, "SDS-Revision aktualisiert.")
+    return redirect(
+        "global_sds:revision-detail", pk=revision.pk,
+    )
+
+
+@login_required
+@require_POST
+def revision_delete(
+    request: HttpRequest, pk: int,
+) -> HttpResponse:
+    """SDS-Revision löschen (nur eigene PENDING)."""
+    tenant_id = _tenant_id(request)
+    revision = get_object_or_404(
+        GlobalSdsRevision.objects.filter(
+            uploaded_by_tenant_id=str(tenant_id),
+        ),
+        pk=pk,
+    )
+
+    name = str(revision)
+    revision.delete()
+    messages.success(
+        request, f"SDS-Revision '{name}' gelöscht.",
+    )
+    return redirect("global_sds:dashboard")
 
 
 # ─────────────────────────────────────────────────────────────────────

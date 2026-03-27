@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}SDS bearbeiten: {{ revision.product_name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  <div class="flex items-center space-x-4 mb-6">
+    <a href="{% url 'global_sds:revision-detail' pk=revision.pk %}" class="text-gray-400 hover:text-gray-600">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i>
+    </a>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">SDS bearbeiten</h1>
+      <p class="text-sm text-gray-500">
+        {{ revision.substance.name }}
+        {% if revision.substance.cas_number %}(CAS {{ revision.substance.cas_number }}){% endif %}
+      </p>
+    </div>
+  </div>
+
+  <form method="post" class="space-y-8">
+    {% csrf_token %}
+
+    {# ─ Metadaten ─────────────────────────────────────────── #}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Metadaten</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="id_product_name" class="block text-sm font-medium text-gray-700 mb-1">{{ form.product_name.label }}</label>
+          {{ form.product_name }}
+          {% if form.product_name.errors %}<p class="text-red-500 text-xs mt-1">{{ form.product_name.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="id_manufacturer_name" class="block text-sm font-medium text-gray-700 mb-1">{{ form.manufacturer_name.label }}</label>
+          {{ form.manufacturer_name }}
+          {% if form.manufacturer_name.errors %}<p class="text-red-500 text-xs mt-1">{{ form.manufacturer_name.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="id_revision_date" class="block text-sm font-medium text-gray-700 mb-1">{{ form.revision_date.label }}</label>
+          {{ form.revision_date }}
+          {% if form.revision_date.errors %}<p class="text-red-500 text-xs mt-1">{{ form.revision_date.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="id_version_number" class="block text-sm font-medium text-gray-700 mb-1">{{ form.version_number.label }}</label>
+          {{ form.version_number }}
+          {% if form.version_number.errors %}<p class="text-red-500 text-xs mt-1">{{ form.version_number.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="id_signal_word" class="block text-sm font-medium text-gray-700 mb-1">{{ form.signal_word.label }}</label>
+          {{ form.signal_word }}
+        </div>
+        <div>
+          <label for="id_status" class="block text-sm font-medium text-gray-700 mb-1">{{ form.status.label }}</label>
+          {{ form.status }}
+        </div>
+      </div>
+    </div>
+
+    {# ─ Regulatorisch & Ex-Schutz ─────────────────────────── #}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Regulatorisch &amp; Ex-Schutz</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="id_wgk" class="block text-sm font-medium text-gray-700 mb-1">{{ form.wgk.label }}</label>
+          {{ form.wgk }}
+        </div>
+        <div>
+          <label for="id_storage_class_trgs510" class="block text-sm font-medium text-gray-700 mb-1">{{ form.storage_class_trgs510.label }}</label>
+          {{ form.storage_class_trgs510 }}
+        </div>
+        <div>
+          <label for="id_flash_point_c" class="block text-sm font-medium text-gray-700 mb-1">{{ form.flash_point_c.label }}</label>
+          {{ form.flash_point_c }}
+        </div>
+        <div>
+          <label for="id_ignition_temperature_c" class="block text-sm font-medium text-gray-700 mb-1">{{ form.ignition_temperature_c.label }}</label>
+          {{ form.ignition_temperature_c }}
+        </div>
+        <div>
+          <label for="id_lower_explosion_limit" class="block text-sm font-medium text-gray-700 mb-1">{{ form.lower_explosion_limit.label }}</label>
+          {{ form.lower_explosion_limit }}
+        </div>
+        <div>
+          <label for="id_upper_explosion_limit" class="block text-sm font-medium text-gray-700 mb-1">{{ form.upper_explosion_limit.label }}</label>
+          {{ form.upper_explosion_limit }}
+        </div>
+      </div>
+    </div>
+
+    {# ─ Aktionen ──────────────────────────────────────────── #}
+    <div class="flex items-center justify-between">
+      <a href="{% url 'global_sds:revision-detail' pk=revision.pk %}"
+         class="text-sm text-gray-500 hover:text-gray-700">
+        Abbrechen
+      </a>
+      <button type="submit"
+              class="inline-flex items-center px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+        Speichern
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}
