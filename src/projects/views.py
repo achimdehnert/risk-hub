@@ -54,14 +54,14 @@ def project_create(request: HttpRequest) -> HttpResponse:
 
     if request.method == "POST":
         name = request.POST.get("name", "").strip()
-        site_id = request.POST.get("site_id", "")
+        site_name = request.POST.get("site_name", "").strip()
         description = request.POST.get("description", "")
         project_number = request.POST.get("project_number", "")
         client_name = request.POST.get("client_name", "")
         selected = request.POST.getlist("modules")
         declined = request.POST.getlist("declined_modules")
 
-        if not name or not site_id:
+        if not name or not site_name:
             recommendations = recommend_modules_from_description(
                 description, subscribed,
             )
@@ -77,6 +77,23 @@ def project_create(request: HttpRequest) -> HttpResponse:
                 },
             )
 
+        # Resolve or auto-create Site
+        site, created = Site.objects.get_or_create(
+            tenant_id=request.tenant_id,
+            name=site_name,
+            defaults={
+                "organization": request.user.tenancy_memberships.filter(
+                    tenant_id=request.tenant_id,
+                ).first().organization,
+            },
+        )
+        if created:
+            logger.info(
+                "Auto-created Site '%s' for tenant %s",
+                site_name,
+                request.tenant_id,
+            )
+
         # Build recommendations for storage
         recommendations = recommend_modules_from_description(
             description, subscribed,
@@ -85,7 +102,7 @@ def project_create(request: HttpRequest) -> HttpResponse:
         project = create_project(
             CreateProjectCmd(
                 tenant_id=str(request.tenant_id),
-                site_id=site_id,
+                site_id=str(site.pk),
                 name=name,
                 description=description,
                 project_number=project_number,
