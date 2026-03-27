@@ -1,0 +1,35 @@
+# IIL Platform — Windsurf Rules
+
+## PyPI-First Principle (verbindlich)
+
+Vor jeder Implementierung von Funktionalität:
+
+1. **Prüfe zuerst**, ob ein eigenes `iil-*` PyPI-Package die Methode bereitstellt.
+2. **Nutze die Package-Methode**, wenn vorhanden.
+3. **Nur wenn kein Package passt**: eigene Implementierung, mit Kommentar
+   `# No iil-* package covers this — custom implementation`
+4. **Prüfbefehl**: `pip list | grep iil` im Container
+
+### Bekannte iil-* Packages
+
+| Package | Import | Methoden |
+|---------|--------|----------|
+| `iil-aifw` | `aifw.service` | `sync_completion()`, `completion()` — LLM-Calls |
+| `iil-promptfw` | `promptfw` | Jinja2 Prompt-Templates für LLM |
+| `iil-authoringfw` | `authoringfw` | Authoring/Content-Pipelines |
+| `iil-concept-templates` | `concept_templates` | PDF-Extraktion, ConceptTemplate, prefill_field, render_pdf |
+| `iil-learnfw` | `learnfw` | Kurs/Lern-Management |
+| `iil-platform-context` | `platform_context` | Request-Middleware, Tenant-Context |
+| `iil-django-tenancy` | `django_tenancy` | Multi-Tenancy Mixins |
+| `iil-platform` | `iil_platform` | Shared Platform utilities |
+
+### Verboten
+
+- Nie `litellm`/`openai`/`groq` direkt aufrufen → `aifw.service.sync_completion`
+- Nie eigene PDF-Extraktion bauen wenn `concept_templates` installiert ist
+- Nie eigene Prompt-Engine bauen wenn `promptfw` verfügbar
+
+## Lokale Wrapper (erlaubt als Thin Adapter)
+
+- `ai_analysis.llm_client.llm_complete_sync` → ruft `aifw.service.sync_completion` auf
+- Diese Wrapper sind OK, aber die eigentliche Logik muss im iil-* Package leben
