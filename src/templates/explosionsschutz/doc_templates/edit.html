@@ -98,6 +98,7 @@
 
 </div>
 
+{{ structure|json_script:"structure-data" }}
 <script>
 // ── Field type definitions ──────────────────────────────────
 const FIELD_TYPES = [
@@ -110,7 +111,7 @@ const FIELD_TYPES = [
 ];
 
 // ── State ───────────────────────────────────────────────────
-let structure = {{ structure_json|safe }};
+let structure = JSON.parse(document.getElementById('structure-data').textContent);
 if (!structure || !structure.sections) structure = { sections: [] };
 
 // ── Render ──────────────────────────────────────────────────

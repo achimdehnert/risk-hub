@@ -541,17 +541,17 @@ def instance_edit(
                 ftype = field.get("type", "textarea")
                 val = svals.get(fkey, "")
                 if ftype == "table":
-                    field["_rows"] = val if isinstance(
+                    field["table_rows"] = val if isinstance(
                         val, list,
                     ) else field.get("default_rows", [])
                     # Ensure min 3 empty rows
                     cols = field.get("columns", [])
-                    while len(field["_rows"]) < 3:
-                        field["_rows"].append(
+                    while len(field["table_rows"]) < 3:
+                        field["table_rows"].append(
                             [""] * len(cols),
                         )
                 else:
-                    field["_value"] = val or field.get(
+                    field["field_value"] = val or field.get(
                         "default", "",
                     )
 

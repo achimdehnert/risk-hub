@@ -83,7 +83,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    {% for row in field._rows %}
+                    {% for row in field.table_rows %}
                     <tr class="border-b border-gray-100 hover:bg-gray-50">
                       {% for cell in row %}
                       <td class="px-1 py-1">
@@ -109,25 +109,25 @@
               <textarea name="{{ form_key }}" rows="6"
                         {% if field.required %}required{% endif %}
                         class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="{{ field.label }}...">{{ field._value }}</textarea>
+                        placeholder="{{ field.label }}...">{{ field.field_value }}</textarea>
 
             {% elif field.type == "number" %}
               <input type="number" name="{{ form_key }}" step="any"
                      {% if field.required %}required{% endif %}
                      class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                     value="{{ field._value }}">
+                     value="{{ field.field_value }}">
 
             {% elif field.type == "date" %}
               <input type="date" name="{{ form_key }}"
                      {% if field.required %}required{% endif %}
                      class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                     value="{{ field._value }}">
+                     value="{{ field.field_value }}">
 
             {% else %}
               <input type="text" name="{{ form_key }}"
                      {% if field.required %}required{% endif %}
                      class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                     value="{{ field._value }}"
+                     value="{{ field.field_value }}"
                      placeholder="{{ field.label }}">
             {% endif %}
 
