@@ -5,6 +5,10 @@ Standalone Dokument-Template Views für Explosionsschutz.
 UC1: PDF hochladen → Template erstellen → editieren → akzeptieren
 UC2: Template auswählen → Inhalte erstellen
 UC3: Template + Dokument hochladen → Inhalte einlesen → editieren
+
+Nutzt concept_templates Package für:
+- PDF-Strukturerkennung (TOC-Bereinigung, Content-Analyse)
+- Tabellen-Erkennung und Feldtyp-Zuweisung
 """
 
 import json
@@ -22,6 +26,15 @@ from .models import ExDocInstance, ExDocTemplate
 logger = logging.getLogger(__name__)
 
 TPL_DIR = "explosionsschutz/doc_templates"
+
+# concept_templates Package (optional — graceful fallback)
+try:
+    from concept_templates.pdf_structure_extractor import (
+        extract_structure_from_text as _pkg_extract,
+    )
+    _HAS_PKG = True
+except ImportError:
+    _HAS_PKG = False
 
 
 def _tenant_id(request: HttpRequest) -> str:
@@ -65,14 +78,44 @@ def _extract_pdf_text(pdf_file) -> str:
     return ""
 
 
+def _template_to_dict(ct) -> dict:
+    """ConceptTemplate → JSON-kompatibles dict für DB."""
+    sections = []
+    for s in ct.sections:
+        fields = []
+        for f in s.fields:
+            fd = {
+                "key": f.name,
+                "label": f.label,
+                "type": str(f.field_type.value),
+                "required": f.required,
+            }
+            if f.default:
+                fd["default"] = f.default
+            if f.columns:
+                fd["columns"] = f.columns
+            if f.default_rows:
+                fd["default_rows"] = f.default_rows
+            fields.append(fd)
+        sections.append({
+            "key": s.name,
+            "label": s.title,
+            "fields": fields,
+        })
+    return {"sections": sections}
+
+
 def _text_to_structure(text: str) -> dict:
     """Extrahierten Text in Template-Struktur umwandeln.
 
-    Erkennt nummerierte Überschriften (1. Titel, 2. Titel, etc.)
-    und erstellt Sections mit je einem Textarea-Feld.
+    Delegiert an concept_templates Package falls verfügbar.
     """
+    if _HAS_PKG:
+        ct = _pkg_extract(text)
+        return _template_to_dict(ct)
+
+    # Fallback ohne Package: einfache Section-Erkennung
     sections = []
-    # Nummerierte Überschriften erkennen
     pattern = re.compile(
         r"^(\d+(?:\.\d+)*\.?)\s+(.+)$", re.MULTILINE,
     )
@@ -82,9 +125,13 @@ def _text_to_structure(text: str) -> dict:
         for i, m in enumerate(matches):
             num = m.group(1).rstrip(".")
             title = m.group(2).strip()
+            # Einfache TOC-Bereinigung
+            title = re.sub(
+                r"\s*[.·…]{2,}\s*\d*\s*$", "", title,
+            ).strip()
+            if not title:
+                continue
             key = f"section_{num.replace('.', '_')}"
-
-            # Text bis zur nächsten Überschrift
             start = m.end()
             end = (
                 matches[i + 1].start()
@@ -92,34 +139,28 @@ def _text_to_structure(text: str) -> dict:
                 else len(text)
             )
             content = text[start:end].strip()
-
             sections.append({
                 "key": key,
                 "label": f"{num}. {title}",
-                "fields": [
-                    {
-                        "key": "inhalt",
-                        "label": "Inhalt",
-                        "type": "textarea",
-                        "required": False,
-                        "default": content[:2000],
-                    },
-                ],
-            })
-    else:
-        # Fallback: ganzer Text als eine Section
-        sections.append({
-            "key": "section_1",
-            "label": "1. Dokumentinhalt",
-            "fields": [
-                {
+                "fields": [{
                     "key": "inhalt",
                     "label": "Inhalt",
                     "type": "textarea",
                     "required": False,
-                    "default": text[:5000],
-                },
-            ],
+                    "default": content[:3000],
+                }],
+            })
+    else:
+        sections.append({
+            "key": "section_1",
+            "label": "1. Dokumentinhalt",
+            "fields": [{
+                "key": "inhalt",
+                "label": "Inhalt",
+                "type": "textarea",
+                "required": False,
+                "default": text[:5000],
+            }],
         })
 
     return {"sections": sections}
@@ -131,33 +172,37 @@ def _import_text_into_template(
     """Importiert Text aus Dokument in Template-Werte.
 
     Versucht den Text anhand der Section-Labels aufzuteilen.
+    Unterstützt Freitext- und Tabellen-Felder.
     """
     values = {}
     sections = structure.get("sections", [])
 
     for i, section in enumerate(sections):
-        key = section["key"]
+        skey = section["key"]
         label = section.get("label", "")
+        fields = section.get("fields", [])
 
         # Suche nach dem Section-Label im Text
+        content = ""
         num_match = re.match(r"(\d+(?:\.\d+)*)", label)
         if num_match:
             num = num_match.group(1)
-            pattern = re.compile(
+            pat = re.compile(
                 rf"^{re.escape(num)}\.?\s+",
                 re.MULTILINE,
             )
-            match = pattern.search(text)
+            match = pat.search(text)
             if match:
                 start = match.end()
-                # Bis zur nächsten Section
                 next_section = (
                     sections[i + 1]
                     if i + 1 < len(sections)
                     else None
                 )
                 if next_section:
-                    next_label = next_section.get("label", "")
+                    next_label = next_section.get(
+                        "label", "",
+                    )
                     next_num = re.match(
                         r"(\d+(?:\.\d+)*)", next_label,
                     )
@@ -166,7 +211,9 @@ def _import_text_into_template(
                             rf"^{re.escape(next_num.group(1))}\.?\s+",
                             re.MULTILINE,
                         )
-                        next_m = next_pat.search(text, start)
+                        next_m = next_pat.search(
+                            text, start,
+                        )
                         end = (
                             next_m.start() if next_m
                             else len(text)
@@ -175,12 +222,18 @@ def _import_text_into_template(
                         end = len(text)
                 else:
                     end = len(text)
-
                 content = text[start:end].strip()
-                values[key] = {"inhalt": content[:5000]}
-                continue
 
-        values[key] = {"inhalt": ""}
+        # Felder befüllen
+        values[skey] = {}
+        for field in fields:
+            fkey = field["key"]
+            ftype = field.get("type", "textarea")
+            if ftype == "table":
+                # Tabelle aus Content nicht importiert
+                values[skey][fkey] = []
+            else:
+                values[skey][fkey] = content[:5000]
 
     return values
 
@@ -479,11 +532,33 @@ def instance_edit(
         except (json.JSONDecodeError, TypeError):
             values = {}
 
+        # Merge values into structure for easy rendering
+        for section in structure.get("sections", []):
+            skey = section["key"]
+            svals = values.get(skey, {})
+            for field in section.get("fields", []):
+                fkey = field["key"]
+                ftype = field.get("type", "textarea")
+                val = svals.get(fkey, "")
+                if ftype == "table":
+                    field["_rows"] = val if isinstance(
+                        val, list,
+                    ) else field.get("default_rows", [])
+                    # Ensure min 3 empty rows
+                    cols = field.get("columns", [])
+                    while len(field["_rows"]) < 3:
+                        field["_rows"].append(
+                            [""] * len(cols),
+                        )
+                else:
+                    field["_value"] = val or field.get(
+                        "default", "",
+                    )
+
         return render(
             request, f"{TPL_DIR}/instance_edit.html", {
                 "instance": instance,
                 "structure": structure,
-                "values": values,
             },
         )
 
@@ -494,10 +569,34 @@ def instance_edit(
         values[skey] = {}
         for field in section.get("fields", []):
             fkey = field["key"]
+            ftype = field.get("type", "textarea")
             form_key = f"{skey}__{fkey}"
-            values[skey][fkey] = request.POST.get(
-                form_key, "",
-            )
+
+            if ftype == "table":
+                columns = field.get("columns", [])
+                rows = []
+                row_idx = 0
+                while True:
+                    row_key = f"{form_key}__row_{row_idx}"
+                    first_col = request.POST.get(
+                        f"{row_key}__col_0", None,
+                    )
+                    if first_col is None:
+                        break
+                    row = []
+                    for ci in range(len(columns)):
+                        cell = request.POST.get(
+                            f"{row_key}__col_{ci}", "",
+                        )
+                        row.append(cell)
+                    if any(c.strip() for c in row):
+                        rows.append(row)
+                    row_idx += 1
+                values[skey][fkey] = rows
+            else:
+                values[skey][fkey] = request.POST.get(
+                    form_key, "",
+                )
 
     new_status = request.POST.get("status", instance.status)
     if new_status in dict(ExDocInstance.Status.choices):
