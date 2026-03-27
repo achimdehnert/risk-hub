@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     "django_module_shop",
     # AI Framework
     "aifw",
+    # Document Templates (iil-doc-templates)
+    "doc_templates",
     # Learning & Assessment Framework (ADR-150)
     "iil_learnfw",
     # Risk-Hub apps

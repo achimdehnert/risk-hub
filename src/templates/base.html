@@ -27,10 +27,10 @@
                     <span class="font-bold text-orange-600 text-lg">Schutztat</span>
                 </a>
                 <div class="hidden md:flex ml-10 space-x-4">
-                    <a href="/projects/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/projects/' and '/templates' not in request.path %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="/projects/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/projects/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Projekte
                     </a>
-                    <a href="/projects/templates/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/projects/templates' in request.path %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="/doc-templates/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/doc-templates' in request.path %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Vorlagen
                     </a>
                     {% if "ex" in active_modules %}

@@ -30,7 +30,9 @@ iil-learnfw[api,tenancy]>=0.4.0
 iil-promptfw>=0.5.1,<1
 iil-authoringfw>=0.3.0,<1
 # Concept Templates — ADR-147 (PDF extraction + LLM structure analysis)
-# iil-concept-templates[llm,pdf]>=0.2.0  # TODO: uncomment when published to PyPI
+iil-concept-templates>=0.4.0
+# Document Templates — reusable Django template system
+iil-doc-templates>=0.1.0
 # Safety Framework — riskfw inlined in src/riskfw/ (ADR-146 Phase 1)
 # CAD / BIM — nl2cad-core mono-distribution (ADR-146 Phase 2)
 # nl2cad-core[gaeb]>=0.2.0  # TODO: uncomment when published to PyPI
