@@ -26,16 +26,11 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "django_filters",
-    # Platform shared packages
-    "platform_context",
-    "django_tenancy",
-    "django_module_shop",
-    # AI Framework
-    "aifw",
-    # Document Templates (iil-doc-templates)
-    "doc_templates",
-    # Learning & Assessment Framework (ADR-150)
-    "iil_learnfw",
+    # Platform shared packages (optional — guarded for images without private pkgs)
+    *[app for app in [
+        "platform_context", "django_tenancy", "django_module_shop",
+        "aifw", "doc_templates", "iil_learnfw",
+    ] if importlib.util.find_spec(app) is not None],
     # Risk-Hub apps
     "common",
     "tenancy",
@@ -366,4 +361,21 @@ IIL_LEARNFW = {
     "ASSESSMENT_ENGINE_ENABLED": True,
     "ASSESSMENT_IP_HASH_SALT": read_secret("ASSESSMENT_IP_HASH_SALT", default="risk-hub-dev-salt"),
     "ASSESSMENT_REPORT_ENGINE": "weasyprint",
+}
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "django.request": {
+            "handlers": ["console"],
+            "level": "ERROR",
+            "propagate": True,
+        },
+    },
 }

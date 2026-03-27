@@ -16,4 +16,5 @@ def tenant_context(request: HttpRequest) -> dict:
         "tenant_slug": ctx.tenant_slug,
         "request_id": ctx.request_id,
         "active_modules": get_active_modules(request),
+        "stripe_sub": None,
     }
