@@ -23,7 +23,7 @@ ARG PROJECT_PAT
 # Install public packages first (always succeeds)
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -U pip setuptools wheel \
-    && grep -v 'git+https://' /app/requirements.txt | grep -v '^#' | grep -v '^$' > /tmp/requirements-public.txt \
+    && grep -v 'git+https://' /app/requirements.txt | grep -v '^#' | grep -v '^$' | grep -v 'iil-doc-templates' > /tmp/requirements-public.txt \
     && pip install --no-cache-dir -r /tmp/requirements-public.txt
 
 # Install private packages via direct git clone + pip install (avoids pip resolvelib bug)
