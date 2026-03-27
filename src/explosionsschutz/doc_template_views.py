@@ -105,50 +105,157 @@ def _template_to_dict(ct) -> dict:
     return {"sections": sections}
 
 
+def _clean_toc(title: str) -> str:
+    """Remove TOC dots and page numbers."""
+    title = re.sub(r"\s*[.·…]{2,}\s*\d*\s*$", "", title)
+    title = re.sub(r"\s+\d{1,4}\s*$", "", title)
+    return title.strip()
+
+
+def _split_cols(line: str) -> list[str]:
+    """Split a line by tab or multi-space."""
+    if "\t" in line:
+        parts = [c.strip() for c in line.split("\t")]
+    else:
+        parts = [c.strip() for c in re.split(r"\s{2,}", line)]
+    return [p for p in parts if p]
+
+
+def _is_valid_heading(num: str, title: str, line: str) -> bool:
+    """Filter false positives: table rows, PLZ, measurements."""
+    top = int(num.split(".")[0])
+    if top > 30:
+        return False
+    if sum(1 for c in title if c.isalpha()) < 2:
+        return False
+    if len(_split_cols(line)) >= 3:
+        return False
+    if re.match(
+        r"^(m[²³]?/[hs]|kg|cm|mm|l/|bar|°C|kW)\b",
+        title, re.IGNORECASE,
+    ):
+        return False
+    if re.match(r"^\d{5}\b", num + title):
+        return False
+    return True
+
+
+def _detect_table(content: str) -> list[str] | None:
+    """Detect table columns in section content."""
+    lines = content.strip().split("\n")
+    if len(lines) < 2:
+        return None
+    structured = [
+        ln for ln in lines
+        if "\t" in ln or ln.count("  ") >= 2
+    ]
+    if len(structured) >= 2:
+        cols = _split_cols(structured[0])
+        if 2 <= len(cols) <= 10:
+            return cols
+    return None
+
+
 def _text_to_structure(text: str) -> dict:
     """Extrahierten Text in Template-Struktur umwandeln.
 
     Delegiert an concept_templates Package falls verfügbar.
+    Fallback: Letter headings (A. B. C.) + numbered headings,
+    sequential monotonicity filter, table detection.
     """
     if _HAS_PKG:
         ct = _pkg_extract(text)
         return _template_to_dict(ct)
 
-    # Fallback ohne Package: einfache Section-Erkennung
-    sections = []
-    pattern = re.compile(
+    # Fallback: full extraction with letter + number headings
+    num_pat = re.compile(
         r"^(\d+(?:\.\d+)*\.?)\s+(.+)$", re.MULTILINE,
     )
-    matches = list(pattern.finditer(text))
+    letter_pat = re.compile(
+        r"^([A-Z])\.\s+(.+)$", re.MULTILINE,
+    )
 
-    if matches:
-        for i, m in enumerate(matches):
-            num = m.group(1).rstrip(".")
-            title = m.group(2).strip()
-            # Einfache TOC-Bereinigung
-            title = re.sub(
-                r"\s*[.·…]{2,}\s*\d*\s*$", "", title,
-            ).strip()
-            if not title:
+    # Numeric candidates with validation
+    num_cands = []
+    for m in num_pat.finditer(text):
+        num = m.group(1).rstrip(".")
+        title = _clean_toc(m.group(2).strip())
+        if not title:
+            continue
+        try:
+            if not _is_valid_heading(num, title, m.group(0)):
                 continue
-            key = f"section_{num.replace('.', '_')}"
+        except (ValueError, IndexError):
+            continue
+        num_cands.append((m, num, title))
+
+    # Sequential monotonicity filter
+    filtered = []
+    max_top = 0
+    for m, num, title in num_cands:
+        parts = num.split(".")
+        top = int(parts[0])
+        if len(parts) == 1 and top < max_top:
+            continue
+        if len(parts) == 1:
+            max_top = max(max_top, top)
+        filtered.append((m, num, title))
+
+    # Letter candidates
+    letter_cands = []
+    for m in letter_pat.finditer(text):
+        letter = m.group(1)
+        title = _clean_toc(m.group(2).strip())
+        if not title:
+            continue
+        letter_cands.append((m, letter, title))
+
+    # Merge sorted by position
+    all_valid = sorted(
+        filtered + letter_cands,
+        key=lambda x: x[0].start(),
+    )
+
+    sections = []
+    if all_valid:
+        for i, (m, num, title) in enumerate(all_valid):
+            if num.isalpha():
+                key = f"section_{num.lower()}"
+            else:
+                key = f"section_{num.replace('.', '_')}"
+            label = f"{num}. {title}"
+
             start = m.end()
             end = (
-                matches[i + 1].start()
-                if i + 1 < len(matches)
+                all_valid[i + 1][0].start()
+                if i + 1 < len(all_valid)
                 else len(text)
             )
             content = text[start:end].strip()
+
+            # Detect table in content
+            fields = []
+            table_cols = _detect_table(content)
+            if table_cols:
+                fields.append({
+                    "key": "tabelle",
+                    "label": "Tabelle",
+                    "type": "table",
+                    "required": False,
+                    "columns": table_cols,
+                })
+            fields.append({
+                "key": "inhalt",
+                "label": "Inhalt",
+                "type": "textarea",
+                "required": False,
+                "default": content[:3000],
+            })
+
             sections.append({
                 "key": key,
-                "label": f"{num}. {title}",
-                "fields": [{
-                    "key": "inhalt",
-                    "label": "Inhalt",
-                    "type": "textarea",
-                    "required": False,
-                    "default": content[:3000],
-                }],
+                "label": label,
+                "fields": fields,
             })
     else:
         sections.append({
