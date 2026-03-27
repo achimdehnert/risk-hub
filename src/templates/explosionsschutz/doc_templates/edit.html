@@ -99,6 +99,7 @@
 </div>
 
 {{ structure|json_script:"structure-data" }}
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 <script>
 // ── Field type definitions ──────────────────────────────────
 const FIELD_TYPES = [
@@ -131,7 +132,7 @@ function render() {
     <div class="border border-gray-200 rounded-lg overflow-hidden" data-section="${si}">
       <!-- Section Header -->
       <div class="bg-gray-50 px-4 py-3 flex items-center gap-2">
-        <span class="text-gray-400 cursor-grab" title="Verschieben">☰</span>
+        <span class="drag-handle text-gray-400 cursor-grab active:cursor-grabbing" title="Verschieben">☰</span>
         <input type="text" value="${esc(section.label)}"
                onchange="updateSectionLabel(${si}, this.value)"
                class="flex-1 bg-transparent border-0 text-sm font-semibold text-gray-800 focus:ring-0 p-0"
@@ -326,9 +327,32 @@ function esc(str) {
   return div.innerHTML.replace(/"/g, '&quot;');
 }
 
+// ── Drag & Drop ─────────────────────────────────────────────
+let sortableInstance = null;
+
+function initSortable() {
+  const container = document.getElementById('sections-container');
+  if (sortableInstance) sortableInstance.destroy();
+  sortableInstance = Sortable.create(container, {
+    handle: '.drag-handle',
+    animation: 200,
+    ghostClass: 'opacity-30',
+    chosenClass: 'ring-2 ring-blue-400',
+    onEnd: function(evt) {
+      const moved = structure.sections.splice(evt.oldIndex, 1)[0];
+      structure.sections.splice(evt.newIndex, 0, moved);
+      render();
+    },
+  });
+}
+
 // ── Init ────────────────────────────────────────────────────
-// Script is at bottom of page, DOM is ready — call render directly.
-// DOMContentLoaded may have already fired.
+const _origRender = render;
+render = function() {
+  _origRender();
+  initSortable();
+};
+
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', render);
 } else {
