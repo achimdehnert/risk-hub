@@ -99,7 +99,6 @@
 </div>
 
 {{ structure|json_script:"structure-data" }}
-<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.6/Sortable.min.js"></script>
 <script>
 // ── Field type definitions ──────────────────────────────────
 const FIELD_TYPES = [
@@ -129,10 +128,11 @@ function render() {
   emptyState.classList.add('hidden');
 
   container.innerHTML = structure.sections.map((section, si) => `
-    <div class="border border-gray-200 rounded-lg overflow-hidden" data-section="${si}">
+    <div class="border border-gray-200 rounded-lg" data-section="${si}"
+         draggable="true" ondragstart="onDragStart(event, ${si})" ondragover="onDragOver(event)" ondragenter="onDragEnter(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event, ${si})" ondragend="onDragEnd(event)">
       <!-- Section Header -->
-      <div class="bg-gray-50 px-4 py-3 flex items-center gap-2">
-        <span class="drag-handle text-gray-400 cursor-grab active:cursor-grabbing" title="Verschieben">☰</span>
+      <div class="bg-gray-50 px-4 py-3 flex items-center gap-2 rounded-t-lg">
+        <span class="text-gray-400 cursor-grab active:cursor-grabbing select-none" title="Verschieben">☰</span>
         <input type="text" value="${esc(section.label)}"
                onchange="updateSectionLabel(${si}, this.value)"
                class="flex-1 bg-transparent border-0 text-sm font-semibold text-gray-800 focus:ring-0 p-0"
@@ -327,32 +327,53 @@ function esc(str) {
   return div.innerHTML.replace(/"/g, '&quot;');
 }
 
-// ── Drag & Drop ─────────────────────────────────────────────
-let sortableInstance = null;
+// ── Drag & Drop (native HTML5) ──────────────────────────────
+let dragSrcIdx = null;
 
-function initSortable() {
-  const container = document.getElementById('sections-container');
-  if (sortableInstance) sortableInstance.destroy();
-  sortableInstance = Sortable.create(container, {
-    handle: '.drag-handle',
-    animation: 200,
-    ghostClass: 'opacity-30',
-    chosenClass: 'ring-2 ring-blue-400',
-    onEnd: function(evt) {
-      const moved = structure.sections.splice(evt.oldIndex, 1)[0];
-      structure.sections.splice(evt.newIndex, 0, moved);
-      render();
-    },
+function onDragStart(e, si) {
+  dragSrcIdx = si;
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/plain', si);
+  requestAnimationFrame(() => e.target.classList.add('opacity-40'));
+}
+
+function onDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = 'move';
+}
+
+function onDragEnter(e) {
+  const sec = e.target.closest('[data-section]');
+  if (sec) sec.classList.add('ring-2', 'ring-blue-400');
+}
+
+function onDragLeave(e) {
+  const sec = e.target.closest('[data-section]');
+  if (sec && !sec.contains(e.relatedTarget)) {
+    sec.classList.remove('ring-2', 'ring-blue-400');
+  }
+}
+
+function onDrop(e, targetIdx) {
+  e.preventDefault();
+  const sec = e.target.closest('[data-section]');
+  if (sec) sec.classList.remove('ring-2', 'ring-blue-400');
+  if (dragSrcIdx === null || dragSrcIdx === targetIdx) return;
+  const moved = structure.sections.splice(dragSrcIdx, 1)[0];
+  structure.sections.splice(targetIdx, 0, moved);
+  dragSrcIdx = null;
+  render();
+}
+
+function onDragEnd(e) {
+  e.target.classList.remove('opacity-40');
+  document.querySelectorAll('[data-section]').forEach(el => {
+    el.classList.remove('ring-2', 'ring-blue-400');
   });
+  dragSrcIdx = null;
 }
 
 // ── Init ────────────────────────────────────────────────────
-const _origRender = render;
-render = function() {
-  _origRender();
-  initSortable();
-};
-
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', render);
 } else {
