@@ -19,6 +19,8 @@ from .models import (
     EquipmentType,
     ExConceptDocument,
     ExConceptTemplateStore,
+    ExDocInstance,
+    ExDocTemplate,
     ExFilledTemplate,
     ExplosionConcept,
     Inspection,
@@ -766,3 +768,28 @@ class ExFilledTemplateAdmin(admin.ModelAdmin):
     search_fields = ["name"]
     readonly_fields = ["id", "created_at", "updated_at"]
     raw_id_fields = ["concept", "template"]
+
+
+# ── Dokument-Templates (standalone) ──────────────────────────────
+
+
+@admin.register(ExDocTemplate)
+class ExDocTemplateAdmin(admin.ModelAdmin):
+    list_display = [
+        "name", "status", "section_count",
+        "field_count", "updated_at",
+    ]
+    list_filter = ["status"]
+    search_fields = ["name", "description"]
+    readonly_fields = ["uuid", "created_at", "updated_at"]
+
+
+@admin.register(ExDocInstance)
+class ExDocInstanceAdmin(admin.ModelAdmin):
+    list_display = [
+        "name", "template", "status", "updated_at",
+    ]
+    list_filter = ["status"]
+    search_fields = ["name"]
+    readonly_fields = ["uuid", "created_at", "updated_at"]
+    raw_id_fields = ["template"]

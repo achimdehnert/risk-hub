@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}Dokument bearbeiten: {{ instance.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <div class="flex items-center space-x-4 mb-6">
+    <a href="{% url 'explosionsschutz:ex-doc-templates' %}" class="text-gray-400 hover:text-gray-600">&larr;</a>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">{{ instance.name }}</h1>
+      <p class="text-sm text-gray-500">
+        Vorlage: {{ instance.template.name }}
+        {% if instance.source_filename %} — Import: {{ instance.source_filename }}{% endif %}
+      </p>
+    </div>
+    <div class="ml-auto flex items-center gap-3">
+      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+        {% if instance.status == 'approved' %}bg-green-100 text-green-800
+        {% elif instance.status == 'review' %}bg-blue-100 text-blue-800
+        {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+        {{ instance.get_status_display }}
+      </span>
+      <form method="post" action="{% url 'explosionsschutz:ex-doc-instance-delete' pk=instance.pk %}"
+            onsubmit="return confirm('Dokument wirklich löschen?');" class="inline">
+        {% csrf_token %}
+        <button type="submit" class="px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium">
+          Löschen
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    {# ─ Dokumentname + Status ─────────────────────────────── #}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Dokumentname</label>
+          <input type="text" name="name" value="{{ instance.name }}"
+                 class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+            <option value="draft" {% if instance.status == 'draft' %}selected{% endif %}>Entwurf</option>
+            <option value="review" {% if instance.status == 'review' %}selected{% endif %}>In Prüfung</option>
+            <option value="approved" {% if instance.status == 'approved' %}selected{% endif %}>Freigegeben</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    {# ─ Abschnitte mit Feldern ────────────────────────────── #}
+    {% for section in structure.sections %}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+        {{ section.label }}
+      </h2>
+      <div class="space-y-4">
+        {% for field in section.fields %}
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">
+            {{ field.label }}
+            {% if field.required %}<span class="text-red-500">*</span>{% endif %}
+          </label>
+
+          {% with form_key=section.key|add:"__"|add:field.key %}
+            {% if field.type == "textarea" %}
+              <textarea name="{{ form_key }}" rows="6"
+                        {% if field.required %}required{% endif %}
+                        class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                        placeholder="{{ field.label }}...">{% for sk, sv in values.items %}{% if sk == section.key %}{% for fk, fv in sv.items %}{% if fk == field.key %}{{ fv }}{% endif %}{% endfor %}{% endif %}{% endfor %}</textarea>
+            {% elif field.type == "number" %}
+              <input type="number" name="{{ form_key }}" step="any"
+                     {% if field.required %}required{% endif %}
+                     class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                     value="{% for sk, sv in values.items %}{% if sk == section.key %}{% for fk, fv in sv.items %}{% if fk == field.key %}{{ fv }}{% endif %}{% endfor %}{% endif %}{% endfor %}">
+            {% elif field.type == "date" %}
+              <input type="date" name="{{ form_key }}"
+                     {% if field.required %}required{% endif %}
+                     class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                     value="{% for sk, sv in values.items %}{% if sk == section.key %}{% for fk, fv in sv.items %}{% if fk == field.key %}{{ fv }}{% endif %}{% endfor %}{% endif %}{% endfor %}">
+            {% else %}
+              <input type="text" name="{{ form_key }}"
+                     {% if field.required %}required{% endif %}
+                     class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                     value="{% for sk, sv in values.items %}{% if sk == section.key %}{% for fk, fv in sv.items %}{% if fk == field.key %}{{ fv }}{% endif %}{% endfor %}{% endif %}{% endfor %}"
+                     placeholder="{{ field.label }}">
+            {% endif %}
+          {% endwith %}
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="bg-gray-50 rounded-xl border border-gray-200 p-8 text-center">
+      <p class="text-gray-500">Die Vorlage enthält keine Abschnitte.</p>
+    </div>
+    {% endfor %}
+
+    {# ─ Aktionen ──────────────────────────────────────────── #}
+    <div class="flex items-center justify-between">
+      <a href="{% url 'explosionsschutz:ex-doc-templates' %}" class="text-sm text-gray-500 hover:text-gray-700">
+        Zurück zur Liste
+      </a>
+      <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+        Speichern
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

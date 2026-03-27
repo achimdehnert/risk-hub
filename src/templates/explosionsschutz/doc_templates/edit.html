@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Vorlage bearbeiten: {{ tmpl.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+  <div class="flex items-center space-x-4 mb-6">
+    <a href="{% url 'explosionsschutz:ex-doc-templates' %}" class="text-gray-400 hover:text-gray-600">&larr;</a>
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Vorlage bearbeiten</h1>
+      <p class="text-sm text-gray-500">
+        {{ tmpl.section_count }} Abschnitte, {{ tmpl.field_count }} Felder
+        {% if tmpl.source_filename %} — Quelle: {{ tmpl.source_filename }}{% endif %}
+      </p>
+    </div>
+    <div class="ml-auto">
+      <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+        {% if tmpl.status == 'accepted' %}bg-green-100 text-green-800
+        {% elif tmpl.status == 'draft' %}bg-yellow-100 text-yellow-800
+        {% else %}bg-gray-100 text-gray-800{% endif %}">
+        {{ tmpl.get_status_display }}
+      </span>
+    </div>
+  </div>
+
+  <form method="post" class="space-y-6">
+    {% csrf_token %}
+
+    {# ─ Metadaten ─────────────────────────────────────────── #}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Metadaten</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Name *</label>
+          <input type="text" name="name" value="{{ tmpl.name }}" required
+                 class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          <select name="status" class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">
+            <option value="draft" {% if tmpl.status == 'draft' %}selected{% endif %}>Entwurf</option>
+            <option value="accepted" {% if tmpl.status == 'accepted' %}selected{% endif %}>Akzeptiert</option>
+            <option value="archived" {% if tmpl.status == 'archived' %}selected{% endif %}>Archiviert</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-4">
+        <label class="block text-sm font-medium text-gray-700 mb-1">Beschreibung</label>
+        <textarea name="description" rows="2"
+                  class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500">{{ tmpl.description }}</textarea>
+      </div>
+    </div>
+
+    {# ─ Struktur (JSON) ───────────────────────────────────── #}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">
+        Template-Struktur (JSON)
+      </h2>
+      <p class="text-xs text-gray-400 mb-3">
+        Bearbeiten Sie die Abschnitte und Felder. Jeder Abschnitt hat einen <code>key</code>, <code>label</code> und eine Liste von <code>fields</code>.
+        Jedes Feld hat <code>key</code>, <code>label</code>, <code>type</code> (text/textarea/number/date), <code>required</code> (true/false).
+      </p>
+      <textarea name="structure_json" rows="20"
+                class="w-full rounded-lg border-gray-300 text-sm font-mono focus:border-blue-500 focus:ring-blue-500"
+                spellcheck="false">{{ structure_json }}</textarea>
+    </div>
+
+    {# ─ Vorschau ──────────────────────────────────────────── #}
+    {% if structure.sections %}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Vorschau</h2>
+      {% for section in structure.sections %}
+      <div class="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+        <h3 class="text-sm font-semibold text-gray-700 mb-2">{{ section.label }}</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
+          {% for field in section.fields %}
+          <div class="text-xs">
+            <span class="text-gray-500">{{ field.label }}</span>
+            <span class="text-gray-300 ml-1">({{ field.type }}{% if field.required %}, Pflicht{% endif %})</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {# ─ Aktionen ──────────────────────────────────────────── #}
+    <div class="flex items-center justify-between">
+      <div class="flex gap-2">
+        <a href="{% url 'explosionsschutz:ex-doc-templates' %}"
+           class="text-sm text-gray-500 hover:text-gray-700">Zurück zur Liste</a>
+        <span class="text-gray-300">|</span>
+        <a href="{% url 'explosionsschutz:ex-doc-instance-create' template_pk=tmpl.pk %}"
+           class="text-sm text-green-600 hover:text-green-800">Dokument aus dieser Vorlage erstellen</a>
+      </div>
+      <button type="submit" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+        Speichern
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

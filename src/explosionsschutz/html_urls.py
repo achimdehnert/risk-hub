@@ -6,6 +6,7 @@ HTML-Template URLs für Explosionsschutz-Modul
 from django.urls import path
 from django.views.generic import RedirectView
 
+from . import doc_template_views
 from .concept_template_views import (
     ExConceptDocAnalyzeView,
     ExDocumentUploadView,
@@ -173,6 +174,47 @@ urlpatterns = [
         "htmx/zone-proposal/",
         HtmxZoneProposalView.as_view(),
         name="htmx-zone-proposal",
+    ),
+    # ── Dokument-Templates (standalone) ─────────────────────────
+    path(
+        "doc-templates/",
+        doc_template_views.template_list,
+        name="ex-doc-templates",
+    ),
+    path(
+        "doc-templates/create/",
+        doc_template_views.template_create,
+        name="ex-doc-template-create",
+    ),
+    path(
+        "doc-templates/upload/",
+        doc_template_views.template_upload,
+        name="ex-doc-template-upload",
+    ),
+    path(
+        "doc-templates/<int:pk>/edit/",
+        doc_template_views.template_edit,
+        name="ex-doc-template-edit",
+    ),
+    path(
+        "doc-templates/<int:pk>/delete/",
+        doc_template_views.template_delete,
+        name="ex-doc-template-delete",
+    ),
+    path(
+        "doc-templates/<int:template_pk>/new-instance/",
+        doc_template_views.instance_create,
+        name="ex-doc-instance-create",
+    ),
+    path(
+        "doc-instances/<int:pk>/edit/",
+        doc_template_views.instance_edit,
+        name="ex-doc-instance-edit",
+    ),
+    path(
+        "doc-instances/<int:pk>/delete/",
+        doc_template_views.instance_delete,
+        name="ex-doc-instance-delete",
     ),
     # ── Concept Templates (ADR-147) ─────────────────────────────
     path(
