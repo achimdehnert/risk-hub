@@ -32,6 +32,8 @@ INSTALLED_APPS = [
     "django_module_shop",
     # AI Framework
     "aifw",
+    # Learning & Assessment Framework (ADR-150)
+    "iil_learnfw",
     # Risk-Hub apps
     "common",
     "tenancy",
@@ -350,3 +352,15 @@ OIDC_OP_JWKS_ENDPOINT = f"{_IDP}/{_OIDC_APP_SLUG}/jwks/"
 OIDC_RP_SIGN_ALGO = "RS256"
 OIDC_RP_SCOPES = "openid email profile"
 LOGOUT_REDIRECT_URL = "/"
+
+# iil-learnfw (ADR-150 Phase 5 — risk-hub as second consumer)
+IIL_LEARNFW = {
+    "TENANT_AWARE": True,
+    "AUTHORING_ENABLED": False,
+    "ENROLLMENT_MODE": "admin_only",
+    "GAMIFICATION_ENABLED": False,
+    "GRADING_ENABLED": False,
+    "ASSESSMENT_ENGINE_ENABLED": True,
+    "ASSESSMENT_IP_HASH_SALT": read_secret("ASSESSMENT_IP_HASH_SALT", default="risk-hub-dev-salt"),
+    "ASSESSMENT_REPORT_ENGINE": "weasyprint",
+}
