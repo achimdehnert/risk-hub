@@ -16,6 +16,7 @@ import logging
 import re
 
 from django.contrib import messages
+from django.db import models
 from django.contrib.auth.decorators import login_required
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -542,7 +543,17 @@ def template_delete(
         ExDocTemplate, pk=pk, tenant_id=tid,
     )
     name = tmpl.name
-    tmpl.delete()
+    try:
+        tmpl.delete()
+    except models.ProtectedError:
+        count = tmpl.instances.count()
+        messages.error(
+            request,
+            f"Vorlage '{name}' kann nicht gelöscht werden — "
+            f"es gibt noch {count} Dokument(e) die darauf basieren. "
+            f"Bitte zuerst die Dokumente löschen.",
+        )
+        return redirect("explosionsschutz:ex-doc-templates")
     messages.success(request, f"Vorlage '{name}' gelöscht.")
     return redirect("explosionsschutz:ex-doc-templates")
 
