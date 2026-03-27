@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Dokument erstellen — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <div>
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="{% url 'projects:project-list' %}" class="hover:text-gray-700">Projekte</a>
+            <span class="mx-2">/</span>
+            <a href="{% url 'projects:project-detail' pk=project.pk %}" class="hover:text-gray-700">{{ project.name }}</a>
+            <span class="mx-2">/</span>
+            <span>Dokument erstellen</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">Neues Dokument erstellen</h1>
+        <p class="text-sm text-gray-500 mt-1">Wählen Sie den Dokumenttyp — die Gliederung wird automatisch angelegt.</p>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4 text-sm text-red-700">{{ error }}</div>
+    {% endif %}
+
+    <form method="post" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-3">Dokumenttyp *</label>
+                <div class="grid gap-3">
+                    {% for kind_code, kind_meta in kinds.items %}
+                    <label class="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-orange-300 hover:bg-orange-50 cursor-pointer transition">
+                        <input type="radio" name="kind" value="{{ kind_code }}"
+                               {% if form_data.kind == kind_code %}checked{% endif %}
+                               class="h-4 w-4 text-orange-500 border-gray-300 focus:ring-orange-500">
+                        <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i data-lucide="{{ kind_meta.icon }}" class="w-5 h-5 text-orange-600"></i>
+                        </div>
+                        <div>
+                            <span class="text-sm font-medium text-gray-900">{{ kind_meta.label }}</span>
+                            <span class="text-xs text-gray-500 ml-2">{{ kind_meta.default_sections|length }} Abschnitte</span>
+                        </div>
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Titel *</label>
+                <input type="text" name="title" required
+                       value="{{ form_data.title|default:'' }}"
+                       placeholder="z.B. Explosionsschutzdokument Lackieranlage Halle 3"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <a href="{% url 'projects:project-detail' pk=project.pk %}"
+               class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                Abbrechen
+            </a>
+            <button type="submit"
+                    class="inline-flex items-center px-6 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600">
+                <i data-lucide="file-plus" class="w-4 h-4 mr-2"></i>
+                Dokument erstellen
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

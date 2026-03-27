@@ -2,7 +2,13 @@
 
 from django.contrib import admin
 
-from projects.models import Project, ProjectModule
+from projects.models import (
+    DocumentSection,
+    OutputDocument,
+    Project,
+    ProjectDocument,
+    ProjectModule,
+)
 
 
 class ProjectModuleInline(admin.TabularInline):
@@ -24,3 +30,24 @@ class ProjectAdmin(admin.ModelAdmin):
     search_fields = ("name", "project_number", "client_name")
     readonly_fields = ("uuid", "created_at", "updated_at")
     inlines = [ProjectModuleInline]
+
+
+@admin.register(ProjectDocument)
+class ProjectDocumentAdmin(admin.ModelAdmin):
+    list_display = ("title", "doc_type", "project", "created_at")
+    list_filter = ("doc_type",)
+    search_fields = ("title",)
+
+
+class DocumentSectionInline(admin.TabularInline):
+    model = DocumentSection
+    extra = 0
+    ordering = ("order",)
+
+
+@admin.register(OutputDocument)
+class OutputDocumentAdmin(admin.ModelAdmin):
+    list_display = ("title", "kind", "status", "project", "version")
+    list_filter = ("kind", "status")
+    search_fields = ("title",)
+    inlines = [DocumentSectionInline]

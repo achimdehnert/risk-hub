@@ -1,8 +1,9 @@
 """Project models (ADR-041).
 
-Phase 1: Project + ProjectModule
 - BigAutoField (Platform-Prinzip) + separates uuid-Feld
 - ProjectModule als Tabelle statt JSONField
+- ProjectDocument: hochgeladene Unterlagen
+- OutputDocument + DocumentSection: generierte Dokumente
 """
 
 import uuid
@@ -157,3 +158,142 @@ class ProjectModule(models.Model):
 
     def __str__(self) -> str:
         return f"{self.module} ({self.get_status_display()})"
+
+
+class ProjectDocument(models.Model):
+    """Hochgeladene Projektunterlage (ADR-041 Phase 2)."""
+
+    class DocType(models.TextChoices):
+        SDS = "sds", "Sicherheitsdatenblatt"
+        PLAN = "plan", "Grundriss/Anlagenplan"
+        GUTACHTEN = "gutachten", "Bestehendes Gutachten"
+        REGULATION = "regulation", "Regelwerk/Norm"
+        PROCESS = "process", "Verfahrensbeschreibung"
+        OTHER = "other", "Sonstiges"
+
+    uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False,
+    )
+    tenant_id = models.UUIDField(db_index=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="documents",
+    )
+
+    title = models.CharField(max_length=255)
+    doc_type = models.CharField(
+        max_length=20,
+        choices=DocType.choices,
+        default=DocType.OTHER,
+    )
+    file = models.FileField(upload_to="projects/docs/%Y/%m/")
+
+    extracted_text = models.TextField(blank=True, default="")
+    page_count = models.IntegerField(null=True, blank=True)
+    ai_summary = models.TextField(blank=True, default="")
+
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    objects = TenantManager()
+
+    class Meta:
+        db_table = "project_document"
+        verbose_name = "Projektunterlage"
+        verbose_name_plural = "Projektunterlagen"
+        ordering = ["-created_at"]
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.get_doc_type_display()})"
+
+    @property
+    def filename(self) -> str:
+        """Return just the filename from the file path."""
+        if self.file:
+            return self.file.name.split("/")[-1]
+        return ""
+
+
+class OutputDocument(models.Model):
+    """Generiertes Ausgabedokument (ADR-041 Phase 4)."""
+
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Entwurf"
+        REVIEW = "review", "In Prüfung"
+        APPROVED = "approved", "Freigegeben"
+
+    uuid = models.UUIDField(
+        default=uuid.uuid4, unique=True, editable=False,
+    )
+    tenant_id = models.UUIDField(db_index=True)
+    project = models.ForeignKey(
+        Project,
+        on_delete=models.CASCADE,
+        related_name="output_documents",
+    )
+
+    kind = models.CharField(
+        max_length=50,
+        help_text="Dokumenttyp, z.B. ex_schutz, gbu, brandschutz",
+    )
+    title = models.CharField(max_length=255)
+    version = models.PositiveIntegerField(default=1)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT,
+    )
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
+
+    class Meta:
+        db_table = "project_output_document"
+        verbose_name = "Ausgabedokument"
+        verbose_name_plural = "Ausgabedokumente"
+        ordering = ["-updated_at"]
+
+    def __str__(self) -> str:
+        return f"{self.title} v{self.version} ({self.get_status_display()})"
+
+
+class DocumentSection(models.Model):
+    """Abschnitt im Ausgabedokument (ADR-041 Phase 4)."""
+
+    document = models.ForeignKey(
+        OutputDocument,
+        on_delete=models.CASCADE,
+        related_name="sections",
+    )
+
+    section_key = models.CharField(max_length=50)
+    title = models.CharField(max_length=255)
+    order = models.PositiveIntegerField(default=0)
+    content = models.TextField(blank=True, default="")
+    is_ai_generated = models.BooleanField(default=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "project_document_section"
+        verbose_name = "Dokumentabschnitt"
+        verbose_name_plural = "Dokumentabschnitte"
+        ordering = ["order"]
+
+    def __str__(self) -> str:
+        return f"{self.order}. {self.title}"

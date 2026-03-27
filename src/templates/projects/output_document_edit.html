@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}{{ doc.title }} — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div>
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="{% url 'projects:project-list' %}" class="hover:text-gray-700">Projekte</a>
+            <span class="mx-2">/</span>
+            <a href="{% url 'projects:project-detail' pk=project.pk %}" class="hover:text-gray-700">{{ project.name }}</a>
+            <span class="mx-2">/</span>
+            <span>{{ doc.title }}</span>
+        </nav>
+        <div class="flex justify-between items-start">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">{{ doc.title }}</h1>
+                <div class="flex items-center gap-3 mt-1 text-sm text-gray-500">
+                    <span class="px-2 py-0.5 rounded bg-yellow-100 text-yellow-700 text-xs font-medium">{{ doc.get_status_display }}</span>
+                    <span>Version {{ doc.version }}</span>
+                    <span>{{ doc.sections.count }} Abschnitte</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Sidebar: Projektunterlagen -->
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sticky top-4">
+                <h3 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <i data-lucide="files" class="w-4 h-4 text-orange-500"></i>
+                    Projektunterlagen
+                </h3>
+                {% if documents %}
+                <ul class="space-y-2">
+                    {% for pdoc in documents %}
+                    <li class="flex items-center gap-2 text-xs text-gray-600 p-2 rounded hover:bg-gray-50">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5 text-gray-400 flex-shrink-0"></i>
+                        <span class="truncate" title="{{ pdoc.title }}">{{ pdoc.title }}</span>
+                        <span class="px-1.5 py-0.5 rounded bg-gray-100 text-gray-500 flex-shrink-0">{{ pdoc.get_doc_type_display }}</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-xs text-gray-400">Keine Unterlagen hochgeladen.</p>
+                <a href="{% url 'projects:document-upload' pk=project.pk %}"
+                   class="text-xs text-orange-600 hover:underline mt-2 inline-block">
+                    Jetzt hochladen →
+                </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Main: Sections -->
+        <div class="lg:col-span-3 space-y-4">
+            {% for section in sections %}
+            <div id="section-{{ section.pk }}" class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                {% include "projects/partials/_section_card.html" with section=section project=project doc=doc %}
+            </div>
+            {% empty %}
+            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8 text-center">
+                <p class="text-gray-500">Keine Abschnitte vorhanden.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

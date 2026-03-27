@@ -27,4 +27,31 @@ urlpatterns = [
         views.project_recommend_modules,
         name="recommend-modules",
     ),
+    # Documents (Upload)
+    path(
+        "<int:pk>/upload/",
+        views.document_upload,
+        name="document-upload",
+    ),
+    path(
+        "<int:pk>/docs/<int:doc_pk>/delete/",
+        views.document_delete,
+        name="document-delete",
+    ),
+    # Output Documents (Dokument erstellen)
+    path(
+        "<int:pk>/documents/new/",
+        views.output_document_create,
+        name="output-document-create",
+    ),
+    path(
+        "<int:pk>/documents/<int:doc_pk>/",
+        views.output_document_edit,
+        name="output-document-edit",
+    ),
+    path(
+        "<int:pk>/documents/<int:doc_pk>/sections/<int:sec_pk>/save/",
+        views.section_save,
+        name="section-save",
+    ),
 ]

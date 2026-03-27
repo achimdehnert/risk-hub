@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Unterlagen hochladen — {{ project.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+    <div>
+        <nav class="text-sm text-gray-500 mb-2">
+            <a href="{% url 'projects:project-list' %}" class="hover:text-gray-700">Projekte</a>
+            <span class="mx-2">/</span>
+            <a href="{% url 'projects:project-detail' pk=project.pk %}" class="hover:text-gray-700">{{ project.name }}</a>
+            <span class="mx-2">/</span>
+            <span>Unterlagen hochladen</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">Unterlagen hochladen</h1>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-6">
+        {% csrf_token %}
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Dokumenttyp</label>
+                <select name="doc_type"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
+                    {% for value, label in doc_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Dateien auswählen</label>
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-orange-400 transition"
+                     id="drop-zone">
+                    <i data-lucide="upload-cloud" class="w-10 h-10 text-gray-400 mx-auto mb-3"></i>
+                    <p class="text-sm text-gray-600 mb-2">Dateien hierher ziehen oder klicken</p>
+                    <input type="file" name="files" multiple required
+                           class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
+                           accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.tiff">
+                    <p class="text-xs text-gray-400 mt-2">PDF, Word, Excel, Bilder — max. je 50 MB</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3">
+            <a href="{% url 'projects:project-detail' pk=project.pk %}"
+               class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+                Abbrechen
+            </a>
+            <button type="submit"
+                    class="inline-flex items-center px-6 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                Hochladen
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
