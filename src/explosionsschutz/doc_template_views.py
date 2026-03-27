@@ -945,18 +945,19 @@ def instance_llm_prefill(
             status=400,
         )
 
-    try:
-        from concept_templates.prefill import prefill_field
-    except ImportError:
-        return HttpResponse(
-            '<span class="text-red-500 text-sm">'
-            "concept_templates nicht installiert"
-            "</span>",
-        )
-
-    context_values = None
+    # Build context from existing values
+    context_parts = []
     if instance.values_json and instance.values_json != "{}":
-        context_values = json.loads(instance.values_json)
+        try:
+            vals = json.loads(instance.values_json)
+            for skey, svals in vals.items():
+                for fkey, fval in svals.items():
+                    if isinstance(fval, str) and fval.strip():
+                        context_parts.append(
+                            f"{fkey}: {fval[:300]}",
+                        )
+        except (json.JSONDecodeError, AttributeError):
+            pass
 
     # Extracted texts from linked concept (if any)
     extracted_texts = []
@@ -975,24 +976,42 @@ def instance_llm_prefill(
             instance.template.source_text[:5000],
         ]
 
-    def _llm_fn(system: str, user: str) -> str:
-        from ai_analysis.llm_client import llm_complete_sync
-        return llm_complete_sync(
-            prompt=user,
-            system=system,
+    system_prompt = (
+        "Du bist ein Experte für Explosionsschutz und "
+        "technische Dokumentation. Schreibe fachlich "
+        "korrekte, präzise Texte auf Deutsch. "
+        "Antworte NUR mit dem Feldinhalt, keine "
+        "Erklärungen oder Einleitungen."
+    )
+    user_prompt = f"Feld: {llm_hint}\n"
+    if context_parts:
+        user_prompt += (
+            "\nBereits ausgefüllte Felder:\n"
+            + "\n".join(context_parts[:10])
+            + "\n"
+        )
+    if extracted_texts:
+        joined = "\n---\n".join(
+            t[:3000] for t in extracted_texts
+        )
+        user_prompt += (
+            f"\nReferenz-Dokument(e):\n{joined}\n"
+        )
+    user_prompt += (
+        f"\nSchreibe den Inhalt für das Feld "
+        f"'{field_key}' im Kontext Explosionsschutz."
+    )
+
+    try:
+        from ai_analysis.llm_client import (
+            llm_complete_sync,
+        )
+        value = llm_complete_sync(
+            prompt=user_prompt,
+            system=system_prompt,
             action_code="concept_analysis",
             temperature=0.3,
             max_tokens=500,
-        )
-
-    try:
-        value = prefill_field(
-            field_key=field_key,
-            llm_hint=llm_hint,
-            llm_fn=_llm_fn,
-            context_values=context_values,
-            extracted_texts=extracted_texts,
-            scope="explosionsschutz",
         )
     except Exception as exc:
         logger.warning("LLM prefill failed: %s", exc)
