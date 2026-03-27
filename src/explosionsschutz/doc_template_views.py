@@ -653,11 +653,7 @@ def template_edit(
     tmpl.save()
 
     messages.success(request, "Vorlage gespeichert.")
-    if tmpl.status == ExDocTemplate.Status.ACCEPTED:
-        return redirect("explosionsschutz:ex-doc-templates")
-    return redirect(
-        "explosionsschutz:ex-doc-template-edit", pk=tmpl.pk,
-    )
+    return redirect("explosionsschutz:ex-doc-templates")
 
 
 # ─── Template Delete ─────────────────────────────────────────
