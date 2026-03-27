@@ -290,6 +290,17 @@ class ConceptDetailView(View):
         measures = concept.measures.all()
         documents = concept.documents.all()
 
+        from .models import ExDocInstance, ExDocTemplate
+
+        doc_instances = ExDocInstance.objects.filter(
+            concept=concept,
+            tenant_id=tenant_id,
+        ).select_related("template").order_by("-updated_at")
+        doc_templates = ExDocTemplate.objects.filter(
+            tenant_id=tenant_id,
+            status=ExDocTemplate.Status.ACCEPTED,
+        ).order_by("name")
+
         from approvals.models import ApprovalRequest
 
         active_approval = ApprovalRequest.objects.filter(
@@ -307,6 +318,8 @@ class ConceptDetailView(View):
                 "zones": zones,
                 "measures": measures,
                 "documents": documents,
+                "doc_instances": doc_instances,
+                "doc_templates": doc_templates,
                 "active_approval": active_approval,
                 "zone_form": ZoneDefinitionForm(),
                 "measure_form": ProtectionMeasureForm(),

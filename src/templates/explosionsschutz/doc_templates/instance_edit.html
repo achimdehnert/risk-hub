@@ -10,6 +10,7 @@
       <h1 class="text-2xl font-bold text-gray-900">{{ instance.name }}</h1>
       <p class="text-sm text-gray-500">
         Vorlage: {{ instance.template.name }}
+        {% if instance.concept %} · Konzept: <a href="{% url 'explosionsschutz:concept-detail-html' instance.concept.pk %}" class="text-orange-600 hover:text-orange-700">{{ instance.concept.title }}</a>{% endif %}
         {% if instance.source_filename %} — Import: {{ instance.source_filename }}{% endif %}
       </p>
     </div>
@@ -20,6 +21,11 @@
         {% else %}bg-yellow-100 text-yellow-800{% endif %}">
         {{ instance.get_status_display }}
       </span>
+      <a href="{% url 'explosionsschutz:ex-doc-instance-pdf' pk=instance.pk %}"
+         class="px-3 py-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-xs font-medium inline-flex items-center">
+        <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i>
+        PDF
+      </a>
       <form method="post" action="{% url 'explosionsschutz:ex-doc-instance-delete' pk=instance.pk %}"
             onsubmit="return confirm('Dokument wirklich löschen?');" class="inline">
         {% csrf_token %}
@@ -106,10 +112,18 @@
               </button>
 
             {% elif field.type == "textarea" %}
-              <textarea name="{{ form_key }}" rows="6"
-                        {% if field.required %}required{% endif %}
-                        class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
-                        placeholder="{{ field.label }}...">{{ field.field_value }}</textarea>
+              <div id="prefill-target-{{ form_key }}">
+                <textarea name="{{ form_key }}" rows="6"
+                          {% if field.required %}required{% endif %}
+                          class="w-full rounded-lg border-gray-300 text-sm focus:border-blue-500 focus:ring-blue-500"
+                          placeholder="{{ field.label }}...">{{ field.field_value }}</textarea>
+              </div>
+              <button type="button"
+                      onclick="llmPrefill('{{ form_key }}', '{{ field.label|escapejs }}', this)"
+                      class="mt-1 text-xs text-violet-600 hover:text-violet-800 inline-flex items-center">
+                <i data-lucide="sparkles" class="w-3 h-3 mr-1"></i>
+                KI ausfüllen
+              </button>
 
             {% elif field.type == "number" %}
               <input type="number" name="{{ form_key }}" step="any"
@@ -158,6 +172,30 @@
 
 {% block extra_js %}
 <script>
+function llmPrefill(fieldKey, label, btn) {
+  btn.disabled = true;
+  btn.innerHTML = '<i data-lucide="loader" class="w-3 h-3 mr-1 animate-spin"></i> Wird generiert...';
+  var target = document.getElementById('prefill-target-' + fieldKey);
+  var fd = new FormData();
+  fd.append('field_key', fieldKey);
+  fd.append('llm_hint', 'Beschreibe: ' + label);
+  fd.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+  fetch('{% url "explosionsschutz:ex-doc-instance-llm-prefill" pk=instance.pk %}', {
+    method: 'POST',
+    body: fd,
+  }).then(function(r) { return r.text(); })
+    .then(function(html) {
+      target.innerHTML = html;
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="sparkles" class="w-3 h-3 mr-1"></i> KI ausfüllen';
+      if (typeof lucide !== 'undefined') lucide.createIcons();
+    }).catch(function(err) {
+      btn.disabled = false;
+      btn.innerHTML = '<i data-lucide="sparkles" class="w-3 h-3 mr-1"></i> KI ausfüllen';
+      alert('Fehler: ' + err);
+    });
+}
+
 function addTableRow(table) {
   const tbody = table.querySelector('tbody');
   const rows = tbody.querySelectorAll('tr');

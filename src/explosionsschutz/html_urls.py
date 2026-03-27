@@ -207,6 +207,11 @@ urlpatterns = [
         name="ex-doc-instance-create",
     ),
     path(
+        "doc-templates/<int:template_pk>/new-instance/<uuid:concept_pk>/",
+        doc_template_views.instance_create_for_concept,
+        name="ex-doc-instance-create-for-concept",
+    ),
+    path(
         "doc-instances/<int:pk>/edit/",
         doc_template_views.instance_edit,
         name="ex-doc-instance-edit",
@@ -215,6 +220,16 @@ urlpatterns = [
         "doc-instances/<int:pk>/delete/",
         doc_template_views.instance_delete,
         name="ex-doc-instance-delete",
+    ),
+    path(
+        "doc-instances/<int:pk>/llm-prefill/",
+        doc_template_views.instance_llm_prefill,
+        name="ex-doc-instance-llm-prefill",
+    ),
+    path(
+        "doc-instances/<int:pk>/pdf/",
+        doc_template_views.instance_pdf_export,
+        name="ex-doc-instance-pdf",
     ),
     # ── Concept Templates (ADR-147) ─────────────────────────────
     path(

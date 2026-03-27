@@ -131,6 +131,14 @@ class ExDocInstance(models.Model):
         on_delete=models.PROTECT,
         related_name="instances",
     )
+    concept = models.ForeignKey(
+        "explosionsschutz.ExplosionConcept",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="doc_instances",
+        help_text="Verknüpftes Ex-Konzept (optional)",
+    )
     name = models.CharField(max_length=255)
     values_json = models.TextField(
         default="{}",

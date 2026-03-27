@@ -749,6 +749,42 @@ def instance_create(
     )
 
 
+# ─── Instance Create for Concept ─────────────────────────────
+
+
+@login_required
+def instance_create_for_concept(
+    request: HttpRequest, template_pk: int, concept_pk: str,
+) -> HttpResponse:
+    """Neues Dokument aus Template für ein Konzept erstellen."""
+    from .models import ExplosionConcept
+
+    tid = _tenant_id(request)
+    tmpl = get_object_or_404(
+        ExDocTemplate, pk=template_pk, tenant_id=tid,
+    )
+    concept = get_object_or_404(
+        ExplosionConcept, pk=concept_pk, tenant_id=tid,
+    )
+
+    name = f"{concept.title} — {tmpl.name}"
+    instance = ExDocInstance.objects.create(
+        tenant_id=tid,
+        template=tmpl,
+        concept=concept,
+        name=name,
+        values_json="{}",
+    )
+    messages.success(
+        request,
+        f"Dokument '{name}' erstellt.",
+    )
+    return redirect(
+        "explosionsschutz:ex-doc-instance-edit",
+        pk=instance.pk,
+    )
+
+
 # ─── Instance Edit ───────────────────────────────────────────
 
 
@@ -877,3 +913,177 @@ def instance_delete(
     instance.delete()
     messages.success(request, f"Dokument '{name}' gelöscht.")
     return redirect("explosionsschutz:ex-doc-templates")
+
+
+# ─── Instance LLM Prefill ────────────────────────────────────
+
+
+@login_required
+@require_POST
+def instance_llm_prefill(
+    request: HttpRequest, pk: int,
+) -> HttpResponse:
+    """HTMX endpoint: KI-Prefill für ein einzelnes Feld."""
+    tid = _tenant_id(request)
+    instance = get_object_or_404(
+        ExDocInstance.objects.select_related("template"),
+        pk=pk, tenant_id=tid,
+    )
+
+    field_key = request.POST.get("field_key", "")
+    llm_hint = request.POST.get("llm_hint", "")
+
+    if not field_key or not llm_hint:
+        return HttpResponse(
+            "field_key und llm_hint erforderlich",
+            status=400,
+        )
+
+    try:
+        from concept_templates.prefill import prefill_field
+    except ImportError:
+        return HttpResponse(
+            '<span class="text-red-500 text-sm">'
+            "concept_templates nicht installiert"
+            "</span>",
+        )
+
+    context_values = None
+    if instance.values_json and instance.values_json != "{}":
+        context_values = json.loads(instance.values_json)
+
+    # Extracted texts from linked concept (if any)
+    extracted_texts = []
+    if instance.concept_id:
+        extracted_texts = list(
+            instance.concept.concept_documents.filter(
+                status="analyzed",
+                deleted_at__isnull=True,
+            ).values_list(
+                "extracted_text", flat=True,
+            )[:2]
+        )
+    # Fallback: source text from template
+    if not extracted_texts and instance.template.source_text:
+        extracted_texts = [
+            instance.template.source_text[:5000],
+        ]
+
+    def _llm_fn(system: str, user: str) -> str:
+        from ai_analysis.llm_client import llm_complete_sync
+        return llm_complete_sync(
+            prompt=user,
+            system=system,
+            action_code="concept_analysis",
+            temperature=0.3,
+            max_tokens=500,
+        )
+
+    try:
+        value = prefill_field(
+            field_key=field_key,
+            llm_hint=llm_hint,
+            llm_fn=_llm_fn,
+            context_values=context_values,
+            extracted_texts=extracted_texts,
+            scope="explosionsschutz",
+        )
+    except Exception as exc:
+        logger.warning("LLM prefill failed: %s", exc)
+        return HttpResponse(
+            '<span class="text-red-500 text-sm">'
+            f"Fehler: {exc}</span>",
+        )
+
+    from django.utils.html import escape
+    safe_val = escape(value)
+    return HttpResponse(
+        f'<textarea name="{field_key}" rows="4" '
+        f'class="w-full px-3 py-2 border border-green-300 '
+        f'rounded-lg bg-green-50 focus:ring-2 '
+        f'focus:ring-orange-500">{safe_val}</textarea>',
+    )
+
+
+# ─── Instance PDF Export ──────────────────────────────────────
+
+
+@login_required
+def instance_pdf_export(
+    request: HttpRequest, pk: int,
+) -> HttpResponse:
+    """PDF-Export eines ausgefüllten Dokuments."""
+    tid = _tenant_id(request)
+    instance = get_object_or_404(
+        ExDocInstance.objects.select_related("template"),
+        pk=pk, tenant_id=tid,
+    )
+
+    try:
+        from concept_templates.document_renderer import (
+            render_pdf,
+        )
+        from concept_templates.schemas import (
+            ConceptTemplate,
+            FieldType,
+            TemplateField,
+            TemplateSection,
+        )
+    except ImportError:
+        messages.error(
+            request,
+            "PDF-Export benötigt concept_templates[render].",
+        )
+        return redirect(
+            "explosionsschutz:ex-doc-instance-edit",
+            pk=instance.pk,
+        )
+
+    structure = json.loads(instance.template.structure_json)
+    values = json.loads(instance.values_json) if (
+        instance.values_json and instance.values_json != "{}"
+    ) else {}
+
+    # Convert structure to ConceptTemplate
+    sections = []
+    for i, s in enumerate(structure.get("sections", [])):
+        fields = []
+        for f in s.get("fields", []):
+            ft = FieldType.TEXTAREA
+            if f.get("type") == "text":
+                ft = FieldType.TEXT
+            elif f.get("type") == "table":
+                ft = FieldType.TABLE
+            fields.append(TemplateField(
+                name=f["key"],
+                label=f.get("label", f["key"]),
+                field_type=ft,
+            ))
+        sections.append(TemplateSection(
+            name=s["key"],
+            title=s.get("label", f"Abschnitt {i + 1}"),
+            order=i + 1,
+            fields=fields,
+        ))
+
+    ct = ConceptTemplate(
+        name=instance.template.name,
+        scope="explosionsschutz",
+        version="1.0",
+        sections=sections,
+    )
+
+    pdf_bytes = render_pdf(
+        template=ct,
+        values=values,
+        title=instance.name,
+    )
+
+    response = HttpResponse(
+        pdf_bytes, content_type="application/pdf",
+    )
+    safe_name = instance.name.replace(" ", "_")[:80]
+    response["Content-Disposition"] = (
+        f'attachment; filename="{safe_name}.pdf"'
+    )
+    return response

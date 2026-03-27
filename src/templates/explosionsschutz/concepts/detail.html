@@ -116,6 +116,12 @@
                     <i data-lucide="file" class="w-4 h-4 inline mr-1"></i>
                     Dokumente
                 </button>
+                <button class="px-6 py-3 border-b-2 border-transparent text-gray-500 hover:text-gray-700"
+                        data-tab-btn data-tab-target="tab-vorlagen">
+                    <i data-lucide="file-text" class="w-4 h-4 inline mr-1"></i>
+                    Vorlagen
+                    {% if doc_instances %}<span class="ml-1 px-1.5 py-0.5 text-xs bg-orange-100 text-orange-700 rounded-full">{{ doc_instances|length }}</span>{% endif %}
+                </button>
             </nav>
         </div>
 
@@ -136,6 +142,90 @@
         <div id="tab-documents" class="p-6 hidden">
             <h3 class="font-semibold text-gray-900 mb-4">Nachweisdokumente</h3>
             {% include "explosionsschutz/partials/_document_list.html" %}
+        </div>
+
+        <!-- Vorlagen Tab -->
+        <div id="tab-vorlagen" class="p-6 hidden">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="font-semibold text-gray-900">Dokumente aus Vorlagen</h3>
+                {% if doc_templates %}
+                <div class="relative">
+                    <button data-toggle="new-doc-dropdown"
+                            class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm">
+                        <i data-lucide="plus" class="w-4 h-4 mr-1"></i>
+                        Neues Dokument
+                    </button>
+                    <div id="new-doc-dropdown"
+                         class="hidden absolute right-0 mt-2 w-72 bg-white rounded-md shadow-lg ring-1 ring-black ring-opacity-5 z-50">
+                        <div class="py-1">
+                            <p class="px-4 py-2 text-xs text-gray-500 font-medium uppercase">Vorlage wählen</p>
+                            {% for tmpl in doc_templates %}
+                            <a href="{% url 'explosionsschutz:ex-doc-instance-create-for-concept' template_pk=tmpl.pk concept_pk=concept.pk %}"
+                               class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <i data-lucide="file-plus" class="w-4 h-4 mr-2 text-gray-400"></i>
+                                {{ tmpl.name|truncatechars:40 }}
+                                <span class="ml-auto text-xs text-gray-400">{{ tmpl.section_count }} Abschnitte</span>
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <a href="{% url 'explosionsschutz:ex-doc-templates' %}"
+                   class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm">
+                    <i data-lucide="settings" class="w-4 h-4 mr-1"></i>
+                    Vorlagen verwalten
+                </a>
+                {% endif %}
+            </div>
+
+            {% if doc_instances %}
+            <div class="space-y-3">
+                {% for inst in doc_instances %}
+                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200 hover:border-orange-300 transition-colors">
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="file-text" class="w-5 h-5 text-gray-400"></i>
+                        <div>
+                            <a href="{% url 'explosionsschutz:ex-doc-instance-edit' pk=inst.pk %}"
+                               class="font-medium text-gray-900 hover:text-orange-600">
+                                {{ inst.name }}
+                            </a>
+                            <p class="text-xs text-gray-500">
+                                Vorlage: {{ inst.template.name }} · {{ inst.updated_at|date:"d.m.Y H:i" }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        {% if inst.status == "draft" %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700">Entwurf</span>
+                        {% elif inst.status == "review" %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700">In Prüfung</span>
+                        {% elif inst.status == "approved" %}
+                        <span class="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700">Freigegeben</span>
+                        {% endif %}
+                        <a href="{% url 'explosionsschutz:ex-doc-instance-edit' pk=inst.pk %}"
+                           class="p-1 text-gray-400 hover:text-orange-500" title="Bearbeiten">
+                            <i data-lucide="edit" class="w-4 h-4"></i>
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i data-lucide="file-text" class="w-12 h-12 mx-auto mb-3 text-gray-300"></i>
+                <p>Noch keine Dokumente aus Vorlagen erstellt.</p>
+                {% if doc_templates %}
+                <p class="text-sm mt-1">Wählen Sie oben eine Vorlage, um ein neues Dokument zu erstellen.</p>
+                {% else %}
+                <p class="text-sm mt-1">
+                    <a href="{% url 'explosionsschutz:ex-doc-templates' %}" class="text-orange-600 hover:text-orange-700">
+                        Zuerst eine Vorlage erstellen →
+                    </a>
+                </p>
+                {% endif %}
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
