@@ -391,6 +391,16 @@ class DocumentSection(models.Model):
     title = models.CharField(max_length=255)
     order = models.PositiveIntegerField(default=0)
     content = models.TextField(blank=True, default="")
+    fields_json = models.TextField(
+        blank=True,
+        default="[]",
+        help_text="Felddefinitionen als JSON (aus Template-Struktur)",
+    )
+    values_json = models.TextField(
+        blank=True,
+        default="{}",
+        help_text="Feldwerte als JSON {field_key: value}",
+    )
     is_ai_generated = models.BooleanField(default=False)
 
     created_at = models.DateTimeField(auto_now_add=True)

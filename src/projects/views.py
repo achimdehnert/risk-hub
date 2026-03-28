@@ -364,13 +364,53 @@ def output_document_create(
             created_by=request.user,
         )
 
+        # PDF import (optional)
+        pdf_file = request.FILES.get("pdf_file")
+        imported_values = {}
+        if pdf_file:
+            text = _extract_pdf_text(pdf_file)
+            if text:
+                try:
+                    structure = json.loads(tmpl.structure_json)
+                except (json.JSONDecodeError, TypeError):
+                    structure = {"sections": []}
+                imported_values = _import_text_into_template(
+                    text, structure,
+                )
+                messages.info(
+                    request,
+                    f"Inhalte aus '{pdf_file.name}' importiert.",
+                )
+            else:
+                messages.warning(
+                    request,
+                    "Kein Text aus PDF extrahiert.",
+                )
+
         # Create sections from template structure
         for idx, section in enumerate(tmpl.get_sections()):
+            skey = section.get("key", f"s_{idx}")
+            fields = section.get("fields", [])
+            sec_values = imported_values.get(skey, {})
+
+            # Pre-fill content from imported values
+            content = ""
+            for f in fields:
+                if f.get("type") == "textarea" and not content:
+                    content = sec_values.get(f["key"], "")
+
             DocumentSection.objects.create(
                 document=doc,
-                section_key=section.get("key", f"s_{idx}"),
+                section_key=skey,
                 title=section.get("label", f"Abschnitt {idx + 1}"),
                 order=idx,
+                content=content,
+                fields_json=json.dumps(
+                    fields, ensure_ascii=False,
+                ),
+                values_json=json.dumps(
+                    sec_values, ensure_ascii=False,
+                ),
             )
 
         return redirect(
@@ -441,8 +481,54 @@ def section_save(
     if request.method == "POST":
         section.content = request.POST.get("content", "")
         section.is_ai_generated = False
+
+        # Collect structured field values
+        try:
+            fields = json.loads(section.fields_json or "[]")
+        except (json.JSONDecodeError, TypeError):
+            fields = []
+
+        values = {}
+        for field in fields:
+            fkey = field["key"]
+            ftype = field.get("type", "textarea")
+            form_key = f"{section.section_key}__{fkey}"
+
+            if ftype == "table":
+                # Collect table rows
+                columns = field.get("columns", [])
+                rows = []
+                row_idx = 0
+                while True:
+                    row = []
+                    found = False
+                    for ci in range(len(columns)):
+                        cell_key = f"{form_key}__row_{row_idx}__col_{ci}"
+                        val = request.POST.get(cell_key, "")
+                        if val:
+                            found = True
+                        row.append(val)
+                    if not found:
+                        break
+                    rows.append(row)
+                    row_idx += 1
+                values[fkey] = rows
+            elif ftype == "boolean":
+                values[fkey] = request.POST.get(form_key, "false")
+            else:
+                val = request.POST.get(form_key, "")
+                values[fkey] = val
+                if ftype == "textarea" and val and not section.content:
+                    section.content = val
+
+        section.values_json = json.dumps(
+            values, ensure_ascii=False,
+        )
         section.save(
-            update_fields=["content", "is_ai_generated", "updated_at"],
+            update_fields=[
+                "content", "values_json",
+                "is_ai_generated", "updated_at",
+            ],
         )
 
     return render(
@@ -454,6 +540,184 @@ def section_save(
             "doc": section.document,
         },
     )
+
+
+# ─── LLM Prefill ─────────────────────────────────────────────
+
+
+@login_required
+def section_llm_prefill(
+    request: HttpRequest, pk: int, doc_pk: int, sec_pk: int,
+) -> HttpResponse:
+    """HTMX: Generate AI content for a section field."""
+    tenant_response = _require_tenant(request)
+    if tenant_response is not None:
+        return tenant_response
+
+    section = get_object_or_404(
+        DocumentSection,
+        pk=sec_pk,
+        document__pk=doc_pk,
+        document__project__pk=pk,
+        document__tenant_id=request.tenant_id,
+    )
+
+    field_key = request.POST.get("field_key", "")
+    llm_hint = request.POST.get("llm_hint", "")
+
+    # Build prompt from document context
+    doc = section.document
+    project = doc.project
+    prompt = (
+        f"Du bist ein Experte für {doc.kind or 'Arbeitsschutz'}-Dokumentation. "
+        f"Projekt: {project.name}. "
+        f"Dokument: {doc.title}. "
+        f"Abschnitt: {section.title}. "
+        f"Aufgabe: {llm_hint or section.title}. "
+        f"Schreibe einen fachlich korrekten, professionellen Text "
+        f"für diesen Abschnitt auf Deutsch."
+    )
+
+    generated = ""
+    try:
+        from aifw.service import sync_completion
+        result = sync_completion(
+            messages=[{"role": "user", "content": prompt}],
+            model="groq/llama-3.3-70b-versatile",
+            max_tokens=2000,
+        )
+        generated = result.get("content", "")
+    except ImportError:
+        logger.warning("aifw not available for LLM prefill")
+        generated = f"[KI nicht verfügbar — bitte manuell ausfüllen: {section.title}]"
+    except Exception as exc:
+        logger.exception("LLM prefill failed: %s", exc)
+        generated = f"[Fehler bei KI-Generierung: {exc}]"
+
+    # Return textarea partial with generated content
+    form_key = f"{section.section_key}__{field_key}" if field_key else "content"
+    return HttpResponse(
+        f'<textarea name="{form_key}" rows="6" '
+        f'class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm '
+        f'focus:ring-orange-500 focus:border-orange-500 resize-y">'
+        f"{generated}</textarea>",
+        content_type="text/html",
+    )
+
+
+# ─── PDF Export ──────────────────────────────────────────────
+
+
+@login_required
+def output_document_pdf(
+    request: HttpRequest, pk: int, doc_pk: int,
+) -> HttpResponse:
+    """Generate PDF for an output document via WeasyPrint."""
+    tenant_response = _require_tenant(request)
+    if tenant_response is not None:
+        return tenant_response
+
+    doc = get_object_or_404(
+        OutputDocument.objects.prefetch_related("sections"),
+        pk=doc_pk,
+        project__pk=pk,
+        tenant_id=request.tenant_id,
+    )
+    sections = doc.sections.all()
+
+    # Render HTML for PDF
+    html_parts = [
+        f"<h1>{doc.title}</h1>",
+        f"<p><small>Version {doc.version} · "
+        f"{doc.get_status_display()} · "
+        f"{doc.updated_at.strftime('%d.%m.%Y')}</small></p>",
+    ]
+
+    for section in sections:
+        html_parts.append(f"<h2>{section.title}</h2>")
+
+        try:
+            fields = json.loads(section.fields_json or "[]")
+            values = json.loads(section.values_json or "{}")
+        except (json.JSONDecodeError, TypeError):
+            fields = []
+            values = {}
+
+        if fields:
+            for field in fields:
+                fkey = field["key"]
+                ftype = field.get("type", "textarea")
+                val = values.get(fkey, "")
+
+                if ftype == "table" and isinstance(val, list):
+                    cols = field.get("columns", [])
+                    if cols and val:
+                        html_parts.append(
+                            "<table border='1' cellpadding='4' "
+                            "cellspacing='0' style='border-collapse:"
+                            "collapse; width:100%; font-size:10pt;'>"
+                        )
+                        html_parts.append("<thead><tr>")
+                        for c in cols:
+                            html_parts.append(
+                                f"<th style='background:#f0f0f0'>"
+                                f"{c}</th>"
+                            )
+                        html_parts.append("</tr></thead><tbody>")
+                        for row in val:
+                            html_parts.append("<tr>")
+                            for cell in row:
+                                html_parts.append(f"<td>{cell}</td>")
+                            html_parts.append("</tr>")
+                        html_parts.append("</tbody></table>")
+                elif val:
+                    html_parts.append(
+                        f"<p>{str(val).replace(chr(10), '<br>')}</p>"
+                    )
+        elif section.content:
+            html_parts.append(
+                f"<p>{section.content.replace(chr(10), '<br>')}</p>"
+            )
+
+    full_html = (
+        "<!DOCTYPE html><html><head>"
+        "<meta charset='utf-8'>"
+        "<style>"
+        "body{font-family:Arial,sans-serif;font-size:11pt;"
+        "line-height:1.5;margin:2cm;}"
+        "h1{font-size:18pt;color:#1a1a1a;}"
+        "h2{font-size:14pt;color:#333;margin-top:1.5em;border-bottom:"
+        "1px solid #ddd;padding-bottom:4px;}"
+        "table{margin:0.5em 0;}"
+        "</style></head><body>"
+        + "\n".join(html_parts)
+        + "</body></html>"
+    )
+
+    try:
+        import weasyprint
+        pdf_bytes = weasyprint.HTML(
+            string=full_html,
+        ).write_pdf()
+        response = HttpResponse(
+            pdf_bytes, content_type="application/pdf",
+        )
+        safe_title = doc.title.replace('"', "'")
+        response["Content-Disposition"] = (
+            f'attachment; filename="{safe_title}.pdf"'
+        )
+        return response
+    except (ImportError, OSError) as exc:
+        logger.warning("WeasyPrint not available: %s", exc)
+        messages.error(
+            request,
+            "PDF-Export nicht verfügbar "
+            "(WeasyPrint nicht installiert).",
+        )
+        return redirect(
+            "projects:output-document-edit",
+            pk=pk, doc_pk=doc_pk,
+        )
 
 
 # ─── DocumentTemplate CRUD ──────────────────────────────────
@@ -721,60 +985,364 @@ def _extract_pdf_text(pdf_file) -> str:
     return ""
 
 
-def _text_to_structure(text: str) -> dict:
-    """Convert extracted PDF text to template structure."""
+def _clean_toc(title: str) -> str:
+    """Remove TOC dots and page numbers."""
     import re
+    title = re.sub(r"\s*[.·…]{2,}\s*\d*\s*$", "", title)
+    title = re.sub(r"\s+\d{1,4}\s*$", "", title)
+    return title.strip()
 
-    sections = []
+
+def _split_cols(line: str) -> list[str]:
+    """Split a line by tab or multi-space."""
+    import re
+    if "\t" in line:
+        parts = [c.strip() for c in line.split("\t")]
+    else:
+        parts = [c.strip() for c in re.split(r"\s{2,}", line)]
+    return [p for p in parts if p]
+
+
+def _is_valid_heading(num: str, title: str, line: str) -> bool:
+    """Filter false positives: table rows, PLZ, measurements."""
+    import re
+    top = int(num.split(".")[0])
+    if top > 30:
+        return False
+    if sum(1 for c in title if c.isalpha()) < 2:
+        return False
+    if len(_split_cols(line)) >= 3:
+        return False
+    if re.match(
+        r"^(m[²³]?/[hs]|kg|cm|mm|l/|bar|°C|kW)\b",
+        title, re.IGNORECASE,
+    ):
+        return False
+    return True
+
+
+def _detect_table(content: str) -> list[str] | None:
+    """Detect table columns in section content."""
+    lines = content.strip().split("\n")
+    if len(lines) < 2:
+        return None
+    structured = [
+        ln for ln in lines
+        if "\t" in ln or ln.count("  ") >= 2
+    ]
+    if len(structured) >= 2:
+        cols = _split_cols(structured[0])
+        if 2 <= len(cols) <= 10:
+            return cols
+    return None
+
+
+def _detect_toc_entries(text: str) -> list[tuple[str, str]] | None:
+    """Detect TOC (Inhaltsverzeichnis) and return entries."""
+    import re
+    toc_match = re.search(
+        r"^(Inhaltsverzeichnis|Inhalt|Table of Contents)\s*$",
+        text, re.MULTILINE | re.IGNORECASE,
+    )
+    if not toc_match:
+        return None
+
+    lines = text[toc_match.end():].split("\n")
+    toc_lines = []
+    non_toc = 0
+    for line in lines:
+        stripped = line.strip()
+        if not stripped:
+            non_toc += 1
+            if non_toc >= 3:
+                break
+            continue
+        is_toc = bool(
+            re.search(r"[.·…]{2,}", stripped)
+            or re.match(r"^[A-Z]\.\s+\S", stripped)
+            or re.match(r"^\d+(?:\.\d+)*\.?\s+\S", stripped)
+        )
+        if is_toc:
+            toc_lines.append(stripped)
+            non_toc = 0
+        else:
+            non_toc += 1
+            if non_toc >= 3:
+                break
+
+    if len(toc_lines) < 2:
+        return None
+
+    toc_text = "\n".join(toc_lines)
+    entries = []
     num_pat = re.compile(
         r"^(\d+(?:\.\d+)*\.?)\s+(.+)$", re.MULTILINE,
     )
-
-    matches = list(num_pat.finditer(text))
-    for i, m in enumerate(matches):
+    letter_pat = re.compile(
+        r"^([A-Z])\.\s+(.+)$", re.MULTILINE,
+    )
+    for m in num_pat.finditer(toc_text):
         num = m.group(1).rstrip(".")
-        title = m.group(2).strip()
-        # Filter false headings
-        try:
-            top = int(num.split(".")[0])
-            if top > 30:
-                continue
-        except ValueError:
-            continue
-        if sum(1 for c in title if c.isalpha()) < 2:
+        title = _clean_toc(m.group(2).strip())
+        if title:
+            entries.append((num, title, m.start()))
+    for m in letter_pat.finditer(toc_text):
+        title = _clean_toc(m.group(2).strip())
+        if title:
+            entries.append((m.group(1), title, m.start()))
+    entries.sort(key=lambda x: x[2])
+    if len(entries) < 2:
+        return None
+    return [(eid, et) for eid, et, _ in entries]
+
+
+def _extract_toc_first(
+    text: str, toc_entries: list[tuple[str, str]],
+) -> list[dict]:
+    """Use TOC as structure, map body content to each entry."""
+    import re
+    toc_end = len(text) // 5
+    body_pos = []
+    for eid, etitle in toc_entries:
+        prefix = re.escape(etitle[:20])
+        if eid.isalpha():
+            pat = re.compile(
+                rf"^{re.escape(eid)}\.\s+{prefix}",
+                re.MULTILINE,
+            )
+        else:
+            pat = re.compile(
+                rf"^{re.escape(eid)}\.?\s+{prefix}",
+                re.MULTILINE,
+            )
+        m = pat.search(text, toc_end)
+        if m:
+            lend = text.find("\n", m.start())
+            if lend == -1:
+                lend = len(text)
+            body_pos.append((m.start(), lend, eid, etitle))
+
+    if not body_pos:
+        return []
+
+    body_pos.sort(key=lambda x: x[0])
+    pos_map = {}
+    for start, end, eid, etitle in body_pos:
+        if eid not in pos_map:
+            pos_map[eid] = (start, end, etitle)
+
+    sections = []
+    for eid, etitle in toc_entries:
+        if eid.isalpha():
+            key = f"section_{eid.lower()}"
+        else:
+            key = f"section_{eid.replace('.', '_')}"
+        label = f"{eid}. {etitle}"
+
+        if eid not in pos_map:
+            sections.append({
+                "key": key, "label": label,
+                "fields": [{
+                    "key": "inhalt", "label": "Inhalt",
+                    "type": "textarea", "required": False,
+                }],
+            })
             continue
 
+        hstart, hend, _ = pos_map[eid]
+        next_start = len(text)
+        for ostart, _, _, _ in body_pos:
+            if ostart > hstart:
+                next_start = ostart
+                break
+        content = text[hend:next_start].strip()
+
+        fields = []
+        table_cols = _detect_table(content)
+        if table_cols:
+            fields.append({
+                "key": "tabelle", "label": "Tabelle",
+                "type": "table", "required": False,
+                "columns": table_cols,
+            })
+        fields.append({
+            "key": "inhalt", "label": "Inhalt",
+            "type": "textarea", "required": False,
+            "default": content[:3000],
+        })
+        sections.append({
+            "key": key, "label": label, "fields": fields,
+        })
+    return sections
+
+
+def _text_to_structure(text: str) -> dict:
+    """Convert extracted PDF text to template structure.
+
+    Strategy 1: TOC-first (Inhaltsverzeichnis detection).
+    Strategy 2: Heading detection with filters.
+    Fallback: Single section with full text.
+    """
+    import re
+
+    # Try concept_templates package first
+    try:
+        from concept_templates.pdf_structure_extractor import (
+            extract_structure_from_text as _pkg_extract,
+        )
+        ct = _pkg_extract(text)
+        sections = []
+        for s in ct.sections:
+            fields = []
+            for f in s.fields:
+                fd = {
+                    "key": f.name, "label": f.label,
+                    "type": str(f.field_type.value),
+                    "required": f.required,
+                }
+                if f.default:
+                    fd["default"] = f.default
+                if f.columns:
+                    fd["columns"] = f.columns
+                fields.append(fd)
+            sections.append({
+                "key": s.name, "label": s.title,
+                "fields": fields,
+            })
+        return {"sections": sections}
+    except ImportError:
+        pass
+
+    # Strategy 1: TOC-first
+    toc = _detect_toc_entries(text)
+    if toc:
+        sections = _extract_toc_first(text, toc)
+        if sections:
+            return {"sections": sections}
+
+    # Strategy 2: Heading detection with filters
+    num_pat = re.compile(
+        r"^(\d+(?:\.\d+)*\.?)\s+(.+)$", re.MULTILINE,
+    )
+    candidates = []
+    for m in num_pat.finditer(text):
+        num = m.group(1).rstrip(".")
+        title = _clean_toc(m.group(2).strip())
+        if not title:
+            continue
+        try:
+            if not _is_valid_heading(num, title, m.group(0)):
+                continue
+        except (ValueError, IndexError):
+            continue
+        candidates.append((m, num, title))
+
+    sections = []
+    for i, (m, num, title) in enumerate(candidates):
         key = f"section_{num.replace('.', '_')}"
         start = m.end()
-        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
+        end = (
+            candidates[i + 1][0].start()
+            if i + 1 < len(candidates)
+            else len(text)
+        )
         content = text[start:end].strip()[:3000]
 
-        fields = [{
-            "key": "inhalt",
-            "label": "Inhalt",
-            "type": "textarea",
-            "required": False,
-        }]
+        fields = []
+        table_cols = _detect_table(content)
+        if table_cols:
+            fields.append({
+                "key": "tabelle", "label": "Tabelle",
+                "type": "table", "required": False,
+                "columns": table_cols,
+            })
+        fields.append({
+            "key": "inhalt", "label": "Inhalt",
+            "type": "textarea", "required": False,
+        })
         if content:
-            fields[0]["default"] = content
+            fields[-1]["default"] = content
 
         sections.append({
-            "key": key,
-            "label": f"{num}. {title}",
+            "key": key, "label": f"{num}. {title}",
             "fields": fields,
         })
 
-    if not sections:
-        sections = [{
-            "key": "section_1",
-            "label": "1. Dokumentinhalt",
-            "fields": [{
-                "key": "inhalt",
-                "label": "Inhalt",
-                "type": "textarea",
-                "required": False,
-                "default": text[:5000],
-            }],
-        }]
+    if sections:
+        return {"sections": sections}
 
-    return {"sections": sections}
+    # Fallback
+    return {"sections": [{
+        "key": "section_1",
+        "label": "1. Dokumentinhalt",
+        "fields": [{
+            "key": "inhalt", "label": "Inhalt",
+            "type": "textarea", "required": False,
+            "default": text[:5000],
+        }],
+    }]}
+
+
+def _import_text_into_template(
+    text: str, structure: dict,
+) -> dict:
+    """Import text from PDF into template field values.
+
+    Splits text by section labels and assigns to fields.
+    """
+    import re
+    values = {}
+    sections = structure.get("sections", [])
+
+    for i, section in enumerate(sections):
+        skey = section["key"]
+        fields = section.get("fields", [])
+
+        content = ""
+        label = section.get("label", "")
+        num_match = re.match(r"(\d+(?:\.\d+)*)", label)
+        if num_match:
+            num = num_match.group(1)
+            pat = re.compile(
+                rf"^{re.escape(num)}\.?\s+",
+                re.MULTILINE,
+            )
+            match = pat.search(text)
+            if match:
+                start = match.end()
+                next_section = (
+                    sections[i + 1]
+                    if i + 1 < len(sections)
+                    else None
+                )
+                if next_section:
+                    next_label = next_section.get("label", "")
+                    next_num = re.match(
+                        r"(\d+(?:\.\d+)*)", next_label,
+                    )
+                    if next_num:
+                        next_pat = re.compile(
+                            rf"^{re.escape(next_num.group(1))}\.?\s+",
+                            re.MULTILINE,
+                        )
+                        next_m = next_pat.search(text, start)
+                        end = (
+                            next_m.start() if next_m
+                            else len(text)
+                        )
+                    else:
+                        end = len(text)
+                else:
+                    end = len(text)
+                content = text[start:end].strip()
+
+        values[skey] = {}
+        for field in fields:
+            fkey = field["key"]
+            ftype = field.get("type", "textarea")
+            if ftype == "table":
+                values[skey][fkey] = []
+            else:
+                values[skey][fkey] = content[:5000]
+
+    return values

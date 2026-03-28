@@ -25,8 +25,9 @@
     {% endfor %}
     {% endif %}
 
-    <form method="post" class="space-y-6">
+    <form method="post" class="space-y-6" id="template-form">
         {% csrf_token %}
+        <input type="hidden" name="structure_json" id="structure-json-input" value="">
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Metadata -->
@@ -66,43 +67,142 @@
                 </button>
             </div>
 
-            <!-- Structure Editor -->
+            <!-- Interactive Structure Editor -->
             <div class="lg:col-span-2 space-y-4">
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <i data-lucide="list-tree" class="w-4 h-4 text-orange-500"></i>
-                        Gliederung (JSON)
-                    </h2>
-                    <textarea name="structure_json" rows="25" id="structure-editor"
-                              class="w-full px-3 py-2 border border-gray-200 rounded-lg text-xs font-mono focus:ring-orange-500 focus:border-orange-500 bg-gray-50">{{ structure_json }}</textarea>
-                    <p class="text-xs text-gray-400 mt-2">
-                        Jeder Abschnitt hat: <code>key</code>, <code>label</code>, <code>fields[]</code>.
-                        Felder: <code>key</code>, <code>label</code>, <code>type</code> (text, textarea, table).
-                    </p>
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                            <i data-lucide="list-tree" class="w-4 h-4 text-orange-500"></i>
+                            Gliederung
+                        </h2>
+                        <button type="button" onclick="addSection()"
+                                class="inline-flex items-center px-3 py-1.5 text-xs bg-orange-50 text-orange-700 rounded-lg hover:bg-orange-100">
+                            <i data-lucide="plus" class="w-3 h-3 mr-1"></i>
+                            Abschnitt
+                        </button>
+                    </div>
+
+                    <div id="sections-container" class="space-y-3"></div>
                 </div>
 
-                <!-- Preview -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <i data-lucide="eye" class="w-4 h-4 text-orange-500"></i>
-                        Vorschau ({{ structure.sections|length }} Abschnitte)
-                    </h2>
-                    {% if structure.sections %}
-                    <div class="space-y-2">
-                        {% for section in structure.sections %}
-                        <div class="flex items-center gap-3 p-3 rounded-lg bg-gray-50 border border-gray-100">
-                            <span class="text-xs font-mono text-gray-400 w-24 flex-shrink-0 truncate">{{ section.key }}</span>
-                            <span class="text-sm font-medium text-gray-900">{{ section.label }}</span>
-                            <span class="text-xs text-gray-400 ml-auto">{{ section.fields|length }} Felder</span>
-                        </div>
-                        {% endfor %}
-                    </div>
-                    {% else %}
-                    <p class="text-sm text-gray-400">Keine Abschnitte definiert.</p>
-                    {% endif %}
-                </div>
+                <!-- JSON Debug -->
+                <details class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <summary class="p-4 text-xs font-medium text-gray-500 cursor-pointer hover:bg-gray-50">
+                        JSON Debug
+                    </summary>
+                    <pre id="json-debug" class="p-4 text-xs font-mono bg-gray-50 border-t border-gray-200 overflow-x-auto max-h-64"></pre>
+                </details>
             </div>
         </div>
     </form>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+var structure = {{ structure_json|safe }};
+
+function render() {
+    var container = document.getElementById('sections-container');
+    container.innerHTML = '';
+    (structure.sections || []).forEach(function(sec, si) {
+        var div = document.createElement('div');
+        div.className = 'border border-gray-200 rounded-lg p-4 bg-gray-50';
+        div.draggable = true;
+        div.dataset.idx = si;
+        div.ondragstart = function(e) { e.dataTransfer.setData('text/plain', si); };
+        div.ondragover = function(e) { e.preventDefault(); };
+        div.ondrop = function(e) {
+            e.preventDefault();
+            var from = parseInt(e.dataTransfer.getData('text/plain'));
+            var to = si;
+            if (from !== to) {
+                var item = structure.sections.splice(from, 1)[0];
+                structure.sections.splice(to, 0, item);
+                render();
+            }
+        };
+
+        var header = '<div class="flex justify-between items-center mb-2">'
+            + '<div class="flex items-center gap-2">'
+            + '<i data-lucide="grip-vertical" class="w-3 h-3 text-gray-400 cursor-grab"></i>'
+            + '<input type="text" value="' + (sec.label || '') + '" '
+            + 'onchange="structure.sections[' + si + '].label=this.value;updateJson()" '
+            + 'class="text-sm font-medium text-gray-900 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-orange-500 focus:outline-none px-1 py-0.5">'
+            + '<span class="text-xs text-gray-400 font-mono">' + sec.key + '</span>'
+            + '</div>'
+            + '<div class="flex items-center gap-1">'
+            + '<button type="button" onclick="addField(' + si + ')" '
+            + 'class="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50">+ Feld</button>'
+            + '<button type="button" onclick="removeSection(' + si + ')" '
+            + 'class="text-xs text-red-400 hover:text-red-600 px-2 py-1 rounded hover:bg-red-50">×</button>'
+            + '</div></div>';
+
+        var fieldsHtml = '<div class="space-y-2 ml-4">';
+        (sec.fields || []).forEach(function(f, fi) {
+            fieldsHtml += '<div class="flex items-center gap-2 p-2 rounded bg-white border border-gray-100">'
+                + '<input type="text" value="' + (f.label || '') + '" '
+                + 'onchange="structure.sections[' + si + '].fields[' + fi + '].label=this.value;updateJson()" '
+                + 'class="text-xs text-gray-700 bg-transparent border-b border-transparent hover:border-gray-300 focus:border-orange-500 focus:outline-none flex-1 px-1">'
+                + '<select onchange="structure.sections[' + si + '].fields[' + fi + '].type=this.value;updateJson()" '
+                + 'class="text-xs border border-gray-200 rounded px-1.5 py-1 bg-white">'
+                + '<option value="textarea"' + (f.type === 'textarea' ? ' selected' : '') + '>Textarea</option>'
+                + '<option value="text"' + (f.type === 'text' ? ' selected' : '') + '>Text</option>'
+                + '<option value="number"' + (f.type === 'number' ? ' selected' : '') + '>Zahl</option>'
+                + '<option value="date"' + (f.type === 'date' ? ' selected' : '') + '>Datum</option>'
+                + '<option value="boolean"' + (f.type === 'boolean' ? ' selected' : '') + '>Ja/Nein</option>'
+                + '<option value="table"' + (f.type === 'table' ? ' selected' : '') + '>Tabelle</option>'
+                + '</select>'
+                + '<span class="text-xs font-mono text-gray-400 w-16 truncate">' + f.key + '</span>'
+                + '<button type="button" onclick="removeField(' + si + ',' + fi + ')" '
+                + 'class="text-red-300 hover:text-red-500 text-xs px-1">×</button>'
+                + '</div>';
+        });
+        fieldsHtml += '</div>';
+
+        div.innerHTML = header + fieldsHtml;
+        container.appendChild(div);
+    });
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+    updateJson();
+}
+
+function addSection() {
+    var idx = (structure.sections || []).length + 1;
+    structure.sections.push({
+        key: 'section_' + idx,
+        label: idx + '. Neuer Abschnitt',
+        fields: [{ key: 'inhalt', label: 'Inhalt', type: 'textarea', required: false }]
+    });
+    render();
+}
+
+function removeSection(si) {
+    if (confirm('Abschnitt löschen?')) {
+        structure.sections.splice(si, 1);
+        render();
+    }
+}
+
+function addField(si) {
+    var fidx = structure.sections[si].fields.length + 1;
+    structure.sections[si].fields.push({
+        key: 'feld_' + fidx, label: 'Neues Feld', type: 'textarea', required: false
+    });
+    render();
+}
+
+function removeField(si, fi) {
+    structure.sections[si].fields.splice(fi, 1);
+    render();
+}
+
+function updateJson() {
+    document.getElementById('structure-json-input').value = JSON.stringify(structure);
+    var debug = document.getElementById('json-debug');
+    if (debug) debug.textContent = JSON.stringify(structure, null, 2);
+}
+
+render();
+</script>
 {% endblock %}

@@ -54,6 +54,16 @@ urlpatterns = [
         views.section_save,
         name="section-save",
     ),
+    path(
+        "<int:pk>/documents/<int:doc_pk>/sections/<int:sec_pk>/llm-prefill/",
+        views.section_llm_prefill,
+        name="section-llm-prefill",
+    ),
+    path(
+        "<int:pk>/documents/<int:doc_pk>/pdf/",
+        views.output_document_pdf,
+        name="output-document-pdf",
+    ),
     # Document Templates
     path(
         "templates/",
