@@ -329,7 +329,8 @@ def output_document_create(
     )
     templates = DocumentTemplate.objects.filter(
         tenant_id=request.tenant_id,
-        status=DocumentTemplate.Status.ACCEPTED,
+    ).exclude(
+        status=DocumentTemplate.Status.ARCHIVED,
     ).order_by("kind", "name")
 
     if request.method == "POST":
