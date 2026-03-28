@@ -135,7 +135,7 @@ def api_list_activities(
     except HttpError:
         raise
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
     qs = HazardAssessmentActivity.objects.filter(tenant_id=tenant_id).order_by("-created_at")
     if status:
@@ -163,7 +163,7 @@ def api_create_activity(request, payload: ActivityCreateIn):
     except HttpError:
         raise
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
     try:
         cmd = CreateActivityCmd(
@@ -181,7 +181,7 @@ def api_create_activity(request, payload: ActivityCreateIn):
         activity.refresh_from_db()
         return _to_out(activity)
     except Exception as exc:
-        raise HttpError(400, str(exc))
+        raise HttpError(400, str(exc)) from exc
 
 
 @router.get("/activities/{activity_id}", response=ActivityOut)
@@ -194,13 +194,13 @@ def api_get_activity(request, activity_id: UUID):
     except HttpError:
         raise
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
     try:
         activity = HazardAssessmentActivity.objects.get(id=activity_id, tenant_id=tenant_id)
         return _to_out(activity)
     except HazardAssessmentActivity.DoesNotExist:
-        raise HttpError(404, "GBU-Tätigkeit nicht gefunden")
+        raise HttpError(404, "GBU-Tätigkeit nicht gefunden") from None
 
 
 @router.post("/activities/{activity_id}/approve", response=ActivityOut)
@@ -219,7 +219,7 @@ def api_approve_activity(request, activity_id: UUID, payload: ActivityApproveIn)
     except HttpError:
         raise
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
     if user_id is None:
         raise HttpError(403, "Authentifizierter Nutzer erforderlich")
@@ -238,9 +238,9 @@ def api_approve_activity(request, activity_id: UUID, payload: ActivityApproveIn)
         generate_documents_task.delay(str(activity_id), str(tenant_id))
         return _to_out(activity)
     except ValueError as exc:
-        raise HttpError(400, str(exc))
+        raise HttpError(400, str(exc)) from exc
     except Exception as exc:
-        raise HttpError(400, str(exc))
+        raise HttpError(400, str(exc)) from exc
 
 
 @router.get("/compliance", response=ComplianceOut)
@@ -253,7 +253,7 @@ def api_compliance_status(request):
     except HttpError:
         raise
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
     summary = compliance_summary(tenant_id)
     return ComplianceOut(

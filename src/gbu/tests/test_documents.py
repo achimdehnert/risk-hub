@@ -16,7 +16,7 @@ import pytest
 
 try:
     import weasyprint  # noqa: F401
-except OSError:
+except (ImportError, OSError):
     pytest.skip(
         "WeasyPrint system libs not available on this runner",
         allow_module_level=True,

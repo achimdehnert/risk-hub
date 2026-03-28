@@ -61,7 +61,7 @@ class Command(BaseCommand):
         try:
             org = Organization.objects.get(slug=slug)
         except Organization.DoesNotExist:
-            raise CommandError(f"Tenant '{slug}' nicht gefunden")
+            raise CommandError(f"Tenant '{slug}' nicht gefunden") from None
 
         user_id = None
         if options["user"]:
@@ -69,7 +69,7 @@ class Command(BaseCommand):
                 user = User.objects.get(username=options["user"])
                 user_id = user.id
             except User.DoesNotExist:
-                raise CommandError(f"User '{options['user']}' nicht gefunden")
+                raise CommandError(f"User '{options['user']}' nicht gefunden") from None
 
         if options["with_ghs"]:
             self.stdout.write("Lade GHS-Referenzdaten...")

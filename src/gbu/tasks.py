@@ -42,7 +42,7 @@ def generate_documents_task(activity_id: str, tenant_id: str) -> dict:
         logger.info("[GBU Task] GBU-PDF erzeugt: %s", gbu_version.id)
     except Exception as exc:
         logger.exception("[GBU Task] GBU-PDF fehlgeschlagen: %s", exc)
-        raise generate_documents_task.retry(exc=exc)
+        raise generate_documents_task.retry(exc=exc) from exc
 
     try:
         ba_bytes = render_ba_pdf(act_uuid, ten_uuid)
@@ -50,7 +50,7 @@ def generate_documents_task(activity_id: str, tenant_id: str) -> dict:
         logger.info("[GBU Task] BA-PDF erzeugt: %s", ba_version.id)
     except Exception as exc:
         logger.exception("[GBU Task] BA-PDF fehlgeschlagen: %s", exc)
-        raise generate_documents_task.retry(exc=exc)
+        raise generate_documents_task.retry(exc=exc) from exc
 
     return {
         "activity_id": activity_id,

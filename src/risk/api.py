@@ -81,7 +81,7 @@ def api_list_assessments(
     try:
         return [_to_assessment_out(a) for a in list_assessments(limit=limit, offset=offset)]
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
 
 @router.post("/assessments", response=AssessmentOut)
@@ -97,7 +97,7 @@ def api_create_assessment(request, payload: AssessmentCreateIn):
         )
         return _to_assessment_out(assessment)
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
 
 @router.get("/assessments/{assessment_id}", response=AssessmentOut)
@@ -105,9 +105,9 @@ def api_get_assessment(request, assessment_id: UUID):
     try:
         return _to_assessment_out(get_assessment(assessment_id=assessment_id))
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
     except Exception:
-        raise HttpError(404, "Not found")
+        raise HttpError(404, "Not found") from None
 
 
 @router.post("/assessments/{assessment_id}/approve", response=AssessmentOut)
@@ -120,9 +120,9 @@ def api_approve_assessment(request, assessment_id: UUID):
         )
         return _to_assessment_out(assessment)
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
     except Exception as exc:
-        raise HttpError(400, str(exc))
+        raise HttpError(400, str(exc)) from exc
 
 
 # -- Hazards ----------------------------------------------------------------
@@ -161,7 +161,7 @@ def api_list_hazards(
             )
         ]
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
 
 @router.get("/hazards/{hazard_id}", response=HazardOut)
@@ -169,6 +169,6 @@ def api_get_hazard(request, hazard_id: UUID):
     try:
         return _to_hazard_out(get_hazard(hazard_id=hazard_id))
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
     except Exception:
-        raise HttpError(404, "Not found")
+        raise HttpError(404, "Not found") from None

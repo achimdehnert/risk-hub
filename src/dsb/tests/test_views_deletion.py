@@ -179,11 +179,10 @@ class TestDeletionRequestDetailView:
     def test_wrong_tenant_returns_404(self, rf, fixture_user, fixture_deletion_request):
         from django.http import Http404
 
-        with _ALLOW_ALL:
-            with pytest.raises(Http404):
-                views_deletion.deletion_request_detail(
-                    _req(rf, fixture_user, uuid.uuid4()), pk=fixture_deletion_request.pk
-                )
+        with _ALLOW_ALL, pytest.raises(Http404):
+            views_deletion.deletion_request_detail(
+                _req(rf, fixture_user, uuid.uuid4()), pk=fixture_deletion_request.pk
+            )
 
 
 # =============================================================================

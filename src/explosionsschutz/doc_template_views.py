@@ -16,8 +16,8 @@ import logging
 import re
 
 from django.contrib import messages
-from django.db import models
 from django.contrib.auth.decorators import login_required
+from django.db import models
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST

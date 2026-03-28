@@ -791,7 +791,7 @@ def calculate_and_store_zone(
             id=cmd.zone_id, tenant_id=tenant_id
         )
     except ZoneDefinition.DoesNotExist:
-        raise ValidationError(f"ZoneDefinition {cmd.zone_id} nicht gefunden")
+        raise ValidationError(f"ZoneDefinition {cmd.zone_id} nicht gefunden") from None
 
     if zone.concept is None:
         raise ValidationError(f"ZoneDefinition {cmd.zone_id} hat kein ExplosionConcept")

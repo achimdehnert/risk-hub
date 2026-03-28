@@ -80,7 +80,7 @@ def dwg_to_dxf(dwg_bytes: bytes, filename: str = "input.dwg") -> bytes:
         except subprocess.TimeoutExpired:
             raise RuntimeError(
                 f"DWG-Konvertierung Timeout für {filename}"
-            )
+            ) from None
 
         if result.returncode != 0:
             logger.warning(

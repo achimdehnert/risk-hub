@@ -168,7 +168,7 @@ def document_download(request: HttpRequest, pk) -> HttpResponse:
         )
         return response
     except FileNotFoundError:
-        raise Http404("Datei nicht gefunden.")
+        raise Http404("Datei nicht gefunden.") from None
 
 
 @login_required

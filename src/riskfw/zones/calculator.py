@@ -55,7 +55,7 @@ def calculate_zone_extent(
     except ValueError:
         raise ZoneCalculationError(
             f"Unknown release_type: {release_type!r}. Allowed: {[r.value for r in ReleaseType]}"
-        )
+        ) from None
 
     safety_factor = SAFETY_FACTORS[release_type]
     warnings: list[str] = []

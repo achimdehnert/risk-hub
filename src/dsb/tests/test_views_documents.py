@@ -224,9 +224,8 @@ class TestDocumentDeleteView:
     def test_wrong_tenant_returns_404(self, rf, fixture_user, fixture_document):
         from django.http import Http404
 
-        with _ALLOW_ALL:
-            with pytest.raises(Http404):
-                views_documents.document_delete(
-                    _req(rf, fixture_user, uuid.uuid4(), method="POST"),
-                    pk=fixture_document.pk,
-                )
+        with _ALLOW_ALL, pytest.raises(Http404):
+            views_documents.document_delete(
+                _req(rf, fixture_user, uuid.uuid4(), method="POST"),
+                pk=fixture_document.pk,
+            )

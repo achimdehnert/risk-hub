@@ -252,7 +252,7 @@ def get_substance_properties(substance_name: str) -> dict[str, Any]:
         return {"success": True, "substance": substance.to_dict(), "source": "GESTIS-basiert"}
 
     # Fuzzy search
-    matches = [k for k in SUBSTANCE_DATABASE.keys() if key in k or k in key]
+    matches = [k for k in SUBSTANCE_DATABASE if key in k or k in key]
     if matches:
         return {
             "success": False,

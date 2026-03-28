@@ -73,7 +73,7 @@ def api_list_actions(
     try:
         return [_to_action_out(a) for a in list_actions(limit=limit, offset=offset)]
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
 
 @router.post("", response=ActionOut)
@@ -93,7 +93,7 @@ def api_create_action(request, payload: ActionCreateIn):
         )
         return _to_action_out(action)
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
 
 
 @router.get("/{action_id}", response=ActionOut)
@@ -101,9 +101,9 @@ def api_get_action(request, action_id: UUID):
     try:
         return _to_action_out(get_action(action_id=action_id))
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
     except ActionItem.DoesNotExist:
-        raise HttpError(404, "Not found")
+        raise HttpError(404, "Not found") from None
 
 
 class ActionUpdateIn(Schema):
@@ -124,9 +124,9 @@ def api_update_action(request, action_id: UUID, payload: ActionUpdateIn):
         )
         return _to_action_out(action)
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
     except ActionItem.DoesNotExist:
-        raise HttpError(404, "Not found")
+        raise HttpError(404, "Not found") from None
 
 
 @router.post("/{action_id}/complete", response=ActionOut)
@@ -134,6 +134,6 @@ def api_complete_action(request, action_id: UUID):
     try:
         return _to_action_out(complete_action(action_id=action_id))
     except PermissionDenied as exc:
-        raise HttpError(403, str(exc))
+        raise HttpError(403, str(exc)) from exc
     except ActionItem.DoesNotExist:
-        raise HttpError(404, "Not found")
+        raise HttpError(404, "Not found") from None
