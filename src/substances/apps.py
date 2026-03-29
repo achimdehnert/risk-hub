@@ -12,5 +12,6 @@ class SubstancesConfig(AppConfig):
     verbose_name = "Gefahrstoffe & SDS"
 
     def ready(self):
-        """Signal-Handler registrieren."""
-        pass
+        """Signal-Handler und doc_templates Retrievers registrieren."""
+        from doc_template_retrievers import register_all_retrievers
+        register_all_retrievers()
