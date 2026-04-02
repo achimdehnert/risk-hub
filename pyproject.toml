@@ -83,3 +83,15 @@ ignore = ["E501"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["apps", "config"]
+
+# ADR-155: mypy Config — strict auf eigene Module, ignore_missing_imports für Third-Party
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+
+[[tool.mypy.overrides]]
+module = ["aifw.*", "promptfw.*", "platform_context.*"]
+ignore_missing_imports = false
