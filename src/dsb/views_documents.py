@@ -109,27 +109,19 @@ def document_upload(request: HttpRequest) -> HttpResponse:
                 mandate = None
 
             mime, _ = mimetypes.guess_type(uploaded_file.name)
-            doc = DsbDocument(
+            from dsb.services import create_dsb_document
+            doc = create_dsb_document(
                 tenant_id=tid,
                 mandate=mandate,
                 ref_type=doc_ref_type,
                 ref_id=doc_ref_id if doc_ref_id else None,
                 title=title,
                 description=description,
-                original_filename=uploaded_file.name,
-                file_size=uploaded_file.size,
+                uploaded_file=uploaded_file,
                 mime_type=mime or "",
                 uploaded_by_id=uid,
+                document_date=document_date,
             )
-            if document_date:
-                from datetime import datetime
-
-                try:
-                    doc.document_date = datetime.strptime(document_date, "%Y-%m-%d").date()
-                except ValueError:
-                    pass
-            doc.file = uploaded_file
-            doc.save()
 
             messages.success(request, f"Dokument '{title}' erfolgreich hochgeladen.")
 
@@ -180,11 +172,12 @@ def document_delete(request: HttpRequest, pk) -> HttpResponse:
     tid = _tenant_id(request)
     doc = get_object_or_404(DsbDocument, pk=pk, tenant_id=tid)
     title = doc.title
+    from common.services import delete_object
     try:
         doc.file.delete(save=False)
     except Exception:
         pass
-    doc.delete()
+    delete_object(doc)
     messages.success(request, f"Dokument '{title}' gelöscht.")
     next_url = request.POST.get("next", "")
     return redirect(next_url or "dsb:document-list")

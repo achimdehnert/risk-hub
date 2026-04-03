@@ -15,6 +15,47 @@ from common.services import delete_object, save_form  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
+def create_dsb_document(
+    tenant_id: UUID,
+    mandate,
+    ref_type: str,
+    ref_id: str | None,
+    title: str,
+    description: str,
+    uploaded_file,
+    mime_type: str = "",
+    uploaded_by_id: int | None = None,
+    document_date: str | None = None,
+):
+    """Create a DsbDocument with file upload (ADR-041)."""
+    from dsb.models.document import DsbDocument
+
+    doc = DsbDocument(
+        tenant_id=tenant_id,
+        mandate=mandate,
+        ref_type=ref_type,
+        ref_id=ref_id,
+        title=title,
+        description=description,
+        original_filename=uploaded_file.name,
+        file_size=uploaded_file.size,
+        mime_type=mime_type,
+        uploaded_by_id=uploaded_by_id,
+    )
+    if document_date:
+        from datetime import datetime
+
+        try:
+            doc.document_date = datetime.strptime(
+                document_date, "%Y-%m-%d",
+            ).date()
+        except ValueError:
+            pass
+    doc.file = uploaded_file
+    doc.save()
+    return doc
+
+
 @dataclass(frozen=True)
 class DsbKPI:
     """Aggregated DSB KPIs for a tenant."""

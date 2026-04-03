@@ -271,7 +271,8 @@ def revision_edit(
             {"form": form, "revision": revision},
         )
 
-    form.save()
+    from common.services import save_form
+    save_form(form, tenant_id, is_create=False)
     messages.success(request, "SDS-Revision aktualisiert.")
     return redirect(
         "global_sds:revision-detail", pk=revision.pk,
@@ -292,8 +293,9 @@ def revision_delete(
         pk=pk,
     )
 
+    from common.services import delete_object
     name = str(revision)
-    revision.delete()
+    delete_object(revision)
     messages.success(
         request, f"SDS-Revision '{name}' gelöscht.",
     )
