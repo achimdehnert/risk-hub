@@ -178,32 +178,30 @@ def get_hazard(hazard_id: UUID) -> Hazard:
 
 
 async def analyze_hazard_with_ai(hazard_description: str) -> str:
-    """Analyze hazard using AI."""
-    from bfagent_llm import PromptFramework
+    """Analyze hazard using AI — powered by aifw."""
+    from ai_analysis.llm_client import llm_complete
 
-    framework = PromptFramework.get_instance()
-
-    result = await framework.execute(
-        system_prompt=(
-            "Du bist ein Experte für Gefährdungsbeurteilungen und "
-            "Arbeitssicherheit.\n"
-            "Analysiere die beschriebene Gefährdung und gib Empfehlungen "
-            "für Schutzmaßnahmen."
-        ),
-        user_prompt=(
-            "Analysiere folgende Gefährdung und schlage geeignete "
-            "Schutzmaßnahmen vor:\n\n"
-            "{{ hazard }}\n\n"
-            "Bitte strukturiere deine Antwort wie folgt:\n"
-            "1. Risikoeinschätzung\n"
-            "2. Empfohlene Schutzmaßnahmen\n"
-            "3. Priorität der Maßnahmen"
-        ),
-        context={"hazard": hazard_description},
-        tier="standard",
+    system = (
+        "Du bist ein Experte für Gefährdungsbeurteilungen und "
+        "Arbeitssicherheit.\n"
+        "Analysiere die beschriebene Gefährdung und gib "
+        "Empfehlungen für Schutzmaßnahmen."
+    )
+    user = (
+        "Analysiere folgende Gefährdung und schlage geeignete "
+        "Schutzmaßnahmen vor:\n\n"
+        f"{hazard_description}\n\n"
+        "Bitte strukturiere deine Antwort wie folgt:\n"
+        "1. Risikoeinschätzung\n"
+        "2. Empfohlene Schutzmaßnahmen\n"
+        "3. Priorität der Maßnahmen"
     )
 
-    if result.success and result.response:
-        return result.response.content
-
-    return f"Analyse fehlgeschlagen: {result.error}"
+    try:
+        return await llm_complete(
+            system=system,
+            prompt=user,
+            action_code="hazard_analysis",
+        )
+    except RuntimeError as exc:
+        return f"Analyse fehlgeschlagen: {exc}"

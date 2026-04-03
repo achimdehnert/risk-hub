@@ -31,8 +31,6 @@ def _llm_sync_wrapper(system_prompt: str, user_prompt: str) -> str:
         prompt=user_prompt,
         system=system_prompt,
         action_code=ACTION_CONCEPT_ANALYSIS,
-        temperature=0.2,
-        max_tokens=4000,
     )
 
 
