@@ -70,12 +70,10 @@ def breach_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = BreachCreateForm(request.POST, tenant_id=tid)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
+            from common.services import save_form
+            obj = save_form(form, tid, _user_id(request), is_create=True)
             obj.workflow_status = BreachStatus.REPORTED
-            obj.created_by_id = _user_id(request)
-            obj.save()
-            form.save_m2m()
+            obj.save(update_fields=["workflow_status"])
             send_initial_breach_confirmation(obj)
             messages.success(
                 request,

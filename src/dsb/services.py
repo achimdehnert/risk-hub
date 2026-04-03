@@ -1,10 +1,16 @@
-"""DSB KPI aggregation service (ADR-041 Phase 0)."""
+"""DSB service layer (ADR-041).
+
+CRUD operations + KPI aggregation. Views must not call .save() / .delete()
+directly — always go through this module.
+"""
 
 import logging
 from dataclasses import dataclass
 from uuid import UUID
 
 from django.db.models import Q
+
+from common.services import delete_object, save_form  # noqa: F401
 
 logger = logging.getLogger(__name__)
 

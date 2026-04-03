@@ -274,10 +274,8 @@ def mandate_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = MandateForm(request.POST)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.created_by_id = _user_id(request)
-            obj.save()
+            from dsb.services import save_form
+            save_form(form, tid, _user_id(request), is_create=True)
             return redirect("dsb:mandate-list")
     else:
         form = MandateForm()
@@ -302,9 +300,8 @@ def mandate_edit(request: HttpRequest, pk) -> HttpResponse:
     if request.method == "POST":
         form = MandateForm(request.POST, instance=obj)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.updated_by_id = _user_id(request)
-            obj.save()
+            from dsb.services import save_form
+            save_form(form, tid, _user_id(request), is_create=False)
             return redirect("dsb:mandate-list")
     else:
         form = MandateForm(instance=obj)
@@ -327,7 +324,8 @@ def mandate_delete(request: HttpRequest, pk) -> HttpResponse:
     tid = _tenant_id(request)
     obj = get_object_or_404(Mandate, pk=pk, tenant_id=tid)
     if request.method == "POST":
-        obj.delete()
+        from dsb.services import delete_object
+        delete_object(obj)
         return redirect("dsb:mandate-list")
     return render(
         request,
@@ -370,10 +368,8 @@ def vvt_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = ProcessingActivityForm(request.POST, tenant_id=tid)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.created_by_id = _user_id(request)
-            obj.save()
+            from dsb.services import save_form
+            save_form(form, tid, _user_id(request), is_create=True)
             return redirect("dsb:vvt-list")
     else:
         form = ProcessingActivityForm(tenant_id=tid)
@@ -399,9 +395,8 @@ def vvt_edit(request: HttpRequest, pk) -> HttpResponse:
     if request.method == "POST":
         form = ProcessingActivityForm(request.POST, instance=obj, tenant_id=tid)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.updated_by_id = _user_id(request)
-            obj.save()
+            from dsb.services import save_form
+            save_form(form, tid, _user_id(request), is_create=False)
             return redirect("dsb:vvt-list")
     else:
         form = ProcessingActivityForm(instance=obj, tenant_id=tid)
@@ -435,10 +430,8 @@ def tom_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = FormClass(request.POST, tenant_id=tid)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.created_by_id = _user_id(request)
-            obj.save()
+            from dsb.services import save_form
+            save_form(form, tid, _user_id(request), is_create=True)
             return redirect("dsb:tom-list")
     else:
         form = FormClass(tenant_id=tid)
@@ -479,9 +472,8 @@ def tom_edit(request: HttpRequest, pk) -> HttpResponse:
             tenant_id=tid,
         )
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.updated_by_id = _user_id(request)
-            obj.save()
+            from dsb.services import save_form
+            save_form(form, tid, _user_id(request), is_create=False)
             return redirect("dsb:tom-list")
     else:
         form = FormClass(instance=obj, tenant_id=tid)
@@ -540,10 +532,8 @@ def dpa_create(request: HttpRequest) -> HttpResponse:
             tenant_id=tid,
         )
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.created_by_id = _user_id(request)
-            obj.save()
+            from dsb.services import save_form
+            save_form(form, tid, _user_id(request), is_create=True)
             return redirect("dsb:dpa-list")
     else:
         form = DataProcessingAgreementForm(tenant_id=tid)
@@ -576,9 +566,8 @@ def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
             tenant_id=tid,
         )
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.updated_by_id = _user_id(request)
-            obj.save()
+            from dsb.services import save_form
+            save_form(form, tid, _user_id(request), is_create=False)
             return redirect("dsb:dpa-list")
     else:
         form = DataProcessingAgreementForm(

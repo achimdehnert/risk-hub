@@ -77,12 +77,11 @@ def deletion_request_create(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = DeletionRequestForm(request.POST, tenant_id=tid)
         if form.is_valid():
-            obj = form.save(commit=False)
-            obj.tenant_id = tid
-            obj.created_by_id = _user_id(request)
+            from common.services import save_form
+            obj = save_form(form, tid, _user_id(request), is_create=True)
             obj.updated_by_id = _user_id(request)
             obj.status = DeletionRequestStatus.PENDING
-            obj.save()
+            obj.save(update_fields=["updated_by_id", "status"])
             send_initial_confirmation(obj)
             messages.success(
                 request,

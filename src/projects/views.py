@@ -86,21 +86,13 @@ def project_create(request: HttpRequest) -> HttpResponse:
             )
 
         # Resolve or auto-create Site
-        site, created = Site.objects.get_or_create(
+        from projects.services import get_or_create_site
+        org = request.user.tenancy_memberships.filter(
             tenant_id=request.tenant_id,
-            name=site_name,
-            defaults={
-                "organization": request.user.tenancy_memberships.filter(
-                    tenant_id=request.tenant_id,
-                ).first().organization,
-            },
+        ).first().organization
+        site, created = get_or_create_site(
+            request.tenant_id, site_name, org,
         )
-        if created:
-            logger.info(
-                "Auto-created Site '%s' for tenant %s",
-                site_name,
-                request.tenant_id,
-            )
 
         # Build recommendations for storage
         recommendations = recommend_modules_from_description(
@@ -220,20 +212,14 @@ def document_upload(request: HttpRequest, pk: int) -> HttpResponse:
         files = request.FILES.getlist("files")
         doc_type = request.POST.get("doc_type", "other")
 
+        from projects.services import upload_project_document
         for f in files:
-            title = f.name.rsplit(".", 1)[0] if "." in f.name else f.name
-            ProjectDocument.objects.create(
+            upload_project_document(
                 tenant_id=request.tenant_id,
                 project=project,
-                title=title,
-                doc_type=doc_type,
                 file=f,
+                doc_type=doc_type,
                 uploaded_by=request.user,
-            )
-            logger.info(
-                "Uploaded document '%s' to project %s",
-                f.name,
-                project.name,
             )
 
         return redirect("projects:project-detail", pk=pk)
@@ -264,8 +250,8 @@ def document_delete(
         tenant_id=request.tenant_id,
     )
     if request.method == "POST":
-        doc.file.delete(save=False)
-        doc.delete()
+        from projects.services import delete_project_document
+        delete_project_document(doc)
     return redirect("projects:project-detail", pk=pk)
 
 
@@ -356,15 +342,6 @@ def output_document_create(
             tenant_id=request.tenant_id,
         )
 
-        doc = OutputDocument.objects.create(
-            tenant_id=request.tenant_id,
-            project=project,
-            template=tmpl,
-            kind=tmpl.kind or "custom",
-            title=title,
-            created_by=request.user,
-        )
-
         # PDF import (optional)
         pdf_file = request.FILES.get("pdf_file")
         imported_values = {}
@@ -388,31 +365,15 @@ def output_document_create(
                     "Kein Text aus PDF extrahiert.",
                 )
 
-        # Create sections from template structure
-        for idx, section in enumerate(tmpl.get_sections()):
-            skey = section.get("key", f"s_{idx}")
-            fields = section.get("fields", [])
-            sec_values = imported_values.get(skey, {})
-
-            # Pre-fill content from imported values
-            content = ""
-            for f in fields:
-                if f.get("type") == "textarea" and not content:
-                    content = sec_values.get(f["key"], "")
-
-            DocumentSection.objects.create(
-                document=doc,
-                section_key=skey,
-                title=section.get("label", f"Abschnitt {idx + 1}"),
-                order=idx,
-                content=content,
-                fields_json=json.dumps(
-                    fields, ensure_ascii=False,
-                ),
-                values_json=json.dumps(
-                    sec_values, ensure_ascii=False,
-                ),
-            )
+        from projects.services import create_output_document
+        doc = create_output_document(
+            tenant_id=request.tenant_id,
+            project=project,
+            template=tmpl,
+            title=title,
+            created_by=request.user,
+            imported_values=imported_values,
+        )
 
         return redirect(
             "projects:output-document-edit",
@@ -777,14 +738,13 @@ def template_create(request: HttpRequest) -> HttpResponse:
             ],
         }
 
-        tmpl = DocumentTemplate.objects.create(
+        from projects.services import create_template
+        tmpl = create_template(
             tenant_id=request.tenant_id,
             name=name,
             kind=kind,
             description=desc,
-            structure_json=json.dumps(
-                structure, ensure_ascii=False,
-            ),
+            structure=structure,
         )
         messages.success(request, f"Vorlage '{name}' erstellt.")
         return redirect(
@@ -834,16 +794,15 @@ def template_upload(request: HttpRequest) -> HttpResponse:
             else {"sections": []}
         )
 
-        tmpl = DocumentTemplate.objects.create(
+        from projects.services import create_template
+        tmpl = create_template(
             tenant_id=request.tenant_id,
             name=name,
             kind=kind,
             description=request.POST.get("description", ""),
-            structure_json=json.dumps(
-                structure, ensure_ascii=False,
-            ),
+            structure=structure,
             source_filename=pdf_file.name,
-            source_text=text[:50000],
+            source_text=text or "",
         )
         messages.success(
             request,
@@ -893,17 +852,16 @@ def template_edit(
                 },
             )
 
-        tmpl.structure_json = json.dumps(
-            structure, ensure_ascii=False,
+        from projects.services import update_template
+        update_template(
+            tmpl,
+            structure=structure,
+            name=request.POST.get("name", tmpl.name),
+            description=request.POST.get(
+                "description", tmpl.description,
+            ),
+            status=request.POST.get("status", tmpl.status),
         )
-        tmpl.name = request.POST.get("name", tmpl.name)
-        tmpl.description = request.POST.get(
-            "description", tmpl.description,
-        )
-        new_status = request.POST.get("status", tmpl.status)
-        if new_status in dict(DocumentTemplate.Status.choices):
-            tmpl.status = new_status
-        tmpl.save()
 
         messages.success(request, "Vorlage gespeichert.")
         return redirect("projects:template-list")
@@ -941,7 +899,8 @@ def template_delete(
         tenant_id=request.tenant_id,
     )
     if request.method == "POST":
-        tmpl.delete()
+        from projects.services import delete_template
+        delete_template(tmpl)
         messages.success(request, "Vorlage gelöscht.")
     return redirect("projects:template-list")
 

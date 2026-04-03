@@ -103,10 +103,9 @@ class ConceptCreateView(View):
             return err
         form = FireProtectionConceptForm(request.POST, tenant_id=request.tenant_id)
         if form.is_valid():
-            concept = form.save(commit=False)
-            concept.tenant_id = request.tenant_id
-            concept.created_by_id = request.user.pk if request.user.is_authenticated else None
-            concept.save()
+            from common.services import save_form
+            user_id = request.user.pk if request.user.is_authenticated else None
+            concept = save_form(form, request.tenant_id, user_id, is_create=True)
             messages.success(request, f"Brandschutzkonzept '{concept.title}' angelegt.")
             return redirect("brandschutz:concept-detail", pk=concept.pk)
         return render(request, self.template_name, {"form": form, "title": "Neues Brandschutzkonzept"})
@@ -132,7 +131,8 @@ class ConceptEditView(View):
         concept = get_object_or_404(FireProtectionConcept, pk=pk, tenant_id=request.tenant_id)
         form = FireProtectionConceptForm(request.POST, instance=concept, tenant_id=request.tenant_id)
         if form.is_valid():
-            form.save()
+            from common.services import save_form
+            save_form(form, request.tenant_id, is_create=False)
             messages.success(request, f"Brandschutzkonzept '{concept.title}' aktualisiert.")
             return redirect("brandschutz:concept-detail", pk=concept.pk)
         return render(request, self.template_name, {"form": form, "title": concept.title, "concept": concept})
@@ -257,10 +257,10 @@ class SectionCreateView(View):
         )
         form = FireSectionForm(request.POST)
         if form.is_valid():
-            section = form.save(commit=False)
-            section.tenant_id = request.tenant_id
+            from common.services import save_form
+            section = save_form(form, request.tenant_id, is_create=True)
             section.concept = concept
-            section.save()
+            section.save(update_fields=["concept_id"])
             messages.success(
                 request,
                 f"Brandabschnitt '{section.name}' angelegt.",
@@ -363,11 +363,11 @@ class DocumentUploadView(View):
 
             # Create ConceptDocument + trigger async analysis for PDFs
             if ext == ".pdf":
-                concept_doc = ConceptDocument.objects.create(
+                from brandschutz.services import create_concept_document
+                concept_doc = create_concept_document(
                     tenant_id=request.tenant_id,
                     concept=concept,
                     title=title,
-                    scope="brandschutz",
                     source_filename=uploaded_file.name,
                     content_type=uploaded_file.content_type or "",
                 )
@@ -495,13 +495,10 @@ class TemplateSelectView(View):
                 tenant_id=request.tenant_id,
                 status="analyzed",
             )
-            tmpl = ConceptTemplateStore.objects.create(
+            from brandschutz.services import promote_to_template
+            tmpl = promote_to_template(
                 tenant_id=request.tenant_id,
-                name=f"Aus Analyse: {cdoc.title}",
-                scope=cdoc.scope or "brandschutz",
-                source="analyzed",
-                source_document=cdoc,
-                template_json=cdoc.template_json,
+                concept_doc=cdoc,
             )
         else:
             messages.error(request, "Kein Template ausgewählt.")
@@ -510,12 +507,11 @@ class TemplateSelectView(View):
                 concept_pk=concept.pk,
             )
 
-        # Create the filled template instance
-        filled = FilledTemplate.objects.create(
+        from brandschutz.services import create_filled_template
+        filled = create_filled_template(
             tenant_id=request.tenant_id,
             concept=concept,
             template=tmpl,
-            name=f"{concept.name} — {tmpl.name}",
         )
         return redirect(
             "brandschutz:filled-template-edit",
