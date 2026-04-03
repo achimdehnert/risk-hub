@@ -7,6 +7,7 @@ from pathlib import Path
 import dj_database_url
 
 from config.secrets import read_secret
+from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -339,9 +340,9 @@ if importlib.util.find_spec("apps.accounts.auth") is not None:
     )
 
 # --- authentik OIDC (ADR-142) ---
-OIDC_RP_CLIENT_ID = os.environ.get("OIDC_RP_CLIENT_ID", "")
-OIDC_RP_CLIENT_SECRET = os.environ.get("OIDC_RP_CLIENT_SECRET", "")
-_OIDC_APP_SLUG = os.environ.get("OIDC_APP_SLUG", "risk-hub")
+OIDC_RP_CLIENT_ID = config("OIDC_RP_CLIENT_ID", default="")
+OIDC_RP_CLIENT_SECRET = config("OIDC_RP_CLIENT_SECRET", default="")
+_OIDC_APP_SLUG = config("OIDC_APP_SLUG", default="risk-hub")
 _IDP = "https://id.iil.pet/application/o"
 OIDC_OP_AUTHORIZATION_ENDPOINT = f"{_IDP}/authorize/"
 OIDC_OP_TOKEN_ENDPOINT = f"{_IDP}/token/"

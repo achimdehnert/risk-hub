@@ -11,12 +11,15 @@ import django
 django.setup()
 
 from django.test import Client, override_settings  # noqa: E402
+import logging
+
+logger = logging.getLogger(__name__)
 
 with override_settings(ALLOWED_HOSTS=["*"]):
     c = Client()
     response = c.get("/substances/")
-    print(f"Status: {response.status_code}")
+    logger.info(f"Status: {response.status_code}")
     if response.status_code >= 400:
-        print(f"Content: {response.content.decode()[:5000]}")
+        logger.info(f"Content: {response.content.decode()[:5000]}")
     else:
-        print("OK")
+        logger.info("OK")

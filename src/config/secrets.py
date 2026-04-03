@@ -16,8 +16,9 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
+from decouple import config
 
-SECRETS_DIR = Path(os.environ.get("SECRETS_DIR", "/run/secrets"))
+SECRETS_DIR = Path(config("SECRETS_DIR", default="/run/secrets"))
 
 # Auto-load .env from project root (two levels up from src/config/)
 # Does NOT override already-set environment variables (override=False)
@@ -49,7 +50,7 @@ def read_secret(
     if value:
         return value
 
-    if required and os.environ.get("DJANGO_SETTINGS_MODULE", "").endswith("production"):
+    if required and config("DJANGO_SETTINGS_MODULE", default="").endswith("production"):
         raise ValueError(f"Required secret {key!r} not found in {SECRETS_DIR} or environment")
 
     return default

@@ -72,7 +72,7 @@ class BrandschutzAnalyzer:
         result = analyzer.analyze_dxf(dxf_doc, etage="EG")
 
         for mangel in result.kritische_maengel:
-            print(f"KRITISCH: {mangel.beschreibung} [{mangel.regelwerk}]")
+            logger.error(f"KRITISCH: {mangel.beschreibung} [{mangel.regelwerk}]")
     """
 
     def __init__(self) -> None:

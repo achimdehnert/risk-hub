@@ -13,18 +13,21 @@ from django.db import transaction  # noqa: E402
 from django.utils import timezone  # noqa: E402
 
 from outbox.models import OutboxMessage  # noqa: E402
+import logging
+
+logger = logging.getLogger(__name__)
 
 POLL_SECONDS = 2
 
 
 def publish(msg: OutboxMessage) -> None:
     """Publish message (MVP: just print)."""
-    print(f"[OUTBOX] topic={msg.topic} tenant={msg.tenant_id} payload={msg.payload}")
+    logger.info(f"[OUTBOX] topic={msg.topic} tenant={msg.tenant_id} payload={msg.payload}")
 
 
 def run_forever():
     """Poll outbox and publish messages."""
-    print("[OUTBOX] Publisher started")
+    logger.info("[OUTBOX] Publisher started")
     while True:
         with transaction.atomic():
             qs = (
