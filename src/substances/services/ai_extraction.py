@@ -180,8 +180,6 @@ def ai_extract_substances(
         prompt=prompt,
         system=SYSTEM_PROMPT,
         action_code=ACTION_SUBSTANCE_IMPORT,
-        temperature=0.1,
-        max_tokens=4000,
         tenant_id=tenant_id,
     )
 

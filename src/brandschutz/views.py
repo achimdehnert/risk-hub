@@ -658,9 +658,7 @@ class FilledTemplateLLMPrefillView(View):
             return llm_complete_sync(
                 prompt=user,
                 system=system,
-                action_code="concept_analysis",
-                temperature=0.3,
-                max_tokens=500,
+                action_code="concept_prefill",
             )
 
         value = prefill_field(

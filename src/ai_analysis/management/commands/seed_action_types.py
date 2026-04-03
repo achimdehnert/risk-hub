@@ -91,6 +91,27 @@ class Command(BaseCommand):
                 4000,
                 0.2,
             ),
+            (
+                "substance_import",
+                "Substance SDS Import",
+                "Extract structured data from safety data sheets.",
+                4000,
+                0.1,
+            ),
+            (
+                "brandschutz_analysis",
+                "Fire Protection Compliance",
+                "AI compliance analysis for Brandschutzkonzepte.",
+                3000,
+                0.2,
+            ),
+            (
+                "concept_prefill",
+                "Concept Field Prefill",
+                "Short field prefilling from concept documents.",
+                500,
+                0.3,
+            ),
         ]
         for code, name, description, max_tokens, temperature in actions_data:
             a, created = AIActionType.objects.update_or_create(
