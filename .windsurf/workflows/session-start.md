@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/session-start.md
+/home/devuser/github/platform/.windsurf/workflows/session-start.md

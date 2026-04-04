@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/stack-upgrade.md
+/home/devuser/github/platform/.windsurf/workflows/stack-upgrade.md

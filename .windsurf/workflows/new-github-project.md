@@ -1,1 +1,1 @@
-/home/dehnert/github/platform/.windsurf/workflows/new-github-project.md
+/home/devuser/github/platform/.windsurf/workflows/new-github-project.md
