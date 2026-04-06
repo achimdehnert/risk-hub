@@ -1,0 +1,517 @@
+{
+  "sections": [
+    {
+      "key": "section_1",
+      "label": "1. Allgemeine Angaben",
+      "fields": [
+        {
+          "key": "unternehmen",
+          "label": "Unternehmen / Betreiber",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "standort",
+          "label": "Standort / Adresse",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "verantwortlicher",
+          "label": "Verantwortliche Person (Explosionsschutz)",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "ersteller",
+          "label": "Erstellt durch",
+          "type": "text",
+          "required": true
+        },
+        {
+          "key": "erstelldatum",
+          "label": "Erstelldatum",
+          "type": "date",
+          "required": true
+        },
+        {
+          "key": "version",
+          "label": "Dokumentversion",
+          "type": "text",
+          "required": true,
+          "default": "1.0"
+        },
+        {
+          "key": "naechste_pruefung",
+          "label": "Nächste Überprüfung",
+          "type": "date",
+          "required": false
+        }
+      ]
+    },
+    {
+      "key": "section_2",
+      "label": "2. Geltungsbereich",
+      "fields": [
+        {
+          "key": "geltungsbereich",
+          "label": "Geltungsbereich des Dokuments",
+          "type": "textarea",
+          "required": true,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe den Geltungsbereich dieses Explosionsschutzdokuments. Nenne die betroffenen Gebäude, Anlagen, Bereiche und Verfahren. Formuliere präzise, welche Betriebszustände (Normalbetrieb, An-/Abfahren, Wartung, Störung) abgedeckt werden.",
+          "ai_sources": [
+            "standortdaten",
+            "cad"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_3",
+      "label": "3. Beschreibung der Arbeitsbereiche und Verfahren",
+      "fields": [
+        {
+          "key": "betriebsbeschreibung",
+          "label": "Beschreibung des Betriebs und der Verfahren",
+          "type": "textarea",
+          "required": true,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe die Arbeitsbereiche und Verfahren, bei denen explosionsfähige Atmosphären auftreten können. Gehe auf Produktionsprozesse, Lagerung, Um- und Abfüllung, Reinigung und Instandhaltung ein.",
+          "ai_sources": [
+            "standortdaten",
+            "bedienungsanleitung",
+            "cad"
+          ]
+        },
+        {
+          "key": "anlagen_uebersicht",
+          "label": "Anlagen- und Apparateübersicht",
+          "type": "table",
+          "required": false,
+          "columns": [
+            "Anlage / Apparat",
+            "Bereich",
+            "Verfahren",
+            "Brennbare Stoffe",
+            "Bemerkung"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_4",
+      "label": "4. Verwendete brennbare Stoffe",
+      "fields": [
+        {
+          "key": "stoffbeschreibung",
+          "label": "Beschreibung der brennbaren Stoffe",
+          "type": "textarea",
+          "required": true,
+          "ai_enabled": true,
+          "ai_prompt": "Liste und beschreibe alle im Betrieb verwendeten brennbaren Stoffe (Gase, Dämpfe, Nebel, Stäube). Nenne sicherheitsrelevante Kenngrößen wie Flammpunkt, Zündtemperatur, Explosionsgrenzen (UEG/OEG) und Explosionsgruppe.",
+          "ai_sources": [
+            "sds"
+          ]
+        },
+        {
+          "key": "stoffdaten_tabelle",
+          "label": "Sicherheitstechnische Kenngrößen",
+          "type": "table",
+          "required": true,
+          "columns": [
+            "Stoff",
+            "CAS-Nr.",
+            "Flammpunkt [°C]",
+            "Zündtemperatur [°C]",
+            "UEG [Vol.-%]",
+            "OEG [Vol.-%]",
+            "Explosionsgruppe",
+            "Temperaturklasse"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_5",
+      "label": "5. Beurteilung der Explosionsgefährdung",
+      "fields": [
+        {
+          "key": "gefaehrdungsbeurteilung",
+          "label": "Beurteilung der Explosionsgefährdung",
+          "type": "textarea",
+          "required": true,
+          "ai_enabled": true,
+          "ai_prompt": "Führe eine systematische Beurteilung der Explosionsgefährdung durch. Bewerte für jeden Bereich: 1) Kann eine gefährliche explosionsfähige Atmosphäre entstehen? 2) In welchem Umfang (Menge, Dauer, Häufigkeit)? 3) Sind wirksame Zündquellen vorhanden? Berücksichtige Normal- und Störbetrieb gemäß TRGS 720/721.",
+          "ai_sources": [
+            "sds",
+            "gefaehrdungsbeurteilung",
+            "standortdaten",
+            "risikobewertung"
+          ]
+        },
+        {
+          "key": "gefaehrdung_tabelle",
+          "label": "Gefährdungsmatrix je Bereich",
+          "type": "table",
+          "required": false,
+          "columns": [
+            "Bereich",
+            "Stoff",
+            "Freisetzungsquelle",
+            "Normalbetrieb",
+            "Störbetrieb",
+            "Bewertung"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_6",
+      "label": "6. Zoneneinteilung",
+      "fields": [
+        {
+          "key": "zoneneinteilung_text",
+          "label": "Erläuterung der Zoneneinteilung",
+          "type": "textarea",
+          "required": true,
+          "ai_enabled": true,
+          "ai_prompt": "Erläutere die Zoneneinteilung gemäß TRGS 720/721 und IEC 60079-10-1/-2. Beschreibe die Methodik der Einteilung, die Lüftungsverhältnisse und die Ausdehnung der Zonen. Unterscheide zwischen Gas/Dampf (Zone 0/1/2) und Staub (Zone 20/21/22).",
+          "ai_sources": [
+            "zonenplan",
+            "standortdaten",
+            "cad",
+            "sds"
+          ]
+        },
+        {
+          "key": "zonen_tabelle",
+          "label": "Zonenverzeichnis",
+          "type": "table",
+          "required": true,
+          "columns": [
+            "Zone",
+            "Bereich / Ort",
+            "Stoff",
+            "Ausdehnung (h × v) [m]",
+            "Lüftung",
+            "Begründung"
+          ]
+        },
+        {
+          "key": "zonenplan_verweis",
+          "label": "Verweis auf Zonenpläne",
+          "type": "textarea",
+          "required": false,
+          "default": "Siehe Anlage: Zonenpläne (Zeichnungs-Nr.: ___)"
+        }
+      ]
+    },
+    {
+      "key": "section_7",
+      "label": "7. Zündquellenanalyse",
+      "fields": [
+        {
+          "key": "zuendquellenanalyse",
+          "label": "Bewertung der Zündquellen (EN 1127-1)",
+          "type": "textarea",
+          "required": true,
+          "ai_enabled": true,
+          "ai_prompt": "Analysiere systematisch alle 13 Zündquellen gemäß EN 1127-1 für die identifizierten Ex-Bereiche: 1) Heiße Oberflächen, 2) Flammen/heiße Gase, 3) Mechanisch erzeugte Funken, 4) Elektrische Anlagen, 5) Ausgleichsströme/Kathodischer Korrosionsschutz, 6) Statische Elektrizität, 7) Blitzschlag, 8) Elektromagnetische Felder, 9) Elektromagnetische Strahlung, 10) Ionisierende Strahlung, 11) Ultraschall, 12) Adiabatische Kompression/Stoßwellen, 13) Exotherme Reaktionen. Bewerte Relevanz und Vermeidbarkeit je Bereich.",
+          "ai_sources": [
+            "gefaehrdungsbeurteilung",
+            "bedienungsanleitung",
+            "pruefbericht",
+            "rechtliche_grundlagen"
+          ]
+        },
+        {
+          "key": "zuendquellen_tabelle",
+          "label": "Zündquellenmatrix",
+          "type": "table",
+          "required": true,
+          "columns": [
+            "Nr.",
+            "Zündquelle (EN 1127-1)",
+            "Zone",
+            "Relevant?",
+            "Maßnahme",
+            "Bewertung"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_8",
+      "label": "8. Schutzmaßnahmen",
+      "fields": [
+        {
+          "key": "schutzmassnahmen_uebersicht",
+          "label": "Übersicht der Schutzmaßnahmen",
+          "type": "textarea",
+          "required": true,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe die getroffenen Explosionsschutzmaßnahmen nach dem TOP-Prinzip gemäß TRGS 722-725: 1) Primärer Ex-Schutz (Vermeidung expl. Atmosphäre), 2) Sekundärer Ex-Schutz (Vermeidung wirksamer Zündquellen), 3) Tertiärer Ex-Schutz (konstruktive Maßnahmen zur Auswirkungsbegrenzung). Ordne jede Maßnahme einem Bereich und einer Zone zu.",
+          "ai_sources": [
+            "sds",
+            "gefaehrdungsbeurteilung",
+            "zonenplan",
+            "rechtliche_grundlagen"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_8_1",
+      "label": "8.1 Primäre Maßnahmen (Vermeidung)",
+      "fields": [
+        {
+          "key": "primaere_massnahmen",
+          "label": "Primäre Explosionsschutzmaßnahmen",
+          "type": "textarea",
+          "required": false,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe die primären Schutzmaßnahmen zur Vermeidung explosionsfähiger Atmosphären: Substitution, Inertisierung, Konzentrationsbegrenzung (unter UEG / über OEG), technische Lüftung, Kapselung.",
+          "ai_sources": [
+            "sds",
+            "rechtliche_grundlagen"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_8_2",
+      "label": "8.2 Sekundäre Maßnahmen (Zündquellenvermeidung)",
+      "fields": [
+        {
+          "key": "sekundaere_massnahmen",
+          "label": "Sekundäre Explosionsschutzmaßnahmen",
+          "type": "textarea",
+          "required": false,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe die sekundären Schutzmaßnahmen zur Vermeidung wirksamer Zündquellen: Ex-geschützte Betriebsmittel, Erdung und Potentialausgleich, Blitzschutz, elektrostatische Maßnahmen, Werkzeugauswahl.",
+          "ai_sources": [
+            "pruefbericht",
+            "bedienungsanleitung",
+            "rechtliche_grundlagen"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_8_3",
+      "label": "8.3 Tertiäre Maßnahmen (Auswirkungsbegrenzung)",
+      "fields": [
+        {
+          "key": "tertiaere_massnahmen",
+          "label": "Konstruktive Explosionsschutzmaßnahmen",
+          "type": "textarea",
+          "required": false,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe die konstruktiven Schutzmaßnahmen zur Begrenzung von Explosionsauswirkungen: Explosionsfeste Bauweise, Druckentlastung (VDI 3673), Explosionsunterdrückung (HRD), Flammensperre, Explosionsentkopplung.",
+          "ai_sources": [
+            "rechtliche_grundlagen"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_8_4",
+      "label": "8.4 Organisatorische Maßnahmen",
+      "fields": [
+        {
+          "key": "organisatorische_massnahmen",
+          "label": "Organisatorische Schutzmaßnahmen",
+          "type": "textarea",
+          "required": false,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe die organisatorischen Schutzmaßnahmen: Arbeitsfreigabeverfahren (Permit to Work), Kennzeichnung von Ex-Bereichen, Zutrittsbeschränkungen, Rauchverbote, Regelungen für Fremdfirmen, Flucht- und Rettungsplan.",
+          "ai_sources": [
+            "betriebsanweisung",
+            "brandschutz"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_8_5",
+      "label": "8.5 Maßnahmenübersicht",
+      "fields": [
+        {
+          "key": "massnahmen_tabelle",
+          "label": "Maßnahmenverzeichnis",
+          "type": "table",
+          "required": true,
+          "columns": [
+            "Nr.",
+            "Maßnahme",
+            "Kategorie",
+            "Zone / Bereich",
+            "Verantwortlich",
+            "Status"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_9",
+      "label": "9. Betriebsmittel in explosionsgefährdeten Bereichen",
+      "fields": [
+        {
+          "key": "betriebsmittel_text",
+          "label": "Erläuterung zu Ex-geschützten Betriebsmitteln",
+          "type": "textarea",
+          "required": false,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe die Anforderungen an Betriebsmittel in den jeweiligen Ex-Zonen. Erläutere die ATEX-Kennzeichnung, Gerätegruppen und -kategorien sowie die Zuordnung zu Zonen (Kategorie 1 → Zone 0/20, Kategorie 2 → Zone 1/21, Kategorie 3 → Zone 2/22).",
+          "ai_sources": [
+            "bedienungsanleitung",
+            "pruefbericht",
+            "rechtliche_grundlagen"
+          ]
+        },
+        {
+          "key": "betriebsmittel_tabelle",
+          "label": "Verzeichnis der Betriebsmittel in Ex-Bereichen",
+          "type": "table",
+          "required": true,
+          "columns": [
+            "Bezeichnung",
+            "Hersteller / Typ",
+            "ATEX-Kennzeichnung",
+            "Zone",
+            "Standort",
+            "Nächste Prüfung"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_10",
+      "label": "10. Prüfungen und Instandhaltung",
+      "fields": [
+        {
+          "key": "pruefungen_text",
+          "label": "Prüf- und Instandhaltungskonzept",
+          "type": "textarea",
+          "required": true,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe das Prüf- und Instandhaltungskonzept für den Explosionsschutz gemäß BetrSichV und IEC 60079-17. Nenne Prüfarten (Erstprüfung, wiederkehrende Prüfung, Stichprobenprüfung), Prüfintervalle und Anforderungen an die befähigten Personen.",
+          "ai_sources": [
+            "pruefbericht",
+            "wartungsplan",
+            "rechtliche_grundlagen"
+          ]
+        },
+        {
+          "key": "pruefplan_tabelle",
+          "label": "Prüfplan",
+          "type": "table",
+          "required": false,
+          "columns": [
+            "Prüfobjekt",
+            "Prüfart",
+            "Intervall",
+            "Befähigte Person",
+            "Letzte Prüfung",
+            "Nächste Prüfung"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_11",
+      "label": "11. Unterweisungen und Schulungen",
+      "fields": [
+        {
+          "key": "unterweisungen_text",
+          "label": "Unterweisungskonzept",
+          "type": "textarea",
+          "required": true,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe das Unterweisungskonzept zum Explosionsschutz. Nenne Zielgruppen (eigene Mitarbeiter, Fremdfirmen, Besucher), Unterweisungsinhalte, -intervalle und -dokumentation gemäß GefStoffV § 14.",
+          "ai_sources": [
+            "betriebsanweisung",
+            "rechtliche_grundlagen"
+          ]
+        },
+        {
+          "key": "unterweisungen_tabelle",
+          "label": "Unterweisungsplan",
+          "type": "table",
+          "required": false,
+          "columns": [
+            "Personenkreis",
+            "Inhalt",
+            "Intervall",
+            "Verantwortlich",
+            "Letzte Unterweisung"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_12",
+      "label": "12. Koordinierung bei Zusammenarbeit mehrerer Firmen",
+      "fields": [
+        {
+          "key": "koordinierung",
+          "label": "Koordinierungsmaßnahmen",
+          "type": "textarea",
+          "required": false,
+          "ai_enabled": true,
+          "ai_prompt": "Beschreibe die Koordinierungsmaßnahmen bei Zusammenarbeit mehrerer Firmen gemäß GefStoffV § 15. Nenne Regelungen für Fremdfirmen, Arbeitsfreigabeverfahren und gegenseitige Informationspflichten im Ex-Bereich.",
+          "ai_sources": [
+            "betriebsanweisung"
+          ]
+        }
+      ]
+    },
+    {
+      "key": "section_13",
+      "label": "13. Anlagen und Verweise",
+      "fields": [
+        {
+          "key": "anlagen_verzeichnis",
+          "label": "Anlagenverzeichnis",
+          "type": "textarea",
+          "required": false,
+          "default": "Anlage 1: Zonenpläne\nAnlage 2: Sicherheitsdatenblätter\nAnlage 3: ATEX-Bescheinigungen / Konformitätserklärungen\nAnlage 4: Prüfprotokolle\nAnlage 5: Betriebsanweisungen\nAnlage 6: Unterweisungsnachweise"
+        },
+        {
+          "key": "normen_verweise",
+          "label": "Angewandte Normen und Regelwerke",
+          "type": "textarea",
+          "required": false,
+          "default": "- GefStoffV — Gefahrstoffverordnung (§ 6 Abs. 9)\n- BetrSichV — Betriebssicherheitsverordnung\n- TRGS 720 — Gefährliche explosionsfähige Atmosphäre — Allgemeines\n- TRGS 721 — Beurteilung der Explosionsgefährdung\n- TRGS 722 — Vermeidung oder Einschränkung gefährlicher expl. Atmosphäre\n- TRGS 723 — Vermeidung der Entzündung gefährlicher expl. Gemische\n- TRGS 724 — Konstruktiver Explosionsschutz\n- TRGS 725 — MSR-Einrichtungen im Explosionsschutz\n- IEC 60079-10-1/-2 — Zoneneinteilung Gas/Staub\n- IEC 60079-14 — Projektierung und Errichtung\n- IEC 60079-17 — Prüfung und Instandhaltung\n- EN 1127-1 — Explosionsschutz — Grundlagen und Methodik\n- VDI 3673 — Druckentlastung von Staubexplosionen"
+        }
+      ]
+    },
+    {
+      "key": "section_14",
+      "label": "14. Revisionsverlauf",
+      "fields": [
+        {
+          "key": "revisionen",
+          "label": "Revisionshistorie",
+          "type": "table",
+          "required": true,
+          "columns": [
+            "Version",
+            "Datum",
+            "Autor",
+            "Änderungen",
+            "Freigabe"
+          ]
+        },
+        {
+          "key": "freigabe_hinweis",
+          "label": "Freigabehinweis",
+          "type": "textarea",
+          "required": false,
+          "default": "Dieses Explosionsschutzdokument wurde gemäß § 6 Abs. 9 GefStoffV erstellt und ist vor Aufnahme der Arbeit vom Arbeitgeber zu unterzeichnen. Es ist bei wesentlichen Änderungen der Arbeitsverfahren, Arbeitsmittel oder des Stands der Technik zu aktualisieren."
+        }
+      ]
+    }
+  ]
+}

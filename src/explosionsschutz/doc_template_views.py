@@ -616,11 +616,21 @@ def template_edit(
         except (json.JSONDecodeError, TypeError):
             structure = {"sections": []}
 
+        from explosionsschutz.ex_doc_constants import (
+            ai_source_choices_for_js,
+            field_type_choices_for_js,
+        )
         return render(request, f"{TPL_DIR}/edit.html", {
             "tmpl": tmpl,
             "structure": structure,
             "structure_json": json.dumps(
                 structure, ensure_ascii=False, indent=2,
+            ),
+            "field_types_json": json.dumps(
+                field_type_choices_for_js(), ensure_ascii=False,
+            ),
+            "ai_source_types_json": json.dumps(
+                ai_source_choices_for_js(), ensure_ascii=False,
             ),
         })
 
@@ -813,21 +823,9 @@ def instance_edit(
         except (json.JSONDecodeError, TypeError):
             values = {}
 
-        # AI source label mapping
-        _ai_src_labels = {
-            "sds": "SDS",
-            "bedienungsanleitung": "Bedienungsanl.",
-            "standortdaten": "Standortdaten",
-            "cad": "CAD",
-            "zonenplan": "Zonenpläne",
-            "gefaehrdungsbeurteilung": "GBU",
-            "betriebsanweisung": "Betriebsanw.",
-            "pruefbericht": "Prüfberichte",
-            "rechtliche_grundlagen": "Normen",
-            "wartungsplan": "Wartungsplan",
-            "risikobewertung": "Risikobew.",
-            "brandschutz": "Brandschutz",
-        }
+        # AI source label mapping (shared constants)
+        from explosionsschutz.ex_doc_constants import ai_source_short_labels
+        _ai_src_labels = ai_source_short_labels()
 
         # Merge values into structure for easy rendering
         for section in structure.get("sections", []):
@@ -956,7 +954,14 @@ def instance_delete(
 def instance_llm_prefill(
     request: HttpRequest, pk: int,
 ) -> HttpResponse:
-    """HTMX endpoint: KI-Prefill für ein einzelnes Feld."""
+    """HTMX endpoint: KI-Prefill für ein einzelnes Feld.
+
+    Delegates to explosionsschutz.services.ex_doc_prefill which uses:
+    - promptfw Jinja2 templates (maintainable prompts)
+    - Real document context via retrievers (SDS, GBU, etc.)
+    - aifw.sync_completion direct (quality routing + token tracking)
+    - concept_templates.prefill fallback (when installed)
+    """
     tid = _tenant_id(request)
     instance = get_object_or_404(
         ExDocInstance.objects.select_related("template"),
@@ -966,6 +971,7 @@ def instance_llm_prefill(
     field_key = request.POST.get("field_key", "")
     llm_hint = request.POST.get("llm_hint", "")
     ai_sources_raw = request.POST.get("ai_sources", "")
+    field_type = request.POST.get("field_type", "textarea")
 
     if not field_key or not llm_hint:
         return HttpResponse(
@@ -973,27 +979,20 @@ def instance_llm_prefill(
             status=400,
         )
 
-    # Parse requested AI source types
     ai_sources = [
         s.strip() for s in ai_sources_raw.split(",")
         if s.strip()
     ]
 
-    # Build context from existing values
-    context_parts = []
+    # Existing values for cross-field context
+    existing_values = None
     if instance.values_json and instance.values_json != "{}":
         try:
-            vals = json.loads(instance.values_json)
-            for skey, svals in vals.items():
-                for fkey, fval in svals.items():
-                    if isinstance(fval, str) and fval.strip():
-                        context_parts.append(
-                            f"{fkey}: {fval[:300]}",
-                        )
+            existing_values = json.loads(instance.values_json)
         except (json.JSONDecodeError, AttributeError):
             pass
 
-    # Extracted texts from linked concept (if any)
+    # Extracted texts from linked concept or template source
     extracted_texts = []
     if instance.concept_id:
         extracted_texts = list(
@@ -1004,78 +1003,24 @@ def instance_llm_prefill(
                 "extracted_text", flat=True,
             )[:2]
         )
-    # Fallback: source text from template
     if not extracted_texts and instance.template.source_text:
         extracted_texts = [
             instance.template.source_text[:5000],
         ]
 
-    # AI source type labels for prompt context
-    _src_labels = {
-        "sds": "Sicherheitsdatenblätter",
-        "bedienungsanleitung": "Bedienungsanleitungen",
-        "standortdaten": "Standort- und Gebäudedaten",
-        "cad": "CAD-Zeichnungen und Anlagenpläne",
-        "zonenplan": "Zonenpläne und Ex-Zonen-Einteilung",
-        "gefaehrdungsbeurteilung": "Gefährdungsbeurteilungen",
-        "betriebsanweisung": "Betriebsanweisungen",
-        "pruefbericht": "Prüfberichte und Protokolle",
-        "rechtliche_grundlagen": "Rechtliche Grundlagen",
-        "wartungsplan": "Wartungs-/Instandhaltungspläne",
-        "risikobewertung": "Risikobewertungen",
-        "brandschutz": "Brandschutzkonzepte",
-    }
-
-    system_prompt = (
-        "Du bist ein Experte für Explosionsschutz und "
-        "technische Dokumentation. Schreibe fachlich "
-        "korrekte, präzise Texte auf Deutsch. "
-        "Antworte NUR mit dem Feldinhalt, keine "
-        "Erklärungen oder Einleitungen."
-    )
-
-    # Use template-defined prompt as primary instruction
-    user_prompt = f"Aufgabe: {llm_hint}\n"
-
-    # Add source type instructions
-    if ai_sources:
-        src_names = [
-            _src_labels.get(s, s) for s in ai_sources
-        ]
-        user_prompt += (
-            "\nBerücksichtige folgende Dokumenttypen "
-            "als fachliche Grundlage:\n- "
-            + "\n- ".join(src_names) + "\n"
-        )
-
-    if context_parts:
-        user_prompt += (
-            "\nBereits ausgefüllte Felder:\n"
-            + "\n".join(context_parts[:10])
-            + "\n"
-        )
-    if extracted_texts:
-        joined = "\n---\n".join(
-            t[:3000] for t in extracted_texts
-        )
-        user_prompt += (
-            f"\nReferenz-Dokument(e):\n{joined}\n"
-        )
-    user_prompt += (
-        f"\nSchreibe den Inhalt für das Feld "
-        f"'{field_key}' im Kontext Explosionsschutz."
-    )
-
     try:
-        from ai_analysis.llm_client import (
-            llm_complete_sync,
+        from explosionsschutz.services.ex_doc_prefill import (
+            prefill_ex_doc_field,
         )
-        value = llm_complete_sync(
-            prompt=user_prompt,
-            system=system_prompt,
-            action_code="concept_analysis",
-            temperature=0.3,
-            max_tokens=500,
+        value = prefill_ex_doc_field(
+            field_key=field_key,
+            llm_hint=llm_hint,
+            ai_sources=ai_sources,
+            tenant_id=tid,
+            instance=instance,
+            existing_values=existing_values,
+            extracted_texts=extracted_texts,
+            field_type=field_type,
         )
     except Exception as exc:
         logger.warning("LLM prefill failed: %s", exc)

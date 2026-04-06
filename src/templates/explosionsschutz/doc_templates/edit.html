@@ -99,32 +99,12 @@
 </div>
 
 {{ structure|json_script:"structure-data" }}
+{{ field_types_json|json_script:"field-types-data" }}
+{{ ai_source_types_json|json_script:"ai-source-types-data" }}
 <script>
-// ── Field type definitions ──────────────────────────────────
-const FIELD_TYPES = [
-  { value: 'textarea', label: 'Freitext', icon: '📝' },
-  { value: 'table', label: 'Tabelle', icon: '📊' },
-  { value: 'text', label: 'Kurztext', icon: '✏️' },
-  { value: 'number', label: 'Zahl', icon: '#' },
-  { value: 'date', label: 'Datum', icon: '📅' },
-  { value: 'boolean', label: 'Ja/Nein', icon: '☑' },
-];
-
-// ── AI context source document types ────────────────────────
-const AI_SOURCE_TYPES = [
-  { value: 'sds', label: 'Sicherheitsdatenblätter (SDS)' },
-  { value: 'bedienungsanleitung', label: 'Bedienungsanleitungen' },
-  { value: 'standortdaten', label: 'Standort- und Gebäudedaten' },
-  { value: 'cad', label: 'CAD-Zeichnungen / Anlagenpläne' },
-  { value: 'zonenplan', label: 'Zonenpläne / Ex-Zonen' },
-  { value: 'gefaehrdungsbeurteilung', label: 'Gefährdungsbeurteilungen' },
-  { value: 'betriebsanweisung', label: 'Betriebsanweisungen' },
-  { value: 'pruefbericht', label: 'Prüfberichte / Protokolle' },
-  { value: 'rechtliche_grundlagen', label: 'Rechtliche Grundlagen / Normen' },
-  { value: 'wartungsplan', label: 'Wartungs- und Instandhaltungspläne' },
-  { value: 'risikobewertung', label: 'Risikobewertungen' },
-  { value: 'brandschutz', label: 'Brandschutzkonzepte' },
-];
+// ── Field type & AI source definitions (from server, not hardcoded) ──
+const FIELD_TYPES = JSON.parse(document.getElementById('field-types-data').textContent);
+const AI_SOURCE_TYPES = JSON.parse(document.getElementById('ai-source-types-data').textContent);
 
 // ── State ───────────────────────────────────────────────────
 let structure = JSON.parse(document.getElementById('structure-data').textContent);

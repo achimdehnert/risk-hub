@@ -1,17 +1,21 @@
-"""Source retrievers for doc_templates LLM prefill.
+"""Source retrievers for AI field prefill (ADR-107).
 
-Registers real document content from risk-hub models
-so the LLM gets actual data instead of just source type labels.
+Registers real document content from risk-hub models via
+fieldprefill.retrievers.register_retriever so the LLM gets
+actual data instead of just source type labels.
 
 Registered in SubstancesConfig.ready() to ensure models are loaded.
 """
 
 import logging
 
+from fieldprefill.retrievers import register_retriever
+
 logger = logging.getLogger(__name__)
 
 
-def _get_sds_texts(tenant_id, instance):
+@register_retriever("sds")
+def _get_sds_texts(tenant_id, instance=None):
     """Retrieve SDS data for all active substances of the tenant."""
     from substances.models import Substance
 
@@ -49,7 +53,8 @@ def _get_sds_texts(tenant_id, instance):
     return texts
 
 
-def _get_gefaehrdungsbeurteilung_texts(tenant_id, instance):
+@register_retriever("gefaehrdungsbeurteilung")
+def _get_gefaehrdungsbeurteilung_texts(tenant_id, instance=None):
     """Retrieve hazard assessments (GBU) for the tenant."""
     from risk.models import Assessment, Hazard
 
@@ -77,7 +82,8 @@ def _get_gefaehrdungsbeurteilung_texts(tenant_id, instance):
     return texts
 
 
-def _get_brandschutz_texts(tenant_id, instance):
+@register_retriever("brandschutz")
+def _get_brandschutz_texts(tenant_id, instance=None):
     """Retrieve fire safety documents for the tenant."""
     from documents.models import Document
 
@@ -92,7 +98,8 @@ def _get_brandschutz_texts(tenant_id, instance):
     return texts
 
 
-def _get_betriebsanweisung_texts(tenant_id, instance):
+@register_retriever("betriebsanweisung")
+def _get_betriebsanweisung_texts(tenant_id, instance=None):
     """Retrieve operating instructions for the tenant."""
     from documents.models import Document
 
@@ -103,7 +110,8 @@ def _get_betriebsanweisung_texts(tenant_id, instance):
     return [f"Betriebsanweisung: {d.title}" for d in docs]
 
 
-def _get_pruefbericht_texts(tenant_id, instance):
+@register_retriever("pruefbericht")
+def _get_pruefbericht_texts(tenant_id, instance=None):
     """Retrieve test reports and certificates."""
     from documents.models import Document
 
@@ -114,7 +122,8 @@ def _get_pruefbericht_texts(tenant_id, instance):
     return [f"Prüfbericht: {d.title}" for d in docs]
 
 
-def _get_risikobewertung_texts(tenant_id, instance):
+@register_retriever("risikobewertung")
+def _get_risikobewertung_texts(tenant_id, instance=None):
     """Retrieve risk assessments."""
     from risk.models import Assessment
 
@@ -133,31 +142,27 @@ def _get_risikobewertung_texts(tenant_id, instance):
 
 
 def register_all_retrievers():
-    """Register all source document retrievers.
+    """Register all source document retrievers + domain system prompt.
 
     Called from SubstancesConfig.ready().
+    Retrievers are auto-registered via @register_retriever decorators above.
+    This function registers the domain-specific system prompt.
     """
-    try:
-        from doc_templates.services.retriever import (
-            register_source_retriever,
-        )
-    except ImportError:
-        logger.debug(
-            "doc_templates not installed — skipping retriever registration"
-        )
-        return
+    from fieldprefill.prompts import register_system_prompt
 
-    register_source_retriever("sds", _get_sds_texts)
-    register_source_retriever(
-        "gefaehrdungsbeurteilung", _get_gefaehrdungsbeurteilung_texts,
-    )
-    register_source_retriever("brandschutz", _get_brandschutz_texts)
-    register_source_retriever(
-        "betriebsanweisung", _get_betriebsanweisung_texts,
-    )
-    register_source_retriever("pruefbericht", _get_pruefbericht_texts)
-    register_source_retriever(
-        "risikobewertung", _get_risikobewertung_texts,
+    register_system_prompt(
+        scope="explosionsschutz.ex_doc",
+        prompt=(
+            "Du bist ein Experte für Explosionsschutz und "
+            "technische Dokumentation nach GefStoffV, TRGS 720ff "
+            "und ATEX-Richtlinien. "
+            "Schreibe fachlich korrekte, präzise Texte auf Deutsch. "
+            "Antworte NUR mit dem Feldinhalt, keine "
+            "Erklärungen oder Einleitungen."
+        ),
     )
 
-    logger.info("doc_templates retrievers registered (6 source types)")
+    logger.info(
+        "fieldprefill retrievers registered (6 source types) + "
+        "system prompt for scope 'explosionsschutz.ex_doc'"
+    )
