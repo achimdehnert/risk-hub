@@ -40,7 +40,9 @@ RUN pip install --no-cache-dir hatchling hatch-vcs flit_core \
     && (pip install --no-cache-dir /tmp/nl2cad/packages/nl2cad-areas 2>&1 && echo "OK: nl2cad-areas") || echo "SKIP: nl2cad-areas" \
     && (pip install --no-cache-dir /tmp/nl2cad/packages/nl2cad-brandschutz 2>&1 && echo "OK: nl2cad-brandschutz") || echo "SKIP: nl2cad-brandschutz" \
     && (pip install --no-cache-dir /tmp/nl2cad/packages/nl2cad-gaeb 2>&1 && echo "OK: nl2cad-gaeb") || echo "SKIP: nl2cad-gaeb" \
-    && rm -rf /tmp/platform /tmp/nl2cad \
+    && git clone --depth=1 https://github.com/achimdehnert/iil-fieldprefill.git /tmp/iil-fieldprefill 2>/dev/null || true \
+    && (pip install --no-cache-dir /tmp/iil-fieldprefill 2>&1 && echo "OK: iil-fieldprefill") || echo "SKIP: iil-fieldprefill" \
+    && rm -rf /tmp/platform /tmp/nl2cad /tmp/iil-fieldprefill \
     && (git config --global --unset url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf 2>/dev/null || true)
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
