@@ -12,7 +12,9 @@ from __future__ import annotations
 
 import pytest
 
-iil_testkit_contract = pytest.importorskip("iil_testkit.contract", reason="iil_testkit not installed")
+iil_testkit_contract = pytest.importorskip(
+    "iil_testkit.contract", reason="iil_testkit not installed"
+)
 ContractVerifier = iil_testkit_contract.ContractVerifier
 
 pytestmark = pytest.mark.contract
