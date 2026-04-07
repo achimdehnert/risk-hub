@@ -27,8 +27,7 @@ on:
 jobs:
   ci:
     uses: achimdehnert/platform/.github/workflows/_ci-python.yml@main
-    # TEMP: skip CI until iil-fieldprefill is on PyPI or platform CI handles git packages
-    if: false
+    if: startsWith(github.ref, 'refs/heads/')
     secrets: inherit
 
   deploy:
