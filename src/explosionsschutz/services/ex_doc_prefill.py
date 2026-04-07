@@ -47,8 +47,9 @@ def prefill_ex_doc_field(
     Returns:
         Generated text content for the field.
     """
-    from explosionsschutz.ex_doc_constants import ai_source_full_labels
     from fieldprefill import prefill_field
+
+    from explosionsschutz.ex_doc_constants import ai_source_full_labels
 
     _src_labels = ai_source_full_labels()
     source_type_names = [

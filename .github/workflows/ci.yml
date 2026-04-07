@@ -46,7 +46,13 @@ jobs:
           fi
 
       - name: Install dependencies
+        env:
+          PROJECT_PAT: ${{ secrets.PROJECT_PAT }}
         run: |
+          # Install private iil-fieldprefill from git (not on PyPI, ADR-107)
+          pip install "git+https://x-access-token:${PROJECT_PAT}@github.com/achimdehnert/iil-fieldprefill.git" 2>/dev/null \
+            || pip install "git+https://github.com/achimdehnert/iil-fieldprefill.git" 2>/dev/null \
+            || echo "WARN: iil-fieldprefill not installable — some tests may fail"
           pip install -r requirements.txt
           pip install -e packages/django-tenancy || true
           pip install -r requirements-test.txt || true
