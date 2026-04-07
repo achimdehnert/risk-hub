@@ -38,6 +38,7 @@ jobs:
     with:
       app_name: "risk-hub"
       app_path: "/opt/risk-hub"
+      dockerfile_path: "docker/app/Dockerfile"
       health_check_url: "https://schutztat.de/healthz/"
       image_tag_override: ${{ inputs.image_tag_override || '' }}
       target_environment: ${{ inputs.target_environment || '' }}
