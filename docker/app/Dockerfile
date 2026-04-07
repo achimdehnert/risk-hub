@@ -28,7 +28,7 @@ RUN pip install --no-cache-dir -U pip setuptools wheel \
 
 # Install private packages via direct git clone + pip install (avoids pip resolvelib bug)
 RUN pip install --no-cache-dir hatchling hatch-vcs flit_core \
-    && git config --global url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf "https://github.com/" \
+    && if [ -n "${PROJECT_PAT}" ]; then git config --global url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf "https://github.com/"; fi \
     && git clone --depth=1 https://github.com/achimdehnert/platform.git /tmp/platform 2>/dev/null || true \
     && echo "SKIP: platform django-tenancy (risk-hub uses its own)" \
     && (pip install --no-cache-dir /tmp/platform/packages/platform-context 2>&1 && echo "OK: platform-context") || echo "SKIP: platform-context" \

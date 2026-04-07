@@ -26,7 +26,7 @@ iil-platform[shop]>=1.0.0
 # See: .windsurf/rules/iil-packages.md
 # ============================================================================
 iil-aifw>=0.5.0,<1
-iil-fieldprefill>=0.1.0,<1
+# iil-fieldprefill — installed from git in Dockerfile (not on PyPI yet, ADR-107)
 iil-learnfw[api,tenancy]>=0.4.0
 iil-promptfw>=0.7.0,<1
 iil-authoringfw>=0.3.0,<1
