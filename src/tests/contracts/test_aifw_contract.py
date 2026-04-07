@@ -11,7 +11,9 @@ Provider: iil-aifw (aifw.service)
 from __future__ import annotations
 
 import pytest
-from iil_testkit.contract import ContractVerifier
+
+iil_testkit_contract = pytest.importorskip("iil_testkit.contract", reason="iil_testkit not installed")
+ContractVerifier = iil_testkit_contract.ContractVerifier
 
 pytestmark = pytest.mark.contract
 
