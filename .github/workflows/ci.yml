@@ -63,15 +63,12 @@ jobs:
           pip install ruff pytest-env
 
       - name: Ruff check
-        working-directory: src
         run: ruff check . --output-format=github
 
       - name: Ruff format check
-        working-directory: src
         run: ruff format --check .
 
       - name: Run tests (incl. URL audit)
-        working-directory: src
         env:
           DJANGO_SETTINGS_MODULE: config.settings_test
           SECRET_KEY: test-secret-key-for-ci
