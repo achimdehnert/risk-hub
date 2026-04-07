@@ -17,8 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgdk-pixbuf-2.0-0 libcairo2 libffi-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Build-time secret for private GitHub packages (platform-context, django-tenancy)
-ARG PROJECT_PAT
+# Build-time secret for private GitHub packages — injected via BuildKit --secret, never stored in layers
+# Usage: docker build --secret id=PROJECT_PAT,env=PROJECT_PAT ...
 
 # Install public packages first (always succeeds)
 COPY requirements.txt /app/requirements.txt
@@ -27,7 +27,9 @@ RUN pip install --no-cache-dir -U pip setuptools wheel \
     && pip install --no-cache-dir -r /tmp/requirements-public.txt
 
 # Install private packages via direct git clone + pip install (avoids pip resolvelib bug)
-RUN pip install --no-cache-dir hatchling hatch-vcs flit_core \
+RUN --mount=type=secret,id=PROJECT_PAT \
+    pip install --no-cache-dir hatchling hatch-vcs flit_core \
+    && PROJECT_PAT=$(cat /run/secrets/PROJECT_PAT 2>/dev/null || echo "") \
     && if [ -n "${PROJECT_PAT}" ]; then git config --global url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf "https://github.com/"; fi \
     && git clone --depth=1 https://github.com/achimdehnert/platform.git /tmp/platform 2>/dev/null || true \
     && echo "SKIP: platform django-tenancy (risk-hub uses its own)" \
@@ -43,7 +45,7 @@ RUN pip install --no-cache-dir hatchling hatch-vcs flit_core \
     && git clone --depth=1 https://github.com/achimdehnert/iil-fieldprefill.git /tmp/iil-fieldprefill 2>/dev/null || true \
     && (pip install --no-cache-dir /tmp/iil-fieldprefill 2>&1 && echo "OK: iil-fieldprefill") || echo "SKIP: iil-fieldprefill" \
     && rm -rf /tmp/platform /tmp/nl2cad /tmp/iil-fieldprefill \
-    && (git config --global --unset url."https://x-access-token:${PROJECT_PAT}@github.com/".insteadOf 2>/dev/null || true)
+    && git config --global --remove-section url."https://x-access-token:${PROJECT_PAT}@github.com/" 2>/dev/null || true
 
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
