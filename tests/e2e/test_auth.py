@@ -12,13 +12,12 @@ import re
 import pytest
 from playwright.sync_api import Page, expect
 
-
 BASE_URL = "http://localhost:8090"
 pytestmark = pytest.mark.e2e
 
 _TENANT_SKIP = pytest.mark.skip(
     reason="risk-hub braucht Tenant-Subdomain (demo.localhost:8090) — "
-           "/etc/hosts + Nginx-Proxy konfigurieren für vollständige E2E-Tests"
+    "/etc/hosts + Nginx-Proxy konfigurieren für vollständige E2E-Tests"
 )
 
 

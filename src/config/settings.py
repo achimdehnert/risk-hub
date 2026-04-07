@@ -5,9 +5,9 @@ import os
 from pathlib import Path
 
 import dj_database_url
+from decouple import config
 
 from config.secrets import read_secret
-from decouple import config
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -28,10 +28,18 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     # Platform shared packages (optional — guarded for images without private pkgs)
-    *[app for app in [
-        "platform_context", "django_tenancy", "django_module_shop",
-        "aifw", "doc_templates", "iil_learnfw",
-    ] if importlib.util.find_spec(app) is not None],
+    *[
+        app
+        for app in [
+            "platform_context",
+            "django_tenancy",
+            "django_module_shop",
+            "aifw",
+            "doc_templates",
+            "iil_learnfw",
+        ]
+        if importlib.util.find_spec(app) is not None
+    ],
     # Risk-Hub apps
     "common",
     "tenancy",
@@ -336,7 +344,8 @@ AUTHENTICATION_BACKENDS = [
 # Add OIDC backend if module exists (find_spec avoids AppRegistryNotReady)
 if importlib.util.find_spec("apps.accounts.auth") is not None:
     AUTHENTICATION_BACKENDS.insert(
-        0, "apps.accounts.auth.IILOIDCAuthenticationBackend",
+        0,
+        "apps.accounts.auth.IILOIDCAuthenticationBackend",
     )
 
 # --- authentik OIDC (ADR-142) ---

@@ -5,11 +5,8 @@ Keine business logic in Forms – nur Eingabevalidierung.
 from __future__ import annotations
 
 from django import forms
-from django.forms import ModelForm
 
 from .models import (
-    Area,
-    Equipment,
     ExplosionConcept,
     Inspection,
     ProtectionMeasure,

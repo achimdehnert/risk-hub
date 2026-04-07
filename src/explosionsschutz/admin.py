@@ -776,8 +776,11 @@ class ExFilledTemplateAdmin(admin.ModelAdmin):
 @admin.register(ExDocTemplate)
 class ExDocTemplateAdmin(admin.ModelAdmin):
     list_display = [
-        "name", "status", "section_count",
-        "field_count", "updated_at",
+        "name",
+        "status",
+        "section_count",
+        "field_count",
+        "updated_at",
     ]
     list_filter = ["status"]
     search_fields = ["name", "description"]
@@ -787,7 +790,10 @@ class ExDocTemplateAdmin(admin.ModelAdmin):
 @admin.register(ExDocInstance)
 class ExDocInstanceAdmin(admin.ModelAdmin):
     list_display = [
-        "name", "template", "status", "updated_at",
+        "name",
+        "template",
+        "status",
+        "updated_at",
     ]
     list_filter = ["status"]
     search_fields = ["name"]

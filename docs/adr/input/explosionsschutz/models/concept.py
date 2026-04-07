@@ -93,7 +93,7 @@ class Area(models.Model):
         ).exists()
 
     @property
-    def current_concept(self) -> "ExplosionConcept | None":
+    def current_concept(self) -> ExplosionConcept | None:
         return self.concepts.filter(is_current=True).first()
 
 

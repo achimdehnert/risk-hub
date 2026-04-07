@@ -110,7 +110,8 @@ class SdsUploadView(APIView):
         tenant_id = getattr(request, "tenant_id", None)
         try:
             substance = Substance.objects.get(
-                id=pk, tenant_id=tenant_id,
+                id=pk,
+                tenant_id=tenant_id,
             )
         except Substance.DoesNotExist:
             return Response(
@@ -138,9 +139,7 @@ class SdsUploadView(APIView):
                 substance=substance,
                 pdf_content=pdf_file.read(),
                 filename=pdf_file.name,
-                content_type=(
-                    pdf_file.content_type or "application/pdf"
-                ),
+                content_type=(pdf_file.content_type or "application/pdf"),
                 revision_date=revision_date,
                 notes=request.data.get("notes", ""),
             )
@@ -168,7 +167,8 @@ class SdsApproveView(APIView):
 
         try:
             sds = SdsRevision.objects.get(
-                id=pk, tenant_id=tenant_id,
+                id=pk,
+                tenant_id=tenant_id,
             )
         except SdsRevision.DoesNotExist:
             return Response(

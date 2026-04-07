@@ -115,54 +115,32 @@ class LookupResult:
             "cas": self.cas,
             "ec": self.ec_number,
             "trade_name": "",
-            "description": (
-                self.iupac_name or self.chemical_char
-            ),
+            "description": (self.iupac_name or self.chemical_char),
             "signal_word": self.signal_word,
             "h_statements": self.h_statements,
             "p_statements": self.p_statements,
             "pictograms": self.pictograms,
             "is_cmr": self.is_cmr,
             "storage_class": "",
-            "flash_point_c": self._parse_temp(
-                self.flash_point
-            ),
-            "ignition_temperature_c": self._parse_temp(
-                self.ignition_temp
-            ),
+            "flash_point_c": self._parse_temp(self.flash_point),
+            "ignition_temperature_c": self._parse_temp(self.ignition_temp),
             "temperature_class": self.temp_class,
             "explosion_group": self.explosion_group,
             # GESTIS-Daten
-            "boiling_point_c": self._parse_temp(
-                self.boiling_point
-            ),
-            "melting_point_c": self._parse_temp(
-                self.melting_point
-            ),
+            "boiling_point_c": self._parse_temp(self.boiling_point),
+            "melting_point_c": self._parse_temp(self.melting_point),
             "density": self.density or "",
-            "molecular_formula": (
-                self.molecular_formula or ""
-            ),
-            "molecular_weight": (
-                self.molecular_weight or ""
-            ),
+            "molecular_formula": (self.molecular_formula or ""),
+            "molecular_weight": (self.molecular_weight or ""),
             "agw": self.agw or "",
             "wgk": self.wgk or "",
             "first_aid": self.first_aid or "",
-            "protective_measures": (
-                self.protective_measures or ""
-            ),
+            "protective_measures": (self.protective_measures or ""),
             "storage_info": self.storage or "",
-            "fire_protection": (
-                self.fire_protection or ""
-            ),
+            "fire_protection": (self.fire_protection or ""),
             "disposal": self.disposal or "",
-            "spill_response": (
-                self.spill_response or ""
-            ),
-            "regulations": _json.dumps(
-                self.regulations, ensure_ascii=False
-            ),
+            "spill_response": (self.spill_response or ""),
+            "regulations": _json.dumps(self.regulations, ensure_ascii=False),
             "gestis_zvg": self.gestis_zvg or "",
             "gestis_url": self.gestis_url or "",
         }
@@ -183,9 +161,7 @@ class SubstanceLookupService:
     def __init__(self, timeout: int = API_TIMEOUT):
         self.timeout = timeout
         self.session = requests.Session()
-        self.session.headers.update(
-            {"Accept": "application/json", "User-Agent": "risk-hub/1.0"}
-        )
+        self.session.headers.update({"Accept": "application/json", "User-Agent": "risk-hub/1.0"})
 
     def lookup(self, query: str) -> LookupResult:
         """GESTIS zuerst, dann PubChem als Fallback."""
@@ -222,25 +198,23 @@ class SubstanceLookupService:
         zvg = search_hit["zvg_nr"]
         logger.info("GESTIS article: ZVG %s", zvg)
         url = f"{GESTIS_API}/article/de/{zvg}"
-        headers = {
-            "Authorization": f"Bearer {GESTIS_KEY}"
-        }
+        headers = {"Authorization": f"Bearer {GESTIS_KEY}"}
         try:
             resp = self.session.get(
-                url, headers=headers,
+                url,
+                headers=headers,
                 timeout=self.timeout,
             )
             if resp.status_code != 200:
                 logger.warning(
                     "GESTIS article %s: %d",
-                    zvg, resp.status_code,
+                    zvg,
+                    resp.status_code,
                 )
                 return LookupResult()
             data = resp.json()
         except Exception:
-            logger.exception(
-                "GESTIS article failed: %s", zvg
-            )
+            logger.exception("GESTIS article failed: %s", zvg)
             return LookupResult()
 
         result = LookupResult(
@@ -249,10 +223,7 @@ class SubstanceLookupService:
             name=data.get("name", ""),
             cas=search_hit.get("cas_nr", ""),
             gestis_zvg=zvg,
-            gestis_url=(
-                "https://gestis.dguv.de/data"
-                f"?name={zvg}"
-            ),
+            gestis_url=(f"https://gestis.dguv.de/data?name={zvg}"),
         )
 
         # Parse chapters
@@ -267,20 +238,17 @@ class SubstanceLookupService:
         self._parse_gestis_chapters(chapters, result)
         return result
 
-    def _gestis_search(
-        self, query: str
-    ) -> dict | None:
+    def _gestis_search(self, query: str) -> dict | None:
         """Search GESTIS → return search hit dict."""
         if not hasattr(self, "_gestis_cache"):
             self._gestis_cache = None
         url = f"{GESTIS_API}/search/de"
-        headers = {
-            "Authorization": f"Bearer {GESTIS_KEY}"
-        }
+        headers = {"Authorization": f"Bearer {GESTIS_KEY}"}
         try:
             if self._gestis_cache is None:
                 resp = self.session.get(
-                    url, headers=headers,
+                    url,
+                    headers=headers,
                     timeout=self.timeout + 10,
                 )
                 if resp.status_code != 200:
@@ -306,14 +274,10 @@ class SubstanceLookupService:
                 if ql in nm:
                     return item
         except Exception:
-            logger.exception(
-                "GESTIS search failed: %s", query
-            )
+            logger.exception("GESTIS search failed: %s", query)
         return None
 
-    def _parse_gestis_chapters(
-        self, chapters: dict, result: LookupResult
-    ) -> None:
+    def _parse_gestis_chapters(self, chapters: dict, result: LookupResult) -> None:
         """Extract structured data from GESTIS HTML chapters."""
         s = _strip_html
 
@@ -329,46 +293,35 @@ class SubstanceLookupService:
         # Identification (0100) — CAS, EC
         if "0100" in chapters:
             txt = s(chapters["0100"])
-            cas_m = re.search(
-                r"CAS Nr:\s*(\d{1,7}-\d{2}-\d)", txt
-            )
+            cas_m = re.search(r"CAS Nr:\s*(\d{1,7}-\d{2}-\d)", txt)
             if cas_m and not result.cas:
                 result.cas = cas_m.group(1)
-            ec_m = re.search(
-                r"EG Nr:\s*([\d-]+)", txt
-            )
+            ec_m = re.search(r"EG Nr:\s*([\d-]+)", txt)
             if ec_m:
                 result.ec_number = ec_m.group(1)
 
         # Molecular formula (0400)
         if "0400" in chapters:
             txt = s(chapters["0400"])
-            mw = re.search(
-                r"Molare Masse:\s*([\d.,]+)", txt
-            )
+            mw = re.search(r"Molare Masse:\s*([\d.,]+)", txt)
             if mw:
                 result.molecular_weight = mw.group(1)
             # Formula: first token like C3H6O
-            mf = re.match(
-                r"([A-Z][A-Za-z0-9]+)", txt
-            )
+            mf = re.match(r"([A-Z][A-Za-z0-9]+)", txt)
             if mf:
                 result.molecular_formula = mf.group(1)
 
         # Physical properties
         if "0602" in chapters:
-            m = re.search(r"(-?\d+(?:[.,]\d+)?)\s*°C",
-                          s(chapters["0602"]))
+            m = re.search(r"(-?\d+(?:[.,]\d+)?)\s*°C", s(chapters["0602"]))
             if m:
                 result.melting_point = f"{m.group(1)} °C"
         if "0603" in chapters:
-            m = re.search(r"(-?\d+(?:[.,]\d+)?)\s*°C",
-                          s(chapters["0603"]))
+            m = re.search(r"(-?\d+(?:[.,]\d+)?)\s*°C", s(chapters["0603"]))
             if m:
                 result.boiling_point = f"{m.group(1)} °C"
         if "0604" in chapters:
-            m = re.search(r"Wert:\s*([\d.,]+)\s*g/cm",
-                          s(chapters["0604"]))
+            m = re.search(r"Wert:\s*([\d.,]+)\s*g/cm", s(chapters["0604"]))
             if m:
                 result.density = f"{m.group(1)} g/cm³"
         if "0607" in chapters:
@@ -377,9 +330,7 @@ class SubstanceLookupService:
                 s(chapters["0607"]),
             )
             if m:
-                result.flash_point = (
-                    f"{m.group(1).strip()} °C"
-                )
+                result.flash_point = f"{m.group(1).strip()} °C"
         if "0608" in chapters:
             txt = s(chapters["0608"])
             m = re.search(r"(-?\d+(?:[.,]\d+)?)\s*°C", txt)
@@ -391,9 +342,7 @@ class SubstanceLookupService:
         if "0609" in chapters:
             txt = s(chapters["0609"])
             result.explosion_limits = txt[:300]
-            eg = re.search(
-                r"Explosionsgruppe:\s*(II[ABC])", txt
-            )
+            eg = re.search(r"Explosionsgruppe:\s*(II[ABC])", txt)
             if eg:
                 result.explosion_group = eg.group(1)
 
@@ -410,12 +359,9 @@ class SubstanceLookupService:
             elif "Achtung" in txt or "Warning" in txt:
                 result.signal_word = "warning"
             # CMR
-            cmr = {"H340", "H341", "H350", "H351",
-                   "H360", "H361", "H362"}
+            cmr = {"H340", "H341", "H350", "H351", "H360", "H361", "H362"}
             result.is_cmr = bool(h_codes & cmr)
-            result.ghs_descriptions = (
-                self._h_codes_to_descriptions(h_codes)
-            )
+            result.ghs_descriptions = self._h_codes_to_descriptions(h_codes)
 
         # Workplace limits
         if "1201" in chapters:
@@ -440,15 +386,11 @@ class SubstanceLookupService:
         regs = []
         if "1209" in chapters:
             txt = s(chapters["1209"])
-            for trgs in re.findall(
-                r"TRGS \d+[^.]*", txt
-            ):
+            for trgs in re.findall(r"TRGS \d+[^.]*", txt):
                 regs.append(trgs.strip()[:120])
         if "1210" in chapters:
             txt = s(chapters["1210"])
-            for dguv in re.findall(
-                r"DGUV [^,.\n]+", txt
-            ):
+            for dguv in re.findall(r"DGUV [^,.\n]+", txt):
                 regs.append(dguv.strip()[:120])
         if "1208" in chapters:
             txt = s(chapters["1208"])
@@ -460,9 +402,7 @@ class SubstanceLookupService:
         if "0703" in chapters:
             result.first_aid = s(chapters["0703"])[:500]
         if "0802" in chapters:
-            result.protective_measures = (
-                s(chapters["0802"])[:500]
-            )
+            result.protective_measures = s(chapters["0802"])[:500]
         if "0803" in chapters:
             result.storage = s(chapters["0803"])[:500]
         if "0804" in chapters:
@@ -534,7 +474,9 @@ class SubstanceLookupService:
 
     def _pubchem_resolve_cas(self, cas: str) -> int | None:
         """Resolve CAS number → PubChem CID."""
-        url = f"{PUBCHEM_BASE}/pug/compound/name/{cas}/property/MolecularFormula,MolecularWeight/JSON"
+        url = (
+            f"{PUBCHEM_BASE}/pug/compound/name/{cas}/property/MolecularFormula,MolecularWeight/JSON"
+        )
         try:
             resp = self.session.get(url, timeout=self.timeout)
             if resp.status_code != 200:
@@ -549,27 +491,19 @@ class SubstanceLookupService:
 
     def _pubchem_get_name(self, cid: int) -> str:
         """Fetch common name from PubChem synonyms."""
-        url = (
-            f"{PUBCHEM_BASE}/pug/compound/cid/{cid}"
-            f"/synonyms/JSON"
-        )
+        url = f"{PUBCHEM_BASE}/pug/compound/cid/{cid}/synonyms/JSON"
         try:
             resp = self.session.get(url, timeout=self.timeout)
             if resp.status_code != 200:
                 return ""
             data = resp.json()
-            info_list = (
-                data.get("InformationList", {})
-                .get("Information", [])
-            )
+            info_list = data.get("InformationList", {}).get("Information", [])
             if info_list:
                 synonyms = info_list[0].get("Synonym", [])
                 if synonyms:
                     return synonyms[0]
         except Exception:
-            logger.exception(
-                "PubChem synonyms failed for CID %d", cid
-            )
+            logger.exception("PubChem synonyms failed for CID %d", cid)
         return ""
 
     def _pubchem_get_ghs(self, cid: int) -> LookupResult:
@@ -655,9 +589,7 @@ class SubstanceLookupService:
                                 echa_summary_parts.append(s)
                                 notif_match = re.search(r"(\d+)\s*notifications", s)
                                 if notif_match:
-                                    result.echa_notifications = int(
-                                        notif_match.group(1)
-                                    )
+                                    result.echa_notifications = int(notif_match.group(1))
 
         result.signal_word = signal_word
         result.h_statements = sorted(h_codes)

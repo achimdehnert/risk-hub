@@ -44,17 +44,13 @@ class IgnitionAssessmentReport:
     @property
     def has_unmitigated_high_risk(self) -> bool:
         """True if any ignition source is HIGH risk without mitigation."""
-        return any(
-            a.risk_level == IgnitionRisk.HIGH and not a.mitigation
-            for a in self.assessments
-        )
+        return any(a.risk_level == IgnitionRisk.HIGH and not a.mitigation for a in self.assessments)
 
     @property
     def high_risk_sources(self) -> list[IgnitionAssessment]:
         """All HIGH risk ignition sources without mitigation."""
         return [
-            a for a in self.assessments
-            if a.risk_level == IgnitionRisk.HIGH and not a.mitigation
+            a for a in self.assessments if a.risk_level == IgnitionRisk.HIGH and not a.mitigation
         ]
 
     @property

@@ -2,6 +2,7 @@ import json
 import urllib.parse
 import urllib.request
 
+from decouple import config
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
@@ -9,7 +10,6 @@ from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
-from decouple import config
 
 
 def custom_403(request: HttpRequest, exception=None) -> HttpResponse:
@@ -78,8 +78,6 @@ def trial_request(request: HttpRequest) -> JsonResponse:
 
     api_token = getattr(settings, "FORWARDEMAIL_API_TOKEN", "")
     if not api_token:
-        import os
-
         api_token = config("FORWARDEMAIL_API_TOKEN", default="")
 
     try:

@@ -3,6 +3,8 @@
 Template-basierte Views für Gefahrstoff-Management (HTML-Seiten mit HTMX)
 """
 
+import contextlib
+
 from django.contrib import messages
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
@@ -580,10 +582,8 @@ class SubstanceImportView(View):
         # Filter to selected indices
         selected_indices = set()
         for s in selected:
-            try:
+            with contextlib.suppress(ValueError):
                 selected_indices.add(int(s))
-            except ValueError:
-                pass
 
         if not selected_indices:
             messages.warning(request, "Keine Stoffe ausgewählt.")
@@ -598,9 +598,7 @@ class SubstanceImportView(View):
                 },
             )
 
-        records_to_import = [
-            r for i, r in enumerate(all_records) if i in selected_indices
-        ]
+        records_to_import = [r for i, r in enumerate(all_records) if i in selected_indices]
 
         service = SubstanceImportService(tenant_id=tenant_id, user_id=user_id)
         try:
@@ -610,10 +608,7 @@ class SubstanceImportView(View):
             messages.error(request, "Import fehlgeschlagen.")
             return render(request, self.template_name, {"form": SubstanceImportForm()})
 
-        msg = (
-            f"Import abgeschlossen: {stats.created} neu, "
-            f"{stats.updated} aktualisiert."
-        )
+        msg = f"Import abgeschlossen: {stats.created} neu, {stats.updated} aktualisiert."
         if stats.errors:
             msg += f" {len(stats.errors)} Fehler: " + "; ".join(stats.errors[:5])
             messages.warning(request, msg)
@@ -656,7 +651,9 @@ class SubstanceImportView(View):
             if not rows:
                 return []
             headers = [str(h or "").strip().lower() for h in rows[0]]
-            return [dict(zip(headers, [str(c or "") for c in row])) for row in rows[1:]]
+            return [
+                dict(zip(headers, [str(c or "") for c in row], strict=False)) for row in rows[1:]
+            ]
         else:
             raise ValueError(f"Format {ext} ohne KI nicht unterstützt.")
 
@@ -700,9 +697,7 @@ class SubstanceLookupView(View):
         tenant_id = getattr(request, "tenant_id", None)
         user_id = request.user.id if request.user.is_authenticated else None
 
-        service = SubstanceImportService(
-            tenant_id=tenant_id, user_id=user_id
-        )
+        service = SubstanceImportService(tenant_id=tenant_id, user_id=user_id)
         try:
             stats = service.import_from_records([record], dry_run=False)
         except Exception:
@@ -746,7 +741,5 @@ class SubstanceLookupView(View):
 
         return {
             "data": result,
-            "record_json": json.dumps(
-                result.to_import_record(), ensure_ascii=False
-            ),
+            "record_json": json.dumps(result.to_import_record(), ensure_ascii=False),
         }

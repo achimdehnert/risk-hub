@@ -86,8 +86,7 @@ def calculate_zone_extent(
         zone_type = ZoneType.ZONE_0
         zone_volume_m3 = room_volume_m3 if room_volume_m3 else 0.0
         zone_radius_m = (
-            (zone_volume_m3 * 3.0 / (4.0 * math.pi)) ** (1.0 / 3.0)
-            if zone_volume_m3 > 0 else 0.0
+            (zone_volume_m3 * 3.0 / (4.0 * math.pi)) ** (1.0 / 3.0) if zone_volume_m3 > 0 else 0.0
         )
         warnings.append("No ventilation -- entire room classified as Zone 0 per TRGS 721")
 
@@ -99,7 +98,10 @@ def calculate_zone_extent(
 
     logger.info(
         "[ZoneCalc] substance=%s type=%s zone=%s radius=%.2fm",
-        substance_name, release_type, zone_type, zone_radius_m,
+        substance_name,
+        release_type,
+        zone_type,
+        zone_radius_m,
     )
 
     return ZoneExtentResult(

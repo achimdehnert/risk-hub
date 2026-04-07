@@ -292,10 +292,14 @@ class ConceptDetailView(View):
 
         from .models import ExDocInstance, ExDocTemplate
 
-        doc_instances = ExDocInstance.objects.filter(
-            concept=concept,
-            tenant_id=tenant_id,
-        ).select_related("template").order_by("-updated_at")
+        doc_instances = (
+            ExDocInstance.objects.filter(
+                concept=concept,
+                tenant_id=tenant_id,
+            )
+            .select_related("template")
+            .order_by("-updated_at")
+        )
         doc_templates = ExDocTemplate.objects.filter(
             tenant_id=tenant_id,
             status=ExDocTemplate.Status.ACCEPTED,
@@ -607,9 +611,7 @@ class ConceptValidateView(View):
             concept.is_validated = True
             concept.validated_by = request.user
             concept.validated_at = dt.datetime.now(tz=dt.UTC)
-            concept.save(
-                update_fields=["status", "is_validated", "validated_by", "validated_at"]
-            )
+            concept.save(update_fields=["status", "is_validated", "validated_by", "validated_at"])
             messages.success(request, f'Konzept "{concept.title}" zur Prüfung freigegeben.')
         return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
 
@@ -1334,9 +1336,7 @@ class HtmxAddDocumentView(View):
     def post(self, request, concept_pk):
         tenant_id = getattr(request, "tenant_id", None)
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-        concept = get_object_or_404(
-            ExplosionConcept.objects.filter(base_filter), pk=concept_pk
-        )
+        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=concept_pk)
 
         form = VerificationDocumentForm(request.POST, request.FILES)
         if form.is_valid():
@@ -1373,9 +1373,7 @@ class HtmxIgnitionAssessmentView(View):
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
         zone = get_object_or_404(ZoneDefinition.objects.filter(base_filter), pk=zone_pk)
 
-        assessments = {
-            a.ignition_source: a for a in zone.ignition_assessments.all()
-        }
+        assessments = {a.ignition_source: a for a in zone.ignition_assessments.all()}
         sources = [
             {
                 "value": choice[0],
@@ -1410,9 +1408,7 @@ class HtmxIgnitionAssessmentView(View):
             )
             assess_ignition_source(cmd, tenant_id=tenant_id, user_id=user_id)
 
-        assessments = {
-            a.ignition_source: a for a in zone.ignition_assessments.all()
-        }
+        assessments = {a.ignition_source: a for a in zone.ignition_assessments.all()}
         sources = [
             {
                 "value": choice[0],

@@ -13,6 +13,7 @@ Unterstützt:
 
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 from dataclasses import dataclass, field
@@ -157,64 +158,33 @@ class SubstanceImportService:
             "storage_class": record.get("storage_class") or "",
             "is_cmr": bool(record.get("is_cmr")),
             "flash_point_c": record.get("flash_point_c"),
-            "ignition_temperature_c": record.get(
-                "ignition_temperature_c"
-            ),
-            "lower_explosion_limit": record.get(
-                "lower_explosion_limit"
-            ),
-            "upper_explosion_limit": record.get(
-                "upper_explosion_limit"
-            ),
-            "temperature_class": (
-                record.get("temperature_class") or ""
-            ),
-            "explosion_group": (
-                record.get("explosion_group") or ""
-            ),
+            "ignition_temperature_c": record.get("ignition_temperature_c"),
+            "lower_explosion_limit": record.get("lower_explosion_limit"),
+            "upper_explosion_limit": record.get("upper_explosion_limit"),
+            "temperature_class": (record.get("temperature_class") or ""),
+            "explosion_group": (record.get("explosion_group") or ""),
             "vapor_density": record.get("vapor_density"),
             "created_by": self.user_id,
             # GESTIS-Daten
             "boiling_point_c": record.get("boiling_point_c"),
             "melting_point_c": record.get("melting_point_c"),
             "density": record.get("density") or "",
-            "molecular_formula": (
-                record.get("molecular_formula") or ""
-            ),
-            "molecular_weight": (
-                record.get("molecular_weight") or ""
-            ),
+            "molecular_formula": (record.get("molecular_formula") or ""),
+            "molecular_weight": (record.get("molecular_weight") or ""),
             "agw": record.get("agw") or "",
             "wgk": record.get("wgk") or "",
             "first_aid": record.get("first_aid") or "",
-            "protective_measures": (
-                record.get("protective_measures") or ""
-            ),
-            "storage_info": (
-                record.get("storage_info") or ""
-            ),
-            "fire_protection": (
-                record.get("fire_protection") or ""
-            ),
+            "protective_measures": (record.get("protective_measures") or ""),
+            "storage_info": (record.get("storage_info") or ""),
+            "fire_protection": (record.get("fire_protection") or ""),
             "disposal": record.get("disposal") or "",
-            "spill_response": (
-                record.get("spill_response") or ""
-            ),
-            "regulations": (
-                record.get("regulations") or ""
-            ),
-            "gestis_zvg": (
-                record.get("gestis_zvg") or ""
-            ),
-            "gestis_url": (
-                record.get("gestis_url") or ""
-            ),
+            "spill_response": (record.get("spill_response") or ""),
+            "regulations": (record.get("regulations") or ""),
+            "gestis_zvg": (record.get("gestis_zvg") or ""),
+            "gestis_url": (record.get("gestis_url") or ""),
         }
         # Remove None values for optional fields
-        defaults = {
-            k: v for k, v in defaults.items()
-            if v is not None
-        }
+        defaults = {k: v for k, v in defaults.items() if v is not None}
         substance, created = Substance.objects.update_or_create(
             tenant_id=self.tenant_id,
             name=name,
@@ -307,7 +277,6 @@ class SubstanceImportService:
         if signal not in valid_signals:
             raise ValueError(f"Ungültiges Signalwort: {signal}")
 
-
     def import_from_csv(
         self,
         file_obj,
@@ -346,15 +315,17 @@ class SubstanceImportService:
                 "explosion_group": (row.get("explosion_group") or "").strip(),
             }
             # Numeric fields
-            for num_field in ("flash_point_c", "ignition_temperature_c",
-                              "lower_explosion_limit", "upper_explosion_limit",
-                              "vapor_density"):
+            for num_field in (
+                "flash_point_c",
+                "ignition_temperature_c",
+                "lower_explosion_limit",
+                "upper_explosion_limit",
+                "vapor_density",
+            ):
                 val = (row.get(num_field) or "").strip()
                 if val:
-                    try:
+                    with contextlib.suppress(ValueError):
                         record[num_field] = float(val.replace(",", "."))
-                    except ValueError:
-                        pass
 
             # Semicolon-separated list fields
             for list_field in ("h_statements", "p_statements", "pictograms"):
@@ -390,29 +361,36 @@ class SubstanceImportService:
         headers = [str(h or "").strip().lower() for h in rows[0]]
         records = []
         for row in rows[1:]:
-            raw = dict(zip(headers, row))
+            raw = dict(zip(headers, row, strict=False))
             record = {
                 "name": str(raw.get("name") or "").strip(),
                 "cas": str(raw.get("cas") or "").strip(),
                 "ec": str(raw.get("ec") or "").strip(),
                 "trade_name": str(raw.get("trade_name") or raw.get("handelsname") or "").strip(),
                 "description": str(raw.get("description") or raw.get("beschreibung") or "").strip(),
-                "signal_word": str(raw.get("signal_word") or raw.get("signalwort") or "none").strip().lower(),
-                "storage_class": str(raw.get("storage_class") or raw.get("lagerklasse") or "").strip(),
-                "is_cmr": str(raw.get("is_cmr") or raw.get("cmr") or "").strip().lower() in ("true", "1", "ja", "yes"),
+                "signal_word": str(raw.get("signal_word") or raw.get("signalwort") or "none")
+                .strip()
+                .lower(),
+                "storage_class": str(
+                    raw.get("storage_class") or raw.get("lagerklasse") or ""
+                ).strip(),
+                "is_cmr": str(raw.get("is_cmr") or raw.get("cmr") or "").strip().lower()
+                in ("true", "1", "ja", "yes"),
                 "temperature_class": str(raw.get("temperature_class") or "").strip(),
                 "explosion_group": str(raw.get("explosion_group") or "").strip(),
             }
             # Numeric fields
-            for num_field in ("flash_point_c", "ignition_temperature_c",
-                              "lower_explosion_limit", "upper_explosion_limit",
-                              "vapor_density"):
+            for num_field in (
+                "flash_point_c",
+                "ignition_temperature_c",
+                "lower_explosion_limit",
+                "upper_explosion_limit",
+                "vapor_density",
+            ):
                 val = raw.get(num_field)
                 if val is not None:
-                    try:
+                    with contextlib.suppress(ValueError, TypeError):
                         record[num_field] = float(val)
-                    except (ValueError, TypeError):
-                        pass
 
             # Semicolon-separated list fields
             for list_field in ("h_statements", "p_statements", "pictograms"):
@@ -451,22 +429,31 @@ class SubstanceImportService:
         headers = [h.lower().replace(" ", "_") for h in rows[0]]
         records = []
         for row in rows[1:]:
-            raw = dict(zip(headers, row))
+            raw = dict(zip(headers, row, strict=False))
             record = {
                 "name": (raw.get("name") or raw.get("stoffname") or "").strip(),
-                "cas": (raw.get("cas") or raw.get("cas-nummer") or raw.get("cas_nummer") or "").strip(),
+                "cas": (
+                    raw.get("cas") or raw.get("cas-nummer") or raw.get("cas_nummer") or ""
+                ).strip(),
                 "ec": (raw.get("ec") or "").strip(),
                 "trade_name": (raw.get("trade_name") or raw.get("handelsname") or "").strip(),
-                "description": (raw.get("description") or raw.get("beschreibung") or raw.get("verwendung") or "").strip(),
-                "signal_word": (raw.get("signal_word") or raw.get("signalwort") or "none").strip().lower(),
+                "description": (
+                    raw.get("description") or raw.get("beschreibung") or raw.get("verwendung") or ""
+                ).strip(),
+                "signal_word": (raw.get("signal_word") or raw.get("signalwort") or "none")
+                .strip()
+                .lower(),
                 "storage_class": (raw.get("storage_class") or raw.get("lagerklasse") or "").strip(),
-                "is_cmr": (raw.get("is_cmr") or raw.get("cmr") or "").strip().lower() in ("true", "1", "ja", "yes"),
+                "is_cmr": (raw.get("is_cmr") or raw.get("cmr") or "").strip().lower()
+                in ("true", "1", "ja", "yes"),
             }
             # Semicolon-separated list fields
             for list_field in ("h_statements", "p_statements", "pictograms"):
-                alt_names = {"h_statements": ["h-sätze", "h_sätze", "h-saetze"],
-                             "p_statements": ["p-sätze", "p_sätze", "p-saetze"],
-                             "pictograms": ["piktogramme", "ghs"]}
+                alt_names = {
+                    "h_statements": ["h-sätze", "h_sätze", "h-saetze"],
+                    "p_statements": ["p-sätze", "p_sätze", "p-saetze"],
+                    "pictograms": ["piktogramme", "ghs"],
+                }
                 val = raw.get(list_field, "")
                 if not val:
                     for alt in alt_names.get(list_field, []):
@@ -474,7 +461,9 @@ class SubstanceImportService:
                         if val:
                             break
                 if val:
-                    record[list_field] = [c.strip() for c in val.replace(",", ";").split(";") if c.strip()]
+                    record[list_field] = [
+                        c.strip() for c in val.replace(",", ";").split(";") if c.strip()
+                    ]
 
             if record["name"]:
                 records.append(record)
@@ -500,6 +489,7 @@ class SubstanceImportService:
             raise ValueError("PDF muss als Binärdatei übergeben werden")
 
         import io
+
         pdf = pdfplumber.open(io.BytesIO(content))
         all_rows = []
         for page in pdf.pages:
@@ -509,10 +499,7 @@ class SubstanceImportService:
         pdf.close()
 
         if not all_rows:
-            raise ValueError(
-                "Keine Tabellen in PDF gefunden. "
-                "Bitte Excel oder CSV verwenden."
-            )
+            raise ValueError("Keine Tabellen in PDF gefunden. Bitte Excel oder CSV verwenden.")
 
         # First row with content = headers
         headers = [str(h or "").strip().lower().replace(" ", "_") for h in all_rows[0]]
@@ -520,18 +507,31 @@ class SubstanceImportService:
         for row in all_rows[1:]:
             if not any(cell for cell in row):
                 continue
-            raw = dict(zip(headers, [str(c or "").strip() for c in row]))
+            raw = dict(zip(headers, [str(c or "").strip() for c in row], strict=False))
             record = {
-                "name": (raw.get("name") or raw.get("stoffname") or raw.get("bezeichnung") or "").strip(),
-                "cas": (raw.get("cas") or raw.get("cas-nummer") or raw.get("cas_nummer") or raw.get("cas-nr.") or "").strip(),
+                "name": (
+                    raw.get("name") or raw.get("stoffname") or raw.get("bezeichnung") or ""
+                ).strip(),
+                "cas": (
+                    raw.get("cas")
+                    or raw.get("cas-nummer")
+                    or raw.get("cas_nummer")
+                    or raw.get("cas-nr.")
+                    or ""
+                ).strip(),
                 "trade_name": (raw.get("trade_name") or raw.get("handelsname") or "").strip(),
-                "signal_word": (raw.get("signal_word") or raw.get("signalwort") or "none").strip().lower(),
+                "signal_word": (raw.get("signal_word") or raw.get("signalwort") or "none")
+                .strip()
+                .lower(),
                 "storage_class": (raw.get("storage_class") or raw.get("lagerklasse") or "").strip(),
-                "is_cmr": (raw.get("is_cmr") or raw.get("cmr") or "").strip().lower() in ("true", "1", "ja", "yes"),
+                "is_cmr": (raw.get("is_cmr") or raw.get("cmr") or "").strip().lower()
+                in ("true", "1", "ja", "yes"),
             }
             for list_field in ("h_statements", "p_statements"):
-                alt_names = {"h_statements": ["h-sätze", "h_sätze", "h-saetze", "h-sätze"],
-                             "p_statements": ["p-sätze", "p_sätze", "p-saetze", "p-sätze"]}
+                alt_names = {
+                    "h_statements": ["h-sätze", "h_sätze", "h-saetze", "h-sätze"],
+                    "p_statements": ["p-sätze", "p_sätze", "p-saetze", "p-sätze"],
+                }
                 val = raw.get(list_field, "")
                 if not val:
                     for alt in alt_names.get(list_field, []):
@@ -539,7 +539,11 @@ class SubstanceImportService:
                         if val:
                             break
                 if val:
-                    record[list_field] = [c.strip() for c in val.replace(",", ";").replace(" ", ";").split(";") if c.strip()]
+                    record[list_field] = [
+                        c.strip()
+                        for c in val.replace(",", ";").replace(" ", ";").split(";")
+                        if c.strip()
+                    ]
 
             if record["name"]:
                 records.append(record)
@@ -576,6 +580,5 @@ class SubstanceImportService:
             return self.import_from_pdf(file_obj, dry_run=dry_run)
         else:
             raise ValueError(
-                f"Nicht unterstütztes Dateiformat: {ext}. "
-                "Erlaubt: .csv, .json, .xlsx, .docx, .pdf"
+                f"Nicht unterstütztes Dateiformat: {ext}. Erlaubt: .csv, .json, .xlsx, .docx, .pdf"
             )

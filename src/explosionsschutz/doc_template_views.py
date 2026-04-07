@@ -11,6 +11,7 @@ Nutzt concept_templates Package für:
 - Tabellen-Erkennung und Feldtyp-Zuweisung
 """
 
+import contextlib
 import json
 import logging
 import re
@@ -33,6 +34,7 @@ try:
     from concept_templates.pdf_structure_extractor import (
         extract_structure_from_text as _pkg_extract,
     )
+
     _HAS_PKG = True
 except ImportError:
     _HAS_PKG = False
@@ -46,6 +48,7 @@ def _extract_pdf_text(pdf_file) -> str:
     """PDF-Text extrahieren (pdfplumber oder PyPDF2)."""
     try:
         import pdfplumber
+
         if hasattr(pdf_file, "seek"):
             pdf_file.seek(0)
         parts = []
@@ -62,6 +65,7 @@ def _extract_pdf_text(pdf_file) -> str:
 
     try:
         import PyPDF2
+
         if hasattr(pdf_file, "seek"):
             pdf_file.seek(0)
         reader = PyPDF2.PdfReader(pdf_file)
@@ -98,11 +102,13 @@ def _template_to_dict(ct) -> dict:
             if f.default_rows:
                 fd["default_rows"] = f.default_rows
             fields.append(fd)
-        sections.append({
-            "key": s.name,
-            "label": s.title,
-            "fields": fields,
-        })
+        sections.append(
+            {
+                "key": s.name,
+                "label": s.title,
+                "fields": fields,
+            }
+        )
     return {"sections": sections}
 
 
@@ -133,12 +139,11 @@ def _is_valid_heading(num: str, title: str, line: str) -> bool:
         return False
     if re.match(
         r"^(m[²³]?/[hs]|kg|cm|mm|l/|bar|°C|kW)\b",
-        title, re.IGNORECASE,
+        title,
+        re.IGNORECASE,
     ):
         return False
-    if re.match(r"^\d{5}\b", num + title):
-        return False
-    return True
+    return not re.match(r"^\d{5}\b", num + title)
 
 
 def _detect_table(content: str) -> list[str] | None:
@@ -146,10 +151,7 @@ def _detect_table(content: str) -> list[str] | None:
     lines = content.strip().split("\n")
     if len(lines) < 2:
         return None
-    structured = [
-        ln for ln in lines
-        if "\t" in ln or ln.count("  ") >= 2
-    ]
+    structured = [ln for ln in lines if "\t" in ln or ln.count("  ") >= 2]
     if len(structured) >= 2:
         cols = _split_cols(structured[0])
         if 2 <= len(cols) <= 10:
@@ -161,12 +163,13 @@ def _detect_toc_entries(text: str) -> list[tuple[str, str]] | None:
     """Detect TOC (Inhaltsverzeichnis) and return entries in order."""
     toc_match = re.search(
         r"^(Inhaltsverzeichnis|Inhalt|Table of Contents)\s*$",
-        text, re.MULTILINE | re.IGNORECASE,
+        text,
+        re.MULTILINE | re.IGNORECASE,
     )
     if not toc_match:
         return None
 
-    lines = text[toc_match.end():].split("\n")
+    lines = text[toc_match.end() :].split("\n")
     toc_lines = []
     non_toc = 0
     for line in lines:
@@ -195,10 +198,12 @@ def _detect_toc_entries(text: str) -> list[tuple[str, str]] | None:
     toc_text = "\n".join(toc_lines)
     entries = []
     num_pat = re.compile(
-        r"^(\d+(?:\.\d+)*\.?)\s+(.+)$", re.MULTILINE,
+        r"^(\d+(?:\.\d+)*\.?)\s+(.+)$",
+        re.MULTILINE,
     )
     letter_pat = re.compile(
-        r"^([A-Z])\.\s+(.+)$", re.MULTILINE,
+        r"^([A-Z])\.\s+(.+)$",
+        re.MULTILINE,
     )
     for m in num_pat.finditer(toc_text):
         num = m.group(1).rstrip(".")
@@ -216,7 +221,8 @@ def _detect_toc_entries(text: str) -> list[tuple[str, str]] | None:
 
 
 def _extract_toc_first(
-    text: str, toc_entries: list[tuple[str, str]],
+    text: str,
+    toc_entries: list[tuple[str, str]],
 ) -> list[dict]:
     """Use TOC as structure, map body content to each entry."""
     # Find body headings
@@ -252,20 +258,24 @@ def _extract_toc_first(
 
     sections = []
     for eid, etitle in toc_entries:
-        if eid.isalpha():
-            key = f"section_{eid.lower()}"
-        else:
-            key = f"section_{eid.replace('.', '_')}"
+        key = f"section_{eid.lower()}" if eid.isalpha() else f"section_{eid.replace('.', '_')}"
         label = f"{eid}. {etitle}"
 
         if eid not in pos_map:
-            sections.append({
-                "key": key, "label": label,
-                "fields": [{
-                    "key": "inhalt", "label": "Inhalt",
-                    "type": "textarea", "required": False,
-                }],
-            })
+            sections.append(
+                {
+                    "key": key,
+                    "label": label,
+                    "fields": [
+                        {
+                            "key": "inhalt",
+                            "label": "Inhalt",
+                            "type": "textarea",
+                            "required": False,
+                        }
+                    ],
+                }
+            )
             continue
 
         hstart, hend, _ = pos_map[eid]
@@ -279,29 +289,43 @@ def _extract_toc_first(
         fields = []
         table_cols = _detect_table(content)
         if table_cols:
-            fields.append({
-                "key": "tabelle", "label": "Tabelle",
-                "type": "table", "required": False,
-                "columns": table_cols,
-            })
-        fields.append({
-            "key": "inhalt", "label": "Inhalt",
-            "type": "textarea", "required": False,
-            "default": content[:3000],
-        })
-        sections.append({
-            "key": key, "label": label, "fields": fields,
-        })
+            fields.append(
+                {
+                    "key": "tabelle",
+                    "label": "Tabelle",
+                    "type": "table",
+                    "required": False,
+                    "columns": table_cols,
+                }
+            )
+        fields.append(
+            {
+                "key": "inhalt",
+                "label": "Inhalt",
+                "type": "textarea",
+                "required": False,
+                "default": content[:3000],
+            }
+        )
+        sections.append(
+            {
+                "key": key,
+                "label": label,
+                "fields": fields,
+            }
+        )
     return sections
 
 
 def _extract_no_toc(text: str) -> list[dict]:
     """Fallback extraction without TOC: heading detection + filters."""
     num_pat = re.compile(
-        r"^(\d+(?:\.\d+)*\.?)\s+(.+)$", re.MULTILINE,
+        r"^(\d+(?:\.\d+)*\.?)\s+(.+)$",
+        re.MULTILINE,
     )
     letter_pat = re.compile(
-        r"^([A-Z])\.\s+(.+)$", re.MULTILINE,
+        r"^([A-Z])\.\s+(.+)$",
+        re.MULTILINE,
     )
     num_cands = []
     for m in num_pat.finditer(text):
@@ -339,33 +363,38 @@ def _extract_no_toc(text: str) -> list[dict]:
     )
     sections = []
     for i, (m, num, title) in enumerate(all_valid):
-        if num.isalpha():
-            key = f"section_{num.lower()}"
-        else:
-            key = f"section_{num.replace('.', '_')}"
+        key = f"section_{num.lower()}" if num.isalpha() else f"section_{num.replace('.', '_')}"
         start = m.end()
-        end = (
-            all_valid[i + 1][0].start()
-            if i + 1 < len(all_valid) else len(text)
-        )
+        end = all_valid[i + 1][0].start() if i + 1 < len(all_valid) else len(text)
         content = text[start:end].strip()
         fields = []
         table_cols = _detect_table(content)
         if table_cols:
-            fields.append({
-                "key": "tabelle", "label": "Tabelle",
-                "type": "table", "required": False,
-                "columns": table_cols,
-            })
-        fields.append({
-            "key": "inhalt", "label": "Inhalt",
-            "type": "textarea", "required": False,
-            "default": content[:3000],
-        })
-        sections.append({
-            "key": key, "label": f"{num}. {title}",
-            "fields": fields,
-        })
+            fields.append(
+                {
+                    "key": "tabelle",
+                    "label": "Tabelle",
+                    "type": "table",
+                    "required": False,
+                    "columns": table_cols,
+                }
+            )
+        fields.append(
+            {
+                "key": "inhalt",
+                "label": "Inhalt",
+                "type": "textarea",
+                "required": False,
+                "default": content[:3000],
+            }
+        )
+        sections.append(
+            {
+                "key": key,
+                "label": f"{num}. {title}",
+                "fields": fields,
+            }
+        )
     return sections
 
 
@@ -392,21 +421,28 @@ def _text_to_structure(text: str) -> dict:
         return {"sections": sections}
 
     # Fallback
-    return {"sections": [{
-        "key": "section_1",
-        "label": "1. Dokumentinhalt",
-        "fields": [{
-            "key": "inhalt",
-            "label": "Inhalt",
-            "type": "textarea",
-            "required": False,
-            "default": text[:5000],
-        }],
-    }]}
+    return {
+        "sections": [
+            {
+                "key": "section_1",
+                "label": "1. Dokumentinhalt",
+                "fields": [
+                    {
+                        "key": "inhalt",
+                        "label": "Inhalt",
+                        "type": "textarea",
+                        "required": False,
+                        "default": text[:5000],
+                    }
+                ],
+            }
+        ]
+    }
 
 
 def _import_text_into_template(
-    text: str, structure: dict,
+    text: str,
+    structure: dict,
 ) -> dict:
     """Importiert Text aus Dokument in Template-Werte.
 
@@ -433,17 +469,15 @@ def _import_text_into_template(
             match = pat.search(text)
             if match:
                 start = match.end()
-                next_section = (
-                    sections[i + 1]
-                    if i + 1 < len(sections)
-                    else None
-                )
+                next_section = sections[i + 1] if i + 1 < len(sections) else None
                 if next_section:
                     next_label = next_section.get(
-                        "label", "",
+                        "label",
+                        "",
                     )
                     next_num = re.match(
-                        r"(\d+(?:\.\d+)*)", next_label,
+                        r"(\d+(?:\.\d+)*)",
+                        next_label,
                     )
                     if next_num:
                         next_pat = re.compile(
@@ -451,12 +485,10 @@ def _import_text_into_template(
                             re.MULTILINE,
                         )
                         next_m = next_pat.search(
-                            text, start,
+                            text,
+                            start,
                         )
-                        end = (
-                            next_m.start() if next_m
-                            else len(text)
-                        )
+                        end = next_m.start() if next_m else len(text)
                     else:
                         end = len(text)
                 else:
@@ -487,14 +519,22 @@ def template_list(request: HttpRequest) -> HttpResponse:
     templates = ExDocTemplate.objects.filter(
         tenant_id=tid,
     ).order_by("-updated_at")
-    instances = ExDocInstance.objects.filter(
-        tenant_id=tid,
-    ).select_related("template").order_by("-updated_at")[:20]
+    instances = (
+        ExDocInstance.objects.filter(
+            tenant_id=tid,
+        )
+        .select_related("template")
+        .order_by("-updated_at")[:20]
+    )
 
-    return render(request, f"{TPL_DIR}/list.html", {
-        "templates": templates,
-        "instances": instances,
-    })
+    return render(
+        request,
+        f"{TPL_DIR}/list.html",
+        {
+            "templates": templates,
+            "instances": instances,
+        },
+    )
 
 
 # ─── Template Create (manual) ───────────────────────────────
@@ -535,12 +575,14 @@ def template_create(request: HttpRequest) -> HttpResponse:
         name=name,
         description=desc,
         structure_json=json.dumps(
-            structure, ensure_ascii=False,
+            structure,
+            ensure_ascii=False,
         ),
     )
     messages.success(request, f"Vorlage '{name}' erstellt.")
     return redirect(
-        "explosionsschutz:ex-doc-template-edit", pk=tmpl.pk,
+        "explosionsschutz:ex-doc-template-edit",
+        pk=tmpl.pk,
     )
 
 
@@ -562,38 +604,43 @@ def template_upload(request: HttpRequest) -> HttpResponse:
     name = request.POST.get("name", "").strip()
     if not name:
         name = pdf_file.name.replace(".pdf", "").replace(
-            "_", " ",
+            "_",
+            " ",
         )
 
     text = _extract_pdf_text(pdf_file)
     if not text:
         messages.warning(
             request,
-            "Kein Text aus PDF extrahiert. "
-            "Leere Vorlage erstellt.",
+            "Kein Text aus PDF extrahiert. Leere Vorlage erstellt.",
         )
 
-    structure = _text_to_structure(text) if text else {
-        "sections": [],
-    }
+    structure = (
+        _text_to_structure(text)
+        if text
+        else {
+            "sections": [],
+        }
+    )
 
     tmpl = ExDocTemplate.objects.create(
         tenant_id=tid,
         name=name,
         description=request.POST.get("description", ""),
         structure_json=json.dumps(
-            structure, ensure_ascii=False,
+            structure,
+            ensure_ascii=False,
         ),
         source_filename=pdf_file.name,
         source_text=text[:50000],
     )
     messages.success(
         request,
-        f"Vorlage '{name}' aus PDF erstellt "
-        f"({tmpl.section_count} Abschnitte).",
+        f"Vorlage '{name}' aus PDF erstellt ({tmpl.section_count} Abschnitte).",
     )
     return redirect(
-        "explosionsschutz:ex-doc-template-edit", pk=tmpl.pk,
+        "explosionsschutz:ex-doc-template-edit",
+        pk=tmpl.pk,
     )
 
 
@@ -602,12 +649,15 @@ def template_upload(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def template_edit(
-    request: HttpRequest, pk: int,
+    request: HttpRequest,
+    pk: int,
 ) -> HttpResponse:
     """Template-Struktur bearbeiten."""
     tid = _tenant_id(request)
     tmpl = get_object_or_404(
-        ExDocTemplate, pk=pk, tenant_id=tid,
+        ExDocTemplate,
+        pk=pk,
+        tenant_id=tid,
     )
 
     if request.method == "GET":
@@ -620,19 +670,28 @@ def template_edit(
             ai_source_choices_for_js,
             field_type_choices_for_js,
         )
-        return render(request, f"{TPL_DIR}/edit.html", {
-            "tmpl": tmpl,
-            "structure": structure,
-            "structure_json": json.dumps(
-                structure, ensure_ascii=False, indent=2,
-            ),
-            "field_types_json": json.dumps(
-                field_type_choices_for_js(), ensure_ascii=False,
-            ),
-            "ai_source_types_json": json.dumps(
-                ai_source_choices_for_js(), ensure_ascii=False,
-            ),
-        })
+
+        return render(
+            request,
+            f"{TPL_DIR}/edit.html",
+            {
+                "tmpl": tmpl,
+                "structure": structure,
+                "structure_json": json.dumps(
+                    structure,
+                    ensure_ascii=False,
+                    indent=2,
+                ),
+                "field_types_json": json.dumps(
+                    field_type_choices_for_js(),
+                    ensure_ascii=False,
+                ),
+                "ai_source_types_json": json.dumps(
+                    ai_source_choices_for_js(),
+                    ensure_ascii=False,
+                ),
+            },
+        )
 
     # POST: Struktur speichern
     raw_json = request.POST.get("structure_json", "")
@@ -642,20 +701,27 @@ def template_edit(
             raise ValueError("Missing 'sections' key")
     except (json.JSONDecodeError, ValueError) as exc:
         messages.error(
-            request, f"Ungültiges JSON: {exc}",
+            request,
+            f"Ungültiges JSON: {exc}",
         )
-        return render(request, f"{TPL_DIR}/edit.html", {
-            "tmpl": tmpl,
-            "structure": {"sections": []},
-            "structure_json": raw_json,
-        })
+        return render(
+            request,
+            f"{TPL_DIR}/edit.html",
+            {
+                "tmpl": tmpl,
+                "structure": {"sections": []},
+                "structure_json": raw_json,
+            },
+        )
 
     tmpl.structure_json = json.dumps(
-        structure, ensure_ascii=False,
+        structure,
+        ensure_ascii=False,
     )
     tmpl.name = request.POST.get("name", tmpl.name)
     tmpl.description = request.POST.get(
-        "description", tmpl.description,
+        "description",
+        tmpl.description,
     )
     new_status = request.POST.get("status", tmpl.status)
     if new_status in dict(ExDocTemplate.Status.choices):
@@ -672,12 +738,15 @@ def template_edit(
 @login_required
 @require_POST
 def template_delete(
-    request: HttpRequest, pk: int,
+    request: HttpRequest,
+    pk: int,
 ) -> HttpResponse:
     """Dokumentvorlage löschen."""
     tid = _tenant_id(request)
     tmpl = get_object_or_404(
-        ExDocTemplate, pk=pk, tenant_id=tid,
+        ExDocTemplate,
+        pk=pk,
+        tenant_id=tid,
     )
     name = tmpl.name
     try:
@@ -700,18 +769,25 @@ def template_delete(
 
 @login_required
 def instance_create(
-    request: HttpRequest, template_pk: int,
+    request: HttpRequest,
+    template_pk: int,
 ) -> HttpResponse:
     """Neues Dokument aus Template erstellen (leer oder Import)."""
     tid = _tenant_id(request)
     tmpl = get_object_or_404(
-        ExDocTemplate, pk=template_pk, tenant_id=tid,
+        ExDocTemplate,
+        pk=template_pk,
+        tenant_id=tid,
     )
 
     if request.method == "GET":
-        return render(request, f"{TPL_DIR}/instance_create.html", {
-            "tmpl": tmpl,
-        })
+        return render(
+            request,
+            f"{TPL_DIR}/instance_create.html",
+            {
+                "tmpl": tmpl,
+            },
+        )
 
     name = request.POST.get("name", "").strip()
     if not name:
@@ -731,7 +807,8 @@ def instance_create(
         text = _extract_pdf_text(pdf_file)
         if text:
             values = _import_text_into_template(
-                text, structure,
+                text,
+                structure,
             )
             source_filename = pdf_file.name
             messages.info(
@@ -749,7 +826,8 @@ def instance_create(
         template=tmpl,
         name=name,
         values_json=json.dumps(
-            values, ensure_ascii=False,
+            values,
+            ensure_ascii=False,
         ),
         source_filename=source_filename,
     )
@@ -764,17 +842,23 @@ def instance_create(
 
 @login_required
 def instance_create_for_concept(
-    request: HttpRequest, template_pk: int, concept_pk: str,
+    request: HttpRequest,
+    template_pk: int,
+    concept_pk: str,
 ) -> HttpResponse:
     """Neues Dokument aus Template für ein Konzept erstellen."""
     from .models import ExplosionConcept
 
     tid = _tenant_id(request)
     tmpl = get_object_or_404(
-        ExDocTemplate, pk=template_pk, tenant_id=tid,
+        ExDocTemplate,
+        pk=template_pk,
+        tenant_id=tid,
     )
     concept = get_object_or_404(
-        ExplosionConcept, pk=concept_pk, tenant_id=tid,
+        ExplosionConcept,
+        pk=concept_pk,
+        tenant_id=tid,
     )
 
     name = f"{concept.title} — {tmpl.name}"
@@ -800,7 +884,8 @@ def instance_create_for_concept(
 
 @login_required
 def instance_edit(
-    request: HttpRequest, pk: int,
+    request: HttpRequest,
+    pk: int,
 ) -> HttpResponse:
     """Dokument-Inhalte bearbeiten."""
     tid = _tenant_id(request)
@@ -825,6 +910,7 @@ def instance_edit(
 
         # AI source label mapping (shared constants)
         from explosionsschutz.ex_doc_constants import ai_source_short_labels
+
         _ai_src_labels = ai_source_short_labels()
 
         # Merge values into structure for easy rendering
@@ -836,9 +922,14 @@ def instance_edit(
                 ftype = field.get("type", "textarea")
                 val = svals.get(fkey, "")
                 if ftype == "table":
-                    field["table_rows"] = val if isinstance(
-                        val, list,
-                    ) else field.get("default_rows", [])
+                    field["table_rows"] = (
+                        val
+                        if isinstance(
+                            val,
+                            list,
+                        )
+                        else field.get("default_rows", [])
+                    )
                     # Ensure min 3 empty rows
                     cols = field.get("columns", [])
                     while len(field["table_rows"]) < 3:
@@ -847,7 +938,8 @@ def instance_edit(
                         )
                 else:
                     field["field_value"] = val or field.get(
-                        "default", "",
+                        "default",
+                        "",
                     )
 
                 # AI config for template rendering
@@ -856,13 +948,12 @@ def instance_edit(
                     field["ai_sources_csv"] = ",".join(
                         ai_src,
                     )
-                    field["ai_sources_labels"] = ", ".join(
-                        _ai_src_labels.get(s, s)
-                        for s in ai_src
-                    )
+                    field["ai_sources_labels"] = ", ".join(_ai_src_labels.get(s, s) for s in ai_src)
 
         return render(
-            request, f"{TPL_DIR}/instance_edit.html", {
+            request,
+            f"{TPL_DIR}/instance_edit.html",
+            {
                 "instance": instance,
                 "structure": structure,
             },
@@ -885,14 +976,16 @@ def instance_edit(
                 while True:
                     row_key = f"{form_key}__row_{row_idx}"
                     first_col = request.POST.get(
-                        f"{row_key}__col_0", None,
+                        f"{row_key}__col_0",
+                        None,
                     )
                     if first_col is None:
                         break
                     row = []
                     for ci in range(len(columns)):
                         cell = request.POST.get(
-                            f"{row_key}__col_{ci}", "",
+                            f"{row_key}__col_{ci}",
+                            "",
                         )
                         row.append(cell)
                     if any(c.strip() for c in row):
@@ -902,12 +995,11 @@ def instance_edit(
             elif ftype == "boolean":
                 # Hidden "false" + checkbox "true"
                 vals = request.POST.getlist(form_key)
-                values[skey][fkey] = (
-                    "true" if "true" in vals else "false"
-                )
+                values[skey][fkey] = "true" if "true" in vals else "false"
             else:
                 values[skey][fkey] = request.POST.get(
-                    form_key, "",
+                    form_key,
+                    "",
                 )
 
     new_status = request.POST.get("status", instance.status)
@@ -915,7 +1007,8 @@ def instance_edit(
         instance.status = new_status
 
     instance.values_json = json.dumps(
-        values, ensure_ascii=False,
+        values,
+        ensure_ascii=False,
     )
     instance.name = request.POST.get("name", instance.name)
     instance.save()
@@ -933,12 +1026,15 @@ def instance_edit(
 @login_required
 @require_POST
 def instance_delete(
-    request: HttpRequest, pk: int,
+    request: HttpRequest,
+    pk: int,
 ) -> HttpResponse:
     """Dokument löschen."""
     tid = _tenant_id(request)
     instance = get_object_or_404(
-        ExDocInstance, pk=pk, tenant_id=tid,
+        ExDocInstance,
+        pk=pk,
+        tenant_id=tid,
     )
     name = instance.name
     instance.delete()
@@ -952,7 +1048,8 @@ def instance_delete(
 @login_required
 @require_POST
 def instance_llm_prefill(
-    request: HttpRequest, pk: int,
+    request: HttpRequest,
+    pk: int,
 ) -> HttpResponse:
     """HTMX endpoint: KI-Prefill für ein einzelnes Feld.
 
@@ -965,7 +1062,8 @@ def instance_llm_prefill(
     tid = _tenant_id(request)
     instance = get_object_or_404(
         ExDocInstance.objects.select_related("template"),
-        pk=pk, tenant_id=tid,
+        pk=pk,
+        tenant_id=tid,
     )
 
     field_key = request.POST.get("field_key", "")
@@ -979,18 +1077,13 @@ def instance_llm_prefill(
             status=400,
         )
 
-    ai_sources = [
-        s.strip() for s in ai_sources_raw.split(",")
-        if s.strip()
-    ]
+    ai_sources = [s.strip() for s in ai_sources_raw.split(",") if s.strip()]
 
     # Existing values for cross-field context
     existing_values = None
     if instance.values_json and instance.values_json != "{}":
-        try:
+        with contextlib.suppress(json.JSONDecodeError, AttributeError):
             existing_values = json.loads(instance.values_json)
-        except (json.JSONDecodeError, AttributeError):
-            pass
 
     # Extracted texts from linked concept or template source
     extracted_texts = []
@@ -1000,7 +1093,8 @@ def instance_llm_prefill(
                 status="analyzed",
                 deleted_at__isnull=True,
             ).values_list(
-                "extracted_text", flat=True,
+                "extracted_text",
+                flat=True,
             )[:2]
         )
     if not extracted_texts and instance.template.source_text:
@@ -1012,6 +1106,7 @@ def instance_llm_prefill(
         from explosionsschutz.services.ex_doc_prefill import (
             prefill_ex_doc_field,
         )
+
         value = prefill_ex_doc_field(
             field_key=field_key,
             llm_hint=llm_hint,
@@ -1025,16 +1120,16 @@ def instance_llm_prefill(
     except Exception as exc:
         logger.warning("LLM prefill failed: %s", exc)
         return HttpResponse(
-            '<span class="text-red-500 text-sm">'
-            f"Fehler: {exc}</span>",
+            f'<span class="text-red-500 text-sm">Fehler: {exc}</span>',
         )
 
     from django.utils.html import escape
+
     safe_val = escape(value)
     return HttpResponse(
         f'<textarea name="{field_key}" rows="4" '
         f'class="w-full px-3 py-2 border border-green-300 '
-        f'rounded-lg bg-green-50 focus:ring-2 '
+        f"rounded-lg bg-green-50 focus:ring-2 "
         f'focus:ring-orange-500">{safe_val}</textarea>',
     )
 
@@ -1044,13 +1139,15 @@ def instance_llm_prefill(
 
 @login_required
 def instance_pdf_export(
-    request: HttpRequest, pk: int,
+    request: HttpRequest,
+    pk: int,
 ) -> HttpResponse:
     """PDF-Export eines ausgefüllten Dokuments."""
     tid = _tenant_id(request)
     instance = get_object_or_404(
         ExDocInstance.objects.select_related("template"),
-        pk=pk, tenant_id=tid,
+        pk=pk,
+        tenant_id=tid,
     )
 
     try:
@@ -1074,9 +1171,11 @@ def instance_pdf_export(
         )
 
     structure = json.loads(instance.template.structure_json)
-    values = json.loads(instance.values_json) if (
-        instance.values_json and instance.values_json != "{}"
-    ) else {}
+    values = (
+        json.loads(instance.values_json)
+        if (instance.values_json and instance.values_json != "{}")
+        else {}
+    )
 
     # Convert structure to ConceptTemplate
     sections = []
@@ -1088,17 +1187,21 @@ def instance_pdf_export(
                 ft = FieldType.TEXT
             elif f.get("type") == "table":
                 ft = FieldType.TABLE
-            fields.append(TemplateField(
-                name=f["key"],
-                label=f.get("label", f["key"]),
-                field_type=ft,
-            ))
-        sections.append(TemplateSection(
-            name=s["key"],
-            title=s.get("label", f"Abschnitt {i + 1}"),
-            order=i + 1,
-            fields=fields,
-        ))
+            fields.append(
+                TemplateField(
+                    name=f["key"],
+                    label=f.get("label", f["key"]),
+                    field_type=ft,
+                )
+            )
+        sections.append(
+            TemplateSection(
+                name=s["key"],
+                title=s.get("label", f"Abschnitt {i + 1}"),
+                order=i + 1,
+                fields=fields,
+            )
+        )
 
     ct = ConceptTemplate(
         name=instance.template.name,
@@ -1114,10 +1217,9 @@ def instance_pdf_export(
     )
 
     response = HttpResponse(
-        pdf_bytes, content_type="application/pdf",
+        pdf_bytes,
+        content_type="application/pdf",
     )
     safe_name = instance.name.replace(" ", "_")[:80]
-    response["Content-Disposition"] = (
-        f'attachment; filename="{safe_name}.pdf"'
-    )
+    response["Content-Disposition"] = f'attachment; filename="{safe_name}.pdf"'
     return response

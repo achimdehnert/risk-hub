@@ -118,9 +118,7 @@ class BrandschutzAnalyse:
 
     @property
     def kritische_maengel(self) -> list[BrandschutzMangel]:
-        return [
-            m for m in self.maengel if m.schwere == MaengelSchwere.KRITISCH
-        ]
+        return [m for m in self.maengel if m.schwere == MaengelSchwere.KRITISCH]
 
     @property
     def hat_kritische_maengel(self) -> bool:
@@ -129,9 +127,7 @@ class BrandschutzAnalyse:
     @property
     def loescheinrichtungen_count(self) -> int:
         return sum(
-            1
-            for e in self.einrichtungen
-            if e.kategorie == BrandschutzKategorie.LOESCHEINRICHTUNG
+            1 for e in self.einrichtungen if e.kategorie == BrandschutzKategorie.LOESCHEINRICHTUNG
         )
 
     def to_dict(self) -> dict:

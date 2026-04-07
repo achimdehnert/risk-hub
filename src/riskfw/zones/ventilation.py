@@ -52,7 +52,9 @@ def analyze_ventilation_effectiveness(
 
     logger.info(
         "[Ventilation] type=%s air_changes=%.1f/h effectiveness=%s",
-        ventilation_type, air_changes, effectiveness,
+        ventilation_type,
+        air_changes,
+        effectiveness,
     )
 
     return VentilationResult(

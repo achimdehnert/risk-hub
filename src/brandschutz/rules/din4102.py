@@ -21,8 +21,7 @@ class DIN4102Validator:
         for abschnitt in analyse.brandabschnitte:
             if abschnitt.feuerwiderstand:
                 abschnitt.klasse_ausreichend = (
-                    abschnitt.feuerwiderstand.upper()
-                    in self.VALID_KLASSEN
+                    abschnitt.feuerwiderstand.upper() in self.VALID_KLASSEN
                 )
                 if not abschnitt.klasse_ausreichend:
                     analyse.warnungen.append(

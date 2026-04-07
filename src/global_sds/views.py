@@ -55,8 +55,7 @@ def compliance_dashboard(request: HttpRequest) -> HttpResponse:
 
     # Alle Revisionen die dieser Tenant sehen darf
     all_revisions = (
-        GlobalSdsRevision.objects
-        .visible_for_tenant(tenant_id)
+        GlobalSdsRevision.objects.visible_for_tenant(tenant_id)
         .select_related("substance")
         .order_by("-created_at")
     )
@@ -74,41 +73,54 @@ def compliance_dashboard(request: HttpRequest) -> HttpResponse:
     ).count()
 
     # Overdue + Soon
-    overdue = usages.filter(
-        review_deadline__lt=today,
-        status__in=[
-            SdsUsageStatus.REVIEW_REQUIRED,
-            SdsUsageStatus.UPDATE_AVAILABLE,
-        ],
-    ).select_related("sds_revision__substance").order_by(
-        "review_deadline",
+    overdue = (
+        usages.filter(
+            review_deadline__lt=today,
+            status__in=[
+                SdsUsageStatus.REVIEW_REQUIRED,
+                SdsUsageStatus.UPDATE_AVAILABLE,
+            ],
+        )
+        .select_related("sds_revision__substance")
+        .order_by(
+            "review_deadline",
+        )
     )
 
-    due_soon = usages.filter(
-        review_deadline__gte=today,
-        review_deadline__lte=soon_cutoff,
-        status__in=[
-            SdsUsageStatus.REVIEW_REQUIRED,
-            SdsUsageStatus.UPDATE_AVAILABLE,
-        ],
-    ).select_related("sds_revision__substance").order_by(
-        "review_deadline",
+    due_soon = (
+        usages.filter(
+            review_deadline__gte=today,
+            review_deadline__lte=soon_cutoff,
+            status__in=[
+                SdsUsageStatus.REVIEW_REQUIRED,
+                SdsUsageStatus.UPDATE_AVAILABLE,
+            ],
+        )
+        .select_related("sds_revision__substance")
+        .order_by(
+            "review_deadline",
+        )
     )
 
-    pending_review = usages.filter(
-        status__in=[
-            SdsUsageStatus.REVIEW_REQUIRED,
-            SdsUsageStatus.UPDATE_AVAILABLE,
-        ],
-    ).select_related(
-        "sds_revision__substance",
-        "pending_update_revision",
-    ).order_by("review_deadline")
+    pending_review = (
+        usages.filter(
+            status__in=[
+                SdsUsageStatus.REVIEW_REQUIRED,
+                SdsUsageStatus.UPDATE_AVAILABLE,
+            ],
+        )
+        .select_related(
+            "sds_revision__substance",
+            "pending_update_revision",
+        )
+        .order_by("review_deadline")
+    )
 
     # GBU geflaggt (falls Modul vorhanden)
     gbu_flagged = 0
     try:
         from gbu.models import HazardAssessment
+
         gbu_flagged = HazardAssessment.objects.filter(
             tenant_id=tenant_id,
             review_required=True,
@@ -167,6 +179,7 @@ def sds_upload(request: HttpRequest) -> HttpResponse:
     # Parser aufrufen
     try:
         from substances.services.sds_parser import SdsParserService
+
         parser = SdsParserService()
         parse_result = parser.parse_pdf(pdf_file)
     except (ImportError, Exception) as exc:
@@ -244,7 +257,8 @@ def revision_detail(request: HttpRequest, pk: int) -> HttpResponse:
 
 @login_required
 def revision_edit(
-    request: HttpRequest, pk: int,
+    request: HttpRequest,
+    pk: int,
 ) -> HttpResponse:
     """SDS-Revision bearbeiten (Metadaten + regulatorisch)."""
     tenant_id = _tenant_id(request)
@@ -262,7 +276,8 @@ def revision_edit(
         )
 
     form = RevisionEditForm(
-        request.POST, instance=revision,
+        request.POST,
+        instance=revision,
     )
     if not form.is_valid():
         return render(
@@ -272,17 +287,20 @@ def revision_edit(
         )
 
     from common.services import save_form
+
     save_form(form, tenant_id, is_create=False)
     messages.success(request, "SDS-Revision aktualisiert.")
     return redirect(
-        "global_sds:revision-detail", pk=revision.pk,
+        "global_sds:revision-detail",
+        pk=revision.pk,
     )
 
 
 @login_required
 @require_POST
 def revision_delete(
-    request: HttpRequest, pk: int,
+    request: HttpRequest,
+    pk: int,
 ) -> HttpResponse:
     """SDS-Revision löschen (nur eigene PENDING)."""
     tenant_id = _tenant_id(request)
@@ -294,10 +312,12 @@ def revision_delete(
     )
 
     from common.services import delete_object
+
     name = str(revision)
     delete_object(revision)
     messages.success(
-        request, f"SDS-Revision '{name}' gelöscht.",
+        request,
+        f"SDS-Revision '{name}' gelöscht.",
     )
     return redirect("global_sds:dashboard")
 

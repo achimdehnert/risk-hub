@@ -26,10 +26,7 @@ class Command(BaseCommand):
         if user is None:
             raise CommandError(f"Unknown user: {username}")
 
-        if tenant_id_raw:
-            tenant_id = UUID(tenant_id_raw)
-        else:
-            tenant_id = getattr(user, "tenant_id", None)
+        tenant_id = UUID(tenant_id_raw) if tenant_id_raw else getattr(user, "tenant_id", None)
 
         if tenant_id is None:
             raise CommandError("tenant_id required (user has no tenant_id and --tenant-id not set)")

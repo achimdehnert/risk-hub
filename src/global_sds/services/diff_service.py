@@ -18,24 +18,30 @@ from global_sds.models import (
 logger = logging.getLogger(__name__)
 
 # Impact-Zuordnung pro Feld (ADR-012 §6.1)
-SAFETY_CRITICAL_FIELDS = frozenset({
-    "flash_point_c",
-    "ignition_temperature_c",
-    "lower_explosion_limit",
-    "upper_explosion_limit",
-})
+SAFETY_CRITICAL_FIELDS = frozenset(
+    {
+        "flash_point_c",
+        "ignition_temperature_c",
+        "lower_explosion_limit",
+        "upper_explosion_limit",
+    }
+)
 
-REGULATORY_FIELDS = frozenset({
-    "wgk",
-    "storage_class_trgs510",
-    "voc_percent",
-    "voc_g_per_l",
-})
+REGULATORY_FIELDS = frozenset(
+    {
+        "wgk",
+        "storage_class_trgs510",
+        "voc_percent",
+        "voc_g_per_l",
+    }
+)
 
-INFORMATIONAL_FIELDS = frozenset({
-    "manufacturer_name",
-    "version_number",
-})
+INFORMATIONAL_FIELDS = frozenset(
+    {
+        "manufacturer_name",
+        "version_number",
+    }
+)
 
 
 @dataclass
@@ -60,11 +66,7 @@ class DiffResult:
 
     @property
     def has_changes(self) -> bool:
-        return bool(
-            self.field_diffs
-            or self.added_h_codes
-            or self.removed_h_codes
-        )
+        return bool(self.field_diffs or self.added_h_codes or self.removed_h_codes)
 
 
 class SdsRevisionDiffService:
@@ -95,33 +97,31 @@ class SdsRevisionDiffService:
             new_val = getattr(new_revision, fname, None)
             if old_val != new_val:
                 impact = self._classify_field(fname)
-                result.field_diffs.append(FieldDiff(
-                    field_name=fname,
-                    old_value=str(old_val or ""),
-                    new_value=str(new_val or ""),
-                    impact=impact,
-                ))
+                result.field_diffs.append(
+                    FieldDiff(
+                        field_name=fname,
+                        old_value=str(old_val or ""),
+                        new_value=str(new_val or ""),
+                        impact=impact,
+                    )
+                )
 
         # H-Sätze vergleichen
-        old_h = set(
-            old_revision.hazard_statements
-            .values_list("code", flat=True)
-        )
-        new_h = set(
-            new_revision.hazard_statements
-            .values_list("code", flat=True)
-        )
+        old_h = set(old_revision.hazard_statements.values_list("code", flat=True))
+        new_h = set(new_revision.hazard_statements.values_list("code", flat=True))
         result.added_h_codes = sorted(new_h - old_h)
         result.removed_h_codes = sorted(old_h - new_h)
 
         # H-Satz-Änderungen sind Safety-Critical
         if result.added_h_codes or result.removed_h_codes:
-            result.field_diffs.append(FieldDiff(
-                field_name="hazard_statements",
-                old_value=",".join(sorted(old_h)),
-                new_value=",".join(sorted(new_h)),
-                impact=ImpactLevel.SAFETY_CRITICAL,
-            ))
+            result.field_diffs.append(
+                FieldDiff(
+                    field_name="hazard_statements",
+                    old_value=",".join(sorted(old_h)),
+                    new_value=",".join(sorted(new_h)),
+                    impact=ImpactLevel.SAFETY_CRITICAL,
+                )
+            )
 
         # Gesamt-Impact = höchster Einzelimpact
         result.overall_impact = self._compute_overall(
@@ -130,8 +130,10 @@ class SdsRevisionDiffService:
 
         logger.info(
             "Diff %s → %s: %d changes, impact=%s",
-            old_revision.pk, new_revision.pk,
-            len(result.field_diffs), result.overall_impact,
+            old_revision.pk,
+            new_revision.pk,
+            len(result.field_diffs),
+            result.overall_impact,
         )
         return result
 
@@ -142,32 +144,29 @@ class SdsRevisionDiffService:
         diff_result: DiffResult,
     ) -> SdsRevisionDiffRecord:
         """Diff als immutable Record persistieren."""
-        record, created = (
-            SdsRevisionDiffRecord.objects.get_or_create(
-                old_revision=old_revision,
-                new_revision=new_revision,
-                defaults={
-                    "overall_impact": diff_result.overall_impact,
-                    "field_diffs": [
-                        {
-                            "field": d.field_name,
-                            "old": d.old_value,
-                            "new": d.new_value,
-                            "impact": d.impact,
-                        }
-                        for d in diff_result.field_diffs
-                    ],
-                    "added_h_codes": diff_result.added_h_codes,
-                    "removed_h_codes": diff_result.removed_h_codes,
-                    "changed_components": (
-                        diff_result.changed_components
-                    ),
-                },
-            )
+        record, created = SdsRevisionDiffRecord.objects.get_or_create(
+            old_revision=old_revision,
+            new_revision=new_revision,
+            defaults={
+                "overall_impact": diff_result.overall_impact,
+                "field_diffs": [
+                    {
+                        "field": d.field_name,
+                        "old": d.old_value,
+                        "new": d.new_value,
+                        "impact": d.impact,
+                    }
+                    for d in diff_result.field_diffs
+                ],
+                "added_h_codes": diff_result.added_h_codes,
+                "removed_h_codes": diff_result.removed_h_codes,
+                "changed_components": (diff_result.changed_components),
+            },
         )
         if created:
             logger.info(
-                "Persisted DiffRecord %s", record.pk,
+                "Persisted DiffRecord %s",
+                record.pk,
             )
         return record
 
@@ -180,7 +179,8 @@ class SdsRevisionDiffService:
         return ImpactLevel.INFORMATIONAL
 
     def _compute_overall(
-        self, diffs: list[FieldDiff],
+        self,
+        diffs: list[FieldDiff],
     ) -> str:
         """Höchsten Impact aller Diffs bestimmen."""
         priority = {

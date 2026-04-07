@@ -10,10 +10,8 @@ Alle Mutations laufen über diese Services:
 """
 from __future__ import annotations
 
-import uuid
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
-from typing import Optional
 from uuid import UUID
 
 from django.core.exceptions import PermissionDenied, ValidationError
@@ -31,11 +29,9 @@ from .models import (
     Inspection,
     MeasureCategory,
     ProtectionMeasure,
-    VerificationDocument,
     ZoneDefinition,
     ZoneIgnitionSourceAssessment,
 )
-
 
 # ============================================================================
 # Command DTOs
@@ -55,7 +51,7 @@ class CreateAreaCmd:
 class CreateConceptCmd:
     area_id: UUID
     title: str
-    substance_id: Optional[UUID] = None
+    substance_id: UUID | None = None
     atmosphere_type: str = "gas"
     process_description: str = ""
     document_number: str = ""
@@ -64,18 +60,18 @@ class CreateConceptCmd:
 @dataclass(frozen=True)
 class UpdateConceptCmd:
     concept_id: UUID
-    title: Optional[str] = None
-    substance_id: Optional[UUID] = None
-    process_description: Optional[str] = None
-    substitute_check_status: Optional[str] = None
-    substitute_check_notes: Optional[str] = None
-    release_source_type: Optional[str] = None
-    release_grade: Optional[str] = None
-    release_description: Optional[str] = None
-    explosion_impact_mitigation: Optional[str] = None
-    responsible_id: Optional[UUID] = None
-    responsible_name: Optional[str] = None
-    next_review_date: Optional[date] = None
+    title: str | None = None
+    substance_id: UUID | None = None
+    process_description: str | None = None
+    substitute_check_status: str | None = None
+    substitute_check_notes: str | None = None
+    release_source_type: str | None = None
+    release_grade: str | None = None
+    release_description: str | None = None
+    explosion_impact_mitigation: str | None = None
+    responsible_id: UUID | None = None
+    responsible_name: str | None = None
+    next_review_date: date | None = None
 
 
 @dataclass(frozen=True)
@@ -106,12 +102,12 @@ class CreateZoneCmd:
     justification: str
     location_in_area: str = ""
     extent_shape: str = "custom"
-    extent_radius_m: Optional[float] = None
-    extent_height_m: Optional[float] = None
+    extent_radius_m: float | None = None
+    extent_height_m: float | None = None
     extent_description: str = ""
     ventilation_type: str = "natural"
     ventilation_notes: str = ""
-    trgs_reference_id: Optional[UUID] = None
+    trgs_reference_id: UUID | None = None
 
 
 @dataclass(frozen=True)
@@ -131,26 +127,26 @@ class CreateMeasureCmd:
     title: str
     description: str
     justification: str = ""
-    catalog_reference_id: Optional[UUID] = None
-    safety_function_id: Optional[UUID] = None
-    responsible_id: Optional[UUID] = None
+    catalog_reference_id: UUID | None = None
+    safety_function_id: UUID | None = None
+    responsible_id: UUID | None = None
     responsible_name: str = ""
-    due_date: Optional[date] = None
+    due_date: date | None = None
     status: str = "done"
-    standard_reference_id: Optional[UUID] = None
+    standard_reference_id: UUID | None = None
 
 
 @dataclass(frozen=True)
 class AddEquipmentCmd:
     area_id: UUID
     name: str
-    equipment_type_id: Optional[UUID] = None
+    equipment_type_id: UUID | None = None
     inventory_number: str = ""
     serial_number: str = ""
     atex_marking_override: str = ""
     manufacturer: str = ""
-    inspection_interval_months: Optional[int] = None
-    first_inspection_date: Optional[date] = None
+    inspection_interval_months: int | None = None
+    first_inspection_date: date | None = None
 
 
 @dataclass(frozen=True)
@@ -158,14 +154,14 @@ class RecordInspectionCmd:
     equipment_id: UUID
     inspection_type: str
     scheduled_date: date
-    performed_date: Optional[date] = None
-    performed_by_id: Optional[UUID] = None
+    performed_date: date | None = None
+    performed_by_id: UUID | None = None
     performed_by_name: str = ""
     external_inspector: str = ""
-    result: Optional[str] = None
+    result: str | None = None
     findings: str = ""
     corrective_actions: str = ""
-    next_inspection_date: Optional[date] = None
+    next_inspection_date: date | None = None
 
 
 # ============================================================================

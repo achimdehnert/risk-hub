@@ -14,7 +14,8 @@ from django.conf import settings
 
 # ── System Tenant ────────────────────────────────────────────
 SYSTEM_TENANT_ID = getattr(
-    settings, "EX_DOC_SYSTEM_TENANT_ID",
+    settings,
+    "EX_DOC_SYSTEM_TENANT_ID",
     "00000000-0000-0000-0000-000000000000",
 )
 
@@ -49,6 +50,7 @@ FIELD_TYPES: dict[str, tuple[str, str]] = {
 
 # ── Helper functions ─────────────────────────────────────────
 
+
 def ai_source_short_labels() -> dict[str, str]:
     """key → short label (for template rendering)."""
     return {k: v[0] for k, v in AI_SOURCE_TYPES.items()}
@@ -61,15 +63,9 @@ def ai_source_full_labels() -> dict[str, str]:
 
 def ai_source_choices_for_js() -> list[dict[str, str]]:
     """List of {value, label} dicts for JavaScript template editor."""
-    return [
-        {"value": k, "label": v[1]}
-        for k, v in AI_SOURCE_TYPES.items()
-    ]
+    return [{"value": k, "label": v[1]} for k, v in AI_SOURCE_TYPES.items()]
 
 
 def field_type_choices_for_js() -> list[dict[str, str]]:
     """List of {value, label, icon} dicts for JavaScript template editor."""
-    return [
-        {"value": k, "label": v[0], "icon": v[1]}
-        for k, v in FIELD_TYPES.items()
-    ]
+    return [{"value": k, "label": v[0], "icon": v[1]} for k, v in FIELD_TYPES.items()]

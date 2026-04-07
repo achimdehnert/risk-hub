@@ -70,10 +70,7 @@ def fixture_deletion_request(db, fixture_tenant_id, fixture_mandate):
 
 
 def _req(rf, user, tenant_id, method="GET", path="/dsb/deletion-requests/", data=None):
-    if method == "POST":
-        r = rf.post(path, data or {})
-    else:
-        r = rf.get(path)
+    r = rf.post(path, data or {}) if method == "POST" else rf.get(path)
     r.user = user
     r.tenant_id = tenant_id
     r.session = {}

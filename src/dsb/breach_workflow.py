@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import contextlib
+
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -133,10 +135,8 @@ def advance_breach_workflow(
         to = getattr(breach, email_field, "")
         if to:
             ctx = _breach_context(breach)
-            try:
+            with contextlib.suppress(Exception):
                 _send_email(to, subject_tpl.format(ref=ref), template, ctx)
-            except Exception:
-                pass
 
 
 def send_initial_breach_confirmation(breach: Breach) -> None:
@@ -146,7 +146,5 @@ def send_initial_breach_confirmation(breach: Breach) -> None:
     subject_tpl, template, _ = STEP_EMAIL_MAP[BreachStatus.REPORTED]
     ref = str(breach.id)[:8].upper()
     ctx = _breach_context(breach)
-    try:
+    with contextlib.suppress(Exception):
         _send_email(breach.reported_by_email, subject_tpl.format(ref=ref), template, ctx)
-    except Exception:
-        pass

@@ -102,14 +102,10 @@ class ExplosionsschutzDokument:
             try:
                 erstellt = date.fromisoformat(self.erstellungsdatum)
                 if erstellt > date.today():
-                    errors.append(
-                        f"erstellungsdatum {self.erstellungsdatum}"
-                        " liegt in der Zukunft"
-                    )
+                    errors.append(f"erstellungsdatum {self.erstellungsdatum} liegt in der Zukunft")
             except ValueError:
                 errors.append(
-                    f"erstellungsdatum '{self.erstellungsdatum}'"
-                    " ist kein gültiges ISO-Datum"
+                    f"erstellungsdatum '{self.erstellungsdatum}' ist kein gültiges ISO-Datum"
                 )
 
         if self.naechste_pruefung and self.erstellungsdatum:
@@ -126,10 +122,7 @@ class ExplosionsschutzDokument:
                 pass  # Bereits oben gefangen
 
         if errors:
-            raise ValueError(
-                "ExplosionsschutzDokument Invarianten verletzt:"
-                f" {'; '.join(errors)}"
-            )
+            raise ValueError(f"ExplosionsschutzDokument Invarianten verletzt: {'; '.join(errors)}")
 
         logger.debug(
             "[ESD] Dokument erstellt: betrieb=%r datum=%s bereiche=%d",

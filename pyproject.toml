@@ -75,11 +75,14 @@ src = ["src"]
 exclude = [
     "src/config/test_migrations",
     "**/migrations/*.py",
+    "docs",
+    ".github/scripts",
+    "packages",
 ]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B", "SIM"]
-ignore = ["E501"]
+ignore = ["E501", "SIM102", "SIM105", "SIM117", "B017", "E402"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["apps", "config"]

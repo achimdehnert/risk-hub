@@ -275,6 +275,7 @@ def mandate_create(request: HttpRequest) -> HttpResponse:
         form = MandateForm(request.POST)
         if form.is_valid():
             from dsb.services import save_form
+
             save_form(form, tid, _user_id(request), is_create=True)
             return redirect("dsb:mandate-list")
     else:
@@ -301,6 +302,7 @@ def mandate_edit(request: HttpRequest, pk) -> HttpResponse:
         form = MandateForm(request.POST, instance=obj)
         if form.is_valid():
             from dsb.services import save_form
+
             save_form(form, tid, _user_id(request), is_create=False)
             return redirect("dsb:mandate-list")
     else:
@@ -325,6 +327,7 @@ def mandate_delete(request: HttpRequest, pk) -> HttpResponse:
     obj = get_object_or_404(Mandate, pk=pk, tenant_id=tid)
     if request.method == "POST":
         from dsb.services import delete_object
+
         delete_object(obj)
         return redirect("dsb:mandate-list")
     return render(
@@ -369,6 +372,7 @@ def vvt_create(request: HttpRequest) -> HttpResponse:
         form = ProcessingActivityForm(request.POST, tenant_id=tid)
         if form.is_valid():
             from dsb.services import save_form
+
             save_form(form, tid, _user_id(request), is_create=True)
             return redirect("dsb:vvt-list")
     else:
@@ -396,6 +400,7 @@ def vvt_edit(request: HttpRequest, pk) -> HttpResponse:
         form = ProcessingActivityForm(request.POST, instance=obj, tenant_id=tid)
         if form.is_valid():
             from dsb.services import save_form
+
             save_form(form, tid, _user_id(request), is_create=False)
             return redirect("dsb:vvt-list")
     else:
@@ -431,6 +436,7 @@ def tom_create(request: HttpRequest) -> HttpResponse:
         form = FormClass(request.POST, tenant_id=tid)
         if form.is_valid():
             from dsb.services import save_form
+
             save_form(form, tid, _user_id(request), is_create=True)
             return redirect("dsb:tom-list")
     else:
@@ -473,6 +479,7 @@ def tom_edit(request: HttpRequest, pk) -> HttpResponse:
         )
         if form.is_valid():
             from dsb.services import save_form
+
             save_form(form, tid, _user_id(request), is_create=False)
             return redirect("dsb:tom-list")
     else:
@@ -533,6 +540,7 @@ def dpa_create(request: HttpRequest) -> HttpResponse:
         )
         if form.is_valid():
             from dsb.services import save_form
+
             save_form(form, tid, _user_id(request), is_create=True)
             return redirect("dsb:dpa-list")
     else:
@@ -567,6 +575,7 @@ def dpa_edit(request: HttpRequest, pk) -> HttpResponse:
         )
         if form.is_valid():
             from dsb.services import save_form
+
             save_form(form, tid, _user_id(request), is_create=False)
             return redirect("dsb:dpa-list")
     else:

@@ -58,7 +58,10 @@ urlpatterns = [
     path("", HomeView.as_view(), name="home"),
     # Areas
     path("areas/", AreaListView.as_view(), name="area-list-html"),
-    path("areas/new/", RedirectView.as_view(pattern_name="explosionsschutz:area-create", permanent=True)),
+    path(
+        "areas/new/",
+        RedirectView.as_view(pattern_name="explosionsschutz:area-create", permanent=True),
+    ),
     path("areas/create/", AreaCreateView.as_view(), name="area-create"),
     path(
         "areas/<uuid:pk>/",

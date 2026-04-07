@@ -12,6 +12,7 @@ Sub-Module:
 - zone_classification: Regelbasierte Zoneneinteilung nach TRGS 721
 """
 
+import contextlib
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -948,13 +949,11 @@ def create_equipment_with_atex_check(
             pass
 
     atex_result = None
-    try:
+    with contextlib.suppress(ATEXCheckError):
         atex_result = check_equipment_suitability(
             ex_marking=atex_marking,
             zone=zone_str,
         )
-    except ATEXCheckError:
-        pass
 
     if atex_result is not None:
         EquipmentATEXCheck.objects.create(

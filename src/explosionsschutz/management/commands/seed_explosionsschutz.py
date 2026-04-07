@@ -54,8 +54,7 @@ class Command(BaseCommand):
             {
                 "code": "TRGS 721",
                 "title": (
-                    "Gefährliche explosionsfähige Atmosphäre"
-                    " — Beurteilung der Explosionsgefährdung"
+                    "Gefährliche explosionsfähige Atmosphäre — Beurteilung der Explosionsgefährdung"
                 ),
                 "category": "TRGS",
             },
@@ -113,8 +112,7 @@ class Command(BaseCommand):
             {
                 "code": "EN 1127-1",
                 "title": (
-                    "Explosionsfähige Atmosphären — Explosionsschutz"
-                    " — Grundlagen und Methodik"
+                    "Explosionsfähige Atmosphären — Explosionsschutz — Grundlagen und Methodik"
                 ),
                 "category": "EN",
             },
@@ -166,8 +164,7 @@ class Command(BaseCommand):
                 "title": "Erdung aller leitfähigen Teile",
                 "default_type": "secondary",
                 "description_template": (
-                    "Alle leitfähigen Teile im Bereich {bereich}"
-                    " sind gemäß TRGS 727 zu erden."
+                    "Alle leitfähigen Teile im Bereich {bereich} sind gemäß TRGS 727 zu erden."
                 ),
             },
             {
@@ -175,8 +172,7 @@ class Command(BaseCommand):
                 "title": "Technische Lüftung nach IEC 60079-10-1",
                 "default_type": "primary",
                 "description_template": (
-                    "Technische Raumlüftung mit min."
-                    " {luftwechsel} Luftwechseln/h installieren."
+                    "Technische Raumlüftung mit min. {luftwechsel} Luftwechseln/h installieren."
                 ),
             },
             {
@@ -184,8 +180,7 @@ class Command(BaseCommand):
                 "title": "Gaswarnanlage mit automatischer Abschaltung",
                 "default_type": "secondary",
                 "description_template": (
-                    "Gaswarnanlage für {stoff}"
-                    " mit Abschaltung bei {schwelle}% UEG."
+                    "Gaswarnanlage für {stoff} mit Abschaltung bei {schwelle}% UEG."
                 ),
             },
             {
@@ -232,8 +227,7 @@ class Command(BaseCommand):
                 "title": "Substitution brennbarer Stoffe",
                 "default_type": "primary",
                 "description_template": (
-                    "Prüfung ob {stoff} durch nicht-brennbare"
-                    " Alternative ersetzt werden kann."
+                    "Prüfung ob {stoff} durch nicht-brennbare Alternative ersetzt werden kann."
                 ),
             },
             {

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 from datetime import date, timedelta
 
 from django.core.mail import EmailMultiAlternatives
@@ -135,7 +136,5 @@ def send_initial_confirmation(req: DeletionRequest) -> None:
     subject_tpl, template = STEP_EMAIL_MAP[DeletionRequestStatus.PENDING]
     ref = str(req.id)[:8].upper()
     ctx = _dsb_context(req)
-    try:
+    with contextlib.suppress(Exception):
         _send_email(req.subject_email, subject_tpl.format(ref=ref), template, ctx)
-    except Exception:
-        pass

@@ -174,72 +174,89 @@ class Substance(TenantScopedModel):
     vapor_density = models.FloatField(null=True, blank=True, help_text="Dampfdichte (Luft = 1)")
 
     # Physikalische Daten (GESTIS)
-    boiling_point_c = models.FloatField(
-        null=True, blank=True, help_text="Siedepunkt in °C"
-    )
-    melting_point_c = models.FloatField(
-        null=True, blank=True, help_text="Schmelzpunkt in °C"
-    )
+    boiling_point_c = models.FloatField(null=True, blank=True, help_text="Siedepunkt in °C")
+    melting_point_c = models.FloatField(null=True, blank=True, help_text="Schmelzpunkt in °C")
     density = models.CharField(
-        max_length=50, blank=True, default="",
+        max_length=50,
+        blank=True,
+        default="",
         help_text="Dichte (z.B. 0,79 g/cm³)",
     )
     molecular_formula = models.CharField(
-        max_length=100, blank=True, default="",
+        max_length=100,
+        blank=True,
+        default="",
         help_text="Summenformel",
     )
     molecular_weight = models.CharField(
-        max_length=50, blank=True, default="",
+        max_length=50,
+        blank=True,
+        default="",
         help_text="Molare Masse",
     )
 
     # Arbeitsschutz (GESTIS)
     agw = models.TextField(
-        blank=True, default="",
+        blank=True,
+        default="",
         help_text="Arbeitsplatzgrenzwert (TRGS 900)",
     )
     wgk = models.CharField(
-        max_length=200, blank=True, default="",
+        max_length=200,
+        blank=True,
+        default="",
         help_text="Wassergefährdungsklasse",
     )
 
     # Schutzmaßnahmen (GESTIS)
     first_aid = models.TextField(
-        blank=True, default="", help_text="Erste Hilfe",
+        blank=True,
+        default="",
+        help_text="Erste Hilfe",
     )
     protective_measures = models.TextField(
-        blank=True, default="",
+        blank=True,
+        default="",
         help_text="Technische + persönliche Schutzmaßnahmen",
     )
     storage_info = models.TextField(
-        blank=True, default="",
+        blank=True,
+        default="",
         help_text="Lagerung (GESTIS)",
     )
     fire_protection = models.TextField(
-        blank=True, default="",
+        blank=True,
+        default="",
         help_text="Brand- und Explosionsschutz",
     )
     disposal = models.TextField(
-        blank=True, default="", help_text="Entsorgung",
+        blank=True,
+        default="",
+        help_text="Entsorgung",
     )
     spill_response = models.TextField(
-        blank=True, default="",
+        blank=True,
+        default="",
         help_text="Maßnahmen bei Freisetzung",
     )
 
     # Vorschriften (GESTIS)
     regulations = models.TextField(
-        blank=True, default="",
+        blank=True,
+        default="",
         help_text="Vorschriften/Regelwerke (JSON-Liste)",
     )
 
     # GESTIS-Referenz
     gestis_zvg = models.CharField(
-        max_length=20, blank=True, default="",
+        max_length=20,
+        blank=True,
+        default="",
         help_text="GESTIS ZVG-Nummer",
     )
     gestis_url = models.URLField(
-        blank=True, default="",
+        blank=True,
+        default="",
         help_text="GESTIS Volltext-Link",
     )
 

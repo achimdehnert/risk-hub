@@ -107,13 +107,8 @@ class GebaeudeklasseHandler:
         result.geschoss_anzahl = len(model.floors)
 
         if not model.floors:
-            result.meldungen.append(
-                "Keine Geschosse im Modell"
-                " — Gebäudeklasse nicht ermittelbar"
-            )
-            logger.warning(
-                "[GebaeudeklasseHandler] Kein Geschoss vorhanden"
-            )
+            result.meldungen.append("Keine Geschosse im Modell — Gebäudeklasse nicht ermittelbar")
+            logger.warning("[GebaeudeklasseHandler] Kein Geschoss vorhanden")
             return result
 
         # OKFF = elevation_m des höchsten Nutzgeschosses
@@ -127,9 +122,7 @@ class GebaeudeklasseHandler:
                 "Alle Geschoss-Höhen sind 0.0 m — OKFF nicht auswertbar. "
                 "Gebäudeklasse kann nicht zuverlässig ermittelt werden."
             )
-            logger.warning(
-                "[GebaeudeklasseHandler] Alle elevation_m == 0.0"
-            )
+            logger.warning("[GebaeudeklasseHandler] Alle elevation_m == 0.0")
             return result
 
         # Hochhaus-Prüfung zuerst (Sonderbau)
@@ -140,9 +133,7 @@ class GebaeudeklasseHandler:
                 f"— Hochhaus (Sonderbau MBO § 2 Abs. 8 Nr. 1,"
                 f" {MBO_VERSION})"
             )
-            logger.info(
-                "[GebaeudeklasseHandler] Hochhaus: OKFF=%.1fm", okff_max
-            )
+            logger.info("[GebaeudeklasseHandler] Hochhaus: OKFF=%.1fm", okff_max)
             return result
 
         # GK 5: OKFF > 13m
@@ -152,9 +143,7 @@ class GebaeudeklasseHandler:
                 f"OKFF {okff_max:.1f}m > {MBO_GK4_MAX_OKFF_M}m "
                 f"→ GK 5 (MBO § 2 Abs. 3 Nr. 5, {MBO_VERSION})"
             )
-            logger.info(
-                "[GebaeudeklasseHandler] GK5: OKFF=%.1fm", okff_max
-            )
+            logger.info("[GebaeudeklasseHandler] GK5: OKFF=%.1fm", okff_max)
             return result
 
         # GK 4: OKFF > 7m
@@ -164,15 +153,11 @@ class GebaeudeklasseHandler:
                 f"OKFF {okff_max:.1f}m > {MBO_GK123_MAX_OKFF_M}m "
                 f"→ GK 4 (MBO § 2 Abs. 3 Nr. 4, {MBO_VERSION})"
             )
-            logger.info(
-                "[GebaeudeklasseHandler] GK4: OKFF=%.1fm", okff_max
-            )
+            logger.info("[GebaeudeklasseHandler] GK4: OKFF=%.1fm", okff_max)
             return result
 
         # GK 1/2/3: OKFF <= 7m — NE-Kriterium
-        total_areas = [
-            sum(r.area_m2 for r in f.rooms) for f in model.floors
-        ]
+        total_areas = [sum(r.area_m2 for r in f.rooms) for f in model.floors]
         max_ne_flaeche = max(total_areas) if total_areas else 0.0
         ne_anzahl = len(model.floors)  # Konservative Näherung
 
@@ -182,17 +167,11 @@ class GebaeudeklasseHandler:
                 "nicht ermittelbar. Konservativ GK 3 angenommen."
             )
             result.gebaeudeklasse = Gebaeudeklasse.GK_3
-            logger.warning(
-                "[GebaeudeklasseHandler] Keine Raumflächen"
-                " — konservativ GK3"
-            )
+            logger.warning("[GebaeudeklasseHandler] Keine Raumflächen — konservativ GK3")
             return result
 
         # GK 3: mehr als 2 NE oder NE-Fläche > 400m²
-        if (
-            ne_anzahl > MBO_GK12_MAX_NE_ANZAHL
-            or max_ne_flaeche > MBO_GK12_MAX_NE_FLAECHE_M2
-        ):
+        if ne_anzahl > MBO_GK12_MAX_NE_ANZAHL or max_ne_flaeche > MBO_GK12_MAX_NE_FLAECHE_M2:
             result.gebaeudeklasse = Gebaeudeklasse.GK_3
             result.meldungen.append(
                 f"NE-Anzahl={ne_anzahl},"

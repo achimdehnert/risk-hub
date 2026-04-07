@@ -10,8 +10,9 @@ import django
 
 django.setup()
 
-from django.test import Client, override_settings  # noqa: E402
 import logging
+
+from django.test import Client, override_settings  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

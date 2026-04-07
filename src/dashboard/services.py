@@ -178,14 +178,8 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
         fire_concepts_active = fc_qs.filter(
             status="active",
         ).count()
-        fire_ext_overdue = (
-            FireExtinguisher.objects
-            .filter(tf, status="overdue").count()
-        )
-        fire_escape_defect = (
-            EscapeRoute.objects
-            .filter(tf, status="defect").count()
-        )
+        fire_ext_overdue = FireExtinguisher.objects.filter(tf, status="overdue").count()
+        fire_escape_defect = EscapeRoute.objects.filter(tf, status="defect").count()
     except Exception:
         pass
 

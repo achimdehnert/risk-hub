@@ -11,7 +11,7 @@ Aufruf: python manage.py seed_explosionsschutz [--force]
 """
 from __future__ import annotations
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from apps.explosionsschutz.models import (
     EquipmentType,

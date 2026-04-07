@@ -59,10 +59,7 @@ def fixture_mandate(db, fixture_tenant_id):
 
 
 def _req(rf, user, tenant_id, method="GET", path="/dsb/", data=None):
-    if method == "POST":
-        r = rf.post(path, data or {})
-    else:
-        r = rf.get(path)
+    r = rf.post(path, data or {}) if method == "POST" else rf.get(path)
     r.user = user
     r.tenant_id = tenant_id
     r.session = {}

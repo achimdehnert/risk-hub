@@ -51,8 +51,7 @@ class SdsVersionDetector:
     ) -> VersionResult:
         """Version erkennen."""
         current = (
-            GlobalSdsRevision.objects
-            .filter(substance=substance)
+            GlobalSdsRevision.objects.filter(substance=substance)
             .exclude(status=GlobalSdsRevision.Status.REJECTED)
             .order_by("-revision_date", "-created_at")
             .first()
@@ -70,19 +69,13 @@ class SdsVersionDetector:
                 return VersionResult(
                     outcome=VersionOutcome.NEW_REVISION,
                     previous_revision=current,
-                    reason=(
-                        f"Neuer: {revision_date} > "
-                        f"{current.revision_date}"
-                    ),
+                    reason=(f"Neuer: {revision_date} > {current.revision_date}"),
                 )
             if revision_date < current.revision_date:
                 return VersionResult(
                     outcome=VersionOutcome.CONFLICT,
                     previous_revision=current,
-                    reason=(
-                        f"Retrograd: {revision_date} < "
-                        f"{current.revision_date}"
-                    ),
+                    reason=(f"Retrograd: {revision_date} < {current.revision_date}"),
                 )
 
         # Versionsnummer-Vergleich
@@ -96,23 +89,19 @@ class SdsVersionDetector:
                     return VersionResult(
                         outcome=VersionOutcome.NEW_REVISION,
                         previous_revision=current,
-                        reason=(
-                            f"Version {version_number} > "
-                            f"{current.version_number}"
-                        ),
+                        reason=(f"Version {version_number} > {current.version_number}"),
                     )
                 if new_ver == old_ver and revision_date:
                     return VersionResult(
                         outcome=VersionOutcome.CONFLICT,
                         previous_revision=current,
-                        reason=(
-                            "Gleiche Version, anderer Inhalt"
-                        ),
+                        reason=("Gleiche Version, anderer Inhalt"),
                     )
             except ValueError:
                 logger.warning(
                     "Cannot parse version: '%s' or '%s'",
-                    version_number, current.version_number,
+                    version_number,
+                    current.version_number,
                 )
 
         # Kein eindeutiges Ergebnis

@@ -120,14 +120,28 @@ MBO_AUSSENTREPPE_MIN_BREITE_M: float = 1.2
 # ---------------------------------------------------------------------------
 
 FEUERWIDERSTANDSKLASSEN_DIN4102: tuple[str, ...] = (
-    "F30", "F60", "F90", "F120", "F180",
+    "F30",
+    "F60",
+    "F90",
+    "F120",
+    "F180",
 )
 
 FEUERWIDERSTANDSKLASSEN_EN13501: tuple[str, ...] = (
-    "REI30", "REI60", "REI90", "REI120",
-    "EI30", "EI60", "EI90", "EI120",
-    "E30", "E60", "E90",
-    "R30", "R60", "R90",
+    "REI30",
+    "REI60",
+    "REI90",
+    "REI120",
+    "EI30",
+    "EI60",
+    "EI90",
+    "EI120",
+    "E30",
+    "E60",
+    "E90",
+    "R30",
+    "R60",
+    "R90",
 )
 
 ALLE_FEUERWIDERSTANDSKLASSEN: frozenset[str] = frozenset(
@@ -135,8 +149,13 @@ ALLE_FEUERWIDERSTANDSKLASSEN: frozenset[str] = frozenset(
 )
 
 BRANDSCHUTZTUER_KLASSEN: tuple[str, ...] = (
-    "T30", "T60", "T90", "T120",
-    "EI230", "EI260", "EI290",
+    "T30",
+    "T60",
+    "T90",
+    "T120",
+    "EI230",
+    "EI260",
+    "EI290",
 )
 
 # ---------------------------------------------------------------------------

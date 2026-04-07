@@ -1,5 +1,6 @@
 """DSB Dokument-Upload Views."""
 
+import contextlib
 import mimetypes
 
 from django.contrib import messages
@@ -110,7 +111,8 @@ def document_upload(request: HttpRequest) -> HttpResponse:
 
             mime, _ = mimetypes.guess_type(uploaded_file.name)
             from dsb.services import create_dsb_document
-            doc = create_dsb_document(
+
+            create_dsb_document(
                 tenant_id=tid,
                 mandate=mandate,
                 ref_type=doc_ref_type,
@@ -173,10 +175,9 @@ def document_delete(request: HttpRequest, pk) -> HttpResponse:
     doc = get_object_or_404(DsbDocument, pk=pk, tenant_id=tid)
     title = doc.title
     from common.services import delete_object
-    try:
+
+    with contextlib.suppress(Exception):
         doc.file.delete(save=False)
-    except Exception:
-        pass
     delete_object(doc)
     messages.success(request, f"Dokument '{title}' gelöscht.")
     next_url = request.POST.get("next", "")

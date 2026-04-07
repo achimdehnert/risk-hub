@@ -39,7 +39,8 @@ def get_or_create_site(
     if created:
         logger.info(
             "Auto-created Site '%s' for tenant %s",
-            site_name, tenant_id,
+            site_name,
+            tenant_id,
         )
     return site, created
 
@@ -59,11 +60,7 @@ def upload_project_document(
     """Upload a single project document."""
     from projects.models import ProjectDocument
 
-    title = (
-        file.name.rsplit(".", 1)[0]
-        if "." in file.name
-        else file.name
-    )
+    title = file.name.rsplit(".", 1)[0] if "." in file.name else file.name
     doc = ProjectDocument.objects.create(
         tenant_id=tenant_id,
         project=project,
@@ -74,7 +71,8 @@ def upload_project_document(
     )
     logger.info(
         "Uploaded document '%s' to project %s",
-        file.name, project.name,
+        file.name,
+        project.name,
     )
     return doc
 
@@ -130,10 +128,12 @@ def create_output_document(
             order=idx,
             content=content,
             fields_json=json.dumps(
-                fields, ensure_ascii=False,
+                fields,
+                ensure_ascii=False,
             ),
             values_json=json.dumps(
-                sec_values, ensure_ascii=False,
+                sec_values,
+                ensure_ascii=False,
             ),
         )
 
@@ -164,7 +164,8 @@ def create_template(
         kind=kind,
         description=description,
         structure_json=json.dumps(
-            structure, ensure_ascii=False,
+            structure,
+            ensure_ascii=False,
         ),
         source_filename=source_filename,
         source_text=source_text[:50000] if source_text else "",
@@ -183,7 +184,8 @@ def update_template(
     from projects.models import DocumentTemplate
 
     tmpl.structure_json = json.dumps(
-        structure, ensure_ascii=False,
+        structure,
+        ensure_ascii=False,
     )
     if name is not None:
         tmpl.name = name
@@ -206,9 +208,21 @@ AVAILABLE_MODULES: dict[str, dict] = {
         "icon": "zap",
         "description": "Zoneneinteilung, Betriebsmittel, Ex-Konzepte, Schutzmaßnahmen",
         "keywords": [
-            "explosion", "ex-schutz", "zone", "atex", "lösungsmittel",
-            "gas", "dampf", "staub", "zündquelle", "lackier",
-            "tank", "abfüll", "chemie", "brennbar", "explosionsfähig",
+            "explosion",
+            "ex-schutz",
+            "zone",
+            "atex",
+            "lösungsmittel",
+            "gas",
+            "dampf",
+            "staub",
+            "zündquelle",
+            "lackier",
+            "tank",
+            "abfüll",
+            "chemie",
+            "brennbar",
+            "explosionsfähig",
         ],
     },
     "substances": {
@@ -216,9 +230,20 @@ AVAILABLE_MODULES: dict[str, dict] = {
         "icon": "flask-conical",
         "description": "Stoffidentifikation, Sicherheitsdatenblätter, H/P-Sätze",
         "keywords": [
-            "gefahrstoff", "sds", "sicherheitsdatenblatt", "stoff",
-            "chemikalie", "lösungsmittel", "giftig", "ätzend", "h-sätze",
-            "ethanol", "toluol", "aceton", "isopropanol", "lackier",
+            "gefahrstoff",
+            "sds",
+            "sicherheitsdatenblatt",
+            "stoff",
+            "chemikalie",
+            "lösungsmittel",
+            "giftig",
+            "ätzend",
+            "h-sätze",
+            "ethanol",
+            "toluol",
+            "aceton",
+            "isopropanol",
+            "lackier",
         ],
     },
     "gbu": {
@@ -226,9 +251,18 @@ AVAILABLE_MODULES: dict[str, dict] = {
         "icon": "clipboard-check",
         "description": "Gefährdungsbeurteilung pro Tätigkeit und Arbeitsplatz",
         "keywords": [
-            "gefährdung", "gbu", "tätigkeit", "arbeitsplatz", "exposition",
-            "gesundheit", "arbeitssicherheit", "schutzausrüstung", "psa",
-            "gefahr", "risiko", "unfall",
+            "gefährdung",
+            "gbu",
+            "tätigkeit",
+            "arbeitsplatz",
+            "exposition",
+            "gesundheit",
+            "arbeitssicherheit",
+            "schutzausrüstung",
+            "psa",
+            "gefahr",
+            "risiko",
+            "unfall",
         ],
     },
     "brandschutz": {
@@ -236,9 +270,18 @@ AVAILABLE_MODULES: dict[str, dict] = {
         "icon": "flame",
         "description": "Feuerlöscher, Fluchtwege, Brandschutznachweis",
         "keywords": [
-            "brand", "feuer", "feuerlöscher", "fluchtweg", "rauchmelder",
-            "sprinkler", "brandschutz", "evakuierung", "notausgang",
-            "brennbar", "entzündlich", "lackier",
+            "brand",
+            "feuer",
+            "feuerlöscher",
+            "fluchtweg",
+            "rauchmelder",
+            "sprinkler",
+            "brandschutz",
+            "evakuierung",
+            "notausgang",
+            "brennbar",
+            "entzündlich",
+            "lackier",
         ],
     },
     "risk": {
@@ -246,8 +289,12 @@ AVAILABLE_MODULES: dict[str, dict] = {
         "icon": "shield-alert",
         "description": "Gesamtrisikobewertung und Maßnahmenplanung",
         "keywords": [
-            "risiko", "bewertung", "assessment", "maßnahme",
-            "eintrittswahrscheinlichkeit", "schadensausmaß",
+            "risiko",
+            "bewertung",
+            "assessment",
+            "maßnahme",
+            "eintrittswahrscheinlichkeit",
+            "schadensausmaß",
         ],
     },
 }
@@ -291,16 +338,11 @@ def recommend_modules_from_description(
     results = []
 
     for code, meta in AVAILABLE_MODULES.items():
-        matched_keywords = [
-            kw for kw in meta["keywords"] if kw in desc_lower
-        ]
+        matched_keywords = [kw for kw in meta["keywords"] if kw in desc_lower]
         recommended = len(matched_keywords) >= 1
 
         if recommended:
-            reason = (
-                f"Erkannt: {', '.join(matched_keywords[:3])} "
-                f"→ {meta['description']}"
-            )
+            reason = f"Erkannt: {', '.join(matched_keywords[:3])} → {meta['description']}"
         else:
             reason = ""
 
@@ -365,11 +407,9 @@ def create_project(cmd: CreateProjectCmd) -> Project:
 
     recommendations_by_module = {}
     if cmd.module_recommendations:
-        recommendations_by_module = {
-            r.module: r for r in cmd.module_recommendations
-        }
+        recommendations_by_module = {r.module: r for r in cmd.module_recommendations}
 
-    for mod_code in (cmd.selected_modules or []):
+    for mod_code in cmd.selected_modules or []:
         rec = recommendations_by_module.get(mod_code)
         ProjectModule.objects.create(
             project=project,
@@ -380,7 +420,7 @@ def create_project(cmd: CreateProjectCmd) -> Project:
             activated_by_id=cmd.created_by_id,
         )
 
-    for mod_code in (cmd.declined_modules or []):
+    for mod_code in cmd.declined_modules or []:
         rec = recommendations_by_module.get(mod_code)
         ProjectModule.objects.create(
             project=project,

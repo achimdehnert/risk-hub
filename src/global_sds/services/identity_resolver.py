@@ -17,10 +17,14 @@ logger = logging.getLogger(__name__)
 
 # Konfigurierbare Schwellenwerte (ADR-012 §7.3 N-1)
 CONFIDENCE_AUTO_MATCH = getattr(
-    settings, "SDS_IDENTITY_AUTO_MATCH_THRESHOLD", 0.95,
+    settings,
+    "SDS_IDENTITY_AUTO_MATCH_THRESHOLD",
+    0.95,
 )
 CONFIDENCE_ASK_USER = getattr(
-    settings, "SDS_IDENTITY_ASK_USER_THRESHOLD", 0.70,
+    settings,
+    "SDS_IDENTITY_ASK_USER_THRESHOLD",
+    0.70,
 )
 
 
@@ -38,11 +42,7 @@ class IdentityMatch:
 
     @property
     def needs_user_confirmation(self) -> bool:
-        return (
-            CONFIDENCE_ASK_USER
-            <= self.confidence
-            < CONFIDENCE_AUTO_MATCH
-        )
+        return CONFIDENCE_ASK_USER <= self.confidence < CONFIDENCE_AUTO_MATCH
 
     @property
     def is_new_substance(self) -> bool:
@@ -75,7 +75,8 @@ class SdsIdentityResolver:
 
         # Stufe 2: Fuzzy Name+Hersteller
         return self._try_fuzzy_match(
-            product_name, manufacturer_name,
+            product_name,
+            manufacturer_name,
         )
 
     def _normalize_cas(self, cas: str) -> str:
@@ -83,7 +84,8 @@ class SdsIdentityResolver:
         return cas.strip().replace(" ", "").replace("‐", "-")
 
     def _try_cas_match(
-        self, cas_number: str,
+        self,
+        cas_number: str,
     ) -> IdentityMatch | None:
         """Exakter CAS-Match."""
         try:
@@ -92,7 +94,8 @@ class SdsIdentityResolver:
             )
             logger.info(
                 "CAS exact match: %s → %s",
-                cas_number, substance.name,
+                cas_number,
+                substance.name,
             )
             return IdentityMatch(
                 substance=substance,
@@ -103,7 +106,8 @@ class SdsIdentityResolver:
             return None
         except GlobalSubstance.MultipleObjectsReturned:
             logger.warning(
-                "Multiple substances for CAS %s", cas_number,
+                "Multiple substances for CAS %s",
+                cas_number,
             )
             return None
 
@@ -126,7 +130,7 @@ class SdsIdentityResolver:
             ).ratio()
 
             # Synonyme prüfen
-            for synonym in (substance.synonyms or []):
+            for synonym in substance.synonyms or []:
                 syn_score = SequenceMatcher(
                     None,
                     product_name.lower(),
@@ -141,7 +145,9 @@ class SdsIdentityResolver:
         if best_match and best_score >= CONFIDENCE_ASK_USER:
             logger.info(
                 "Fuzzy match: '%s' → '%s' (score=%.3f)",
-                product_name, best_match.name, best_score,
+                product_name,
+                best_match.name,
+                best_score,
             )
             return IdentityMatch(
                 substance=best_match,
@@ -151,7 +157,8 @@ class SdsIdentityResolver:
 
         logger.info(
             "No match for '%s' (best=%.3f)",
-            product_name, best_score,
+            product_name,
+            best_score,
         )
         return IdentityMatch(
             substance=None,

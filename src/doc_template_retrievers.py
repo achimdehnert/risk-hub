@@ -20,13 +20,20 @@ def _get_sds_texts(tenant_id, instance=None):
     from substances.models import Substance
 
     substances = Substance.objects.filter(
-        tenant_id=tenant_id, status="active",
+        tenant_id=tenant_id,
+        status="active",
     ).only(
-        "name", "flash_point_c", "ignition_temperature_c",
-        "lower_explosion_limit", "upper_explosion_limit",
-        "temperature_class", "explosion_group",
-        "fire_protection", "protective_measures",
-        "first_aid", "storage_info",
+        "name",
+        "flash_point_c",
+        "ignition_temperature_c",
+        "lower_explosion_limit",
+        "upper_explosion_limit",
+        "temperature_class",
+        "explosion_group",
+        "fire_protection",
+        "protective_measures",
+        "first_aid",
+        "storage_info",
     )[:20]
 
     texts = []
@@ -58,9 +65,13 @@ def _get_gefaehrdungsbeurteilung_texts(tenant_id, instance=None):
     """Retrieve hazard assessments (GBU) for the tenant."""
     from risk.models import Assessment, Hazard
 
-    assessments = Assessment.objects.filter(
-        tenant_id=tenant_id,
-    ).prefetch_related("hazards").order_by("-updated_at")[:10]
+    assessments = (
+        Assessment.objects.filter(
+            tenant_id=tenant_id,
+        )
+        .prefetch_related("hazards")
+        .order_by("-updated_at")[:10]
+    )
 
     texts = []
     for a in assessments:
@@ -71,10 +82,7 @@ def _get_gefaehrdungsbeurteilung_texts(tenant_id, instance=None):
             parts.append(f"Beschreibung: {a.description[:500]}")
         for h in a.hazards.all()[:10]:
             severity = dict(Hazard.Severity.choices).get(h.severity, "")
-            parts.append(
-                f"  Gefährdung: {h.title} "
-                f"(Schwere: {severity}, Score: {h.risk_score})"
-            )
+            parts.append(f"  Gefährdung: {h.title} (Schwere: {severity}, Score: {h.risk_score})")
             if h.mitigation:
                 parts.append(f"  Maßnahme: {h.mitigation[:300]}")
         texts.append("\n".join(parts))
@@ -88,7 +96,8 @@ def _get_brandschutz_texts(tenant_id, instance=None):
     from documents.models import Document
 
     docs = Document.objects.filter(
-        tenant_id=tenant_id, category="brandschutz",
+        tenant_id=tenant_id,
+        category="brandschutz",
     ).order_by("-updated_at")[:5]
 
     texts = []
@@ -104,7 +113,8 @@ def _get_betriebsanweisung_texts(tenant_id, instance=None):
     from documents.models import Document
 
     docs = Document.objects.filter(
-        tenant_id=tenant_id, category="betriebsanweisung",
+        tenant_id=tenant_id,
+        category="betriebsanweisung",
     ).order_by("-updated_at")[:5]
 
     return [f"Betriebsanweisung: {d.title}" for d in docs]
@@ -116,7 +126,8 @@ def _get_pruefbericht_texts(tenant_id, instance=None):
     from documents.models import Document
 
     docs = Document.objects.filter(
-        tenant_id=tenant_id, category="pruefbericht",
+        tenant_id=tenant_id,
+        category="pruefbericht",
     ).order_by("-updated_at")[:5]
 
     return [f"Prüfbericht: {d.title}" for d in docs]
@@ -128,7 +139,8 @@ def _get_risikobewertung_texts(tenant_id, instance=None):
     from risk.models import Assessment
 
     assessments = Assessment.objects.filter(
-        tenant_id=tenant_id, status="approved",
+        tenant_id=tenant_id,
+        status="approved",
     ).order_by("-updated_at")[:5]
 
     texts = []

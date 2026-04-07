@@ -57,7 +57,9 @@ class SdsUsageService:
 
         logger.info(
             "Adopted update: Usage %s → %s (by %s)",
-            usage.pk, new_usage.pk, user,
+            usage.pk,
+            new_usage.pk,
+            user,
         )
         return new_usage
 
@@ -75,26 +77,29 @@ class SdsUsageService:
         """
         if not reason or not reason.strip():
             raise ValueError(
-                "Pflichtbegründung fehlt "
-                "(GefStoffV §7 Compliance)",
+                "Pflichtbegründung fehlt (GefStoffV §7 Compliance)",
             )
 
         usage.update_deferred_reason = reason.strip()
         usage.update_deferred_until = deferred_until
         usage.update_deferred_by = user
-        usage.save(update_fields=[
-            "update_deferred_reason",
-            "update_deferred_until",
-            "update_deferred_by",
-            "updated_at",
-        ])
+        usage.save(
+            update_fields=[
+                "update_deferred_reason",
+                "update_deferred_until",
+                "update_deferred_by",
+                "updated_at",
+            ]
+        )
 
         # Outbox-Event
         self._emit_defer_event(usage, user, reason)
 
         logger.info(
             "Deferred update: Usage %s (by %s, until %s)",
-            usage.pk, user, deferred_until,
+            usage.pk,
+            user,
+            deferred_until,
         )
         return usage
 
@@ -141,13 +146,9 @@ class SdsUsageService:
                     "deferred_by_user_id": str(user.pk),
                     "reason": reason,
                     "deferred_until": (
-                        str(usage.update_deferred_until)
-                        if usage.update_deferred_until
-                        else None
+                        str(usage.update_deferred_until) if usage.update_deferred_until else None
                     ),
-                    "impact_level": (
-                        usage.pending_update_impact
-                    ),
+                    "impact_level": (usage.pending_update_impact),
                 },
             )
         except ImportError:

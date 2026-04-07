@@ -24,9 +24,7 @@ class TestTemplateUrlReferences(TestCase):
         if not templates_dir.exists():
             self.skipTest("templates/ directory not found")
 
-        url_pattern = re.compile(
-            r"""{%\s*url\s+['"]([a-zA-Z_][a-zA-Z0-9_]*:[a-zA-Z0-9_-]+)['"]"""
-        )
+        url_pattern = re.compile(r"""{%\s*url\s+['"]([a-zA-Z_][a-zA-Z0-9_]*:[a-zA-Z0-9_-]+)['"]""")
 
         missing = []
         checked = 0

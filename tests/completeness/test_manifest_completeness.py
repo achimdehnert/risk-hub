@@ -11,7 +11,6 @@ from pathlib import Path
 import pytest
 import yaml
 
-
 BASE_DIR = Path(__file__).resolve().parents[3]
 # risk-hub hat Templates unter src/templates/
 TEMPLATES_DIR = BASE_DIR / "src" / "templates"
@@ -46,10 +45,7 @@ def _testid_exists_in_templates(element_id: str, template_file: str | None = Non
         target = TEMPLATES_DIR / template_file
         if target.exists():
             return needle in target.read_text(encoding="utf-8")
-    for tmpl in TEMPLATES_DIR.rglob("*.html"):
-        if needle in tmpl.read_text(encoding="utf-8"):
-            return True
-    return False
+    return any(needle in tmpl.read_text(encoding="utf-8") for tmpl in TEMPLATES_DIR.rglob("*.html"))
 
 
 def _manifest_params():
@@ -77,7 +73,7 @@ def test_data_testid_present_in_templates(element_id: str, template_file: str, c
         pytest.skip(f"Conditional element '{element_id}' — skipped in static check")
     found = _testid_exists_in_templates(element_id, template_file)
     assert found, (
-        f"Missing: data-testid=\"{element_id}\" not found in templates.\n"
+        f'Missing: data-testid="{element_id}" not found in templates.\n'
         f"Template: {template_file or 'any'}\n"
-        f"Fix: Add data-testid=\"{element_id}\" to the relevant template."
+        f'Fix: Add data-testid="{element_id}" to the relevant template.'
     )

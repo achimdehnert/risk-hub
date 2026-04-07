@@ -3,6 +3,7 @@ tests/contracts/conftest.py — Contract-Test Marker Registration.
 
 ADR: ADR-155
 """
+
 import pytest
 
 

@@ -4,6 +4,7 @@ Tests für die ZoneClassificationEngine (TRGS 721 Regelmatrix).
 
 Keine DB erforderlich — reine Unit-Tests.
 """
+
 import pytest
 
 from explosionsschutz.services.zone_classification import (

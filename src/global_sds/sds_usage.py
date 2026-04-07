@@ -75,20 +75,25 @@ class SdsUsage(models.Model):
         related_name="pending_for_usages",
     )
     pending_update_impact = models.CharField(
-        max_length=20, blank=True, default="",
+        max_length=20,
+        blank=True,
+        default="",
     )
     review_deadline = models.DateField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
         help_text="Frist für Review (GefStoffV §7)",
     )
 
     # Zurückstell-Nachweis — GefStoffV §7 Compliance
     update_deferred_reason = models.TextField(
-        blank=True, default="",
+        blank=True,
+        default="",
         help_text="Pflichtbegründung bei Zurückstellung",
     )
     update_deferred_until = models.DateField(
-        null=True, blank=True,
+        null=True,
+        blank=True,
     )
     update_deferred_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -116,10 +121,7 @@ class SdsUsage(models.Model):
             # M-3: GefStoffV §6(4) — aktive Nutzung erfordert
             # namentliche Freigabe
             models.CheckConstraint(
-                check=(
-                    ~Q(status="ACTIVE")
-                    | Q(approved_by__isnull=False)
-                ),
+                check=(~Q(status="ACTIVE") | Q(approved_by__isnull=False)),
                 name="chk_sds_usage_active_requires_approver",
             ),
         ]
@@ -131,7 +133,4 @@ class SdsUsage(models.Model):
         ]
 
     def __str__(self):
-        return (
-            f"SdsUsage {self.sds_revision} "
-            f"(Tenant {str(self.tenant_id)[:8]})"
-        )
+        return f"SdsUsage {self.sds_revision} (Tenant {str(self.tenant_id)[:8]})"

@@ -7,6 +7,7 @@ Ausgabe: ZoneProposal mit Zonentyp, Konfidenz und Begründung.
 
 Erweiterbar: Regeln können in der DB (ZoneClassificationRule) gepflegt werden.
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -59,8 +60,7 @@ _GAS_RULES: dict[tuple[str, str], ZoneProposal] = {
         zone_type="0",
         confidence="high",
         justification=(
-            "Ständige Freisetzung mit natürlicher Lüftung: Innenbereich Zone 0, "
-            "Umgebung Zone 1."
+            "Ständige Freisetzung mit natürlicher Lüftung: Innenbereich Zone 0, Umgebung Zone 1."
         ),
         trgs_reference="TRGS 721 Abschnitt 4.2",
     ),

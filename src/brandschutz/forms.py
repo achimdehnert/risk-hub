@@ -40,9 +40,7 @@ class FireProtectionConceptForm(forms.ModelForm):
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
         if tenant_id:
-            self.fields["site"].queryset = Site.objects.filter(
-                tenant_id=tenant_id
-            )
+            self.fields["site"].queryset = Site.objects.filter(tenant_id=tenant_id)
 
 
 class FireSectionForm(forms.ModelForm):
@@ -81,9 +79,7 @@ class FireSectionForm(forms.ModelForm):
                     "step": "0.1",
                 }
             ),
-            "construction_class": forms.Select(
-                attrs={"class": _CSS}
-            ),
+            "construction_class": forms.Select(attrs={"class": _CSS}),
             "max_occupancy": forms.NumberInput(
                 attrs={
                     "class": _CSS,
@@ -97,12 +93,8 @@ class FireSectionForm(forms.ModelForm):
                     "step": "0.1",
                 }
             ),
-            "has_sprinkler": forms.CheckboxInput(
-                attrs={"class": "rounded border-gray-300"}
-            ),
-            "has_smoke_detector": forms.CheckboxInput(
-                attrs={"class": "rounded border-gray-300"}
-            ),
+            "has_sprinkler": forms.CheckboxInput(attrs={"class": "rounded border-gray-300"}),
+            "has_smoke_detector": forms.CheckboxInput(attrs={"class": "rounded border-gray-300"}),
             "notes": forms.Textarea(
                 attrs={
                     "class": _CSS,

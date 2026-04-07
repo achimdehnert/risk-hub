@@ -52,15 +52,9 @@ def prefill_ex_doc_field(
     from explosionsschutz.ex_doc_constants import ai_source_full_labels
 
     _src_labels = ai_source_full_labels()
-    source_type_names = [
-        _src_labels.get(s, s) for s in ai_sources
-    ]
+    source_type_names = [_src_labels.get(s, s) for s in ai_sources]
 
-    action_code = (
-        ACTION_EX_DOC_PREFILL_TABLE
-        if field_type == "table"
-        else ACTION_EX_DOC_PREFILL
-    )
+    action_code = ACTION_EX_DOC_PREFILL_TABLE if field_type == "table" else ACTION_EX_DOC_PREFILL
 
     result = prefill_field(
         field_key=field_key,

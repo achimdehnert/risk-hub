@@ -41,15 +41,12 @@ def _load_structure() -> dict:
     """Load template structure from JSON fixture file."""
     if not FIXTURE_FILE.exists():
         raise FileNotFoundError(
-            f"Fixture nicht gefunden: {FIXTURE_FILE}\n"
-            f"Erwartet in: {FIXTURE_DIR}"
+            f"Fixture nicht gefunden: {FIXTURE_FILE}\nErwartet in: {FIXTURE_DIR}"
         )
     with open(FIXTURE_FILE, encoding="utf-8") as fh:
         data = json.load(fh)
     if "sections" not in data:
-        raise ValueError(
-            f"Fixture hat kein 'sections'-Feld: {FIXTURE_FILE}"
-        )
+        raise ValueError(f"Fixture hat kein 'sections'-Feld: {FIXTURE_FILE}")
     return data
 
 
@@ -78,10 +75,7 @@ def _validate_structure(structure: dict) -> list[str]:
         for fi, field in enumerate(section.get("fields", [])):
             ftype = field.get("type", "textarea")
             if ftype not in FIELD_TYPES:
-                warnings.append(
-                    f"Section '{skey}' Field {fi}: "
-                    f"unbekannter Typ '{ftype}'"
-                )
+                warnings.append(f"Section '{skey}' Field {fi}: unbekannter Typ '{ftype}'")
             for src in field.get("ai_sources", []):
                 if src not in AI_SOURCE_TYPES:
                     warnings.append(
@@ -97,6 +91,7 @@ def _validate_structure(structure: dict) -> list[str]:
             TemplateField,
             TemplateSection,
         )
+
         _type_map = {
             "textarea": FieldType.TEXTAREA,
             "text": FieldType.TEXT,
@@ -107,17 +102,21 @@ def _validate_structure(structure: dict) -> list[str]:
             ct_fields = []
             for f in s.get("fields", []):
                 ft = _type_map.get(f.get("type"), FieldType.TEXTAREA)
-                ct_fields.append(TemplateField(
-                    name=f["key"],
-                    label=f.get("label", f["key"]),
-                    field_type=ft,
-                ))
-            ct_sections.append(TemplateSection(
-                name=s["key"],
-                title=s.get("label", f"Abschnitt {i + 1}"),
-                order=i + 1,
-                fields=ct_fields,
-            ))
+                ct_fields.append(
+                    TemplateField(
+                        name=f["key"],
+                        label=f.get("label", f["key"]),
+                        field_type=ft,
+                    )
+                )
+            ct_sections.append(
+                TemplateSection(
+                    name=s["key"],
+                    title=s.get("label", f"Abschnitt {i + 1}"),
+                    order=i + 1,
+                    fields=ct_fields,
+                )
+            )
         ConceptTemplate(
             name=TEMPLATE_NAME,
             scope="explosionsschutz",
@@ -126,9 +125,7 @@ def _validate_structure(structure: dict) -> list[str]:
         )
         logger.debug("concept_templates schema validation: OK")
     except ImportError:
-        logger.debug(
-            "concept_templates not installed — skipping schema validation"
-        )
+        logger.debug("concept_templates not installed — skipping schema validation")
     except Exception as exc:
         warnings.append(f"concept_templates Validierung: {exc}")
 
@@ -136,10 +133,7 @@ def _validate_structure(structure: dict) -> list[str]:
 
 
 class Command(BaseCommand):
-    help = (
-        "Seed Standard-Explosionsschutzdokument-Template "
-        "(GefStoffV § 6 Abs. 9, idempotent)"
-    )
+    help = "Seed Standard-Explosionsschutzdokument-Template (GefStoffV § 6 Abs. 9, idempotent)"
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -151,10 +145,7 @@ class Command(BaseCommand):
             "--tenant-id",
             type=str,
             default=None,
-            help=(
-                "Tenant-ID für das Template "
-                "(default: settings.EX_DOC_SYSTEM_TENANT_ID)"
-            ),
+            help=("Tenant-ID für das Template (default: settings.EX_DOC_SYSTEM_TENANT_ID)"),
         )
         parser.add_argument(
             "--skip-validation",
@@ -183,10 +174,12 @@ class Command(BaseCommand):
             for w in warnings:
                 self.stderr.write(self.style.WARNING(f"  ⚠ {w}"))
             if warnings:
-                self.stderr.write(self.style.WARNING(
-                    f"{len(warnings)} Validierungswarnung(en). "
-                    f"Nutze --skip-validation zum Überspringen."
-                ))
+                self.stderr.write(
+                    self.style.WARNING(
+                        f"{len(warnings)} Validierungswarnung(en). "
+                        f"Nutze --skip-validation zum Überspringen."
+                    )
+                )
 
         # Check idempotency
         existing = ExDocTemplate.objects.filter(
@@ -205,15 +198,8 @@ class Command(BaseCommand):
             return
 
         sections = structure["sections"]
-        total_fields = sum(
-            len(s.get("fields", [])) for s in sections
-        )
-        ai_fields = sum(
-            1
-            for s in sections
-            for f in s.get("fields", [])
-            if f.get("ai_enabled")
-        )
+        total_fields = sum(len(s.get("fields", [])) for s in sections)
+        ai_fields = sum(1 for s in sections for f in s.get("fields", []) if f.get("ai_enabled"))
 
         if dry_run:
             self.stdout.write(
@@ -234,13 +220,16 @@ class Command(BaseCommand):
             name=TEMPLATE_NAME,
             description=TEMPLATE_DESCRIPTION,
             structure_json=json.dumps(
-                structure, ensure_ascii=False,
+                structure,
+                ensure_ascii=False,
             ),
             status=ExDocTemplate.Status.ACCEPTED,
         )
 
         logger.info(
-            "Created Ex-Doc Template: %s (PK=%s)", TEMPLATE_NAME, tmpl.pk,
+            "Created Ex-Doc Template: %s (PK=%s)",
+            TEMPLATE_NAME,
+            tmpl.pk,
         )
         self.stdout.write(
             self.style.SUCCESS(

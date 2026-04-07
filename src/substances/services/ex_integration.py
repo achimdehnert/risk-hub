@@ -82,9 +82,7 @@ class ExSubstanceData:
         """Prüft ob der Stoff entzündbar ist."""
         if self.flash_point_c is not None and self.flash_point_c < 60:
             return True
-        if self.lower_explosion_limit is not None:
-            return True
-        return False
+        return self.lower_explosion_limit is not None
 
 
 class ExIntegrationService:

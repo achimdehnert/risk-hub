@@ -69,10 +69,7 @@ def fixture_breach(db, fixture_tenant_id, fixture_mandate):
 
 
 def _req(rf, user, tenant_id, method="GET", path="/dsb/breaches/", data=None):
-    if method == "POST":
-        r = rf.post(path, data or {})
-    else:
-        r = rf.get(path)
+    r = rf.post(path, data or {}) if method == "POST" else rf.get(path)
     r.user = user
     r.tenant_id = tenant_id
     r.session = {}
@@ -175,9 +172,7 @@ class TestBreachDetailView:
         from django.http import Http404
 
         with _ALLOW_ALL, pytest.raises(Http404):
-            views_breach.breach_detail(
-                _req(rf, fixture_user, uuid.uuid4()), pk=fixture_breach.pk
-            )
+            views_breach.breach_detail(_req(rf, fixture_user, uuid.uuid4()), pk=fixture_breach.pk)
 
 
 # =============================================================================

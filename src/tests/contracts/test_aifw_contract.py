@@ -7,11 +7,11 @@ mit der tatsächlichen aifw-API kompatibel bleibt.
 Consumer: risk-hub (ai_analysis/llm_client.py)
 Provider: iil-aifw (aifw.service)
 """
+
 from __future__ import annotations
 
 import pytest
-
-from iil_testkit.contract import ContractVerifier, ResponseShapeVerifier
+from iil_testkit.contract import ContractVerifier
 
 pytestmark = pytest.mark.contract
 

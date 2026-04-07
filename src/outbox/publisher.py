@@ -9,11 +9,12 @@ import django
 
 django.setup()
 
+import logging
+
 from django.db import transaction  # noqa: E402
 from django.utils import timezone  # noqa: E402
 
 from outbox.models import OutboxMessage  # noqa: E402
-import logging
 
 logger = logging.getLogger(__name__)
 

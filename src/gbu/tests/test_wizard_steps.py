@@ -35,10 +35,7 @@ def fixture_user(db):
 
 
 def _req(rf, user, tenant_id=None, method="GET", path="/gbu/", data=None, session=None):
-    if method == "POST":
-        r = rf.post(path, data or {})
-    else:
-        r = rf.get(path, data or {})
+    r = rf.post(path, data or {}) if method == "POST" else rf.get(path, data or {})
     r.user = user
     r.tenant_id = tenant_id or TENANT_ID
     r.session = session or {}

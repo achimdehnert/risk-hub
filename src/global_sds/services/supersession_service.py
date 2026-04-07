@@ -21,7 +21,9 @@ from global_sds.sds_usage import SdsUsage, SdsUsageStatus
 logger = logging.getLogger(__name__)
 
 REVIEW_DEADLINE_DAYS = getattr(
-    settings, "SDS_REVIEW_DEADLINE_DAYS", 28,
+    settings,
+    "SDS_REVIEW_DEADLINE_DAYS",
+    28,
 )
 
 
@@ -70,26 +72,28 @@ class SdsSupersessionService:
 
             if impact == ImpactLevel.SAFETY_CRITICAL:
                 usage.status = SdsUsageStatus.REVIEW_REQUIRED
-                usage.review_deadline = (
-                    date.today()
-                    + timedelta(days=REVIEW_DEADLINE_DAYS)
-                )
+                usage.review_deadline = date.today() + timedelta(days=REVIEW_DEADLINE_DAYS)
             elif impact == ImpactLevel.REGULATORY:
                 usage.status = SdsUsageStatus.UPDATE_AVAILABLE
 
-            usage.save(update_fields=[
-                "pending_update_revision",
-                "pending_update_impact",
-                "status",
-                "review_deadline",
-                "updated_at",
-            ])
+            usage.save(
+                update_fields=[
+                    "pending_update_revision",
+                    "pending_update_impact",
+                    "status",
+                    "review_deadline",
+                    "updated_at",
+                ]
+            )
             affected += 1
 
             # 4. Outbox-Event
             self._emit_supersession_event(
-                usage, old_revision, new_revision,
-                diff_record, impact,
+                usage,
+                old_revision,
+                new_revision,
+                diff_record,
+                impact,
             )
 
         # 5. GBU/Ex-Schutz flaggen
@@ -97,10 +101,11 @@ class SdsSupersessionService:
             self._flag_downstream(old_revision, diff_record)
 
         logger.info(
-            "Superseded revision %s → %s, "
-            "%d usages affected (impact=%s)",
-            old_revision.pk, new_revision.pk,
-            affected, impact,
+            "Superseded revision %s → %s, %d usages affected (impact=%s)",
+            old_revision.pk,
+            new_revision.pk,
+            affected,
+            impact,
         )
         return affected
 
@@ -128,23 +133,16 @@ class SdsSupersessionService:
                     "impact_level": impact,
                     "added_h_codes": diff_record.added_h_codes,
                     "removed_h_codes": diff_record.removed_h_codes,
-                    "requires_gbu_review": (
-                        impact == ImpactLevel.SAFETY_CRITICAL
-                    ),
-                    "requires_ex_review": (
-                        impact == ImpactLevel.SAFETY_CRITICAL
-                    ),
+                    "requires_gbu_review": (impact == ImpactLevel.SAFETY_CRITICAL),
+                    "requires_ex_review": (impact == ImpactLevel.SAFETY_CRITICAL),
                     "review_deadline": (
-                        str(usage.review_deadline)
-                        if usage.review_deadline
-                        else None
+                        str(usage.review_deadline) if usage.review_deadline else None
                     ),
                 },
             )
         except ImportError:
             logger.warning(
-                "outbox.services not available, "
-                "skipping audit event",
+                "outbox.services not available, skipping audit event",
             )
 
     def _flag_downstream(
@@ -154,8 +152,7 @@ class SdsSupersessionService:
     ) -> None:
         """GBU + Ex-Schutz bei SAFETY_CRITICAL flaggen."""
         reason = (
-            f"SDS-Update: {diff_record.overall_impact}. "
-            f"Neue H-Sätze: {diff_record.added_h_codes}"
+            f"SDS-Update: {diff_record.overall_impact}. Neue H-Sätze: {diff_record.added_h_codes}"
         )
 
         # GBU flaggen (falls Modul vorhanden)
@@ -171,11 +168,13 @@ class SdsSupersessionService:
             )
             if flagged:
                 logger.info(
-                    "Flagged %d GBU assessments", flagged,
+                    "Flagged %d GBU assessments",
+                    flagged,
                 )
         except (ImportError, Exception) as exc:
             logger.debug(
-                "GBU flagging skipped: %s", exc,
+                "GBU flagging skipped: %s",
+                exc,
             )
 
         # Ex-Schutz flaggen (falls Modul vorhanden)
@@ -191,9 +190,11 @@ class SdsSupersessionService:
             )
             if flagged:
                 logger.info(
-                    "Flagged %d Ex-Schutz concepts", flagged,
+                    "Flagged %d Ex-Schutz concepts",
+                    flagged,
                 )
         except (ImportError, Exception) as exc:
             logger.debug(
-                "Ex-Schutz flagging skipped: %s", exc,
+                "Ex-Schutz flagging skipped: %s",
+                exc,
             )

@@ -11,7 +11,8 @@ class SdsRevisionQuerySet(models.QuerySet):
     """Custom QuerySet für globale SDS-Revisionen."""
 
     def visible_for_tenant(
-        self, tenant_id: uuid.UUID | str,
+        self,
+        tenant_id: uuid.UUID | str,
     ) -> "SdsRevisionQuerySet":
         """
         VERIFIED/SUPERSEDED: global sichtbar (alle Tenants).
@@ -20,10 +21,12 @@ class SdsRevisionQuerySet(models.QuerySet):
         from global_sds.models import GlobalSdsRevision
 
         return self.filter(
-            Q(status__in=[
-                GlobalSdsRevision.Status.VERIFIED,
-                GlobalSdsRevision.Status.SUPERSEDED,
-            ])
+            Q(
+                status__in=[
+                    GlobalSdsRevision.Status.VERIFIED,
+                    GlobalSdsRevision.Status.SUPERSEDED,
+                ]
+            )
             | Q(
                 status=GlobalSdsRevision.Status.PENDING,
                 uploaded_by_tenant_id=str(tenant_id),

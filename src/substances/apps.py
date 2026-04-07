@@ -14,4 +14,5 @@ class SubstancesConfig(AppConfig):
     def ready(self):
         """Signal-Handler und doc_templates Retrievers registrieren."""
         from doc_template_retrievers import register_all_retrievers
+
         register_all_retrievers()

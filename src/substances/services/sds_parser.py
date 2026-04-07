@@ -9,6 +9,7 @@ Extrahiert relevante Informationen aus Sicherheitsdatenblättern:
 - Physikalische Eigenschaften (Flammpunkt, Zündtemperatur, etc.)
 """
 
+import contextlib
 import re
 from dataclasses import dataclass, field
 
@@ -233,13 +234,16 @@ class SdsParserService:
 
         # Metadaten extrahieren (Abschnitt 1 + Header)
         result.product_name = self._extract_string(
-            self.PRODUCT_NAME_PATTERN, text,
+            self.PRODUCT_NAME_PATTERN,
+            text,
         )
         result.manufacturer_name = self._extract_string(
-            self.MANUFACTURER_PATTERN, text,
+            self.MANUFACTURER_PATTERN,
+            text,
         )
         result.version_number = self._extract_string(
-            self.VERSION_PATTERN, text,
+            self.VERSION_PATTERN,
+            text,
         )
 
         # CAS-Nummer
@@ -253,12 +257,8 @@ class SdsParserService:
             day, month, year = date_match.groups()
             if len(year) == 2:
                 year = f"20{year}" if int(year) < 50 else f"19{year}"
-            try:
-                result.revision_date = (
-                    f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
-                )
-            except ValueError:
-                pass
+            with contextlib.suppress(ValueError):
+                result.revision_date = f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
 
         # Konfidenz berechnen
         result.parse_confidence = self._compute_confidence(result)
@@ -266,7 +266,9 @@ class SdsParserService:
         return result
 
     def _extract_string(
-        self, pattern: re.Pattern, text: str,
+        self,
+        pattern: re.Pattern,
+        text: str,
     ) -> str:
         """Extrahiert einen String aus Text mittels Regex."""
         match = pattern.search(text)

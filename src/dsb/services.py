@@ -4,6 +4,7 @@ CRUD operations + KPI aggregation. Views must not call .save() / .delete()
 directly — always go through this module.
 """
 
+import contextlib
 import logging
 from dataclasses import dataclass
 from uuid import UUID
@@ -45,12 +46,11 @@ def create_dsb_document(
     if document_date:
         from datetime import datetime
 
-        try:
+        with contextlib.suppress(ValueError):
             doc.document_date = datetime.strptime(
-                document_date, "%Y-%m-%d",
+                document_date,
+                "%Y-%m-%d",
             ).date()
-        except ValueError:
-            pass
     doc.file = uploaded_file
     doc.save()
     return doc

@@ -12,18 +12,15 @@ Struktur:
 from __future__ import annotations
 
 import uuid
-from datetime import date
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 from django.core.exceptions import PermissionDenied, ValidationError
 
 from apps.explosionsschutz.models import (
     Area,
-    Equipment,
     EquipmentType,
     ExplosionConcept,
-    IgnitionSource,
     ProtectionMeasure,
     ZoneDefinition,
     ZoneIgnitionSourceAssessment,
@@ -33,11 +30,8 @@ from apps.explosionsschutz.services import (
     ArchiveConceptCmd,
     AssessIgnitionSourceCmd,
     ConceptService,
-    CreateAreaCmd,
     CreateConceptCmd,
-    CreateMeasureCmd,
     CreateZoneCmd,
-    MeasureService,
     SubmitForReviewCmd,
     UpdateConceptCmd,
     ZoneService,
@@ -45,7 +39,6 @@ from apps.explosionsschutz.services import (
 from apps.explosionsschutz.services.zone_classification import (
     ZoneClassificationEngine,
 )
-
 
 TENANT_ID = uuid.UUID("00000000-0000-0000-0000-000000000001")
 USER_ID = uuid.UUID("00000000-0000-0000-0000-000000000002")

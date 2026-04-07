@@ -14,9 +14,9 @@ from riskfw.exceptions import ATEXCheckError
 logger = logging.getLogger(__name__)
 
 _ZONE_REQUIREMENTS: dict[str, dict] = {
-    "0":  {"min_category": "1G", "allowed": ["1G"]},
-    "1":  {"min_category": "2G", "allowed": ["1G", "2G"]},
-    "2":  {"min_category": "3G", "allowed": ["1G", "2G", "3G"]},
+    "0": {"min_category": "1G", "allowed": ["1G"]},
+    "1": {"min_category": "2G", "allowed": ["1G", "2G"]},
+    "2": {"min_category": "3G", "allowed": ["1G", "2G", "3G"]},
     "20": {"min_category": "1D", "allowed": ["1D"]},
     "21": {"min_category": "2D", "allowed": ["1D", "2D"]},
     "22": {"min_category": "3D", "allowed": ["1D", "2D", "3D"]},
@@ -40,9 +40,7 @@ def check_equipment_suitability(ex_marking: str, zone: str) -> ATEXCheckResult:
     zone_normalized = zone.strip().lower().replace("zone", "").strip()
 
     if zone_normalized not in _ZONE_REQUIREMENTS:
-        raise ATEXCheckError(
-            f"Unknown zone: {zone!r}. Valid: {list(_ZONE_REQUIREMENTS.keys())}"
-        )
+        raise ATEXCheckError(f"Unknown zone: {zone!r}. Valid: {list(_ZONE_REQUIREMENTS.keys())}")
 
     requirements = _ZONE_REQUIREMENTS[zone_normalized]
     marking_upper = ex_marking.upper()
@@ -74,12 +72,8 @@ def check_equipment_suitability(ex_marking: str, zone: str) -> ATEXCheckResult:
             f"Erforderliche Kategorie fuer Zone {zone_normalized}: {requirements['allowed']}"
         )
     elif detected_category not in requirements["allowed"]:
-        issues.append(
-            f"Kategorie {detected_category} nicht fuer Zone {zone_normalized} geeignet"
-        )
-        recommendations.append(
-            f"Mindestens Kategorie {requirements['min_category']} erforderlich"
-        )
+        issues.append(f"Kategorie {detected_category} nicht fuer Zone {zone_normalized} geeignet")
+        recommendations.append(f"Mindestens Kategorie {requirements['min_category']} erforderlich")
 
     if not detected_temp_class:
         issues.append("Keine Temperaturklasse in Kennzeichnung erkannt")
@@ -95,7 +89,10 @@ def check_equipment_suitability(ex_marking: str, zone: str) -> ATEXCheckResult:
 
     logger.info(
         "[ATEXCheck] marking=%s zone=%s suitable=%s category=%s",
-        ex_marking, zone_normalized, is_suitable, detected_category,
+        ex_marking,
+        zone_normalized,
+        is_suitable,
+        detected_category,
     )
 
     return ATEXCheckResult(

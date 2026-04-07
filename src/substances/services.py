@@ -35,10 +35,7 @@ def upload_sds_revision(
     from .models import SdsRevision
 
     sha256 = hashlib.sha256(pdf_content).hexdigest()
-    s3_key = (
-        f"sds/{tenant_id}/{substance.pk}"
-        f"/{sha256[:16]}_{filename}"
-    )
+    s3_key = f"sds/{tenant_id}/{substance.pk}/{sha256[:16]}_{filename}"
 
     try:
         s3 = s3_client()

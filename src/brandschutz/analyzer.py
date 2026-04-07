@@ -130,11 +130,7 @@ class BrandschutzAnalyzer:
         # Layer-basierte Erkennung
         for entity in msp:
             try:
-                layer_name = (
-                    entity.dxf.layer.lower()
-                    if hasattr(entity.dxf, "layer")
-                    else ""
-                )
+                layer_name = entity.dxf.layer.lower() if hasattr(entity.dxf, "layer") else ""
                 self._process_entity(entity, layer_name, etage, analyse)
             except Exception as e:
                 logger.debug("[BrandschutzAnalyzer] Entity skip: %s", e)
@@ -228,9 +224,7 @@ class BrandschutzAnalyzer:
                 entity.dxftype(),
             )
         except Exception as e:
-            logger.debug(
-                "[BrandschutzAnalyzer] Längenberechnung fehlgeschlagen: %s", e
-            )
+            logger.debug("[BrandschutzAnalyzer] Längenberechnung fehlgeschlagen: %s", e)
         return 0.0
 
     def _extract_feuerwiderstand(self, layer_name: str) -> str:

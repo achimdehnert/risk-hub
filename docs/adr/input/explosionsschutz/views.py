@@ -15,22 +15,17 @@ from __future__ import annotations
 import uuid
 
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import PermissionDenied
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.response import TemplateResponse
-from django.views import View
 from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.core.request_context import get_context
 from apps.permissions.decorators import require_permission
 
 from .forms import (
-    AreaForm,
     ConceptBasicForm,
     ConceptReleaseForm,
-    EquipmentForm,
-    IgnitionAssessmentFormSet,
     InspectionForm,
     MeasureForm,
     ZoneForm,
@@ -40,19 +35,13 @@ from .models import (
     Equipment,
     ExplosionConcept,
     IgnitionSource,
-    Inspection,
-    ProtectionMeasure,
-    VerificationDocument,
     ZoneDefinition,
-    ZoneIgnitionSourceAssessment,
 )
 from .services import (
     ApproveConceptCmd,
     ArchiveConceptCmd,
-    AreaService,
     AssessIgnitionSourceCmd,
     ConceptService,
-    CreateAreaCmd,
     CreateConceptCmd,
     CreateMeasureCmd,
     CreateZoneCmd,
@@ -64,7 +53,6 @@ from .services import (
     ZoneService,
 )
 from .services.zone_classification import ZoneClassificationEngine
-
 
 # ============================================================================
 # Dashboard + Übersichtsseiten

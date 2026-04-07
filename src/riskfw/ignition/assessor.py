@@ -15,14 +15,23 @@ IGNITION_SOURCES: dict[str, dict] = {
     "S02": {"name": "Flammen und heisse Gase", "clause": "EN 1127-1:2019 Abschn. 6.2"},
     "S03": {"name": "Mechanisch erzeugte Funken", "clause": "EN 1127-1:2019 Abschn. 6.3"},
     "S04": {"name": "Elektrische Anlagen", "clause": "EN 1127-1:2019 Abschn. 6.4"},
-    "S05": {"name": "Streustrom, kathodischer Korrosionsschutz", "clause": "EN 1127-1:2019 Abschn. 6.5"},
+    "S05": {
+        "name": "Streustrom, kathodischer Korrosionsschutz",
+        "clause": "EN 1127-1:2019 Abschn. 6.5",
+    },
     "S06": {"name": "Statische Elektrizitaet", "clause": "EN 1127-1:2019 Abschn. 6.6"},
     "S07": {"name": "Blitzschlag", "clause": "EN 1127-1:2019 Abschn. 6.7"},
-    "S08": {"name": "Elektromagnetische Felder (Hochfrequenz)", "clause": "EN 1127-1:2019 Abschn. 6.8"},
+    "S08": {
+        "name": "Elektromagnetische Felder (Hochfrequenz)",
+        "clause": "EN 1127-1:2019 Abschn. 6.8",
+    },
     "S09": {"name": "Elektromagnetische Strahlung (opt.)", "clause": "EN 1127-1:2019 Abschn. 6.9"},
     "S10": {"name": "Ionisierende Strahlung", "clause": "EN 1127-1:2019 Abschn. 6.10"},
     "S11": {"name": "Ultraschall", "clause": "EN 1127-1:2019 Abschn. 6.11"},
-    "S12": {"name": "Adiabatische Kompression, Stosswellen", "clause": "EN 1127-1:2019 Abschn. 6.12"},
+    "S12": {
+        "name": "Adiabatische Kompression, Stosswellen",
+        "clause": "EN 1127-1:2019 Abschn. 6.12",
+    },
     "S13": {"name": "Exotherme Reaktionen", "clause": "EN 1127-1:2019 Abschn. 6.13"},
 }
 
@@ -68,7 +77,10 @@ class IgnitionSourceMatrix:
 
         logger.debug(
             "[Ignition] source=%s present=%s effective=%s risk=%s",
-            source_id, is_present, is_effective, risk_level,
+            source_id,
+            is_present,
+            is_effective,
+            risk_level,
         )
 
         return IgnitionAssessment(

@@ -41,7 +41,9 @@ class ExDocTemplate(models.Model):
         ARCHIVED = "archived", "Archiviert"
 
     uuid = models.UUIDField(
-        default=uuid.uuid4, unique=True, editable=False,
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     name = models.CharField(max_length=255)
@@ -56,11 +58,14 @@ class ExDocTemplate(models.Model):
         default=Status.DRAFT,
     )
     source_filename = models.CharField(
-        max_length=255, blank=True, default="",
+        max_length=255,
+        blank=True,
+        default="",
         help_text="Dateiname des Quell-PDFs (falls aus Upload)",
     )
     source_text = models.TextField(
-        blank=True, default="",
+        blank=True,
+        default="",
         help_text="Extrahierter Text aus Quell-PDF",
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -86,6 +91,7 @@ class ExDocTemplate(models.Model):
     @property
     def section_count(self) -> int:
         import json
+
         try:
             data = json.loads(self.structure_json)
             return len(data.get("sections", []))
@@ -95,12 +101,10 @@ class ExDocTemplate(models.Model):
     @property
     def field_count(self) -> int:
         import json
+
         try:
             data = json.loads(self.structure_json)
-            return sum(
-                len(s.get("fields", []))
-                for s in data.get("sections", [])
-            )
+            return sum(len(s.get("fields", [])) for s in data.get("sections", []))
         except (json.JSONDecodeError, TypeError):
             return 0
 
@@ -123,7 +127,9 @@ class ExDocInstance(models.Model):
         APPROVED = "approved", "Freigegeben"
 
     uuid = models.UUIDField(
-        default=uuid.uuid4, unique=True, editable=False,
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     template = models.ForeignKey(
@@ -150,7 +156,9 @@ class ExDocInstance(models.Model):
         default=Status.DRAFT,
     )
     source_filename = models.CharField(
-        max_length=255, blank=True, default="",
+        max_length=255,
+        blank=True,
+        default="",
         help_text="Dateiname des importierten Dokuments",
     )
     created_at = models.DateTimeField(auto_now_add=True)

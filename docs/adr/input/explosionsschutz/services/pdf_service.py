@@ -18,7 +18,6 @@ Struktur des erzeugten Dokuments (nach §6 GefStoffV):
 """
 from __future__ import annotations
 
-import io
 import uuid
 from typing import TYPE_CHECKING
 
@@ -44,7 +43,7 @@ class ExDocumentPdfService:
 
     def generate(
         self,
-        concept: "ExplosionConcept",
+        concept: ExplosionConcept,
         tenant_id: uuid.UUID,
         user_id: uuid.UUID,
     ) -> bytes:
@@ -71,7 +70,7 @@ class ExDocumentPdfService:
         )
         return pdf_bytes
 
-    def _build_context(self, concept: "ExplosionConcept") -> dict:
+    def _build_context(self, concept: ExplosionConcept) -> dict:
         from .models import MeasureCategory
 
         zones = list(

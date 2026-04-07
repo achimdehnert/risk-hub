@@ -58,9 +58,8 @@ class ZoneExtent(BaseModel):
         elif self.shape == "box":
             if not all([self.length_m, self.width_m, self.depth_m]):
                 raise ValueError("length_m, width_m, depth_m erforderlich für shape='box'")
-        elif self.shape == "custom":
-            if not self.custom_description:
-                raise ValueError("custom_description erforderlich für shape='custom'")
+        elif self.shape == "custom" and not self.custom_description:
+            raise ValueError("custom_description erforderlich für shape='custom'")
         return self
 
     @property

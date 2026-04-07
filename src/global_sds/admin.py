@@ -21,7 +21,9 @@ class GlobalSdsComponentInline(admin.TabularInline):
     model = GlobalSdsComponent
     extra = 0
     fields = (
-        "chemical_name", "cas_number", "concentration_min",
+        "chemical_name",
+        "cas_number",
+        "concentration_min",
         "concentration_max",
     )
 
@@ -30,8 +32,12 @@ class GlobalSdsExposureLimitInline(admin.TabularInline):
     model = GlobalSdsExposureLimit
     extra = 0
     fields = (
-        "component", "limit_type", "route",
-        "value", "unit", "basis",
+        "component",
+        "limit_type",
+        "route",
+        "value",
+        "unit",
+        "basis",
     )
 
 
@@ -51,17 +57,26 @@ class GlobalSubstanceAdmin(admin.ModelAdmin):
 @admin.register(GlobalSdsRevision)
 class GlobalSdsRevisionAdmin(admin.ModelAdmin):
     list_display = (
-        "product_name", "substance", "status",
-        "version_number", "revision_date",
-        "parse_confidence", "created_at",
+        "product_name",
+        "substance",
+        "status",
+        "version_number",
+        "revision_date",
+        "parse_confidence",
+        "created_at",
     )
     list_filter = ("status", "created_at")
     search_fields = (
-        "product_name", "manufacturer_name",
-        "substance__name", "substance__cas_number",
+        "product_name",
+        "manufacturer_name",
+        "substance__name",
+        "substance__cas_number",
     )
     readonly_fields = (
-        "uuid", "source_hash", "created_at", "updated_at",
+        "uuid",
+        "source_hash",
+        "created_at",
+        "updated_at",
     )
     inlines = [
         GlobalSdsComponentInline,
@@ -73,22 +88,32 @@ class GlobalSdsRevisionAdmin(admin.ModelAdmin):
 @admin.register(SdsRevisionDiffRecord)
 class SdsRevisionDiffRecordAdmin(admin.ModelAdmin):
     list_display = (
-        "old_revision", "new_revision",
-        "overall_impact", "computed_at",
+        "old_revision",
+        "new_revision",
+        "overall_impact",
+        "computed_at",
     )
     list_filter = ("overall_impact",)
     readonly_fields = (
-        "old_revision", "new_revision", "overall_impact",
-        "field_diffs", "added_h_codes", "removed_h_codes",
-        "changed_components", "computed_at",
+        "old_revision",
+        "new_revision",
+        "overall_impact",
+        "field_diffs",
+        "added_h_codes",
+        "removed_h_codes",
+        "changed_components",
+        "computed_at",
     )
 
 
 @admin.register(SdsUsage)
 class SdsUsageAdmin(admin.ModelAdmin):
     list_display = (
-        "sds_revision", "tenant_id", "status",
-        "approved_by", "review_deadline",
+        "sds_revision",
+        "tenant_id",
+        "status",
+        "approved_by",
+        "review_deadline",
     )
     list_filter = ("status",)
     search_fields = (
@@ -96,6 +121,8 @@ class SdsUsageAdmin(admin.ModelAdmin):
         "sds_revision__substance__name",
     )
     raw_id_fields = (
-        "sds_revision", "pending_update_revision",
-        "approved_by", "update_deferred_by",
+        "sds_revision",
+        "pending_update_revision",
+        "approved_by",
+        "update_deferred_by",
     )

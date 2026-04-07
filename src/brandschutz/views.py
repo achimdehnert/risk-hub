@@ -21,11 +21,23 @@ from .models import (
     FireProtectionMeasure,
 )
 
-ALLOWED_EXTENSIONS = frozenset({
-    ".pdf", ".docx", ".doc", ".dxf", ".dwg",
-    ".jpg", ".jpeg", ".png", ".tiff", ".xlsx", ".xls",
-    ".txt", ".csv",
-})
+ALLOWED_EXTENSIONS = frozenset(
+    {
+        ".pdf",
+        ".docx",
+        ".doc",
+        ".dxf",
+        ".dwg",
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".tiff",
+        ".xlsx",
+        ".xls",
+        ".txt",
+        ".csv",
+    }
+)
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
@@ -60,14 +72,11 @@ class ConceptDetailView(View):
             "escape_routes", "fire_extinguishers", "measures"
         )
         measures = concept.measures.filter(section__isnull=True)
-        documents = (
-            Document.objects.filter(
-                tenant_id=request.tenant_id,
-                concept_ref_id=concept.pk,
-                scope="brandschutz",
-            )
-            .order_by("-created_at")
-        )
+        documents = Document.objects.filter(
+            tenant_id=request.tenant_id,
+            concept_ref_id=concept.pk,
+            scope="brandschutz",
+        ).order_by("-created_at")
         concept_docs = concept.concept_documents.filter(
             deleted_at__isnull=True,
         ).order_by("-created_at")
@@ -95,7 +104,9 @@ class ConceptCreateView(View):
         if err:
             return err
         form = FireProtectionConceptForm(tenant_id=request.tenant_id)
-        return render(request, self.template_name, {"form": form, "title": "Neues Brandschutzkonzept"})
+        return render(
+            request, self.template_name, {"form": form, "title": "Neues Brandschutzkonzept"}
+        )
 
     def post(self, request: HttpRequest) -> HttpResponse:
         err = _require_tenant(request)
@@ -104,11 +115,14 @@ class ConceptCreateView(View):
         form = FireProtectionConceptForm(request.POST, tenant_id=request.tenant_id)
         if form.is_valid():
             from common.services import save_form
+
             user_id = request.user.pk if request.user.is_authenticated else None
             concept = save_form(form, request.tenant_id, user_id, is_create=True)
             messages.success(request, f"Brandschutzkonzept '{concept.title}' angelegt.")
             return redirect("brandschutz:concept-detail", pk=concept.pk)
-        return render(request, self.template_name, {"form": form, "title": "Neues Brandschutzkonzept"})
+        return render(
+            request, self.template_name, {"form": form, "title": "Neues Brandschutzkonzept"}
+        )
 
 
 class ConceptEditView(View):
@@ -122,20 +136,27 @@ class ConceptEditView(View):
             return err
         concept = get_object_or_404(FireProtectionConcept, pk=pk, tenant_id=request.tenant_id)
         form = FireProtectionConceptForm(instance=concept, tenant_id=request.tenant_id)
-        return render(request, self.template_name, {"form": form, "title": concept.title, "concept": concept})
+        return render(
+            request, self.template_name, {"form": form, "title": concept.title, "concept": concept}
+        )
 
     def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
         err = _require_tenant(request)
         if err:
             return err
         concept = get_object_or_404(FireProtectionConcept, pk=pk, tenant_id=request.tenant_id)
-        form = FireProtectionConceptForm(request.POST, instance=concept, tenant_id=request.tenant_id)
+        form = FireProtectionConceptForm(
+            request.POST, instance=concept, tenant_id=request.tenant_id
+        )
         if form.is_valid():
             from common.services import save_form
+
             save_form(form, request.tenant_id, is_create=False)
             messages.success(request, f"Brandschutzkonzept '{concept.title}' aktualisiert.")
             return redirect("brandschutz:concept-detail", pk=concept.pk)
-        return render(request, self.template_name, {"form": form, "title": concept.title, "concept": concept})
+        return render(
+            request, self.template_name, {"form": form, "title": concept.title, "concept": concept}
+        )
 
 
 class ExtinguisherListView(View):
@@ -258,6 +279,7 @@ class SectionCreateView(View):
         form = FireSectionForm(request.POST)
         if form.is_valid():
             from common.services import save_form
+
             section = save_form(form, request.tenant_id, is_create=True)
             section.concept = concept
             section.save(update_fields=["concept_id"])
@@ -265,9 +287,7 @@ class SectionCreateView(View):
                 request,
                 f"Brandabschnitt '{section.name}' angelegt.",
             )
-            return redirect(
-                "brandschutz:concept-detail", pk=concept.pk
-            )
+            return redirect("brandschutz:concept-detail", pk=concept.pk)
         return render(
             request,
             self.template_name,
@@ -314,9 +334,7 @@ class DocumentUploadView(View):
 
         if not uploaded_file:
             messages.error(request, "Bitte eine Datei auswählen.")
-            return redirect(
-                "brandschutz:document-upload", concept_pk=concept.pk
-            )
+            return redirect("brandschutz:document-upload", concept_pk=concept.pk)
 
         # Validate extension
         import os
@@ -327,16 +345,12 @@ class DocumentUploadView(View):
                 request,
                 f"Dateityp '{ext}' nicht erlaubt.",
             )
-            return redirect(
-                "brandschutz:document-upload", concept_pk=concept.pk
-            )
+            return redirect("brandschutz:document-upload", concept_pk=concept.pk)
 
         # Validate size
         if uploaded_file.size > MAX_UPLOAD_SIZE:
             messages.error(request, "Datei zu groß (max. 50 MB).")
-            return redirect(
-                "brandschutz:document-upload", concept_pk=concept.pk
-            )
+            return redirect("brandschutz:document-upload", concept_pk=concept.pk)
 
         if not title:
             title = uploaded_file.name
@@ -364,6 +378,7 @@ class DocumentUploadView(View):
             # Create ConceptDocument + trigger async analysis for PDFs
             if ext == ".pdf":
                 from brandschutz.services import create_concept_document
+
                 concept_doc = create_concept_document(
                     tenant_id=request.tenant_id,
                     concept=concept,
@@ -412,10 +427,14 @@ class ConceptDocAnalyzeView(View):
         concept_doc.template_json = ""
         concept_doc.analysis_confidence = None
         concept_doc.error_message = ""
-        concept_doc.save(update_fields=[
-            "status", "template_json",
-            "analysis_confidence", "error_message",
-        ])
+        concept_doc.save(
+            update_fields=[
+                "status",
+                "template_json",
+                "analysis_confidence",
+                "error_message",
+            ]
+        )
 
         from brandschutz.tasks import extract_and_analyze_task
 
@@ -460,12 +479,16 @@ class TemplateSelectView(View):
         # Existing filled templates for this concept
         filled = concept.filled_templates.order_by("-updated_at")
 
-        return render(request, self.template_name, {
-            "concept": concept,
-            "templates": templates,
-            "analyzed_docs": analyzed_docs,
-            "filled_templates": filled,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "concept": concept,
+                "templates": templates,
+                "analyzed_docs": analyzed_docs,
+                "filled_templates": filled,
+            },
+        )
 
     def post(self, request: HttpRequest, concept_pk: UUID) -> HttpResponse:
         """Create a FilledTemplate from selected template or analyzed doc."""
@@ -496,6 +519,7 @@ class TemplateSelectView(View):
                 status="analyzed",
             )
             from brandschutz.services import promote_to_template
+
             tmpl = promote_to_template(
                 tenant_id=request.tenant_id,
                 concept_doc=cdoc,
@@ -508,6 +532,7 @@ class TemplateSelectView(View):
             )
 
         from brandschutz.services import create_filled_template
+
         filled = create_filled_template(
             tenant_id=request.tenant_id,
             concept=concept,
@@ -570,13 +595,17 @@ class FilledTemplateEditView(View):
         )
 
         sections = get_sections_with_fields(form)
-        return render(request, self.template_name, {
-            "filled": filled,
-            "concept": filled.concept,
-            "form": form,
-            "sections": sections,
-            "template_name_display": ct.name,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "filled": filled,
+                "concept": filled.concept,
+                "form": form,
+                "sections": sections,
+                "template_name_display": ct.name,
+            },
+        )
 
     def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
         filled, err = self._get_filled(request, pk)
@@ -605,13 +634,17 @@ class FilledTemplateEditView(View):
         )
 
         sections = get_sections_with_fields(form)
-        return render(request, self.template_name, {
-            "filled": filled,
-            "concept": filled.concept,
-            "form": form,
-            "sections": sections,
-            "template_name_display": ct.name,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "filled": filled,
+                "concept": filled.concept,
+                "form": form,
+                "sections": sections,
+                "template_name_display": ct.name,
+            },
+        )
 
 
 class FilledTemplateLLMPrefillView(View):
@@ -651,6 +684,7 @@ class FilledTemplateLLMPrefillView(View):
 
         def _llm_fn(system: str, user: str) -> str:
             from ai_analysis.llm_client import llm_complete_sync
+
             return llm_complete_sync(
                 prompt=user,
                 system=system,
@@ -703,7 +737,5 @@ class FilledTemplatePDFView(View):
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         safe_name = filled.name.replace(" ", "_")[:80]
-        response["Content-Disposition"] = (
-            f'attachment; filename="{safe_name}.pdf"'
-        )
+        response["Content-Disposition"] = f'attachment; filename="{safe_name}.pdf"'
         return response

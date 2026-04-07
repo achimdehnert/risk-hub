@@ -101,7 +101,7 @@ class Equipment(models.Model):
         return "—"
 
     @property
-    def inspection_status(self) -> "Equipment.InspectionStatus":
+    def inspection_status(self) -> Equipment.InspectionStatus:
         if not self.next_inspection_date:
             return self.InspectionStatus.NOT_REQUIRED
         today = date.today()

@@ -122,10 +122,14 @@ class ExConceptDocAnalyzeView(View):
         concept_doc.template_json = ""
         concept_doc.analysis_confidence = None
         concept_doc.error_message = ""
-        concept_doc.save(update_fields=[
-            "status", "template_json",
-            "analysis_confidence", "error_message",
-        ])
+        concept_doc.save(
+            update_fields=[
+                "status",
+                "template_json",
+                "analysis_confidence",
+                "error_message",
+            ]
+        )
 
         from explosionsschutz.tasks import extract_and_analyze_task
 
@@ -170,12 +174,16 @@ class ExTemplateSelectView(View):
         )
         filled = concept.filled_templates.order_by("-updated_at")
 
-        return render(request, self.template_name, {
-            "concept": concept,
-            "templates": templates,
-            "analyzed_docs": analyzed_docs,
-            "filled_templates": filled,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "concept": concept,
+                "templates": templates,
+                "analyzed_docs": analyzed_docs,
+                "filled_templates": filled,
+            },
+        )
 
     def post(self, request: HttpRequest, concept_pk: UUID) -> HttpResponse:
         """Create a FilledTemplate from selected template or analyzed doc."""
@@ -284,13 +292,17 @@ class ExFilledTemplateEditView(View):
         )
 
         sections = get_sections_with_fields(form)
-        return render(request, self.template_name, {
-            "filled": filled,
-            "concept": filled.concept,
-            "form": form,
-            "sections": sections,
-            "template_name_display": ct.name,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "filled": filled,
+                "concept": filled.concept,
+                "form": form,
+                "sections": sections,
+                "template_name_display": ct.name,
+            },
+        )
 
     def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
         filled, err = self._get_filled(request, pk)
@@ -319,13 +331,17 @@ class ExFilledTemplateEditView(View):
         )
 
         sections = get_sections_with_fields(form)
-        return render(request, self.template_name, {
-            "filled": filled,
-            "concept": filled.concept,
-            "form": form,
-            "sections": sections,
-            "template_name_display": ct.name,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "filled": filled,
+                "concept": filled.concept,
+                "form": form,
+                "sections": sections,
+                "template_name_display": ct.name,
+            },
+        )
 
 
 # ── LLM Prefill ──────────────────────────────────────────────────
@@ -366,6 +382,7 @@ class ExFilledTemplateLLMPrefillView(View):
 
         def _llm_fn(system: str, user: str) -> str:
             from ai_analysis.llm_client import llm_complete_sync
+
             return llm_complete_sync(
                 prompt=user,
                 system=system,
@@ -423,7 +440,5 @@ class ExFilledTemplatePDFView(View):
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         safe_name = filled.name.replace(" ", "_")[:80]
-        response["Content-Disposition"] = (
-            f'attachment; filename="{safe_name}.pdf"'
-        )
+        response["Content-Disposition"] = f'attachment; filename="{safe_name}.pdf"'
         return response

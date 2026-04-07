@@ -6,6 +6,7 @@ PDF Upload → SHA-256 Deduplizierung → Identitätsauflösung →
 Versionserkennung → optional Supersession.
 """
 
+import contextlib
 import hashlib
 import logging
 from dataclasses import dataclass
@@ -99,7 +100,8 @@ class SdsUploadPipeline:
         if existing:
             logger.info(
                 "Duplicate: hash %s already exists (rev %s)",
-                source_hash[:12], existing.pk,
+                source_hash[:12],
+                existing.pk,
             )
             return UploadResult(
                 outcome=UploadOutcome.DUPLICATE,
@@ -156,18 +158,17 @@ class SdsUploadPipeline:
         revision_date_str = parse_result.get("revision_date")
         revision_date = None
         if revision_date_str:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 revision_date = date.fromisoformat(
                     revision_date_str,
                 )
-            except (ValueError, TypeError):
-                pass
 
         version = self.version_detector.detect(
             substance=substance,
             revision_date=revision_date,
             version_number=parse_result.get(
-                "version_number", "",
+                "version_number",
+                "",
             ),
         )
 
@@ -179,9 +180,7 @@ class SdsUploadPipeline:
             )
 
         # Neue Revision erstellen
-        is_first = (
-            version.outcome == VersionOutcome.FIRST_REVISION
-        )
+        is_first = version.outcome == VersionOutcome.FIRST_REVISION
         revision = self._create_revision(
             substance=substance,
             source_hash=source_hash,
@@ -192,31 +191,27 @@ class SdsUploadPipeline:
 
         # Supersession durchführen
         superseded_count = 0
-        if (
-            version.outcome == VersionOutcome.NEW_REVISION
-            and version.previous_revision
-        ):
+        if version.outcome == VersionOutcome.NEW_REVISION and version.previous_revision:
             diff = self.diff_service.compute_diff(
-                version.previous_revision, revision,
+                version.previous_revision,
+                revision,
             )
             diff_record = self.diff_service.persist_diff(
-                version.previous_revision, revision, diff,
+                version.previous_revision,
+                revision,
+                diff,
             )
-            superseded_count = (
-                self.supersession_service.supersede(
-                    version.previous_revision,
-                    revision,
-                    diff_record,
-                )
+            superseded_count = self.supersession_service.supersede(
+                version.previous_revision,
+                revision,
+                diff_record,
             )
 
         return UploadResult(
             outcome=UploadOutcome.NEW_REVISION,
             revision=revision,
             substance=substance,
-            message=(
-                f"Neue Revision für {substance.name}"
-            ),
+            message=(f"Neue Revision für {substance.name}"),
             superseded_count=superseded_count,
         )
 
@@ -232,7 +227,8 @@ class SdsUploadPipeline:
         from datetime import date
 
         confidence = parse_result.get(
-            "parse_confidence", 0.0,
+            "parse_confidence",
+            0.0,
         )
 
         # Status basierend auf Konfidenz
@@ -244,10 +240,8 @@ class SdsUploadPipeline:
         revision_date = None
         rd_str = parse_result.get("revision_date")
         if rd_str:
-            try:
+            with contextlib.suppress(ValueError, TypeError):
                 revision_date = date.fromisoformat(rd_str)
-            except (ValueError, TypeError):
-                pass
 
         revision = GlobalSdsRevision.objects.create(
             substance=substance,
@@ -255,17 +249,21 @@ class SdsUploadPipeline:
             status=status,
             uploaded_by_tenant_id=tenant_id,
             manufacturer_name=parse_result.get(
-                "manufacturer_name", "",
+                "manufacturer_name",
+                "",
             ),
             product_name=parse_result.get(
-                "product_name", "",
+                "product_name",
+                "",
             ),
             revision_date=revision_date,
             version_number=parse_result.get(
-                "version_number", "",
+                "version_number",
+                "",
             ),
             signal_word=parse_result.get(
-                "signal_word", "",
+                "signal_word",
+                "",
             ),
             flash_point_c=parse_result.get("flash_point_c"),
             ignition_temperature_c=parse_result.get(
@@ -279,12 +277,15 @@ class SdsUploadPipeline:
             ),
             parse_confidence=confidence,
             llm_corrections=parse_result.get(
-                "llm_corrections", [],
+                "llm_corrections",
+                [],
             ),
         )
 
         logger.info(
             "Created revision %s for %s (status=%s)",
-            revision.pk, substance.name, status,
+            revision.pk,
+            substance.name,
+            status,
         )
         return revision

@@ -62,56 +62,31 @@ class BrandschutzkonzeptReport:
         """Bestimmt Gesamtstatus aus Teilberichten."""
         if self.analyse is None and self.gebaeudeklasse is None:
             self.status = BeurteilungsStatus.NICHT_BEURTEILBAR
-            self.meldungen.append(
-                "Keine Analyse-Daten vorhanden"
-                " — Beurteilung nicht möglich"
-            )
+            self.meldungen.append("Keine Analyse-Daten vorhanden — Beurteilung nicht möglich")
             return
 
         if self.analyse and self.analyse.hat_kritische_maengel:
             self.status = BeurteilungsStatus.ABGELEHNT
             count = len(self.analyse.kritische_maengel)
-            self.meldungen.append(
-                f"{count} kritische Mängel — Nachbesserung erforderlich"
-            )
+            self.meldungen.append(f"{count} kritische Mängel — Nachbesserung erforderlich")
             return
 
         from brandschutz.gebaeudeklasse import Gebaeudeklasse
 
-        if (
-            self.gebaeudeklasse
-            and self.gebaeudeklasse.gebaeudeklasse
-            == Gebaeudeklasse.UNBEKANNT
-        ):
+        if self.gebaeudeklasse and self.gebaeudeklasse.gebaeudeklasse == Gebaeudeklasse.UNBEKANNT:
             self.status = BeurteilungsStatus.NICHT_BEURTEILBAR
-            self.meldungen.append(
-                "Gebäudeklasse nicht ermittelbar"
-                " — Beurteilung eingeschränkt"
-            )
+            self.meldungen.append("Gebäudeklasse nicht ermittelbar — Beurteilung eingeschränkt")
             return
 
         self.status = BeurteilungsStatus.VORPRUEFUNG
-        self.meldungen.append(
-            "Vorprüfung abgeschlossen"
-            " — fachliche Bestätigung ausstehend"
-        )
+        self.meldungen.append("Vorprüfung abgeschlossen — fachliche Bestätigung ausstehend")
 
     def berechne_hash(self) -> str:
         """SHA256 über serialisierte Eingabedaten."""
         data = {
-            "gk": (
-                self.gebaeudeklasse.to_dict()
-                if self.gebaeudeklasse
-                else None
-            ),
-            "analyse": (
-                self.analyse.to_dict() if self.analyse else None
-            ),
-            "esd": (
-                self.explosionsschutz.to_dict()
-                if self.explosionsschutz
-                else None
-            ),
+            "gk": (self.gebaeudeklasse.to_dict() if self.gebaeudeklasse else None),
+            "analyse": (self.analyse.to_dict() if self.analyse else None),
+            "esd": (self.explosionsschutz.to_dict() if self.explosionsschutz else None),
         }
         raw = json.dumps(data, sort_keys=True, default=str)
         self.report_hash = hashlib.sha256(raw.encode()).hexdigest()
@@ -123,17 +98,9 @@ class BrandschutzkonzeptReport:
             "erstellt_am": self.erstellt_am,
             "report_hash": self.report_hash,
             "meldungen": self.meldungen,
-            "gebaeudeklasse": (
-                self.gebaeudeklasse.to_dict()
-                if self.gebaeudeklasse
-                else None
-            ),
-            "analyse": (
-                self.analyse.to_dict() if self.analyse else None
-            ),
+            "gebaeudeklasse": (self.gebaeudeklasse.to_dict() if self.gebaeudeklasse else None),
+            "analyse": (self.analyse.to_dict() if self.analyse else None),
             "explosionsschutz": (
-                self.explosionsschutz.to_dict()
-                if self.explosionsschutz
-                else None
+                self.explosionsschutz.to_dict() if self.explosionsschutz else None
             ),
         }

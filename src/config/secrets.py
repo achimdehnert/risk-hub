@@ -15,8 +15,8 @@ Usage in src/config/settings.py:
 import os
 from pathlib import Path
 
-from dotenv import load_dotenv
 from decouple import config
+from dotenv import load_dotenv
 
 SECRETS_DIR = Path(config("SECRETS_DIR", default="/run/secrets"))
 

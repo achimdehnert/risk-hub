@@ -183,7 +183,9 @@ class DocumentTemplate(models.Model):
         ARCHIVED = "archived", "Archiviert"
 
     uuid = models.UUIDField(
-        default=uuid.uuid4, unique=True, editable=False,
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     name = models.CharField(max_length=255)
@@ -204,7 +206,9 @@ class DocumentTemplate(models.Model):
         default=Status.DRAFT,
     )
     source_filename = models.CharField(
-        max_length=255, blank=True, default="",
+        max_length=255,
+        blank=True,
+        default="",
     )
     source_text = models.TextField(blank=True, default="")
 
@@ -231,6 +235,7 @@ class DocumentTemplate(models.Model):
     @property
     def section_count(self) -> int:
         import json as _json
+
         try:
             data = _json.loads(self.structure_json)
             return len(data.get("sections", []))
@@ -240,18 +245,17 @@ class DocumentTemplate(models.Model):
     @property
     def field_count(self) -> int:
         import json as _json
+
         try:
             data = _json.loads(self.structure_json)
-            return sum(
-                len(s.get("fields", []))
-                for s in data.get("sections", [])
-            )
+            return sum(len(s.get("fields", [])) for s in data.get("sections", []))
         except (_json.JSONDecodeError, TypeError):
             return 0
 
     def get_sections(self) -> list[dict]:
         """Parse and return sections from structure_json."""
         import json as _json
+
         try:
             data = _json.loads(self.structure_json)
             return data.get("sections", [])
@@ -271,7 +275,9 @@ class ProjectDocument(models.Model):
         OTHER = "other", "Sonstiges"
 
     uuid = models.UUIDField(
-        default=uuid.uuid4, unique=True, editable=False,
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     project = models.ForeignKey(
@@ -328,7 +334,9 @@ class OutputDocument(models.Model):
         APPROVED = "approved", "Freigegeben"
 
     uuid = models.UUIDField(
-        default=uuid.uuid4, unique=True, editable=False,
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
     )
     tenant_id = models.UUIDField(db_index=True)
     project = models.ForeignKey(

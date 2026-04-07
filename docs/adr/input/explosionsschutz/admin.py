@@ -15,11 +15,9 @@ from .models import (
     ProtectionMeasure,
     ReferenceStandard,
     SafetyFunction,
-    VerificationDocument,
     ZoneDefinition,
     ZoneIgnitionSourceAssessment,
 )
-
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Stammdaten (schreibgeschützt für Tenants via is_system)

@@ -96,9 +96,7 @@ class FireProtectionConcept(models.Model):
 
         if self.status != self.Status.APPROVED:
             return False
-        if self.valid_until and self.valid_until < timezone.now().date():
-            return False
-        return True
+        return not (self.valid_until and self.valid_until < timezone.now().date())
 
 
 class FireSection(models.Model):

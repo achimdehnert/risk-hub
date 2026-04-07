@@ -65,9 +65,9 @@ def dwg_to_dxf(dwg_bytes: bytes, filename: str = "input.dwg") -> bytes:
             input_dir,
             output_dir,
             "ACAD2018",  # Output version
-            "DXF",       # Output type
-            "0",         # No recursion
-            "1",         # Audit
+            "DXF",  # Output type
+            "0",  # No recursion
+            "1",  # Audit
         ]
 
         try:
@@ -78,9 +78,7 @@ def dwg_to_dxf(dwg_bytes: bytes, filename: str = "input.dwg") -> bytes:
                 timeout=60,
             )
         except subprocess.TimeoutExpired:
-            raise RuntimeError(
-                f"DWG-Konvertierung Timeout für {filename}"
-            ) from None
+            raise RuntimeError(f"DWG-Konvertierung Timeout für {filename}") from None
 
         if result.returncode != 0:
             logger.warning(
@@ -101,8 +99,7 @@ def dwg_to_dxf(dwg_bytes: bytes, filename: str = "input.dwg") -> bytes:
                     break
             else:
                 raise RuntimeError(
-                    f"DWG-Konvertierung fehlgeschlagen: "
-                    f"keine DXF-Ausgabe für {filename}"
+                    f"DWG-Konvertierung fehlgeschlagen: keine DXF-Ausgabe für {filename}"
                 )
 
         with open(dxf_path, "rb") as f:
