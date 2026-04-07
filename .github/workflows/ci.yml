@@ -68,15 +68,6 @@ jobs:
       - name: Ruff format check
         run: ruff format --check .
 
-      - name: Prepare test database
-        working-directory: src
-        env:
-          DJANGO_SETTINGS_MODULE: config.settings_test
-          SECRET_KEY: test-secret-key-for-ci
-          DATABASE_URL: "postgresql://test:test@localhost:15433/risk_hub_ci"
-        run: |
-          python manage.py migrate --run-syncdb 2>&1 | tail -5
-
       - name: Run tests (incl. URL audit)
         env:
           DJANGO_SETTINGS_MODULE: config.settings_test
@@ -86,5 +77,5 @@ jobs:
           pytest --tb=short -q \
             -m "not integration and not contract and not slow" \
             --relax-naming \
-            --create-db \
+            --create-db --no-migrations \
             --cov --cov-report=term-missing
