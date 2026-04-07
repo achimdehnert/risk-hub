@@ -24,7 +24,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
         ports:
-          - 5432:5432
+          - 15433:5432
     steps:
       - name: Prune stale Docker networks (self-hosted)
         run: docker network prune -f 2>/dev/null || true
@@ -75,7 +75,7 @@ jobs:
         env:
           DJANGO_SETTINGS_MODULE: config.settings_test
           SECRET_KEY: test-secret-key-for-ci
-          DATABASE_URL: "postgresql://test:test@localhost:5432/risk_hub_ci"
+          DATABASE_URL: "postgresql://test:test@localhost:15433/risk_hub_ci"
         run: |
           pytest --tb=short -q \
             -m "not integration and not contract and not slow" \
