@@ -5,6 +5,7 @@ on:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+  workflow_dispatch:
 
 jobs:
   test:
@@ -25,6 +26,9 @@ jobs:
         ports:
           - 5432:5432
     steps:
+      - name: Prune stale Docker networks (self-hosted)
+        run: docker network prune -f 2>/dev/null || true
+
       - uses: actions/checkout@v4
 
       - name: Set up Python
@@ -62,6 +66,10 @@ jobs:
         working-directory: src
         run: ruff check . --output-format=github
 
+      - name: Ruff format check
+        working-directory: src
+        run: ruff format --check .
+
       - name: Run tests (incl. URL audit)
         working-directory: src
         env:
@@ -70,4 +78,5 @@ jobs:
           DATABASE_URL: "postgresql://test:test@localhost:5432/risk_hub_ci"
         run: |
           pytest --tb=short -q \
-            -m "not integration and not contract and not slow"
+            -m "not integration and not contract and not slow" \
+            --cov --cov-report=term-missing
