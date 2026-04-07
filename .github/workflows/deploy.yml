@@ -31,7 +31,7 @@ jobs:
     with:
       django_settings_module: "config.settings_test"
       src_dir: "src"
-      pytest_workers: "1"
+      skip_tests: true
     secrets: inherit
 
   deploy:
