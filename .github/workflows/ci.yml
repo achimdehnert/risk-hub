@@ -77,4 +77,5 @@ jobs:
           pytest --tb=short -q \
             -m "not integration and not contract and not slow" \
             --relax-naming \
+            --create-db \
             --cov --cov-report=term-missing
