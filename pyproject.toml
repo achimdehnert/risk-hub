@@ -64,6 +64,7 @@ collect_ignore = ["src/test_substances.py"]
 markers = [
     "e2e: Playwright end-to-end tests (require --playwright flag)",
 ]
+addopts = "--relax-naming"
 env = [
     "DJANGO_ALLOW_ASYNC_UNSAFE=true",
 ]
