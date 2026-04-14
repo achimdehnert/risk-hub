@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import dataclass
+from typing import Any
 from uuid import UUID
 
 from django.db import transaction
@@ -438,3 +439,225 @@ def create_project(cmd: CreateProjectCmd) -> Project:
         cmd.declined_modules,
     )
     return project
+
+
+# -----------------------------------------------------------------------
+# Project detail helpers
+# -----------------------------------------------------------------------
+
+
+def get_project_module_details(project: Project) -> list[dict]:
+    """Return enriched module metadata for a project's active modules."""
+    active_modules = project.modules.filter(status="active")
+    details = []
+    for pm in active_modules:
+        meta = AVAILABLE_MODULES.get(pm.module, {})
+        details.append(
+            {
+                "code": pm.module,
+                "label": meta.get("label", pm.module),
+                "icon": meta.get("icon", "box"),
+                "description": meta.get("description", ""),
+            }
+        )
+    return details
+
+
+# -----------------------------------------------------------------------
+# Section value persistence
+# -----------------------------------------------------------------------
+
+
+def save_section_values(
+    section: Any,
+    post_data: dict[str, Any],
+) -> None:
+    """Parse form data and save section field values.
+
+    Extracts structured field values (text, table, boolean) from POST data
+    and persists them on the DocumentSection.
+    """
+    section.content = post_data.get("content", "")
+    section.is_ai_generated = False
+
+    try:
+        fields = json.loads(section.fields_json or "[]")
+    except (json.JSONDecodeError, TypeError):
+        fields = []
+
+    values = {}
+    for field in fields:
+        fkey = field["key"]
+        ftype = field.get("type", "textarea")
+        form_key = f"{section.section_key}__{fkey}"
+
+        if ftype == "table":
+            columns = field.get("columns", [])
+            rows = []
+            row_idx = 0
+            while True:
+                row = []
+                found = False
+                for ci in range(len(columns)):
+                    cell_key = f"{form_key}__row_{row_idx}__col_{ci}"
+                    val = post_data.get(cell_key, "")
+                    if val:
+                        found = True
+                    row.append(val)
+                if not found:
+                    break
+                rows.append(row)
+                row_idx += 1
+            values[fkey] = rows
+        elif ftype == "boolean":
+            values[fkey] = post_data.get(form_key, "false")
+        else:
+            val = post_data.get(form_key, "")
+            values[fkey] = val
+            if ftype == "textarea" and val and not section.content:
+                section.content = val
+
+    section.values_json = json.dumps(
+        values,
+        ensure_ascii=False,
+    )
+    section.save(
+        update_fields=[
+            "content",
+            "values_json",
+            "is_ai_generated",
+            "updated_at",
+        ],
+    )
+
+
+# -----------------------------------------------------------------------
+# LLM section content generation
+# -----------------------------------------------------------------------
+
+
+def generate_section_content(
+    *,
+    section: Any,
+    field_key: str = "",
+    llm_hint: str = "",
+) -> str:
+    """Generate AI content for a document section field.
+
+    Uses aifw.service.sync_completion for LLM generation.
+    Returns generated text content.
+    """
+    doc = section.document
+    project = doc.project
+    prompt = (
+        f"Du bist ein Experte für {doc.kind or 'Arbeitsschutz'}-Dokumentation. "
+        f"Projekt: {project.name}. "
+        f"Dokument: {doc.title}. "
+        f"Abschnitt: {section.title}. "
+        f"Aufgabe: {llm_hint or section.title}. "
+        f"Schreibe einen fachlich korrekten, professionellen Text "
+        f"für diesen Abschnitt auf Deutsch."
+    )
+
+    try:
+        from aifw.service import sync_completion
+
+        result = sync_completion(
+            messages=[{"role": "user", "content": prompt}],
+            model="groq/llama-3.3-70b-versatile",
+            max_tokens=2000,
+        )
+        return result.get("content", "")
+    except ImportError:
+        logger.warning("aifw not available for LLM prefill")
+        return f"[KI nicht verfügbar — bitte manuell ausfüllen: {section.title}]"
+    except Exception as exc:
+        logger.exception("LLM prefill failed: %s", exc)
+        return f"[Fehler bei KI-Generierung: {exc}]"
+
+
+# -----------------------------------------------------------------------
+# PDF rendering
+# -----------------------------------------------------------------------
+
+
+def render_document_html(doc: Any) -> str:
+    """Render an OutputDocument to HTML suitable for PDF export.
+
+    Returns full HTML string with styling.
+    """
+    sections = doc.sections.all()
+
+    html_parts = [
+        f"<h1>{doc.title}</h1>",
+        f"<p><small>Version {doc.version} · "
+        f"{doc.get_status_display()} · "
+        f"{doc.updated_at.strftime('%d.%m.%Y')}</small></p>",
+    ]
+
+    for section in sections:
+        html_parts.append(f"<h2>{section.title}</h2>")
+
+        try:
+            fields = json.loads(section.fields_json or "[]")
+            values = json.loads(section.values_json or "{}")
+        except (json.JSONDecodeError, TypeError):
+            fields = []
+            values = {}
+
+        if fields:
+            for field in fields:
+                fkey = field["key"]
+                ftype = field.get("type", "textarea")
+                val = values.get(fkey, "")
+
+                if ftype == "table" and isinstance(val, list):
+                    cols = field.get("columns", [])
+                    if cols and val:
+                        html_parts.append(
+                            "<table border='1' cellpadding='4' "
+                            "cellspacing='0' style='border-collapse:"
+                            "collapse; width:100%; font-size:10pt;'>"
+                        )
+                        html_parts.append("<thead><tr>")
+                        for c in cols:
+                            html_parts.append(f"<th style='background:#f0f0f0'>{c}</th>")
+                        html_parts.append("</tr></thead><tbody>")
+                        for row in val:
+                            html_parts.append("<tr>")
+                            for cell in row:
+                                html_parts.append(f"<td>{cell}</td>")
+                            html_parts.append("</tr>")
+                        html_parts.append("</tbody></table>")
+                elif val:
+                    html_parts.append(f"<p>{str(val).replace(chr(10), '<br>')}</p>")
+        elif section.content:
+            html_parts.append(f"<p>{section.content.replace(chr(10), '<br>')}</p>")
+
+    return (
+        "<!DOCTYPE html><html><head>"
+        "<meta charset='utf-8'>"
+        "<style>"
+        "body{font-family:Arial,sans-serif;font-size:11pt;"
+        "line-height:1.5;margin:2cm;}"
+        "h1{font-size:18pt;color:#1a1a1a;}"
+        "h2{font-size:14pt;color:#333;margin-top:1.5em;border-bottom:"
+        "1px solid #ddd;padding-bottom:4px;}"
+        "table{margin:0.5em 0;}"
+        "</style></head><body>" + "\n".join(html_parts) + "</body></html>"
+    )
+
+
+def export_document_pdf(doc: Any) -> bytes | None:
+    """Generate PDF bytes for an OutputDocument.
+
+    Returns PDF bytes or None if WeasyPrint is unavailable.
+    """
+    html = render_document_html(doc)
+    try:
+        import weasyprint
+
+        return weasyprint.HTML(string=html).write_pdf()
+    except (ImportError, OSError) as exc:
+        logger.warning("WeasyPrint not available: %s", exc)
+        return None

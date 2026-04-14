@@ -40,12 +40,10 @@ from gbu.forms import (
 )
 from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
 from gbu.services.gbu_engine import (
-    ApproveActivityCmd,
-    CreateActivityCmd,
-    approve_activity,
-    create_activity,
+    FinalizeWizardCmd,
     derive_hazard_categories,
-    set_risk_score,
+    finalize_wizard,
+    read_document_pdf,
 )
 
 logger = logging.getLogger(__name__)
@@ -362,7 +360,7 @@ def wizard_step5(request: HttpRequest) -> HttpResponse:
         form = WizardStep5Form(request.POST)
         if form.is_valid():
             try:
-                cmd = CreateActivityCmd(
+                cmd = FinalizeWizardCmd(
                     site_id=UUID(wizard["site_id"]),
                     sds_revision_id=UUID(wizard["sds_revision_id"]),
                     activity_description=wizard["activity_description"],
@@ -371,27 +369,11 @@ def wizard_step5(request: HttpRequest) -> HttpResponse:
                     quantity_class=wizard["quantity_class"],
                     substitution_checked=wizard.get("substitution_checked", False),
                     substitution_notes=wizard.get("substitution_notes", ""),
-                )
-                activity = create_activity(cmd=cmd, tenant_id=tenant_id, user_id=user_id)
-                set_risk_score(activity_id=activity.id, tenant_id=tenant_id)
-
-                approve_cmd = ApproveActivityCmd(
-                    activity_id=activity.id,
                     next_review_date=form.cleaned_data["next_review_date"],
-                )
-                approve_activity(
-                    cmd=approve_cmd,
-                    tenant_id=tenant_id,
-                    user_id=user_id,
                     approved_by_name=form.cleaned_data["approved_by_name"],
                 )
-
+                activity = finalize_wizard(cmd=cmd, tenant_id=tenant_id, user_id=user_id)
                 request.session.pop("gbu_wizard", None)
-
-                from gbu.tasks import generate_documents_task
-
-                generate_documents_task.delay(str(activity.id), str(tenant_id))
-
                 return redirect("gbu:activity-detail", pk=activity.id)
 
             except Exception as exc:
@@ -448,54 +430,26 @@ def activity_detail(request: HttpRequest, pk: UUID) -> HttpResponse:
 @login_required
 @require_GET
 def download_gbu_pdf(request: HttpRequest, pk: UUID) -> HttpResponse:
-    from django.core.files.storage import default_storage
-
     tenant_id = _tenant_id(request)
-    activity = get_object_or_404(
-        HazardAssessmentActivity,
-        id=pk,
-        tenant_id=tenant_id,
-    )
-    if not activity.gbu_document:
-        return HttpResponse(
-            "GBU-PDF noch nicht generiert. Bitte warten.",
-            status=404,
-            content_type="text/plain",
-        )
-    version = activity.gbu_document
-    try:
-        pdf_bytes = default_storage.open(version.s3_key).read()
-    except Exception:
-        return HttpResponse("PDF nicht verf\xfcgbar.", status=404)
-    response = HttpResponse(pdf_bytes, content_type="application/pdf")
-    response["Content-Disposition"] = f'inline; filename="{version.filename}"'
-    return response
+    activity = get_object_or_404(HazardAssessmentActivity, id=pk, tenant_id=tenant_id)
+    return _pdf_response(activity, "gbu_document")
 
 
 @login_required
 @require_GET
 def download_ba_pdf(request: HttpRequest, pk: UUID) -> HttpResponse:
-    from django.core.files.storage import default_storage
-
     tenant_id = _tenant_id(request)
-    activity = get_object_or_404(
-        HazardAssessmentActivity,
-        id=pk,
-        tenant_id=tenant_id,
-    )
-    if not activity.ba_document:
-        return HttpResponse(
-            "BA-PDF noch nicht generiert. Bitte warten.",
-            status=404,
-            content_type="text/plain",
-        )
-    version = activity.ba_document
-    try:
-        pdf_bytes = default_storage.open(version.s3_key).read()
-    except Exception:
-        return HttpResponse("PDF nicht verf\xfcgbar.", status=404)
+    activity = get_object_or_404(HazardAssessmentActivity, id=pk, tenant_id=tenant_id)
+    return _pdf_response(activity, "ba_document")
+
+
+def _pdf_response(activity, doc_attr: str) -> HttpResponse:
+    """Shared helper for GBU/BA PDF download."""
+    pdf_bytes, name_or_error = read_document_pdf(activity, doc_attr)
+    if pdf_bytes is None:
+        return HttpResponse(name_or_error, status=404, content_type="text/plain")
     response = HttpResponse(pdf_bytes, content_type="application/pdf")
-    response["Content-Disposition"] = f'inline; filename="{version.filename}"'
+    response["Content-Disposition"] = f'inline; filename="{name_or_error}"'
     return response
 
 

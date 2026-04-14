@@ -20,25 +20,18 @@ from .models import (
     FireProtectionConcept,
     FireProtectionMeasure,
 )
-
-ALLOWED_EXTENSIONS = frozenset(
-    {
-        ".pdf",
-        ".docx",
-        ".doc",
-        ".dxf",
-        ".dwg",
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".tiff",
-        ".xlsx",
-        ".xls",
-        ".txt",
-        ".csv",
-    }
+from .services import (
+    build_filled_template_form,
+    create_filled_template,
+    export_filled_template_pdf,
+    prefill_filled_template_field,
+    promote_to_template,
+    retrigger_doc_analysis,
+    save_filled_template_values,
+    update_measure_status,
+    upload_and_analyze_document,
+    validate_upload,
 )
-MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB
 
 
 class ConceptListView(View):
@@ -228,13 +221,7 @@ class MeasureUpdateView(View):
             tenant_id=request.tenant_id,
         )
         new_status = request.POST.get("status")
-        if new_status in dict(FireProtectionMeasure.Status.choices):
-            measure.status = new_status
-            if new_status == FireProtectionMeasure.Status.IMPLEMENTED:
-                from django.utils import timezone
-
-                measure.completed_at = timezone.now()
-            measure.save(update_fields=["status", "completed_at", "updated_at"])
+        if update_measure_status(measure, new_status):
             messages.success(request, f"Maßnahme '{measure.title}' aktualisiert.")
 
         if request.headers.get("HX-Request"):
@@ -336,76 +323,25 @@ class DocumentUploadView(View):
             messages.error(request, "Bitte eine Datei auswählen.")
             return redirect("brandschutz:document-upload", concept_pk=concept.pk)
 
-        # Validate extension
-        import os
-
-        ext = os.path.splitext(uploaded_file.name)[1].lower()
-        if ext not in ALLOWED_EXTENSIONS:
-            messages.error(
-                request,
-                f"Dateityp '{ext}' nicht erlaubt.",
-            )
-            return redirect("brandschutz:document-upload", concept_pk=concept.pk)
-
-        # Validate size
-        if uploaded_file.size > MAX_UPLOAD_SIZE:
-            messages.error(request, "Datei zu groß (max. 50 MB).")
+        validation_error = validate_upload(uploaded_file)
+        if validation_error:
+            messages.error(request, validation_error)
             return redirect("brandschutz:document-upload", concept_pk=concept.pk)
 
         if not title:
             title = uploaded_file.name
 
-        # Create document via documents service
-        from documents.services import upload_document
-
-        try:
-            upload_document(
-                title=title,
-                category=category,
-                file=uploaded_file,
-                tenant_id=request.tenant_id,
-            )
-            # Update the document with concept reference
-            doc = Document.objects.filter(
-                tenant_id=request.tenant_id,
-                title=title,
-            ).first()
-            if doc:
-                doc.concept_ref_id = concept.pk
-                doc.scope = "brandschutz"
-                doc.save(update_fields=["concept_ref_id", "scope"])
-
-            # Create ConceptDocument + trigger async analysis for PDFs
-            if ext == ".pdf":
-                from brandschutz.services import create_concept_document
-
-                concept_doc = create_concept_document(
-                    tenant_id=request.tenant_id,
-                    concept=concept,
-                    title=title,
-                    source_filename=uploaded_file.name,
-                    content_type=uploaded_file.content_type or "",
-                )
-                from brandschutz.tasks import extract_and_analyze_task
-
-                extract_and_analyze_task.delay(
-                    str(concept_doc.id),
-                    str(request.tenant_id),
-                )
-
-            messages.success(
-                request,
-                f"Unterlage '{title}' hochgeladen.",
-            )
-        except Exception as exc:
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.warning("Document upload failed: %s", exc)
-            messages.error(
-                request,
-                f"Upload fehlgeschlagen: {exc}",
-            )
+        success, msg = upload_and_analyze_document(
+            tenant_id=request.tenant_id,
+            concept=concept,
+            uploaded_file=uploaded_file,
+            title=title,
+            category=category,
+        )
+        if success:
+            messages.success(request, msg)
+        else:
+            messages.error(request, msg)
 
         return redirect("brandschutz:concept-detail", pk=concept.pk)
 
@@ -422,26 +358,7 @@ class ConceptDocAnalyzeView(View):
             pk=pk,
             tenant_id=request.tenant_id,
         )
-        # Reset for re-analysis
-        concept_doc.status = "uploaded"
-        concept_doc.template_json = ""
-        concept_doc.analysis_confidence = None
-        concept_doc.error_message = ""
-        concept_doc.save(
-            update_fields=[
-                "status",
-                "template_json",
-                "analysis_confidence",
-                "error_message",
-            ]
-        )
-
-        from brandschutz.tasks import extract_and_analyze_task
-
-        extract_and_analyze_task.delay(
-            str(concept_doc.id),
-            str(request.tenant_id),
-        )
+        retrigger_doc_analysis(concept_doc)
         messages.info(request, f"Analyse für '{concept_doc.title}' gestartet.")
         return redirect(
             "brandschutz:concept-detail",
@@ -511,15 +428,12 @@ class TemplateSelectView(View):
                 tenant_id=request.tenant_id,
             )
         elif doc_id:
-            # Promote analyzed ConceptDocument to a stored template
             cdoc = get_object_or_404(
                 ConceptDocument,
                 pk=doc_id,
                 tenant_id=request.tenant_id,
                 status="analyzed",
             )
-            from brandschutz.services import promote_to_template
-
             tmpl = promote_to_template(
                 tenant_id=request.tenant_id,
                 concept_doc=cdoc,
@@ -530,8 +444,6 @@ class TemplateSelectView(View):
                 "brandschutz:template-select",
                 concept_pk=concept.pk,
             )
-
-        from brandschutz.services import create_filled_template
 
         filled = create_filled_template(
             tenant_id=request.tenant_id,
@@ -560,35 +472,11 @@ class FilledTemplateEditView(View):
         )
         return filled, None
 
-    def _build_form(self, filled, data=None):
-        import json
-
-        from concept_templates.contrib.django.form_generator import (
-            build_template_form,
-        )
-        from concept_templates.schemas import ConceptTemplate
-
-        template_data = json.loads(filled.template.template_json)
-        ct = ConceptTemplate(**template_data)
-        FormClass = build_template_form(ct)
-
-        # Load existing values as initial
-        initial = {}
-        if filled.values_json and filled.values_json != "{}":
-            values = json.loads(filled.values_json)
-            for section_name, fields in values.items():
-                for field_name, value in fields.items():
-                    initial[f"{section_name}__{field_name}"] = value
-
-        if data is not None:
-            return FormClass(data), ct
-        return FormClass(initial=initial), ct
-
     def get(self, request: HttpRequest, pk: UUID) -> HttpResponse:
         filled, err = self._get_filled(request, pk)
         if err:
             return err
-        form, ct = self._build_form(filled)
+        form, ct = build_filled_template_form(filled)
 
         from concept_templates.contrib.django.form_generator import (
             get_sections_with_fields,
@@ -611,18 +499,10 @@ class FilledTemplateEditView(View):
         filled, err = self._get_filled(request, pk)
         if err:
             return err
-        form, ct = self._build_form(filled, data=request.POST)
+        form, ct = build_filled_template_form(filled, data=request.POST)
 
         if form.is_valid():
-            import json
-
-            from concept_templates.contrib.django.form_generator import (
-                extract_values,
-            )
-
-            values = extract_values(form)
-            filled.values_json = json.dumps(values, ensure_ascii=False)
-            filled.save(update_fields=["values_json", "updated_at"])
+            save_filled_template_values(filled, form)
             messages.success(request, "Werte gespeichert.")
             return redirect(
                 "brandschutz:filled-template-edit",
@@ -665,39 +545,10 @@ class FilledTemplateLLMPrefillView(View):
         if not field_key or not llm_hint:
             return HttpResponse("Missing field_key or llm_hint", status=400)
 
-        import json
-
-        from concept_templates.prefill import prefill_field
-
-        # Existing values
-        context_values = None
-        if filled.values_json and filled.values_json != "{}":
-            context_values = json.loads(filled.values_json)
-
-        # Extracted texts from analyzed documents
-        extracted_texts = list(
-            filled.concept.concept_documents.filter(
-                status="analyzed",
-                deleted_at__isnull=True,
-            ).values_list("extracted_text", flat=True)[:2]
-        )
-
-        def _llm_fn(system: str, user: str) -> str:
-            from ai_analysis.llm_client import llm_complete_sync
-
-            return llm_complete_sync(
-                prompt=user,
-                system=system,
-                action_code="concept_prefill",
-            )
-
-        value = prefill_field(
+        value = prefill_filled_template_field(
+            filled=filled,
             field_key=field_key,
             llm_hint=llm_hint,
-            llm_fn=_llm_fn,
-            context_values=context_values,
-            extracted_texts=extracted_texts,
-            scope=filled.template.scope or "brandschutz",
         )
 
         return HttpResponse(
@@ -720,20 +571,7 @@ class FilledTemplatePDFView(View):
             tenant_id=request.tenant_id,
         )
 
-        import json
-
-        from concept_templates.document_renderer import render_pdf
-        from concept_templates.schemas import ConceptTemplate
-
-        template_data = json.loads(filled.template.template_json)
-        ct = ConceptTemplate(**template_data)
-        values = json.loads(filled.values_json) if filled.values_json else {}
-
-        pdf_bytes = render_pdf(
-            template=ct,
-            values=values,
-            title=filled.name,
-        )
+        pdf_bytes = export_filled_template_pdf(filled)
 
         response = HttpResponse(pdf_bytes, content_type="application/pdf")
         safe_name = filled.name.replace(" ", "_")[:80]

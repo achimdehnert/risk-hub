@@ -271,3 +271,77 @@ def set_risk_score(
         has_cmr,
     )
     return activity
+
+
+@dataclass(frozen=True)
+class FinalizeWizardCmd:
+    """Command DTO für den kompletten Wizard-Abschluss (Schritt 5)."""
+
+    site_id: UUID
+    sds_revision_id: UUID
+    activity_description: str
+    activity_frequency: str
+    duration_minutes: int
+    quantity_class: str
+    substitution_checked: bool
+    substitution_notes: str
+    next_review_date: datetime.date
+    approved_by_name: str
+
+
+def finalize_wizard(
+    cmd: FinalizeWizardCmd,
+    tenant_id: UUID,
+    user_id: UUID,
+):
+    """Create activity, set risk score, approve, and trigger document generation.
+
+    Returns the created HazardAssessmentActivity.
+    """
+    create_cmd = CreateActivityCmd(
+        site_id=cmd.site_id,
+        sds_revision_id=cmd.sds_revision_id,
+        activity_description=cmd.activity_description,
+        activity_frequency=cmd.activity_frequency,
+        duration_minutes=cmd.duration_minutes,
+        quantity_class=cmd.quantity_class,
+        substitution_checked=cmd.substitution_checked,
+        substitution_notes=cmd.substitution_notes,
+    )
+    activity = create_activity(cmd=create_cmd, tenant_id=tenant_id, user_id=user_id)
+    set_risk_score(activity_id=activity.id, tenant_id=tenant_id)
+
+    approve_cmd = ApproveActivityCmd(
+        activity_id=activity.id,
+        next_review_date=cmd.next_review_date,
+    )
+    approve_activity(
+        cmd=approve_cmd,
+        tenant_id=tenant_id,
+        user_id=user_id,
+        approved_by_name=cmd.approved_by_name,
+    )
+
+    from gbu.tasks import generate_documents_task
+
+    generate_documents_task.delay(str(activity.id), str(tenant_id))
+
+    return activity
+
+
+def read_document_pdf(activity, doc_attr: str) -> tuple[bytes | None, str]:
+    """Read a PDF document from storage.
+
+    Returns (pdf_bytes, filename) or (None, error_message).
+    """
+    from django.core.files.storage import default_storage
+
+    doc = getattr(activity, doc_attr, None)
+    if not doc:
+        label = "GBU" if doc_attr == "gbu_document" else "BA"
+        return None, f"{label}-PDF noch nicht generiert. Bitte warten."
+    try:
+        pdf_bytes = default_storage.open(doc.s3_key).read()
+        return pdf_bytes, doc.filename
+    except Exception:
+        return None, "PDF nicht verfügbar."
