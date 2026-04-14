@@ -8,11 +8,8 @@ from decimal import Decimal
 import pytest
 
 from global_sds.models import (
-    GlobalSubstance,
     ImpactLevel,
     SdsPropertyDefinition,
-    SdsRevisionDiffRecord,
-    SdsRevisionProperty,
     _normalize_cas,
 )
 from global_sds.sds_usage import SdsUsage, SdsUsageStatus

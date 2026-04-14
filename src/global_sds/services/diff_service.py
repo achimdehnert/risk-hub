@@ -9,6 +9,8 @@ persistiert den Diff als SdsRevisionDiffRecord.
 import logging
 from dataclasses import dataclass, field
 
+from django.conf import settings
+
 from global_sds.models import (
     GlobalSdsRevision,
     ImpactLevel,
@@ -17,23 +19,31 @@ from global_sds.models import (
 
 logger = logging.getLogger(__name__)
 
-# Impact-Zuordnung pro Feld (ADR-012 §6.1)
+# Impact-Zuordnung pro Feld (ADR-012 §6.1, konfigurierbar via settings)
 SAFETY_CRITICAL_FIELDS = frozenset(
-    {
-        "flash_point_c",
-        "ignition_temperature_c",
-        "lower_explosion_limit",
-        "upper_explosion_limit",
-    }
+    getattr(
+        settings,
+        "SDS_SAFETY_CRITICAL_FIELDS",
+        {
+            "flash_point_c",
+            "ignition_temperature_c",
+            "lower_explosion_limit",
+            "upper_explosion_limit",
+        },
+    )
 )
 
 REGULATORY_FIELDS = frozenset(
-    {
-        "wgk",
-        "storage_class_trgs510",
-        "voc_percent",
-        "voc_g_per_l",
-    }
+    getattr(
+        settings,
+        "SDS_REGULATORY_FIELDS",
+        {
+            "wgk",
+            "storage_class_trgs510",
+            "voc_percent",
+            "voc_g_per_l",
+        },
+    )
 )
 
 INFORMATIONAL_FIELDS = frozenset(

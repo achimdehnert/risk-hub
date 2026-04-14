@@ -96,8 +96,8 @@ class SdsSupersessionService:
                 impact,
             )
 
-        # 5. GBU/Ex-Schutz flaggen
-        if impact == ImpactLevel.SAFETY_CRITICAL:
+        # 5. GBU/Ex-Schutz flaggen via DiffRecord properties
+        if diff_record.requires_gbu_review or diff_record.requires_ex_review:
             self._flag_downstream(old_revision, diff_record)
 
         logger.info(

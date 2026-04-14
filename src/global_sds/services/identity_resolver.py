@@ -67,8 +67,7 @@ class SdsIdentityResolver:
         """Identität auflösen."""
         # Stufe 1: CAS exact match
         if cas_number:
-            cas_clean = self._normalize_cas(cas_number)
-            match = self._try_cas_match(cas_clean)
+            match = self._try_cas_match(cas_number)
             if match:
                 return match
 
@@ -78,18 +77,20 @@ class SdsIdentityResolver:
             manufacturer_name,
         )
 
-    def _normalize_cas(self, cas: str) -> str:
-        """CAS normalisieren (Leerzeichen, Bindestriche)."""
-        return cas.strip().replace(" ", "").replace("‐", "-")
-
     def _try_cas_match(
         self,
         cas_number: str,
     ) -> IdentityMatch | None:
-        """Exakter CAS-Match."""
+        """Exakter CAS-Match via cas_number_normalized."""
+        from global_sds.models import _normalize_cas
+
+        normalized = _normalize_cas(cas_number)
+        if not normalized:
+            return None
+
         try:
             substance = GlobalSubstance.objects.get(
-                cas_number=cas_number,
+                cas_number_normalized=normalized,
             )
             logger.info(
                 "CAS exact match: %s → %s",

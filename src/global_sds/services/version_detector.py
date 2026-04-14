@@ -112,6 +112,21 @@ class SdsVersionDetector:
         )
 
     def _parse_version(self, version: str) -> tuple:
-        """Version string in vergleichbares Tuple parsen."""
+        """Version string in vergleichbares Tuple parsen.
+
+        Handles formats: "4", "1.2.3", "3a", "1.2-beta".
+        Non-numeric suffixes are stripped; only numeric parts are compared.
+        """
+        import re
+
         parts = version.strip().split(".")
-        return tuple(int(p) for p in parts)
+        result = []
+        for part in parts:
+            match = re.match(r"(\d+)", part)
+            if match:
+                result.append(int(match.group(1)))
+            else:
+                raise ValueError(f"Cannot parse version part: {part!r}")
+        if not result:
+            raise ValueError(f"No numeric parts in version: {version!r}")
+        return tuple(result)
