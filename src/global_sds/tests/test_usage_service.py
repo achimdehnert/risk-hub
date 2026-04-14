@@ -5,14 +5,13 @@ from datetime import date
 
 import pytest
 
+from global_sds.sds_usage import SdsUsageStatus
 from global_sds.services.usage_service import SdsUsageService
-from global_sds.sds_usage import SdsUsage, SdsUsageStatus
 from global_sds.tests.factories import (
     GlobalSdsRevisionFactory,
     GlobalSubstanceFactory,
     SdsUsageFactory,
 )
-
 
 pytestmark = pytest.mark.django_db
 
@@ -23,10 +22,12 @@ class TestAdoptUpdate:
     def test_should_create_new_usage_and_supersede_old(self, db, user):
         substance = GlobalSubstanceFactory()
         old_rev = GlobalSdsRevisionFactory(
-            substance=substance, source_hash="o" * 64,
+            substance=substance,
+            source_hash="o" * 64,
         )
         new_rev = GlobalSdsRevisionFactory(
-            substance=substance, source_hash="n" * 64,
+            substance=substance,
+            source_hash="n" * 64,
         )
         usage = SdsUsageFactory(
             sds_revision=old_rev,
@@ -66,7 +67,8 @@ class TestDeferUpdate:
     def test_should_defer_with_reason(self, db, user):
         substance = GlobalSubstanceFactory()
         new_rev = GlobalSdsRevisionFactory(
-            substance=substance, source_hash="n" * 64,
+            substance=substance,
+            source_hash="n" * 64,
         )
         usage = SdsUsageFactory(
             status=SdsUsageStatus.REVIEW_REQUIRED,
@@ -77,7 +79,8 @@ class TestDeferUpdate:
         svc = SdsUsageService()
         deferred_until = date(2025, 12, 31)
         result = svc.defer_update(
-            usage, user,
+            usage,
+            user,
             reason="Laufende GBU muss erst abgeschlossen werden",
             deferred_until=deferred_until,
         )
@@ -113,7 +116,8 @@ class TestDeferUpdate:
         """Deferral without specific deadline is allowed."""
         substance = GlobalSubstanceFactory()
         new_rev = GlobalSdsRevisionFactory(
-            substance=substance, source_hash="n" * 64,
+            substance=substance,
+            source_hash="n" * 64,
         )
         usage = SdsUsageFactory(
             status=SdsUsageStatus.REVIEW_REQUIRED,
@@ -123,7 +127,8 @@ class TestDeferUpdate:
 
         svc = SdsUsageService()
         result = svc.defer_update(
-            usage, user,
+            usage,
+            user,
             reason="Betriebsferien bis Februar",
             deferred_until=None,
         )

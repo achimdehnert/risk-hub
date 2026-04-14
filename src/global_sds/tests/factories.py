@@ -10,8 +10,10 @@ from global_sds.models import (
     GlobalSdsExposureLimit,
     GlobalSdsRevision,
     GlobalSubstance,
-    SdsRevisionDiffRecord,
     ImpactLevel,
+    SdsPropertyDefinition,
+    SdsRevisionDiffRecord,
+    SdsRevisionProperty,
 )
 from global_sds.sds_usage import SdsUsage, SdsUsageStatus
 
@@ -74,10 +76,31 @@ class SdsRevisionDiffRecordFactory(factory.django.DjangoModelFactory):
     changed_components = factory.LazyFunction(list)
 
 
+class SdsPropertyDefinitionFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SdsPropertyDefinition
+
+    key = factory.Sequence(lambda n: f"prop_{n}")
+    label_de = factory.Sequence(lambda n: f"Eigenschaft {n}")
+    value_type = SdsPropertyDefinition.ValueType.NUMERIC
+    unit = "°C"
+
+
+class SdsRevisionPropertyFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = SdsRevisionProperty
+
+    sds_revision = factory.SubFactory(GlobalSdsRevisionFactory)
+    definition = factory.SubFactory(SdsPropertyDefinitionFactory)
+    value_numeric_lo = factory.LazyFunction(lambda: __import__("decimal").Decimal("20.5"))
+    confidence = 0.95
+    parse_source = "regex"
+
+
 class SdsUsageFactory(factory.django.DjangoModelFactory):
     class Meta:
         model = SdsUsage
 
     tenant_id = factory.LazyFunction(uuid.uuid4)
     sds_revision = factory.SubFactory(GlobalSdsRevisionFactory)
-    status = SdsUsageStatus.ACTIVE
+    status = SdsUsageStatus.PENDING_APPROVAL

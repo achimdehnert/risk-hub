@@ -6,7 +6,6 @@ import pytest
 from global_sds.services.identity_resolver import SdsIdentityResolver
 from global_sds.tests.factories import GlobalSubstanceFactory
 
-
 pytestmark = pytest.mark.django_db
 
 

@@ -6,12 +6,12 @@ from datetime import date
 
 import pytest
 
+from global_sds.sds_usage import SdsUsageStatus
 from global_sds.tests.factories import (
     GlobalSdsRevisionFactory,
     GlobalSubstanceFactory,
     SdsUsageFactory,
 )
-from global_sds.sds_usage import SdsUsageStatus
 
 
 @pytest.fixture(autouse=True, scope="session")
@@ -19,6 +19,7 @@ def _ensure_pg_trgm(django_db_setup, django_db_blocker):
     """Ensure pg_trgm extension exists (skipped by --no-migrations)."""
     with django_db_blocker.unblock():
         from django.db import connection
+
         with connection.cursor() as cursor:
             cursor.execute("CREATE EXTENSION IF NOT EXISTS pg_trgm;")
 
@@ -39,6 +40,7 @@ def tenant_id_b():
 def user(db):
     """Standard test user."""
     from tests.factories import UserFactory
+
     return UserFactory()
 
 

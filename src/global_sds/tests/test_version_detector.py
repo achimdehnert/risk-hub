@@ -11,7 +11,6 @@ from global_sds.services.version_detector import (
 )
 from global_sds.tests.factories import GlobalSdsRevisionFactory
 
-
 pytestmark = pytest.mark.django_db
 
 
@@ -33,7 +32,9 @@ class TestNewRevision:
     """Newer date or higher version → NEW_REVISION."""
 
     def test_should_detect_new_revision_by_date(
-        self, substance_acetone, revision_acetone_v1,
+        self,
+        substance_acetone,
+        revision_acetone_v1,
     ):
         detector = SdsVersionDetector()
         result = detector.detect(
@@ -45,7 +46,9 @@ class TestNewRevision:
         assert result.previous_revision == revision_acetone_v1
 
     def test_should_detect_new_revision_by_version(
-        self, substance_acetone, revision_acetone_v1,
+        self,
+        substance_acetone,
+        revision_acetone_v1,
     ):
         detector = SdsVersionDetector()
         result = detector.detect(
@@ -61,7 +64,9 @@ class TestConflict:
     """Retrograde date or ambiguous version → CONFLICT."""
 
     def test_should_detect_conflict_retrograde_date(
-        self, substance_acetone, revision_acetone_v1,
+        self,
+        substance_acetone,
+        revision_acetone_v1,
     ):
         detector = SdsVersionDetector()
         result = detector.detect(
@@ -73,7 +78,9 @@ class TestConflict:
         assert result.previous_revision == revision_acetone_v1
 
     def test_should_detect_conflict_same_version_different_content(
-        self, substance_acetone, revision_acetone_v1,
+        self,
+        substance_acetone,
+        revision_acetone_v1,
     ):
         """Same date + same version = CONFLICT (not a new revision)."""
         detector = SdsVersionDetector()
@@ -85,7 +92,9 @@ class TestConflict:
         assert result.outcome == VersionOutcome.CONFLICT
 
     def test_should_detect_conflict_no_date_no_version(
-        self, substance_acetone, revision_acetone_v1,
+        self,
+        substance_acetone,
+        revision_acetone_v1,
     ):
         detector = SdsVersionDetector()
         result = detector.detect(
@@ -100,7 +109,9 @@ class TestEdgeCases:
     """Edge cases and robustness."""
 
     def test_should_handle_unparseable_version(
-        self, substance_acetone, revision_acetone_v1,
+        self,
+        substance_acetone,
+        revision_acetone_v1,
     ):
         detector = SdsVersionDetector()
         result = detector.detect(

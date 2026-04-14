@@ -9,8 +9,6 @@ import logging
 from dataclasses import dataclass
 
 from django.conf import settings
-from django.db.models import FloatField, Value
-from django.db.models.functions import Greatest
 
 from global_sds.models import GlobalSubstance
 
@@ -127,7 +125,9 @@ class SdsIdentityResolver:
         search_term = product_name.lower().strip()
         if not search_term:
             return IdentityMatch(
-                substance=None, confidence=0.0, match_type="none",
+                substance=None,
+                confidence=0.0,
+                match_type="none",
             )
 
         try:
@@ -152,7 +152,9 @@ class SdsIdentityResolver:
         score = result.confidence if result else 0.0
         logger.info("No match for '%s' (best=%.3f)", product_name, score)
         return IdentityMatch(
-            substance=None, confidence=score, match_type="none",
+            substance=None,
+            confidence=score,
+            match_type="none",
         )
 
     def _pg_trgm_match(self, search_term: str) -> IdentityMatch | None:
@@ -162,16 +164,13 @@ class SdsIdentityResolver:
         Uses similarity() on name field. Synonyms are checked via
         a raw annotation since JSONField arrays need unnesting.
         """
-        from django.db.models.functions import Lower
 
         # Annotate with trigram similarity score on name
         candidates = (
-            GlobalSubstance.objects
-            .extra(
+            GlobalSubstance.objects.extra(
                 select={"name_similarity": "similarity(LOWER(name), %s)"},
                 select_params=[search_term],
-            )
-            .order_by("-name_similarity")
+            ).order_by("-name_similarity")
         )[:5]  # Top 5 candidates
 
         best_match = None
@@ -185,7 +184,9 @@ class SdsIdentityResolver:
                 from difflib import SequenceMatcher
 
                 syn_score = SequenceMatcher(
-                    None, search_term, str(synonym).lower(),
+                    None,
+                    search_term,
+                    str(synonym).lower(),
                 ).ratio()
                 score = max(score, syn_score)
 
@@ -210,12 +211,16 @@ class SdsIdentityResolver:
 
         for substance in GlobalSubstance.objects.all()[:500]:
             name_score = SequenceMatcher(
-                None, search_term, substance.name.lower(),
+                None,
+                search_term,
+                substance.name.lower(),
             ).ratio()
 
             for synonym in substance.synonyms or []:
                 syn_score = SequenceMatcher(
-                    None, search_term, str(synonym).lower(),
+                    None,
+                    search_term,
+                    str(synonym).lower(),
                 ).ratio()
                 name_score = max(name_score, syn_score)
 

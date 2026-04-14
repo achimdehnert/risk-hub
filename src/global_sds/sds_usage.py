@@ -10,9 +10,9 @@ niemals direkt GlobalSdsRevision.
 from django.conf import settings
 from django.db import models
 from django.db.models import Q
-from django_tenancy.managers import TenantManager
 
 from global_sds.models import GlobalSdsRevision
+from global_sds.querysets import SdsUsageQuerySet
 
 
 class SdsUsageStatus(models.TextChoices):
@@ -107,7 +107,7 @@ class SdsUsage(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    objects = TenantManager()
+    objects = SdsUsageQuerySet.as_manager()
 
     class Meta:
         db_table = "global_sds_usage"

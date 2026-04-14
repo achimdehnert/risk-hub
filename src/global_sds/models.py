@@ -6,12 +6,21 @@ BigAutoField als PK (Platform-Standard), UUID für externe Referenz/API.
 Kein tenant_id auf diesen Models — Sichtbarkeit über QuerySet gesteuert.
 """
 
+import re
 import uuid
 
 from django.db import models
 from django.db.models import Q
 
 from global_sds.querysets import SdsRevisionQuerySet
+
+
+def _normalize_cas(cas: str | None) -> str:
+    """Remove dashes/spaces from CAS for uniform lookup."""
+    if not cas:
+        return ""
+    return re.sub(r"[\s\-]", "", cas.strip())
+
 
 # ─────────────────────────────────────────────────────────────────────
 # Impact-Klassifizierung (§6.1)
@@ -66,6 +75,20 @@ class GlobalSubstance(models.Model):
         blank=True,
         help_text="Alternative Namen (z.B. Handelsnamen)",
     )
+    cas_number_normalized = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        db_index=True,
+        editable=False,
+        help_text="Auto-normalisierte CAS (ohne Trennzeichen) für Lookup",
+    )
+    common_name_de = models.CharField(
+        max_length=512,
+        blank=True,
+        default="",
+        help_text="Gebräuchlicher deutscher Name",
+    )
     chemical_formula = models.CharField(
         max_length=200,
         blank=True,
@@ -78,6 +101,17 @@ class GlobalSubstance(models.Model):
         verbose_name = "Globale Substanz"
         verbose_name_plural = "Globale Substanzen"
         ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["cas_number_normalized"],
+                name="uq_substance_cas_normalized",
+                condition=Q(cas_number_normalized__gt=""),
+            ),
+        ]
+
+    def save(self, *args, **kwargs):
+        self.cas_number_normalized = _normalize_cas(self.cas_number)
+        super().save(*args, **kwargs)
 
     def __str__(self):
         cas = f" (CAS {self.cas_number})" if self.cas_number else ""
@@ -479,5 +513,186 @@ class SdsRevisionDiffRecord(models.Model):
             ),
         ]
 
+    @property
+    def requires_gbu_review(self) -> bool:
+        """True wenn GBU-Review nötig (H-Codes geändert oder Safety Critical)."""
+        return (
+            self.overall_impact == ImpactLevel.SAFETY_CRITICAL
+            or bool(self.added_h_codes)
+            or bool(self.removed_h_codes)
+        )
+
+    @property
+    def requires_ex_review(self) -> bool:
+        """True wenn Ex-Review nötig (Ex-relevante Felder geändert)."""
+        ex_fields = {
+            "flash_point_c",
+            "ignition_temperature_c",
+            "lower_explosion_limit",
+            "upper_explosion_limit",
+        }
+        for diff in self.field_diffs or []:
+            if isinstance(diff, dict) and diff.get("field") in ex_fields:
+                return True
+        return self.overall_impact == ImpactLevel.SAFETY_CRITICAL
+
     def __str__(self):
         return f"Diff {self.old_revision_id} → {self.new_revision_id} ({self.overall_impact})"
+
+
+# ─────────────────────────────────────────────────────────────────────
+# SDS PROPERTY DEFINITION — DB-Katalog aller SDS-Eigenschaften (§5.3)
+# ─────────────────────────────────────────────────────────────────────
+
+
+class SdsPropertyDefinition(models.Model):
+    """
+    DB-Katalog aller SDS-Eigenschaften (Abschnitt 9 etc.).
+
+    Ermöglicht dynamische Erweiterung ohne Schema-Migration.
+    Definiert ValueType, Extraction-Patterns und Promotion-Pfad.
+    """
+
+    class ValueType(models.TextChoices):
+        NUMERIC = "NUMERIC", "Numerisch (Einzelwert)"
+        NUMERIC_RANGE = "NUMERIC_RANGE", "Numerisch (Bereich)"
+        NUMERIC_AT_TEMP = "NUMERIC_AT_TEMP", "Numerisch bei Temperatur"
+        BOOLEAN = "BOOLEAN", "Boolean"
+        ENUM = "ENUM", "Enum (Auswahlliste)"
+        TEXT = "TEXT", "Freitext"
+
+    key = models.CharField(
+        max_length=100,
+        unique=True,
+        help_text="Interner Schlüssel (z.B. 'flash_point', 'density')",
+    )
+    label_de = models.CharField(max_length=200, help_text="Deutscher Anzeigename")
+    label_en = models.CharField(max_length=200, blank=True, default="")
+    sds_section = models.CharField(
+        max_length=10,
+        blank=True,
+        default="",
+        help_text="SDS-Abschnitt (z.B. '9.1', '14.1')",
+    )
+    value_type = models.CharField(
+        max_length=20,
+        choices=ValueType.choices,
+        default=ValueType.NUMERIC,
+    )
+    unit = models.CharField(
+        max_length=40,
+        blank=True,
+        default="",
+        help_text="Standard-Einheit (z.B. '°C', 'mg/m³')",
+    )
+    extraction_patterns = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Regex-Patterns für Parser [{pattern, group, transform}]",
+    )
+    is_promoted = models.BooleanField(
+        default=False,
+        help_text="True wenn als dedizierte Spalte auf SdsRevision existiert",
+    )
+    promoted_column_name = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        help_text="Spaltenname auf GlobalSdsRevision (wenn promoted)",
+    )
+    coverage_percent = models.FloatField(
+        default=0.0,
+        help_text="Anteil der Revisionen mit diesem Property (%)",
+    )
+    sort_order = models.PositiveSmallIntegerField(default=0)
+
+    class Meta:
+        db_table = "global_sds_propertydefinition"
+        verbose_name = "SDS-Eigenschaftsdefinition"
+        verbose_name_plural = "SDS-Eigenschaftsdefinitionen"
+        ordering = ["sort_order", "key"]
+
+    def __str__(self):
+        return f"{self.key} ({self.get_value_type_display()})"
+
+
+class SdsRevisionProperty(models.Model):
+    """
+    Typisierter Key-Value-Store für SDS-Revision-Eigenschaften.
+
+    Ergänzt promoted Felder auf GlobalSdsRevision um dynamische
+    Eigenschaften ohne Schema-Migration.
+    """
+
+    sds_revision = models.ForeignKey(
+        GlobalSdsRevision,
+        on_delete=models.CASCADE,
+        related_name="properties",
+    )
+    definition = models.ForeignKey(
+        SdsPropertyDefinition,
+        on_delete=models.PROTECT,
+        related_name="values",
+    )
+    value_numeric_lo = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Unterer Wert (oder Einzelwert)",
+    )
+    value_numeric_hi = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Oberer Wert (bei Bereich)",
+    )
+    value_text = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Textwert (bei ENUM/TEXT/BOOLEAN)",
+    )
+    raw_text = models.TextField(
+        blank=True,
+        default="",
+        help_text="Original-Text aus dem SDS (für Audit/Suche)",
+    )
+    confidence = models.FloatField(
+        default=1.0,
+        help_text="Konfidenz des Parsers (0.0-1.0)",
+    )
+    parse_source = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text="Extraktionsquelle (regex, llm, manual)",
+    )
+    temperature_c = models.DecimalField(
+        max_digits=7,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text="Bezugstemperatur (bei NUMERIC_AT_TEMP)",
+    )
+
+    class Meta:
+        db_table = "global_sds_revisionproperty"
+        verbose_name = "SDS-Revisions-Eigenschaft"
+        verbose_name_plural = "SDS-Revisions-Eigenschaften"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["sds_revision", "definition"],
+                name="uq_revision_property_per_def",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["definition", "value_numeric_lo"],
+                name="ix_revprop_def_numeric",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.definition.key}: {self.value_numeric_lo or self.value_text}"

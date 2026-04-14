@@ -7,8 +7,7 @@ import pytest
 
 from global_sds.models import GlobalSdsRevision, GlobalSubstance
 from global_sds.services.upload_pipeline import SdsUploadPipeline, UploadOutcome
-from global_sds.tests.factories import GlobalSdsRevisionFactory, GlobalSubstanceFactory
-
+from global_sds.tests.factories import GlobalSdsRevisionFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -107,7 +106,10 @@ class TestVersionConflict:
     """Stufe 3: Retrograde date or ambiguous version → CONFLICT."""
 
     def test_should_detect_version_conflict(
-        self, substance_acetone, revision_acetone_v1, tenant_id,
+        self,
+        substance_acetone,
+        revision_acetone_v1,
+        tenant_id,
     ):
         pdf = _make_pdf("conflict-pdf")
         parse = _make_parse_result(

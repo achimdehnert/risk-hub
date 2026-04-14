@@ -7,15 +7,14 @@ from unittest.mock import patch
 import pytest
 
 from global_sds.models import GlobalSdsRevision, ImpactLevel
+from global_sds.sds_usage import SdsUsageStatus
 from global_sds.services.supersession_service import SdsSupersessionService
-from global_sds.sds_usage import SdsUsage, SdsUsageStatus
 from global_sds.tests.factories import (
     GlobalSdsRevisionFactory,
     GlobalSubstanceFactory,
     SdsRevisionDiffRecordFactory,
     SdsUsageFactory,
 )
-
 
 pytestmark = pytest.mark.django_db
 
@@ -26,13 +25,18 @@ class TestSupersede:
     def test_should_set_old_revision_to_superseded(self, db):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, status="VERIFIED", source_hash="o" * 64,
+            substance=substance,
+            status="VERIFIED",
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, status="PENDING", source_hash="n" * 64,
+            substance=substance,
+            status="PENDING",
+            source_hash="n" * 64,
         )
         diff = SdsRevisionDiffRecordFactory(
-            old_revision=old, new_revision=new,
+            old_revision=old,
+            new_revision=new,
             overall_impact=ImpactLevel.INFORMATIONAL,
         )
 
@@ -48,13 +52,18 @@ class TestSupersede:
     def test_should_return_affected_usage_count(self, db, user):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, status="VERIFIED", source_hash="o" * 64,
+            substance=substance,
+            status="VERIFIED",
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, status="PENDING", source_hash="n" * 64,
+            substance=substance,
+            status="PENDING",
+            source_hash="n" * 64,
         )
         diff = SdsRevisionDiffRecordFactory(
-            old_revision=old, new_revision=new,
+            old_revision=old,
+            new_revision=new,
             overall_impact=ImpactLevel.REGULATORY,
         )
         # Create 3 active usages from different tenants
@@ -72,17 +81,24 @@ class TestImpactHandling:
     def test_should_set_review_required_for_safety_critical(self, db, user):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, status="VERIFIED", source_hash="o" * 64,
+            substance=substance,
+            status="VERIFIED",
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, status="PENDING", source_hash="n" * 64,
+            substance=substance,
+            status="PENDING",
+            source_hash="n" * 64,
         )
         diff = SdsRevisionDiffRecordFactory(
-            old_revision=old, new_revision=new,
+            old_revision=old,
+            new_revision=new,
             overall_impact=ImpactLevel.SAFETY_CRITICAL,
         )
         usage = SdsUsageFactory(
-            sds_revision=old, status=SdsUsageStatus.ACTIVE, approved_by=user,
+            sds_revision=old,
+            status=SdsUsageStatus.ACTIVE,
+            approved_by=user,
         )
 
         svc = SdsSupersessionService()
@@ -96,17 +112,24 @@ class TestImpactHandling:
     def test_should_set_review_deadline_28_days(self, db, user):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, status="VERIFIED", source_hash="o" * 64,
+            substance=substance,
+            status="VERIFIED",
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, status="PENDING", source_hash="n" * 64,
+            substance=substance,
+            status="PENDING",
+            source_hash="n" * 64,
         )
         diff = SdsRevisionDiffRecordFactory(
-            old_revision=old, new_revision=new,
+            old_revision=old,
+            new_revision=new,
             overall_impact=ImpactLevel.SAFETY_CRITICAL,
         )
         usage = SdsUsageFactory(
-            sds_revision=old, status=SdsUsageStatus.ACTIVE, approved_by=user,
+            sds_revision=old,
+            status=SdsUsageStatus.ACTIVE,
+            approved_by=user,
         )
 
         svc = SdsSupersessionService()
@@ -119,17 +142,24 @@ class TestImpactHandling:
     def test_should_set_update_available_for_regulatory(self, db, user):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, status="VERIFIED", source_hash="o" * 64,
+            substance=substance,
+            status="VERIFIED",
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, status="PENDING", source_hash="n" * 64,
+            substance=substance,
+            status="PENDING",
+            source_hash="n" * 64,
         )
         diff = SdsRevisionDiffRecordFactory(
-            old_revision=old, new_revision=new,
+            old_revision=old,
+            new_revision=new,
             overall_impact=ImpactLevel.REGULATORY,
         )
         usage = SdsUsageFactory(
-            sds_revision=old, status=SdsUsageStatus.ACTIVE, approved_by=user,
+            sds_revision=old,
+            status=SdsUsageStatus.ACTIVE,
+            approved_by=user,
         )
 
         svc = SdsSupersessionService()
@@ -141,17 +171,24 @@ class TestImpactHandling:
     def test_should_not_change_status_for_informational(self, db, user):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, status="VERIFIED", source_hash="o" * 64,
+            substance=substance,
+            status="VERIFIED",
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, status="PENDING", source_hash="n" * 64,
+            substance=substance,
+            status="PENDING",
+            source_hash="n" * 64,
         )
         diff = SdsRevisionDiffRecordFactory(
-            old_revision=old, new_revision=new,
+            old_revision=old,
+            new_revision=new,
             overall_impact=ImpactLevel.INFORMATIONAL,
         )
         usage = SdsUsageFactory(
-            sds_revision=old, status=SdsUsageStatus.ACTIVE, approved_by=user,
+            sds_revision=old,
+            status=SdsUsageStatus.ACTIVE,
+            approved_by=user,
         )
 
         svc = SdsSupersessionService()
@@ -168,13 +205,18 @@ class TestDownstreamFlagging:
     def test_should_call_flag_downstream_for_safety_critical(self, mock_flag, db, user):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, status="VERIFIED", source_hash="o" * 64,
+            substance=substance,
+            status="VERIFIED",
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, status="PENDING", source_hash="n" * 64,
+            substance=substance,
+            status="PENDING",
+            source_hash="n" * 64,
         )
         diff = SdsRevisionDiffRecordFactory(
-            old_revision=old, new_revision=new,
+            old_revision=old,
+            new_revision=new,
             overall_impact=ImpactLevel.SAFETY_CRITICAL,
         )
 
@@ -187,13 +229,18 @@ class TestDownstreamFlagging:
     def test_should_not_flag_downstream_for_regulatory(self, mock_flag, db, user):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, status="VERIFIED", source_hash="o" * 64,
+            substance=substance,
+            status="VERIFIED",
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, status="PENDING", source_hash="n" * 64,
+            substance=substance,
+            status="PENDING",
+            source_hash="n" * 64,
         )
         diff = SdsRevisionDiffRecordFactory(
-            old_revision=old, new_revision=new,
+            old_revision=old,
+            new_revision=new,
             overall_impact=ImpactLevel.REGULATORY,
         )
 

@@ -7,7 +7,6 @@ from global_sds.models import ImpactLevel, SdsRevisionDiffRecord
 from global_sds.services.diff_service import SdsRevisionDiffService
 from global_sds.tests.factories import GlobalSdsRevisionFactory, GlobalSubstanceFactory
 
-
 pytestmark = pytest.mark.django_db
 
 
@@ -17,10 +16,14 @@ class TestFieldDiffs:
     def test_should_detect_safety_critical_flash_point_change(self, db):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, flash_point_c=-20, source_hash="o" * 64,
+            substance=substance,
+            flash_point_c=-20,
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, flash_point_c=-10, source_hash="n" * 64,
+            substance=substance,
+            flash_point_c=-10,
+            source_hash="n" * 64,
         )
         svc = SdsRevisionDiffService()
         result = svc.compute_diff(old, new)
@@ -32,10 +35,14 @@ class TestFieldDiffs:
     def test_should_detect_regulatory_wgk_change(self, db):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, wgk=1, source_hash="o" * 64,
+            substance=substance,
+            wgk=1,
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, wgk=3, source_hash="n" * 64,
+            substance=substance,
+            wgk=3,
+            source_hash="n" * 64,
         )
         svc = SdsRevisionDiffService()
         result = svc.compute_diff(old, new)
@@ -47,10 +54,14 @@ class TestFieldDiffs:
     def test_should_detect_informational_manufacturer_change(self, db):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, manufacturer_name="Old GmbH", source_hash="o" * 64,
+            substance=substance,
+            manufacturer_name="Old GmbH",
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, manufacturer_name="New GmbH", source_hash="n" * 64,
+            substance=substance,
+            manufacturer_name="New GmbH",
+            source_hash="n" * 64,
         )
         svc = SdsRevisionDiffService()
         result = svc.compute_diff(old, new)
@@ -62,10 +73,16 @@ class TestFieldDiffs:
     def test_should_report_no_changes_for_identical_revisions(self, db):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, flash_point_c=-20, wgk=1, source_hash="o" * 64,
+            substance=substance,
+            flash_point_c=-20,
+            wgk=1,
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, flash_point_c=-20, wgk=1, source_hash="n" * 64,
+            substance=substance,
+            flash_point_c=-20,
+            wgk=1,
+            source_hash="n" * 64,
             manufacturer_name=old.manufacturer_name,
             version_number=old.version_number,
             parse_confidence=old.parse_confidence,
@@ -90,18 +107,24 @@ class TestOverallImpact:
     def test_should_compute_overall_as_safety_critical(self, db):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, flash_point_c=-20, wgk=1, source_hash="o" * 64,
+            substance=substance,
+            flash_point_c=-20,
+            wgk=1,
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, flash_point_c=-10, wgk=2, source_hash="n" * 64,
+            substance=substance,
+            flash_point_c=-10,
+            wgk=2,
+            source_hash="n" * 64,
         )
         svc = SdsRevisionDiffService()
         result = svc.compute_diff(old, new)
         assert result.overall_impact == ImpactLevel.SAFETY_CRITICAL
 
     def test_should_default_to_informational_when_no_diffs(self, db):
-        svc = SdsRevisionDiffService()
         from global_sds.services.diff_service import DiffResult
+
         result = DiffResult()
         assert result.overall_impact == ImpactLevel.INFORMATIONAL
 
@@ -112,10 +135,14 @@ class TestPersistDiff:
     def test_should_persist_diff_record(self, db):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, flash_point_c=-20, source_hash="o" * 64,
+            substance=substance,
+            flash_point_c=-20,
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, flash_point_c=-10, source_hash="n" * 64,
+            substance=substance,
+            flash_point_c=-10,
+            source_hash="n" * 64,
         )
         svc = SdsRevisionDiffService()
         diff = svc.compute_diff(old, new)
@@ -130,10 +157,12 @@ class TestPersistDiff:
     def test_should_be_idempotent_on_second_persist(self, db):
         substance = GlobalSubstanceFactory()
         old = GlobalSdsRevisionFactory(
-            substance=substance, source_hash="o" * 64,
+            substance=substance,
+            source_hash="o" * 64,
         )
         new = GlobalSdsRevisionFactory(
-            substance=substance, source_hash="n" * 64,
+            substance=substance,
+            source_hash="n" * 64,
         )
         svc = SdsRevisionDiffService()
         diff = svc.compute_diff(old, new)
