@@ -436,7 +436,7 @@ class SiteInventoryItem(TenantScopedModel):
 class HazardStatementRef(models.Model):
     """H-Sätze Referenztabelle (GHS)."""
 
-    code = models.CharField(max_length=10, primary_key=True, help_text="H-Code (z.B. H225)")
+    code = models.CharField(max_length=10, unique=True, help_text="H-Code (z.B. H225)")
     text_de = models.TextField(help_text="Deutscher Text")
     text_en = models.TextField(blank=True, default="", help_text="English text")
     category = models.CharField(
@@ -459,7 +459,7 @@ class PrecautionaryStatementRef(models.Model):
     """P-Sätze Referenztabelle (GHS)."""
 
     code = models.CharField(
-        max_length=20, primary_key=True, help_text="P-Code (z.B. P210, P210+P233)"
+        max_length=20, unique=True, help_text="P-Code (z.B. P210, P210+P233)"
     )
     text_de = models.TextField(help_text="Deutscher Text")
     text_en = models.TextField(blank=True, default="", help_text="English text")
@@ -482,7 +482,7 @@ class PrecautionaryStatementRef(models.Model):
 class PictogramRef(models.Model):
     """GHS-Piktogramme Referenztabelle."""
 
-    code = models.CharField(max_length=10, primary_key=True, help_text="GHS-Code (z.B. GHS01)")
+    code = models.CharField(max_length=10, unique=True, help_text="GHS-Code (z.B. GHS01)")
     name_de = models.CharField(max_length=100, help_text="Deutscher Name")
     name_en = models.CharField(max_length=100, blank=True, default="", help_text="English name")
     svg_path = models.CharField(
