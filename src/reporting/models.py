@@ -1,8 +1,7 @@
 """Reporting models."""
 
-import uuid
-
 from django.db import models
+
 
 class RetentionPolicy(models.Model):
     """Retention policy for documents/exports."""
@@ -29,6 +28,7 @@ class RetentionPolicy(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.retention_days} days)"
+
 
 class ExportJob(models.Model):
     """Export job for PDF/Excel generation."""

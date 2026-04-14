@@ -8,12 +8,11 @@ Concrete Models für iil-concept-templates:
 - ExFilledTemplate: Ausgefüllte Templates
 """
 
-import uuid
-
 from django.db import models
 from django_tenancy.managers import TenantManager
 
 from .concept import ExplosionConcept
+
 
 class ExConceptDocument(models.Model):
     """Unterlage zu einem Explosionsschutzkonzept (ADR-147).
@@ -101,6 +100,7 @@ class ExConceptDocument(models.Model):
     def has_template(self) -> bool:
         return bool(self.template_json)
 
+
 class ExConceptTemplateStore(models.Model):
     """Persistiertes Konzept-Template für Explosionsschutz (ADR-147).
 
@@ -156,6 +156,7 @@ class ExConceptTemplateStore(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} v{self.version} ({self.get_source_display()})"
+
 
 class ExFilledTemplate(models.Model):
     """Ausgefülltes Template für ein Explosionsschutzkonzept (ADR-147).

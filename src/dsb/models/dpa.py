@@ -1,12 +1,11 @@
 """AVV — Auftragsverarbeitungsvertrag (Art. 28 DSGVO)."""
 
-import uuid
-
 from django.db import models
 
 from .lookups import Category, SubjectGroup
 from .mandate import Mandate
 from .vvt import ProcessingActivity
+
 
 class DataProcessingAgreement(models.Model):
     """Auftragsverarbeitungsvertrag (AVV) gemäß Art. 28 DSGVO."""

@@ -41,9 +41,11 @@ class GbuProgressService(BaseProgressService):
 
     def _build_context(self, activity: Any) -> dict[str, Any]:
         """Derive hazard categories and CMR flag for all checkers."""
-        cats = list(
-            activity.derived_hazard_categories.values_list("category_type", flat=True)
-        ) if hasattr(activity, "derived_hazard_categories") else []
+        cats = (
+            list(activity.derived_hazard_categories.values_list("category_type", flat=True))
+            if hasattr(activity, "derived_hazard_categories")
+            else []
+        )
         return {
             "cats": cats,
             "has_cmr": "CMR" in cats,
@@ -105,9 +107,7 @@ class GbuProgressService(BaseProgressService):
             return self._complete(info=["Kein CMR-Stoff — Substitutionsprüfung optional"])
 
         if has_cmr and not checked:
-            return self._blocked(
-                "CMR-Stoff: Substitutionsprüfung ist Pflicht (GefStoffV §7)"
-            )
+            return self._blocked("CMR-Stoff: Substitutionsprüfung ist Pflicht (GefStoffV §7)")
 
         if checked and not notes:
             return self._partial(["Ergebnis der Substitutionsprüfung fehlt"], pct=60)
@@ -145,8 +145,7 @@ class GbuProgressService(BaseProgressService):
     def _check_ppe(self, a: Any, ctx: dict) -> StepStatus:
         cats = ctx.get("cats", [])
         needs_ppe = bool(
-            {"DERMAL", "HAUT_REIZ", "HAUT_SENSIB", "INHALATION", "HAUT_AEZT", "AUGE"}
-            & set(cats)
+            {"DERMAL", "HAUT_REIZ", "HAUT_SENSIB", "INHALATION", "HAUT_AEZT", "AUGE"} & set(cats)
         )
 
         if not needs_ppe:
@@ -173,9 +172,7 @@ class GbuProgressService(BaseProgressService):
         import datetime
 
         if review_date < datetime.date.today():
-            return self._error(
-                [f"Wirksamkeitsprüfung überfällig seit {review_date}"]
-            )
+            return self._error([f"Wirksamkeitsprüfung überfällig seit {review_date}"])
         return self._complete(info=[f"Nächste Überprüfung: {review_date}"])
 
     # ── Step 8: Freigabe ──────────────────────────────────────────────────

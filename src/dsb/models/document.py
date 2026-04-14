@@ -1,11 +1,11 @@
 """DsbDocument — Dokumenten-Archiv für DSB-Modul (PDF, DOCX, etc.)."""
 
-import uuid
 from pathlib import Path
 
 from django.db import models
 
 from .mandate import Mandate
+
 
 def _upload_path(instance: "DsbDocument", filename: str) -> str:
     """Speichert Dateien unter media/dsb/<tenant_id>/<ref_type>/<pk>/<filename>."""
@@ -15,6 +15,7 @@ def _upload_path(instance: "DsbDocument", filename: str) -> str:
         f"dsb/{instance.tenant_id}/{instance.ref_type}/"
         f"{instance.ref_id or 'general'}/{safe_name}{ext}"
     )
+
 
 class DsbDocument(models.Model):
     """Archiviertes Dokument im DSB-Modul (PDF, DOCX, etc.)."""

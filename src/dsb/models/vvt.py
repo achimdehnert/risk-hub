@@ -1,7 +1,5 @@
 """VVT — Verarbeitungsverzeichnis (Art. 30 DSGVO)."""
 
-import uuid
-
 from django.db import models
 
 from .lookups import (
@@ -12,6 +10,7 @@ from .lookups import (
     SubjectGroup,
 )
 from .mandate import Mandate
+
 
 class ProcessingActivity(models.Model):
     """Verarbeitungstätigkeit gemäß Art. 30 DSGVO (VVT)."""
@@ -131,6 +130,7 @@ class ProcessingActivity(models.Model):
     def __str__(self) -> str:
         return f"{self.number}. {self.name}"
 
+
 class ThirdCountryTransfer(models.Model):
     """Drittlandübermittlung zu einer Verarbeitungstätigkeit (Art. 44ff)."""
 
@@ -178,6 +178,7 @@ class ThirdCountryTransfer(models.Model):
     def __str__(self) -> str:
         entity = f" ({self.recipient_entity})" if self.recipient_entity else ""
         return f"{self.country}{entity}"
+
 
 class RetentionRule(models.Model):
     """Löschfrist/Aufbewahrungsregel einer Verarbeitungstätigkeit."""

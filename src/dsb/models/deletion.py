@@ -1,12 +1,11 @@
 """Deletion — Löschprotokolle (Art. 17 DSGVO)."""
 
-import uuid
-
 from django.db import models
 
 from .lookups import Category
 from .mandate import Mandate
 from .vvt import ProcessingActivity
+
 
 class DeletionLog(models.Model):
     """Löschprotokoll gemäß Art. 17 DSGVO."""

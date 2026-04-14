@@ -1,11 +1,10 @@
 """Audit — Datenschutz-Audits."""
 
-import uuid
-
 from django.db import models
 
 from .choices import SeverityLevel
 from .mandate import Mandate
+
 
 class PrivacyAudit(models.Model):
     """Datenschutz-Audit."""
@@ -67,6 +66,7 @@ class PrivacyAudit(models.Model):
 
     def __str__(self) -> str:
         return f"{self.title} ({self.get_audit_type_display()})"
+
 
 class AuditFinding(models.Model):
     """Einzelbefund eines Audits."""

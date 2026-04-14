@@ -95,9 +95,7 @@ class ExProgressService(BaseProgressService):
         assessed = set()
         if hasattr(concept, "ignition_source_assessments"):
             assessed = set(
-                concept.ignition_source_assessments.values_list(
-                    "source_type", flat=True
-                )
+                concept.ignition_source_assessments.values_list("source_type", flat=True)
             )
 
         done = len(assessed)
@@ -125,16 +123,12 @@ class ExProgressService(BaseProgressService):
         if not measures:
             return self._empty("Keine Schutzmaßnahmen erfasst")
 
-        has_primary = any(
-            getattr(m, "category", "") == "primary" for m in measures
-        )
+        has_primary = any(getattr(m, "category", "") == "primary" for m in measures)
         issues = []
         if not has_primary:
             issues.append("Keine primäre Maßnahme vorhanden (TRGS 722 Pflicht)")
 
-        open_measures = [
-            m for m in measures if getattr(m, "status", "") == "open"
-        ]
+        open_measures = [m for m in measures if getattr(m, "status", "") == "open"]
         if open_measures:
             issues.append(f"{len(open_measures)} Maßnahme(n) noch offen")
 
@@ -147,8 +141,11 @@ class ExProgressService(BaseProgressService):
         if issues:
             state = StepState.PARTIAL if has_primary else StepState.ERROR
             return StepStatus(
-                step=0, label="", state=state,
-                issues=issues, info=[summary] if summary else [],
+                step=0,
+                label="",
+                state=state,
+                issues=issues,
+                info=[summary] if summary else [],
                 item_count=len(measures),
                 completion_percent=70 if has_primary else 30,
             )
@@ -175,8 +172,7 @@ class ExProgressService(BaseProgressService):
                     if zone_type not in allowed_zones:
                         eq_name = getattr(eq, "name", str(eq))
                         errors.append(
-                            f"{eq_name}: Kat {atex_cat} "
-                            f"nicht zulässig in Zone {zone_type}"
+                            f"{eq_name}: Kat {atex_cat} nicht zulässig in Zone {zone_type}"
                         )
 
         if errors:
@@ -197,18 +193,12 @@ class ExProgressService(BaseProgressService):
         if not equipment:
             return self._complete(info=["Keine Betriebsmittel — Schritt entfällt"])
 
-        without_plan = [
-            eq for eq in equipment if not eq.inspections.exists()
-        ]
+        without_plan = [eq for eq in equipment if not eq.inspections.exists()]
         if without_plan:
-            names = ", ".join(
-                getattr(eq, "name", str(eq)) for eq in without_plan[:3]
-            )
+            names = ", ".join(getattr(eq, "name", str(eq)) for eq in without_plan[:3])
             return self._partial(
                 [f"{len(without_plan)} Betriebsmittel ohne Prüfplan: {names}"],
-                pct=round(
-                    (len(equipment) - len(without_plan)) / len(equipment) * 100
-                ),
+                pct=round((len(equipment) - len(without_plan)) / len(equipment) * 100),
                 item_count=len(equipment) - len(without_plan),
             )
         return self._complete(

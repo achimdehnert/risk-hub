@@ -1,9 +1,8 @@
 """Risk assessment models."""
 
-import uuid
-
 from django.db import models
 from django_tenancy.managers import TenantManager
+
 
 class Assessment(models.Model):
     """Risk assessment / Gefährdungsbeurteilung."""
@@ -74,6 +73,7 @@ class Assessment(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
 
 class Hazard(models.Model):
     """Individual hazard within an assessment."""

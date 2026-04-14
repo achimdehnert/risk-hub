@@ -76,12 +76,16 @@ class TestCalculateZoneExtent:
 
     def test_should_apply_correct_safety_factor(self):
         result_jet = calculate_zone_extent(
-            release_rate_kg_s=0.01, ventilation_rate_m3_s=5.0,
-            release_type="jet", lel_percent=2.5,
+            release_rate_kg_s=0.01,
+            ventilation_rate_m3_s=5.0,
+            release_type="jet",
+            lel_percent=2.5,
         )
         result_pool = calculate_zone_extent(
-            release_rate_kg_s=0.01, ventilation_rate_m3_s=5.0,
-            release_type="pool", lel_percent=2.5,
+            release_rate_kg_s=0.01,
+            ventilation_rate_m3_s=5.0,
+            release_type="pool",
+            lel_percent=2.5,
         )
         assert result_jet.safety_factor == 5.0
         assert result_pool.safety_factor == 3.0

@@ -15,6 +15,7 @@ from django_tenancy.managers import TenantManager
 
 __all__ = ["Membership", "Organization", "Site"]
 
+
 class Organization(models.Model):
     """Tenant entity. One Organization = one tenant."""
 
@@ -72,6 +73,7 @@ class Organization(models.Model):
     def is_active(self) -> bool:
         return self.status in (self.Status.TRIAL, self.Status.ACTIVE)
 
+
 class Membership(models.Model):
     """Links a User to an Organization with a role."""
 
@@ -122,6 +124,7 @@ class Membership(models.Model):
 
     def __str__(self) -> str:
         return f"{self.user} @ {self.organization} ({self.role})"
+
 
 class Site(models.Model):
     """Physical site/location within an organization."""

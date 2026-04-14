@@ -6,13 +6,12 @@ Area: Betriebsbereich / Anlage innerhalb eines Standorts
 ExplosionConcept: Explosionsschutzkonzept nach TRGS 720ff
 """
 
-import uuid
-
 from django.contrib.auth import get_user_model
 from django.db import models
 from django_tenancy.managers import TenantManager
 
 User = get_user_model()
+
 
 class Area(models.Model):
     """Betriebsbereich / Anlage innerhalb eines Standorts"""
@@ -73,6 +72,7 @@ class Area(models.Model):
     def has_explosion_hazard(self) -> bool:
         """Prüft ob Ex-relevante Konzepte im Bereich existieren"""
         return self.explosion_concepts.filter(status__in=["approved", "in_review"]).exists()
+
 
 class ExplosionConcept(models.Model):
     """Explosionsschutzkonzept nach TRGS 720ff"""

@@ -3,8 +3,6 @@
 Schutzmaßnahmen (primär, sekundär, tertiär, organisatorisch).
 """
 
-import uuid
-
 from django.contrib.auth import get_user_model
 from django.db import models
 from django_tenancy.managers import TenantManager
@@ -13,6 +11,7 @@ from .concept import ExplosionConcept
 from .master_data import MeasureCatalog, SafetyFunction
 
 User = get_user_model()
+
 
 class ProtectionMeasure(models.Model):
     """Schutzmaßnahme (primär, sekundär, tertiär, organisatorisch)"""

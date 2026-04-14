@@ -1,12 +1,11 @@
 """TOM — Technische und organisatorische Maßnahmen (Art. 32 DSGVO)."""
 
-import uuid
-
 from django.db import models
 
 from .choices import MeasureStatus
 from .lookups import TomCategory
 from .mandate import Mandate
+
 
 class TechnicalMeasure(models.Model):
     """Technische Maßnahme gemäß Art. 32 DSGVO."""
@@ -67,6 +66,7 @@ class TechnicalMeasure(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
 
 class OrganizationalMeasure(models.Model):
     """Organisatorische Maßnahme gemäß Art. 32 DSGVO."""

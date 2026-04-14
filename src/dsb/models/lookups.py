@@ -2,6 +2,7 @@
 
 from django.db import models
 
+
 class Category(models.Model):
     """Datenkategorie (Art. 9 DSGVO). Global, nicht tenant-spezifisch."""
 
@@ -21,6 +22,7 @@ class Category(models.Model):
     def __str__(self) -> str:
         return self.label
 
+
 class SubjectGroup(models.Model):
     """Lookup: Betroffenengruppe (z.B. Besch\u00e4ftigte, Kunden, Patienten)."""
 
@@ -35,6 +37,7 @@ class SubjectGroup(models.Model):
 
     def __str__(self) -> str:
         return self.label
+
 
 class Recipient(models.Model):
     """Lookup: Empf\u00e4ngerkategorie (Art. 30 Abs. 1 lit. d DSGVO)."""
@@ -51,6 +54,7 @@ class Recipient(models.Model):
     def __str__(self) -> str:
         return self.label
 
+
 class Purpose(models.Model):
     """Lookup: Verarbeitungszweck (Art. 30 Abs. 1 lit. b DSGVO)."""
 
@@ -65,6 +69,7 @@ class Purpose(models.Model):
 
     def __str__(self) -> str:
         return self.label
+
 
 class TomCategory(models.Model):
     """Stammdaten-Katalog f\u00fcr TOM (Art. 32 DSGVO).
@@ -99,6 +104,7 @@ class TomCategory(models.Model):
 
     def __str__(self) -> str:
         return f"[{self.get_measure_type_display()}] {self.label}"
+
 
 class StandardRetentionPeriod(models.Model):
     """Stammdaten: Gesetzliche Aufbewahrungsfristen.

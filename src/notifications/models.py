@@ -1,10 +1,9 @@
 """Notification models for deadline alerts and system events."""
 
-import uuid
-
 from django.db import models
 from django.utils import timezone
 from django_tenancy.managers import TenantManager
+
 
 class Notification(models.Model):
     """In-app notification for a tenant user."""
@@ -85,6 +84,7 @@ class Notification(models.Model):
             self.is_read = True
             self.read_at = timezone.now()
             self.save(update_fields=["is_read", "read_at"])
+
 
 class NotificationPreference(models.Model):
     """Per-user notification delivery preferences."""

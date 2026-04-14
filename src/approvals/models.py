@@ -1,12 +1,11 @@
 """Approval workflow models for multi-step review processes."""
 
-import uuid
-
 from django.db import models
 from django.utils import timezone
 from django_tenancy.managers import TenantManager
 
 from identity.models import User
+
 
 class ApprovalWorkflow(models.Model):
     """Configurable approval workflow template per tenant."""
@@ -43,6 +42,7 @@ class ApprovalWorkflow(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.get_workflow_type_display()})"
 
+
 class ApprovalStep(models.Model):
     """A single step in an approval workflow."""
 
@@ -76,6 +76,7 @@ class ApprovalStep(models.Model):
 
     def __str__(self) -> str:
         return f"Step {self.order}: {self.name}"
+
 
 class ApprovalRequest(models.Model):
     """A concrete approval request for a specific entity."""
@@ -140,6 +141,7 @@ class ApprovalRequest(models.Model):
 
     def __str__(self) -> str:
         return f"{self.entity_type}:{self.entity_id} ({self.get_status_display()})"
+
 
 class ApprovalDecision(models.Model):
     """A decision (approve/reject) for a specific step."""

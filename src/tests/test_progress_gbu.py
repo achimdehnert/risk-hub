@@ -137,11 +137,13 @@ class TestGbuStep5Measures:
 
     def test_should_complete_with_tops_measures(self):
         svc = GbuProgressService()
-        a = _make_activity(_measures=[
-            _make_measure("T"),
-            _make_measure("O"),
-            _make_measure("S"),
-        ])
+        a = _make_activity(
+            _measures=[
+                _make_measure("T"),
+                _make_measure("O"),
+                _make_measure("S"),
+            ]
+        )
         p = svc.get_progress(a)
         assert p.step_by_number(5).state == StepState.COMPLETE
 

@@ -1,8 +1,7 @@
 """Mandate — Betreutes Unternehmen des DSB."""
 
-import uuid
-
 from django.db import models
+
 
 class Mandate(models.Model):
     """Betreutes Unternehmen des DSB. KEIN Tenant — Subentität."""

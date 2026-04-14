@@ -7,8 +7,6 @@ Inspection: Prüfung nach BetrSichV
 EquipmentATEXCheck: Archivierter ATEX-Eignungsnachweis
 """
 
-import uuid
-
 from django.contrib.auth import get_user_model
 from django.db import models
 from django_tenancy.managers import TenantManager
@@ -18,6 +16,7 @@ from .master_data import EquipmentType
 from .zone import ZoneDefinition
 
 User = get_user_model()
+
 
 class Equipment(models.Model):
     """Konkretes Ex-geschütztes Betriebsmittel"""
@@ -104,6 +103,7 @@ class Equipment(models.Model):
         category_order = {"1G": 1, "2G": 2, "3G": 3, "1D": 1, "2D": 2, "3D": 3}
         return category_order.get(actual, 99) <= category_order.get(required, 0)
 
+
 class Inspection(models.Model):
     """Prüfung eines Betriebsmittels nach BetrSichV"""
 
@@ -156,6 +156,7 @@ class Inspection(models.Model):
     # NOTE: Equipment inspection date updates are handled in
     # explosionsschutz.services.create_inspection() to keep
     # the model free of hidden side-effects (F-07).
+
 
 class EquipmentATEXCheck(models.Model):
     """

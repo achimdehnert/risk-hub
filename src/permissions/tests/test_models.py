@@ -59,18 +59,12 @@ class TestRole:
 
     def test_same_name_allowed_in_different_tenant(self, fixture_tenant, fixture_tenant_b):
         Role.objects.create(tenant_id=fixture_tenant.tenant_id, name="shared-name")
-        role_b = Role.objects.create(
-            tenant_id=fixture_tenant_b.tenant_id, name="shared-name"
-        )
+        role_b = Role.objects.create(tenant_id=fixture_tenant_b.tenant_id, name="shared-name")
         assert role_b.pk is not None
 
     def test_should_link_permissions_via_rolepermission(self, fixture_tenant):
-        perm = Permission.objects.create(
-            code="test.link", module="test", resource="link"
-        )
-        role = Role.objects.create(
-            tenant_id=fixture_tenant.tenant_id, name="linker"
-        )
+        perm = Permission.objects.create(code="test.link", module="test", resource="link")
+        role = Role.objects.create(tenant_id=fixture_tenant.tenant_id, name="linker")
         RolePermission.objects.create(role=role, permission=perm)
         assert perm in role.permissions.all()
 
@@ -129,12 +123,8 @@ class TestPermissionOverride:
     def test_should_create_grant_override(self, fixture_tenant, fixture_user):
         from tenancy.models import Membership
 
-        ms = Membership.objects.get(
-            tenant_id=fixture_tenant.tenant_id, user=fixture_user
-        )
-        perm = Permission.objects.create(
-            code="override.test", module="test", resource="override"
-        )
+        ms = Membership.objects.get(tenant_id=fixture_tenant.tenant_id, user=fixture_user)
+        perm = Permission.objects.create(code="override.test", module="test", resource="override")
         override = PermissionOverride.objects.create(
             membership=ms,
             permission=perm,
@@ -146,12 +136,8 @@ class TestPermissionOverride:
     def test_should_create_deny_override(self, fixture_tenant, fixture_user):
         from tenancy.models import Membership
 
-        ms = Membership.objects.get(
-            tenant_id=fixture_tenant.tenant_id, user=fixture_user
-        )
-        perm = Permission.objects.create(
-            code="deny.test", module="test", resource="deny"
-        )
+        ms = Membership.objects.get(tenant_id=fixture_tenant.tenant_id, user=fixture_user)
+        perm = Permission.objects.create(code="deny.test", module="test", resource="deny")
         override = PermissionOverride.objects.create(
             membership=ms,
             permission=perm,
@@ -160,21 +146,11 @@ class TestPermissionOverride:
         )
         assert override.allowed is False
 
-    def test_should_enforce_unique_membership_permission(
-        self, fixture_tenant, fixture_user
-    ):
+    def test_should_enforce_unique_membership_permission(self, fixture_tenant, fixture_user):
         from tenancy.models import Membership
 
-        ms = Membership.objects.get(
-            tenant_id=fixture_tenant.tenant_id, user=fixture_user
-        )
-        perm = Permission.objects.create(
-            code="unique.override", module="test", resource="unique"
-        )
-        PermissionOverride.objects.create(
-            membership=ms, permission=perm, allowed=True
-        )
+        ms = Membership.objects.get(tenant_id=fixture_tenant.tenant_id, user=fixture_user)
+        perm = Permission.objects.create(code="unique.override", module="test", resource="unique")
+        PermissionOverride.objects.create(membership=ms, permission=perm, allowed=True)
         with pytest.raises(Exception):
-            PermissionOverride.objects.create(
-                membership=ms, permission=perm, allowed=False
-            )
+            PermissionOverride.objects.create(membership=ms, permission=perm, allowed=False)

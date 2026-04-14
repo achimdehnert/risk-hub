@@ -6,7 +6,6 @@ Used by: projects.services, projects.views (template upload/import).
 
 from __future__ import annotations
 
-import json
 import logging
 import re
 

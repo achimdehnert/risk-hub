@@ -8,12 +8,8 @@ from django.utils import timezone
 
 from permissions.authz import PermissionDenied, has_permission, require_permission
 from permissions.models import (
-    Assignment,
     Permission,
     PermissionOverride,
-    Role,
-    RolePermission,
-    Scope,
 )
 
 
@@ -31,9 +27,7 @@ class TestHasPermission:
         )
         assert result is True
 
-    def test_should_deny_missing_permission(
-        self, fixture_user, fixture_tenant, fixture_assignment
-    ):
+    def test_should_deny_missing_permission(self, fixture_user, fixture_tenant, fixture_assignment):
         result = has_permission(
             user_id=fixture_user.pk,
             tenant_id=fixture_tenant.tenant_id,
@@ -64,9 +58,7 @@ class TestHasPermission:
     ):
         from tenancy.models import Membership
 
-        ms = Membership.objects.get(
-            tenant_id=fixture_tenant.tenant_id, user=fixture_user
-        )
+        ms = Membership.objects.get(tenant_id=fixture_tenant.tenant_id, user=fixture_user)
         PermissionOverride.objects.create(
             membership=ms,
             permission=fixture_permission_read,
@@ -80,14 +72,10 @@ class TestHasPermission:
         )
         assert result is False
 
-    def test_should_grant_via_explicit_grant_override(
-        self, fixture_user, fixture_tenant
-    ):
+    def test_should_grant_via_explicit_grant_override(self, fixture_user, fixture_tenant):
         from tenancy.models import Membership
 
-        ms = Membership.objects.get(
-            tenant_id=fixture_tenant.tenant_id, user=fixture_user
-        )
+        ms = Membership.objects.get(tenant_id=fixture_tenant.tenant_id, user=fixture_user)
         perm = Permission.objects.create(
             code="special.access",
             module="special",
@@ -111,9 +99,7 @@ class TestHasPermission:
     ):
         from tenancy.models import Membership
 
-        ms = Membership.objects.get(
-            tenant_id=fixture_tenant.tenant_id, user=fixture_user
-        )
+        ms = Membership.objects.get(tenant_id=fixture_tenant.tenant_id, user=fixture_user)
         PermissionOverride.objects.create(
             membership=ms,
             permission=fixture_permission_read,
@@ -127,14 +113,10 @@ class TestHasPermission:
         )
         assert result is True
 
-    def test_should_ignore_expired_grant_override(
-        self, fixture_user, fixture_tenant
-    ):
+    def test_should_ignore_expired_grant_override(self, fixture_user, fixture_tenant):
         from tenancy.models import Membership
 
-        ms = Membership.objects.get(
-            tenant_id=fixture_tenant.tenant_id, user=fixture_user
-        )
+        ms = Membership.objects.get(tenant_id=fixture_tenant.tenant_id, user=fixture_user)
         perm = Permission.objects.create(
             code="expired.grant",
             module="test",
@@ -159,9 +141,7 @@ class TestHasPermission:
         """ADR-003: deny override wins over role-based grant."""
         from tenancy.models import Membership
 
-        ms = Membership.objects.get(
-            tenant_id=fixture_tenant.tenant_id, user=fixture_user
-        )
+        ms = Membership.objects.get(tenant_id=fixture_tenant.tenant_id, user=fixture_user)
         PermissionOverride.objects.create(
             membership=ms,
             permission=fixture_permission_read,

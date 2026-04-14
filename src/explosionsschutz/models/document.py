@@ -3,8 +3,6 @@
 Nachweis- und Prüfdokumente zum Ex-Konzept.
 """
 
-import uuid
-
 from django.contrib.auth import get_user_model
 from django.db import models
 from django_tenancy.managers import TenantManager
@@ -12,6 +10,7 @@ from django_tenancy.managers import TenantManager
 from .concept import ExplosionConcept
 
 User = get_user_model()
+
 
 class VerificationDocument(models.Model):
     """Nachweis- und Prüfdokumente zum Ex-Konzept"""

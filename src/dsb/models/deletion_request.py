@@ -1,10 +1,9 @@
 """DeletionRequest — Art. 17 DSGVO Löschungsworkflow."""
 
-import uuid
-
 from django.db import models
 
 from .mandate import Mandate
+
 
 class DeletionRequestStatus(models.TextChoices):
     PENDING = "pending", "Beantragt"
@@ -15,6 +14,7 @@ class DeletionRequestStatus(models.TextChoices):
     NOTIFIED = "notified", "Betroffener benachrichtigt"
     CLOSED = "closed", "Abgeschlossen"
     REJECTED = "rejected", "Abgelehnt"
+
 
 WORKFLOW_TRANSITIONS = {
     DeletionRequestStatus.PENDING: [
@@ -50,6 +50,7 @@ STEP_LABELS = {
     DeletionRequestStatus.CLOSED: ("✓", "Abgeschlossen"),
     DeletionRequestStatus.REJECTED: ("✗", "Abgelehnt"),
 }
+
 
 class DeletionRequest(models.Model):
     """Löschantrag gemäß Art. 17 DSGVO mit vollständigem Workflow."""

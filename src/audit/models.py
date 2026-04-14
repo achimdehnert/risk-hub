@@ -4,10 +4,9 @@ Audit models for tracking user actions and system events.
 Provides comprehensive audit logging for compliance and debugging.
 """
 
-import uuid
-
 from django.db import models
 from django.utils import timezone
+
 
 class AuditEvent(models.Model):
     """

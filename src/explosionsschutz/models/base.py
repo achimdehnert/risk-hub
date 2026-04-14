@@ -11,6 +11,7 @@ import uuid
 from django.core.exceptions import ValidationError
 from django.db import models
 
+
 class TenantScopedMasterDataManager(models.Manager):
     """
     Custom Manager für Stammdaten mit Hybrid-Tenant-Isolation.
@@ -35,6 +36,7 @@ class TenantScopedMasterDataManager(models.Manager):
     def tenant_only(self, tenant_id: uuid.UUID):
         """Nur tenant-spezifische Einträge"""
         return self.filter(tenant_id=tenant_id)
+
 
 class TenantScopedMasterData(models.Model):
     """

@@ -1,7 +1,6 @@
 # tests/test_progress_base.py
 """Tests für BaseProgressService (common/progress)."""
 
-
 from common.progress.base import (
     BaseProgressService,
     DocumentProgress,
@@ -71,7 +70,10 @@ class TestDocumentProgress:
             StepStatus(step=3, label="C", state=StepState.COMPLETE),
         ]
         dp = DocumentProgress(
-            steps=steps, can_approve=False, blocking_reasons=["B"], overall_percent=67,
+            steps=steps,
+            can_approve=False,
+            blocking_reasons=["B"],
+            overall_percent=67,
         )
         assert dp.complete_count == 2
         assert dp.error_count == 0
@@ -83,7 +85,10 @@ class TestDocumentProgress:
             StepStatus(step=2, label="B", state=StepState.ERROR),
         ]
         dp = DocumentProgress(
-            steps=steps, can_approve=False, blocking_reasons=[], overall_percent=50,
+            steps=steps,
+            can_approve=False,
+            blocking_reasons=[],
+            overall_percent=50,
         )
         assert dp.step_by_number(2).state == StepState.ERROR
         assert dp.step_by_number(99) is None

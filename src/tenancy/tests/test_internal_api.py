@@ -7,6 +7,7 @@ import time
 import uuid
 
 import pytest
+from django.http import HttpRequest
 from django.test import RequestFactory, override_settings
 
 from tenancy.internal_api import (
@@ -21,7 +22,7 @@ from tenancy.models import Membership, Organization
 HMAC_SECRET = "test-billing-secret-2024"
 
 
-def _make_request(payload: dict, secret: str = HMAC_SECRET) -> "HttpRequest":
+def _make_request(payload: dict, secret: str = HMAC_SECRET) -> HttpRequest:
     """Build a signed request with HMAC headers."""
     body = json.dumps(payload)
     ts = str(int(time.time()))

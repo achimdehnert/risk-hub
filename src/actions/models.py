@@ -1,9 +1,8 @@
 """Action item models."""
 
-import uuid
-
 from django.db import models
 from django_tenancy.managers import TenantManager
+
 
 class ActionItem(models.Model):
     """Action item / Maßnahme."""

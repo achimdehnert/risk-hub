@@ -1,10 +1,9 @@
 """Identity models."""
 
-import uuid
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django_tenancy.managers import TenantManager
+
 
 class User(AbstractUser):
     """Custom user model with tenant association."""
@@ -14,8 +13,8 @@ class User(AbstractUser):
     class Meta:
         db_table = "identity_user"
 
-class ApiKey(models.Model):
 
+class ApiKey(models.Model):
     tenant_id = models.UUIDField(db_index=True)
     user = models.ForeignKey(
         User,

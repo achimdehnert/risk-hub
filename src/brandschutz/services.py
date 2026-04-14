@@ -76,9 +76,19 @@ def create_filled_template(
 
 ALLOWED_EXTENSIONS = frozenset(
     {
-        ".pdf", ".docx", ".doc", ".dxf", ".dwg",
-        ".jpg", ".jpeg", ".png", ".tiff",
-        ".xlsx", ".xls", ".txt", ".csv",
+        ".pdf",
+        ".docx",
+        ".doc",
+        ".dxf",
+        ".dwg",
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".tiff",
+        ".xlsx",
+        ".xls",
+        ".txt",
+        ".csv",
     }
 )
 MAX_UPLOAD_SIZE = 50 * 1024 * 1024  # 50 MB

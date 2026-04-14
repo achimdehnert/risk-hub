@@ -3,7 +3,7 @@
 import pytest
 from django.test import Client
 
-from tenancy.models import Membership, Organization, Site
+from tenancy.models import Membership, Organization
 
 
 @pytest.fixture

@@ -2,11 +2,10 @@
 
 from __future__ import annotations
 
-import uuid
-
 from django.conf import settings
 from django.db import models
 from django_tenancy.managers import TenantManager
+
 
 class Permission(models.Model):
     """Permission definition (ADR-003 §2.3)."""
@@ -45,6 +44,7 @@ class Permission(models.Model):
     def __str__(self) -> str:
         return self.code
 
+
 class Role(models.Model):
     """Role with permissions, per tenant or system (ADR-003 §2.4)."""
 
@@ -74,6 +74,7 @@ class Role(models.Model):
     def __str__(self) -> str:
         return self.name
 
+
 class RolePermission(models.Model):
     """Role → Permission mapping."""
 
@@ -90,6 +91,7 @@ class RolePermission(models.Model):
                 name="uq_role_permission",
             ),
         ]
+
 
 class Scope(models.Model):
     """Scope for permission assignment (ADR-003 §2.5)."""
@@ -137,6 +139,7 @@ class Scope(models.Model):
             return f"SITE:{self.site_id}"
         return f"ASSET:{self.asset_id}"
 
+
 class Assignment(models.Model):
     """User → Role → Scope assignment (ADR-003 §2.5)."""
 
@@ -169,6 +172,7 @@ class Assignment(models.Model):
                 name="idx_assignment_user",
             ),
         ]
+
 
 class PermissionOverride(models.Model):
     """Explicit grant/deny override per membership (ADR-003 §2.4)."""

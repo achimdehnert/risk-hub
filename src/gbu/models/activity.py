@@ -5,7 +5,6 @@ HazardAssessmentActivity — Kern-Entity (GBU-Tätigkeit), erbt TenantScopedMode
 ActivityMeasure           — Konkrete Schutzmaßnahme, tenant_id denormalisiert
 """
 
-import uuid
 from enum import StrEnum
 
 from django.db import models
@@ -14,11 +13,13 @@ from django_tenancy.managers import TenantManager
 from gbu.models.reference import HazardCategoryRef, MeasureTemplate, TOPSType
 from substances.models import TenantScopedModel
 
+
 class ActivityFrequency(StrEnum):
     DAILY = "daily"
     WEEKLY = "weekly"
     OCCASIONAL = "occasional"
     RARE = "rare"
+
 
 class QuantityClass(StrEnum):
     XS = "xs"
@@ -26,17 +27,20 @@ class QuantityClass(StrEnum):
     M = "m"
     L = "l"
 
+
 class RiskScore(StrEnum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
+
 class ActivityStatus(StrEnum):
     DRAFT = "draft"
     REVIEW = "review"
     APPROVED = "approved"
     OUTDATED = "outdated"
+
 
 class HazardAssessmentActivity(TenantScopedModel):
     """
@@ -157,6 +161,7 @@ class HazardAssessmentActivity(TenantScopedModel):
     @property
     def is_approved(self) -> bool:
         return self.status == ActivityStatus.APPROVED
+
 
 class ActivityMeasure(models.Model):
     """

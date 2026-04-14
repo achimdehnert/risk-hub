@@ -8,8 +8,6 @@ ZoneIgnitionSourceAssessment: Bewertung pro Zone
 ZoneCalculationResult: Archivierter TRGS 721 Nachweis
 """
 
-import uuid
-
 from django.contrib.auth import get_user_model
 from django.db import models
 from django_tenancy.managers import TenantManager
@@ -18,6 +16,7 @@ from .concept import ExplosionConcept
 from .master_data import ReferenceStandard
 
 User = get_user_model()
+
 
 class ZoneDefinition(models.Model):
     """Zoneneinteilung nach ATEX"""
@@ -102,6 +101,7 @@ class ZoneDefinition(models.Model):
         }
         return mapping.get(self.zone_type, "unknown")
 
+
 class IgnitionSource(models.TextChoices):
     """13 Zündquellen nach EN 1127-1"""
 
@@ -118,6 +118,7 @@ class IgnitionSource(models.TextChoices):
     S11_ULTRASOUND = "S11", "Ultraschall"
     S12_ADIABATIC = "S12", "Adiabatische Kompression / Stoßwellen"
     S13_EXOTHERMIC = "S13", "Exotherme Reaktionen"
+
 
 class ZoneIgnitionSourceAssessment(models.Model):
     """
@@ -163,6 +164,7 @@ class ZoneIgnitionSourceAssessment(models.Model):
             else ("vorhanden" if self.is_present else "nicht vorhanden")
         )
         return f"{self.zone.name} - {self.get_ignition_source_display()}: {status}"
+
 
 class ZoneCalculationResult(models.Model):
     """

@@ -56,7 +56,12 @@ class TestIgnitionSourceMatrix:
         assessments = [
             {"source_id": "S01", "is_present": True, "is_effective": False},
             {"source_id": "S02", "is_present": False, "is_effective": False},
-            {"source_id": "S03", "is_present": True, "is_effective": True, "mitigation": "Funkenflug verhindert"},
+            {
+                "source_id": "S03",
+                "is_present": True,
+                "is_effective": True,
+                "mitigation": "Funkenflug verhindert",
+            },
         ]
         results = matrix.assess_all(assessments)
         assert len(results) == 3

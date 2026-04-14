@@ -70,9 +70,7 @@ class TestMembership:
             )
 
     def test_str_includes_user_and_org(self, fixture_tenant, fixture_user):
-        ms = Membership.objects.get(
-            tenant_id=fixture_tenant.tenant_id, user=fixture_user
-        )
+        ms = Membership.objects.get(tenant_id=fixture_tenant.tenant_id, user=fixture_user)
         s = str(ms)
         assert fixture_user.username in s
         assert fixture_tenant.name in s

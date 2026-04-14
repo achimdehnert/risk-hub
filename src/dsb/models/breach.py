@@ -1,6 +1,5 @@
 """Breach — Datenpannen (Art. 33 DSGVO)."""
 
-import uuid
 from datetime import timedelta
 
 from django.db import models
@@ -9,6 +8,7 @@ from django.utils import timezone
 from .choices import SeverityLevel
 from .lookups import Category
 from .mandate import Mandate
+
 
 class BreachStatus(models.TextChoices):
     REPORTED = "reported", "Panne gemeldet"
@@ -19,6 +19,7 @@ class BreachStatus(models.TextChoices):
     AUTHORITY_CLOSED = "authority_closed", "Behörde informiert (Abschluss)"
     CLOSED = "closed", "Abgeschlossen"
 
+
 BREACH_TRANSITIONS = {
     BreachStatus.REPORTED: [BreachStatus.DSB_NOTIFIED],
     BreachStatus.DSB_NOTIFIED: [BreachStatus.AUTHORITY_NOTIFIED],
@@ -27,6 +28,7 @@ BREACH_TRANSITIONS = {
     BreachStatus.RESOLVED: [BreachStatus.AUTHORITY_CLOSED],
     BreachStatus.AUTHORITY_CLOSED: [BreachStatus.CLOSED],
 }
+
 
 class Breach(models.Model):
     """Datenpanne gemäß Art. 33 DSGVO."""

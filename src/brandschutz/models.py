@@ -8,9 +8,8 @@ FireExtinguisher       — Feuerlöscher-Inventar
 FireProtectionMeasure  — Brandschutzmaßnahme (baulich/technisch/organisatorisch)
 """
 
-import uuid
-
 from django.db import models
+
 
 class FireProtectionConcept(models.Model):
     """Brandschutzkonzept für einen Standort/Bereich."""
@@ -96,6 +95,7 @@ class FireProtectionConcept(models.Model):
             return False
         return not (self.valid_until and self.valid_until < timezone.now().date())
 
+
 class FireSection(models.Model):
     """
     Brandabschnitt innerhalb eines Brandschutzkonzepts.
@@ -164,6 +164,7 @@ class FireSection(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} ({self.floor})" if self.floor else self.name
+
 
 class EscapeRoute(models.Model):
     """Flucht- und Rettungsweg innerhalb eines Brandabschnitts."""
@@ -237,6 +238,7 @@ class EscapeRoute(models.Model):
         if self.width_m is None:
             return None
         return self.width_m >= 0.9
+
 
 class FireExtinguisher(models.Model):
     """Feuerlöscher-Inventar."""
@@ -329,6 +331,7 @@ class FireExtinguisher(models.Model):
             return self.next_inspection_date <= timezone.now().date()
         return False
 
+
 class FireProtectionMeasure(models.Model):
     """
     Brandschutzmaßnahme innerhalb eines Konzepts.
@@ -412,6 +415,7 @@ class FireProtectionMeasure(models.Model):
             self.status not in (self.Status.IMPLEMENTED, self.Status.ACCEPTED)
             and self.due_date < timezone.now().date()
         )
+
 
 class ConceptDocument(models.Model):
     """Unterlage zu einem Brandschutzkonzept (ADR-147 Phase B).
@@ -497,6 +501,7 @@ class ConceptDocument(models.Model):
     def has_template(self) -> bool:
         return bool(self.template_json)
 
+
 class ConceptTemplateStore(models.Model):
     """Persistiertes Konzept-Template (ADR-147 Phase E).
 
@@ -550,6 +555,7 @@ class ConceptTemplateStore(models.Model):
 
     def __str__(self) -> str:
         return f"{self.name} v{self.version} ({self.get_source_display()})"
+
 
 class FilledTemplate(models.Model):
     """Ausgefülltes Template für ein Brandschutzkonzept (ADR-147 Phase E).

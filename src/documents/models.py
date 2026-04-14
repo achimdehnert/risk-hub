@@ -1,9 +1,8 @@
 """Document models."""
 
-import uuid
-
 from django.db import models
 from django_tenancy.managers import TenantManager
+
 
 class Document(models.Model):
     """Document with versioning."""
@@ -52,6 +51,7 @@ class Document(models.Model):
 
     def __str__(self) -> str:
         return self.title
+
 
 class DocumentVersion(models.Model):
     """Version of a document stored in S3."""

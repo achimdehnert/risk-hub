@@ -22,8 +22,8 @@ from projects.models import (
 )
 from projects.services import (
     CreateProjectCmd,
-    create_project,
     create_output_document,
+    create_project,
     create_template,
     delete_project_document,
     delete_template,
@@ -746,4 +746,3 @@ def template_delete(
         delete_template(tmpl)
         messages.success(request, "Vorlage gelöscht.")
     return redirect("projects:template-list")
-

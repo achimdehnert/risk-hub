@@ -5,10 +5,9 @@ Implements the Transactional Outbox Pattern for reliable
 event publishing with exactly-once semantics.
 """
 
-import uuid
-
 from django.db import models
 from django.utils import timezone
+
 
 class OutboxMessage(models.Model):
     """
