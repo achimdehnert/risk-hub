@@ -14,11 +14,9 @@ from django_tenancy.managers import TenantManager
 
 User = get_user_model()
 
-
 class Area(models.Model):
     """Betriebsbereich / Anlage innerhalb eines Standorts"""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     site_id = models.UUIDField(db_index=True, help_text="FK zu tenancy.Site")
 
@@ -76,7 +74,6 @@ class Area(models.Model):
         """Prüft ob Ex-relevante Konzepte im Bereich existieren"""
         return self.explosion_concepts.filter(status__in=["approved", "in_review"]).exists()
 
-
 class ExplosionConcept(models.Model):
     """Explosionsschutzkonzept nach TRGS 720ff"""
 
@@ -86,7 +83,6 @@ class ExplosionConcept(models.Model):
         APPROVED = "approved", "Freigegeben"
         ARCHIVED = "archived", "Archiviert"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     # Beziehungen

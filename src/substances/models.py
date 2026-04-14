@@ -20,11 +20,9 @@ from django_tenancy.managers import TenantManager
 # BASE CLASS (Tenant-Scoped)
 # =============================================================================
 
-
 class TenantScopedModel(models.Model):
     """Abstrakte Basisklasse für tenant-isolierte Models."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, help_text="Tenant-ID für Mandantentrennung")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -35,11 +33,9 @@ class TenantScopedModel(models.Model):
     class Meta:
         abstract = True
 
-
 # =============================================================================
 # PARTY (Hersteller / Lieferant)
 # =============================================================================
-
 
 class Party(TenantScopedModel):
     """Hersteller oder Lieferant von Gefahrstoffen."""
@@ -74,11 +70,9 @@ class Party(TenantScopedModel):
     def __str__(self):
         return f"{self.name} ({self.get_party_type_display()})"
 
-
 # =============================================================================
 # SUBSTANCE (Gefahrstoff)
 # =============================================================================
-
 
 class Substance(TenantScopedModel):
     """Gefahrstoff / Chemisches Produkt."""
@@ -292,11 +286,9 @@ class Substance(TenantScopedModel):
         identifier = self.identifiers.filter(id_type=Identifier.IdType.CAS).first()
         return identifier.id_value if identifier else None
 
-
 # =============================================================================
 # IDENTIFIER (Stoffkennungen)
 # =============================================================================
-
 
 class Identifier(TenantScopedModel):
     """Stoffkennungen (CAS, EC, UFI, intern)."""
@@ -327,11 +319,9 @@ class Identifier(TenantScopedModel):
     def __str__(self):
         return f"{self.get_id_type_display()}: {self.id_value}"
 
-
 # =============================================================================
 # SDS REVISION (Sicherheitsdatenblatt)
 # =============================================================================
-
 
 class SdsRevision(TenantScopedModel):
     """Sicherheitsdatenblatt-Revision."""
@@ -396,11 +386,9 @@ class SdsRevision(TenantScopedModel):
     def __str__(self):
         return f"{self.substance.name} - Rev. {self.revision_number}"
 
-
 # =============================================================================
 # SITE INVENTORY (Standort-Inventar)
 # =============================================================================
-
 
 class SiteInventoryItem(TenantScopedModel):
     """Standort-Inventar: Welcher Stoff wo und wieviel."""
@@ -441,11 +429,9 @@ class SiteInventoryItem(TenantScopedModel):
     def __str__(self):
         return f"{self.substance.name} @ {self.site} ({self.quantity} {self.unit})"
 
-
 # =============================================================================
 # REFERENZTABELLEN (Global, nicht tenant-spezifisch)
 # =============================================================================
-
 
 class HazardStatementRef(models.Model):
     """H-Sätze Referenztabelle (GHS)."""
@@ -468,7 +454,6 @@ class HazardStatementRef(models.Model):
 
     def __str__(self):
         return f"{self.code}: {self.text_de[:50]}..."
-
 
 class PrecautionaryStatementRef(models.Model):
     """P-Sätze Referenztabelle (GHS)."""
@@ -494,7 +479,6 @@ class PrecautionaryStatementRef(models.Model):
     def __str__(self):
         return f"{self.code}: {self.text_de[:50]}..."
 
-
 class PictogramRef(models.Model):
     """GHS-Piktogramme Referenztabelle."""
 
@@ -515,13 +499,11 @@ class PictogramRef(models.Model):
     def __str__(self):
         return f"{self.code}: {self.name_de}"
 
-
 # =============================================================================
 # HAZARDOUS SUBSTANCE REGISTRY (TRGS 510 / Seveso III)
 # NOTE: Standalone StorageClass removed (Finding 4a).
 # Use Substance.StorageClass for all storage class references.
 # =============================================================================
-
 
 class SevesoCategory(models.TextChoices):
     """Seveso III Kategorien (12. BImSchV)."""
@@ -529,7 +511,6 @@ class SevesoCategory(models.TextChoices):
     NONE = "none", "Nicht Seveso-relevant"
     LOWER = "lower", "Untere Klasse (Grundpflichten)"
     UPPER = "upper", "Obere Klasse (Erweiterte Pflichten)"
-
 
 class LocationSubstanceEntry(TenantScopedModel):
     """
@@ -641,6 +622,5 @@ class LocationSubstanceEntry(TenantScopedModel):
             return None
         qty_t = float(self.current_quantity_kg) / 1000
         return round(qty_t / float(thr) * 100, 1)
-
 
 StorageClass = Substance.StorageClass

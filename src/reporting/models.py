@@ -4,7 +4,6 @@ import uuid
 
 from django.db import models
 
-
 class RetentionPolicy(models.Model):
     """Retention policy for documents/exports."""
 
@@ -13,7 +12,6 @@ class RetentionPolicy(models.Model):
         HARD = "hard", "Hard"
         NEVER = "never", "Never"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     name = models.CharField(max_length=160)
     category = models.CharField(max_length=120)
@@ -32,7 +30,6 @@ class RetentionPolicy(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.retention_days} days)"
 
-
 class ExportJob(models.Model):
     """Export job for PDF/Excel generation."""
 
@@ -42,7 +39,6 @@ class ExportJob(models.Model):
         DONE = "done", "Done"
         FAILED = "failed", "Failed"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     requested_by_user_id = models.UUIDField()
     export_type = models.CharField(max_length=200)

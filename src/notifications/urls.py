@@ -29,7 +29,7 @@ urlpatterns = [
         name="badge",
     ),
     path(
-        "<uuid:pk>/read/",
+        "<int:pk>/read/",
         NotificationMarkReadView.as_view(),
         name="mark-read",
     ),

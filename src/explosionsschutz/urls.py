@@ -31,17 +31,17 @@ urlpatterns = [
     path("", include(router.urls)),
     # Custom Actions
     path(
-        "concepts/<uuid:pk>/validate/",
+        "concepts/<int:pk>/validate/",
         views.ExplosionConceptViewSet.as_view({"post": "validate"}),
         name="concept-validate",
     ),
     path(
-        "concepts/<uuid:pk>/archive/",
+        "concepts/<int:pk>/archive/",
         views.ExplosionConceptViewSet.as_view({"post": "archive"}),
         name="concept-archive",
     ),
     path(
-        "concepts/<uuid:pk>/export-pdf/",
+        "concepts/<int:pk>/export-pdf/",
         views.ExplosionConceptViewSet.as_view({"get": "export_pdf"}),
         name="concept-export-pdf",
     ),

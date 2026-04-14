@@ -8,7 +8,6 @@ from django_tenancy.managers import TenantManager
 
 from identity.models import User
 
-
 class ApprovalWorkflow(models.Model):
     """Configurable approval workflow template per tenant."""
 
@@ -17,7 +16,6 @@ class ApprovalWorkflow(models.Model):
         RISK_ASSESSMENT = "risk_assessment", "Risikobewertung"
         PROTECTION_MEASURE = "protection_measure", "Schutzmaßnahme"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     workflow_type = models.CharField(
         max_length=30,
@@ -45,11 +43,9 @@ class ApprovalWorkflow(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.get_workflow_type_display()})"
 
-
 class ApprovalStep(models.Model):
     """A single step in an approval workflow."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     workflow = models.ForeignKey(
         ApprovalWorkflow,
         on_delete=models.CASCADE,
@@ -81,7 +77,6 @@ class ApprovalStep(models.Model):
     def __str__(self) -> str:
         return f"Step {self.order}: {self.name}"
 
-
 class ApprovalRequest(models.Model):
     """A concrete approval request for a specific entity."""
 
@@ -92,7 +87,6 @@ class ApprovalRequest(models.Model):
         REJECTED = "rejected", "Abgelehnt"
         WITHDRAWN = "withdrawn", "Zurückgezogen"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     workflow = models.ForeignKey(
         ApprovalWorkflow,
@@ -147,7 +141,6 @@ class ApprovalRequest(models.Model):
     def __str__(self) -> str:
         return f"{self.entity_type}:{self.entity_id} ({self.get_status_display()})"
 
-
 class ApprovalDecision(models.Model):
     """A decision (approve/reject) for a specific step."""
 
@@ -155,7 +148,6 @@ class ApprovalDecision(models.Model):
         APPROVED = "approved", "Freigegeben"
         REJECTED = "rejected", "Abgelehnt"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     request = models.ForeignKey(
         ApprovalRequest,
         on_delete=models.CASCADE,

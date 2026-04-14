@@ -4,7 +4,6 @@ import uuid
 
 from django.db import models
 
-
 class Mandate(models.Model):
     """Betreutes Unternehmen des DSB. KEIN Tenant — Subentität."""
 
@@ -25,11 +24,6 @@ class Mandate(models.Model):
         ENERGY = "energy", "Energie"
         OTHER = "other", "Sonstige"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     name = models.CharField(max_length=200)
     industry = models.CharField(

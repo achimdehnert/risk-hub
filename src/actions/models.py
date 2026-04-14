@@ -5,7 +5,6 @@ import uuid
 from django.db import models
 from django_tenancy.managers import TenantManager
 
-
 class ActionItem(models.Model):
     """Action item / Maßnahme."""
 
@@ -21,7 +20,6 @@ class ActionItem(models.Model):
         HIGH = 3, "Hoch"
         CRITICAL = 4, "Kritisch"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     title = models.CharField(max_length=240)

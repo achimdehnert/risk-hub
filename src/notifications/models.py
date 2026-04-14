@@ -6,7 +6,6 @@ from django.db import models
 from django.utils import timezone
 from django_tenancy.managers import TenantManager
 
-
 class Notification(models.Model):
     """In-app notification for a tenant user."""
 
@@ -24,11 +23,6 @@ class Notification(models.Model):
         APPROVAL_REQUIRED = "approval_required", "Freigabe erforderlich"
         SYSTEM = "system", "System"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     recipient_id = models.UUIDField(
         db_index=True,
@@ -92,7 +86,6 @@ class Notification(models.Model):
             self.read_at = timezone.now()
             self.save(update_fields=["is_read", "read_at"])
 
-
 class NotificationPreference(models.Model):
     """Per-user notification delivery preferences."""
 
@@ -102,11 +95,6 @@ class NotificationPreference(models.Model):
         BOTH = "both", "Beides"
         NONE = "none", "Keine"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     user_id = models.UUIDField(db_index=True)
     category = models.CharField(

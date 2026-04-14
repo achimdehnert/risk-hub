@@ -9,9 +9,9 @@ from tests.factories import AssessmentFactory, HazardFactory
 
 @pytest.mark.django_db
 class TestAssessmentModel:
-    def test_should_create_assessment_with_uuid_pk(self):
+    def test_should_create_assessment_with_bigautofield_pk(self):
         a = AssessmentFactory()
-        assert isinstance(a.pk, uuid.UUID)
+        assert isinstance(a.pk, int)
 
     def test_should_default_status_to_draft(self):
         a = AssessmentFactory()

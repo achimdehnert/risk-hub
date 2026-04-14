@@ -5,7 +5,6 @@ import uuid
 from django.db import models
 from django_tenancy.managers import TenantManager
 
-
 class Document(models.Model):
     """Document with versioning."""
 
@@ -21,7 +20,6 @@ class Document(models.Model):
         UNTERWEISUNG = "unterweisung", "Unterweisungsnachweis"
         PRUEFBERICHT = "pruefbericht", "Prüfbericht"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     title = models.CharField(max_length=240)
     category = models.CharField(
@@ -55,11 +53,9 @@ class Document(models.Model):
     def __str__(self) -> str:
         return self.title
 
-
 class DocumentVersion(models.Model):
     """Version of a document stored in S3."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="versions")
     version = models.IntegerField()

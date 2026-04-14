@@ -10,22 +10,22 @@ urlpatterns = [
     path("", views.ConceptListView.as_view(), name="concept-list"),
     path("new/", views.ConceptCreateView.as_view(), name="concept-create"),
     path(
-        "<uuid:pk>/",
+        "<int:pk>/",
         views.ConceptDetailView.as_view(),
         name="concept-detail",
     ),
     path(
-        "<uuid:pk>/edit/",
+        "<int:pk>/edit/",
         views.ConceptEditView.as_view(),
         name="concept-edit",
     ),
     path(
-        "<uuid:concept_pk>/sections/new/",
+        "<int:concept_pk>/sections/new/",
         views.SectionCreateView.as_view(),
         name="section-create",
     ),
     path(
-        "<uuid:concept_pk>/documents/upload/",
+        "<int:concept_pk>/documents/upload/",
         views.DocumentUploadView.as_view(),
         name="document-upload",
     ),
@@ -40,33 +40,33 @@ urlpatterns = [
         name="escape-route-list",
     ),
     path(
-        "measures/<uuid:pk>/update/",
+        "measures/<int:pk>/update/",
         views.MeasureUpdateView.as_view(),
         name="measure-update",
     ),
     path(
-        "concept-doc/<uuid:pk>/analyze/",
+        "concept-doc/<int:pk>/analyze/",
         views.ConceptDocAnalyzeView.as_view(),
         name="concept-doc-analyze",
     ),
     # Phase E: Template-Auswahl + Formular + KI-Vorausfüllung
     path(
-        "<uuid:concept_pk>/templates/",
+        "<int:concept_pk>/templates/",
         views.TemplateSelectView.as_view(),
         name="template-select",
     ),
     path(
-        "filled/<uuid:pk>/edit/",
+        "filled/<int:pk>/edit/",
         views.FilledTemplateEditView.as_view(),
         name="filled-template-edit",
     ),
     path(
-        "filled/<uuid:pk>/llm-prefill/",
+        "filled/<int:pk>/llm-prefill/",
         views.FilledTemplateLLMPrefillView.as_view(),
         name="filled-template-llm-prefill",
     ),
     path(
-        "filled/<uuid:pk>/pdf/",
+        "filled/<int:pk>/pdf/",
         views.FilledTemplatePDFView.as_view(),
         name="filled-template-pdf",
     ),

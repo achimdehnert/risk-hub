@@ -13,7 +13,6 @@ from .concept import ExplosionConcept
 
 User = get_user_model()
 
-
 class VerificationDocument(models.Model):
     """Nachweis- und Prüfdokumente zum Ex-Konzept"""
 
@@ -26,7 +25,6 @@ class VerificationDocument(models.Model):
         APPROVAL = "approval", "Genehmigung"
         OTHER = "other", "Sonstige"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     concept = models.ForeignKey(

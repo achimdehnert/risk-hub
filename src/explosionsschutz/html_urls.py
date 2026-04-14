@@ -64,23 +64,23 @@ urlpatterns = [
     ),
     path("areas/create/", AreaCreateView.as_view(), name="area-create"),
     path(
-        "areas/<uuid:pk>/",
+        "areas/<int:pk>/",
         AreaDetailView.as_view(),
         name="area-detail-html",
     ),
-    path("areas/<uuid:pk>/edit/", AreaEditView.as_view(), name="area-edit"),
+    path("areas/<int:pk>/edit/", AreaEditView.as_view(), name="area-edit"),
     path(
-        "areas/<uuid:pk>/dxf/",
+        "areas/<int:pk>/dxf/",
         AreaDxfUploadView.as_view(),
         name="area-dxf-upload",
     ),
     path(
-        "areas/<uuid:pk>/ifc/",
+        "areas/<int:pk>/ifc/",
         AreaIFCUploadView.as_view(),
         name="area-ifc-upload",
     ),
     path(
-        "areas/<uuid:pk>/brandschutz/",
+        "areas/<int:pk>/brandschutz/",
         AreaBrandschutzView.as_view(),
         name="area-brandschutz",
     ),
@@ -88,49 +88,49 @@ urlpatterns = [
     path("concepts/", ConceptListView.as_view(), name="concept-list-html"),
     path("concepts/new/", ConceptCreateView.as_view(), name="concept-new"),
     path("concepts/create/", ConceptCreateView.as_view(), name="concept-create"),
-    path("concepts/<uuid:pk>/", ConceptDetailView.as_view(), name="concept-detail-html"),
-    path("concepts/<uuid:pk>/edit/", ConceptEditView.as_view(), name="concept-edit"),
-    path("concepts/<uuid:pk>/validate/", ConceptValidateView.as_view(), name="concept-validate"),
+    path("concepts/<int:pk>/", ConceptDetailView.as_view(), name="concept-detail-html"),
+    path("concepts/<int:pk>/edit/", ConceptEditView.as_view(), name="concept-edit"),
+    path("concepts/<int:pk>/validate/", ConceptValidateView.as_view(), name="concept-validate"),
     # Equipment
     path("equipment/", EquipmentListView.as_view(), name="equipment-list-html"),
     path("equipment/create/", EquipmentCreateView.as_view(), name="equipment-create"),
-    path("equipment/<uuid:pk>/", EquipmentDetailView.as_view(), name="equipment-detail-html"),
+    path("equipment/<int:pk>/", EquipmentDetailView.as_view(), name="equipment-detail-html"),
     # Zone Map
     path(
-        "concepts/<uuid:pk>/zone-map/",
+        "concepts/<int:pk>/zone-map/",
         ZoneMapView.as_view(),
         name="concept-zone-map",
     ),
     # Export
     path(
-        "concepts/<uuid:pk>/preview/",
+        "concepts/<int:pk>/preview/",
         ConceptPreviewView.as_view(),
         name="concept-preview",
     ),
     path(
-        "concepts/<uuid:pk>/export/docx/",
+        "concepts/<int:pk>/export/docx/",
         ConceptExportDocxView.as_view(),
         name="concept-export-docx",
     ),
     path(
-        "concepts/<uuid:pk>/export/pdf/",
+        "concepts/<int:pk>/export/pdf/",
         ConceptExportPdfView.as_view(),
         name="concept-export-pdf",
     ),
     path(
-        "concepts/<uuid:pk>/export/gaeb/",
+        "concepts/<int:pk>/export/gaeb/",
         ConceptExportGAEBView.as_view(),
         name="concept-export-gaeb",
     ),
     # Zone Calculation (riskfw)
     path(
-        "zones/<uuid:zone_pk>/calculate/",
+        "zones/<int:zone_pk>/calculate/",
         ZoneCalculateView.as_view(),
         name="zone-calculate",
     ),
     # DXF Import für Zonen
     path(
-        "concepts/<uuid:pk>/dxf-import/",
+        "concepts/<int:pk>/dxf-import/",
         ConceptDxfImportView.as_view(),
         name="concept-dxf-import",
     ),
@@ -138,38 +138,38 @@ urlpatterns = [
     path("tools/", ToolsView.as_view(), name="tools"),
     # Inspection
     path(
-        "equipment/<uuid:equipment_pk>/inspect/",
+        "equipment/<int:equipment_pk>/inspect/",
         InspectionCreateView.as_view(),
         name="inspection-create",
     ),
     # HTMX Partials
     path(
-        "htmx/concepts/<uuid:concept_pk>/zones/add/",
+        "htmx/concepts/<int:concept_pk>/zones/add/",
         HtmxAddZoneView.as_view(),
         name="htmx-zone-add",
     ),
     path(
-        "htmx/zones/<uuid:zone_pk>/delete/",
+        "htmx/zones/<int:zone_pk>/delete/",
         HtmxDeleteZoneView.as_view(),
         name="htmx-zone-delete",
     ),
     path(
-        "htmx/concepts/<uuid:concept_pk>/measures/add/",
+        "htmx/concepts/<int:concept_pk>/measures/add/",
         HtmxAddMeasureView.as_view(),
         name="htmx-measure-add",
     ),
     path(
-        "htmx/measures/<uuid:measure_pk>/delete/",
+        "htmx/measures/<int:measure_pk>/delete/",
         HtmxDeleteMeasureView.as_view(),
         name="htmx-measure-delete",
     ),
     path(
-        "htmx/concepts/<uuid:concept_pk>/documents/add/",
+        "htmx/concepts/<int:concept_pk>/documents/add/",
         HtmxAddDocumentView.as_view(),
         name="htmx-document-add",
     ),
     path(
-        "htmx/zones/<uuid:zone_pk>/ignition/",
+        "htmx/zones/<int:zone_pk>/ignition/",
         HtmxIgnitionAssessmentView.as_view(),
         name="htmx-ignition-assessment",
     ),
@@ -210,7 +210,7 @@ urlpatterns = [
         name="ex-doc-instance-create",
     ),
     path(
-        "doc-templates/<int:template_pk>/new-instance/<uuid:concept_pk>/",
+        "doc-templates/<int:template_pk>/new-instance/<int:concept_pk>/",
         doc_template_views.instance_create_for_concept,
         name="ex-doc-instance-create-for-concept",
     ),
@@ -236,32 +236,32 @@ urlpatterns = [
     ),
     # ── Concept Templates (ADR-147) ─────────────────────────────
     path(
-        "concepts/<uuid:concept_pk>/documents/upload/",
+        "concepts/<int:concept_pk>/documents/upload/",
         ExDocumentUploadView.as_view(),
         name="ex-document-upload",
     ),
     path(
-        "concept-doc/<uuid:pk>/analyze/",
+        "concept-doc/<int:pk>/analyze/",
         ExConceptDocAnalyzeView.as_view(),
         name="ex-concept-doc-analyze",
     ),
     path(
-        "concepts/<uuid:concept_pk>/templates/",
+        "concepts/<int:concept_pk>/templates/",
         ExTemplateSelectView.as_view(),
         name="ex-template-select",
     ),
     path(
-        "filled/<uuid:pk>/edit/",
+        "filled/<int:pk>/edit/",
         ExFilledTemplateEditView.as_view(),
         name="ex-filled-template-edit",
     ),
     path(
-        "filled/<uuid:pk>/llm-prefill/",
+        "filled/<int:pk>/llm-prefill/",
         ExFilledTemplateLLMPrefillView.as_view(),
         name="ex-filled-template-llm-prefill",
     ),
     path(
-        "filled/<uuid:pk>/pdf/",
+        "filled/<int:pk>/pdf/",
         ExFilledTemplatePDFView.as_view(),
         name="ex-filled-template-pdf",
     ),

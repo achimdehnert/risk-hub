@@ -12,9 +12,9 @@ urlpatterns = [
     path("new/step3/", views.wizard_step3, name="wizard-step3"),
     path("new/step4/", views.wizard_step4, name="wizard-step4"),
     path("new/step5/", views.wizard_step5, name="wizard-step5"),
-    path("<uuid:pk>/", views.activity_detail, name="activity-detail"),
-    path("<uuid:pk>/pdf/gbu/", views.download_gbu_pdf, name="pdf-gbu"),
-    path("<uuid:pk>/pdf/ba/", views.download_ba_pdf, name="pdf-ba"),
+    path("<int:pk>/", views.activity_detail, name="activity-detail"),
+    path("<int:pk>/pdf/gbu/", views.download_gbu_pdf, name="pdf-gbu"),
+    path("<int:pk>/pdf/ba/", views.download_ba_pdf, name="pdf-ba"),
     path("partials/hazards/", views.partial_hazard_list, name="partial-hazards"),
     path("partials/measures/", views.partial_measure_list, name="partial-measures"),
     path(

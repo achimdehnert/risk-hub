@@ -12,7 +12,6 @@ import uuid
 
 from django.db import models
 
-
 class FireProtectionConcept(models.Model):
     """Brandschutzkonzept für einen Standort/Bereich."""
 
@@ -27,7 +26,6 @@ class FireProtectionConcept(models.Model):
         FULL = "full", "Vollständiges Brandschutzkonzept"
         OPERATIONAL = "operational", "Betrieblicher Brandschutz"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     site = models.ForeignKey(
         "tenancy.Site",
@@ -98,7 +96,6 @@ class FireProtectionConcept(models.Model):
             return False
         return not (self.valid_until and self.valid_until < timezone.now().date())
 
-
 class FireSection(models.Model):
     """
     Brandabschnitt innerhalb eines Brandschutzkonzepts.
@@ -114,7 +111,6 @@ class FireSection(models.Model):
         GK4 = "GK4", "GK4 — bis 13 m Höhe"
         GK5 = "GK5", "GK5 — Hochhaus (>13 m)"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     concept = models.ForeignKey(
         FireProtectionConcept,
@@ -169,7 +165,6 @@ class FireSection(models.Model):
     def __str__(self) -> str:
         return f"{self.name} ({self.floor})" if self.floor else self.name
 
-
 class EscapeRoute(models.Model):
     """Flucht- und Rettungsweg innerhalb eines Brandabschnitts."""
 
@@ -184,7 +179,6 @@ class EscapeRoute(models.Model):
         DEFICIENT = "deficient", "Mängel vorhanden"
         BLOCKED = "blocked", "Blockiert"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     section = models.ForeignKey(
         FireSection,
@@ -244,7 +238,6 @@ class EscapeRoute(models.Model):
             return None
         return self.width_m >= 0.9
 
-
 class FireExtinguisher(models.Model):
     """Feuerlöscher-Inventar."""
 
@@ -262,7 +255,6 @@ class FireExtinguisher(models.Model):
         DEFECTIVE = "defective", "Defekt"
         RETIRED = "retired", "Ausgemustert"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     section = models.ForeignKey(
         FireSection,
@@ -337,7 +329,6 @@ class FireExtinguisher(models.Model):
             return self.next_inspection_date <= timezone.now().date()
         return False
 
-
 class FireProtectionMeasure(models.Model):
     """
     Brandschutzmaßnahme innerhalb eines Konzepts.
@@ -356,7 +347,6 @@ class FireProtectionMeasure(models.Model):
         IMPLEMENTED = "implemented", "Umgesetzt"
         ACCEPTED = "accepted", "Akzeptiertes Risiko"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     concept = models.ForeignKey(
         FireProtectionConcept,
@@ -423,7 +413,6 @@ class FireProtectionMeasure(models.Model):
             and self.due_date < timezone.now().date()
         )
 
-
 class ConceptDocument(models.Model):
     """Unterlage zu einem Brandschutzkonzept (ADR-147 Phase B).
 
@@ -439,7 +428,6 @@ class ConceptDocument(models.Model):
         ANALYZED = "analyzed", "Analysiert"
         FAILED = "failed", "Fehlgeschlagen"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     concept = models.ForeignKey(
         FireProtectionConcept,
@@ -509,7 +497,6 @@ class ConceptDocument(models.Model):
     def has_template(self) -> bool:
         return bool(self.template_json)
 
-
 class ConceptTemplateStore(models.Model):
     """Persistiertes Konzept-Template (ADR-147 Phase E).
 
@@ -525,7 +512,6 @@ class ConceptTemplateStore(models.Model):
         MERGED = "merged", "Zusammengeführt"
         MANUAL = "manual", "Manuell erstellt"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     name = models.CharField(max_length=200)
     scope = models.CharField(max_length=30, default="brandschutz")
@@ -565,7 +551,6 @@ class ConceptTemplateStore(models.Model):
     def __str__(self) -> str:
         return f"{self.name} v{self.version} ({self.get_source_display()})"
 
-
 class FilledTemplate(models.Model):
     """Ausgefülltes Template für ein Brandschutzkonzept (ADR-147 Phase E).
 
@@ -579,7 +564,6 @@ class FilledTemplate(models.Model):
         APPROVED = "approved", "Freigegeben"
         EXPORTED = "exported", "Exportiert"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     concept = models.ForeignKey(
         FireProtectionConcept,

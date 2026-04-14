@@ -10,7 +10,6 @@ from .choices import SeverityLevel
 from .lookups import Category
 from .mandate import Mandate
 
-
 class BreachStatus(models.TextChoices):
     REPORTED = "reported", "Panne gemeldet"
     DSB_NOTIFIED = "dsb_notified", "DSB kontaktiert"
@@ -19,7 +18,6 @@ class BreachStatus(models.TextChoices):
     RESOLVED = "resolved", "Panne behoben"
     AUTHORITY_CLOSED = "authority_closed", "Behörde informiert (Abschluss)"
     CLOSED = "closed", "Abgeschlossen"
-
 
 BREACH_TRANSITIONS = {
     BreachStatus.REPORTED: [BreachStatus.DSB_NOTIFIED],
@@ -30,15 +28,9 @@ BREACH_TRANSITIONS = {
     BreachStatus.AUTHORITY_CLOSED: [BreachStatus.CLOSED],
 }
 
-
 class Breach(models.Model):
     """Datenpanne gemäß Art. 33 DSGVO."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
 
     # Workflow

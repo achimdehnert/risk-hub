@@ -8,15 +8,9 @@ from .choices import MeasureStatus
 from .lookups import TomCategory
 from .mandate import Mandate
 
-
 class TechnicalMeasure(models.Model):
     """Technische Maßnahme gemäß Art. 32 DSGVO."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
@@ -74,15 +68,9 @@ class TechnicalMeasure(models.Model):
     def __str__(self) -> str:
         return self.title
 
-
 class OrganizationalMeasure(models.Model):
     """Organisatorische Maßnahme gemäß Art. 32 DSGVO."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,

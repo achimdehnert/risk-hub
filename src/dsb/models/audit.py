@@ -7,7 +7,6 @@ from django.db import models
 from .choices import SeverityLevel
 from .mandate import Mandate
 
-
 class PrivacyAudit(models.Model):
     """Datenschutz-Audit."""
 
@@ -22,11 +21,6 @@ class PrivacyAudit(models.Model):
         COMPLETED = "completed", "Abgeschlossen"
         CANCELLED = "cancelled", "Abgebrochen"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
@@ -74,7 +68,6 @@ class PrivacyAudit(models.Model):
     def __str__(self) -> str:
         return f"{self.title} ({self.get_audit_type_display()})"
 
-
 class AuditFinding(models.Model):
     """Einzelbefund eines Audits."""
 
@@ -84,11 +77,6 @@ class AuditFinding(models.Model):
         RESOLVED = "resolved", "Behoben"
         ACCEPTED = "accepted", "Akzeptiert"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     audit = models.ForeignKey(
         PrivacyAudit,

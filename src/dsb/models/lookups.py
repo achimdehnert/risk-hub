@@ -1,18 +1,10 @@
 """Globale Referenzdaten (kein tenant_id, ADR-038 R2-F13)."""
 
-import uuid
-
 from django.db import models
-
 
 class Category(models.Model):
     """Datenkategorie (Art. 9 DSGVO). Global, nicht tenant-spezifisch."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     key = models.CharField(max_length=50, unique=True)
     label = models.CharField(max_length=200)
     is_special_category = models.BooleanField(
@@ -29,15 +21,9 @@ class Category(models.Model):
     def __str__(self) -> str:
         return self.label
 
-
 class SubjectGroup(models.Model):
     """Lookup: Betroffenengruppe (z.B. Besch\u00e4ftigte, Kunden, Patienten)."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     key = models.CharField(max_length=50, unique=True)
     label = models.CharField(max_length=200)
 
@@ -50,15 +36,9 @@ class SubjectGroup(models.Model):
     def __str__(self) -> str:
         return self.label
 
-
 class Recipient(models.Model):
     """Lookup: Empf\u00e4ngerkategorie (Art. 30 Abs. 1 lit. d DSGVO)."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     key = models.CharField(max_length=50, unique=True)
     label = models.CharField(max_length=200)
 
@@ -71,15 +51,9 @@ class Recipient(models.Model):
     def __str__(self) -> str:
         return self.label
 
-
 class Purpose(models.Model):
     """Lookup: Verarbeitungszweck (Art. 30 Abs. 1 lit. b DSGVO)."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     key = models.CharField(max_length=80, unique=True)
     label = models.CharField(max_length=300)
 
@@ -91,7 +65,6 @@ class Purpose(models.Model):
 
     def __str__(self) -> str:
         return self.label
-
 
 class TomCategory(models.Model):
     """Stammdaten-Katalog f\u00fcr TOM (Art. 32 DSGVO).
@@ -105,11 +78,6 @@ class TomCategory(models.Model):
         ORGANIZATIONAL = "organizational", "Organisatorisch"
         AVV = "avv", "Auftragsverarbeitung (AVV)"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     key = models.CharField(max_length=80, unique=True)
     label = models.CharField(max_length=300)
     measure_type = models.CharField(
@@ -132,7 +100,6 @@ class TomCategory(models.Model):
     def __str__(self) -> str:
         return f"[{self.get_measure_type_display()}] {self.label}"
 
-
 class StandardRetentionPeriod(models.Model):
     """Stammdaten: Gesetzliche Aufbewahrungsfristen.
 
@@ -140,11 +107,6 @@ class StandardRetentionPeriod(models.Model):
     z.B. '\u00a7 257 HGB \u2014 10 Jahre', '\u00a7 147 AO \u2014 10 Jahre'.
     """
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     key = models.CharField(max_length=80, unique=True)
     label = models.CharField(max_length=300)
     legal_reference = models.CharField(

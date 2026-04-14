@@ -7,7 +7,6 @@ from django.db import models
 
 from .mandate import Mandate
 
-
 def _upload_path(instance: "DsbDocument", filename: str) -> str:
     """Speichert Dateien unter media/dsb/<tenant_id>/<ref_type>/<pk>/<filename>."""
     ext = Path(filename).suffix.lower()
@@ -16,7 +15,6 @@ def _upload_path(instance: "DsbDocument", filename: str) -> str:
         f"dsb/{instance.tenant_id}/{instance.ref_type}/"
         f"{instance.ref_id or 'general'}/{safe_name}{ext}"
     )
-
 
 class DsbDocument(models.Model):
     """Archiviertes Dokument im DSB-Modul (PDF, DOCX, etc.)."""
@@ -30,7 +28,6 @@ class DsbDocument(models.Model):
         MANDATE = "mandate", "Mandat"
         GENERAL = "general", "Allgemein"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,

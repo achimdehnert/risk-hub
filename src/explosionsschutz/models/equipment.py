@@ -19,7 +19,6 @@ from .zone import ZoneDefinition
 
 User = get_user_model()
 
-
 class Equipment(models.Model):
     """Konkretes Ex-geschütztes Betriebsmittel"""
 
@@ -29,7 +28,6 @@ class Equipment(models.Model):
         MAINTENANCE = "maintenance", "In Wartung"
         DECOMMISSIONED = "decommissioned", "Stillgelegt"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     equipment_type = models.ForeignKey(
@@ -106,7 +104,6 @@ class Equipment(models.Model):
         category_order = {"1G": 1, "2G": 2, "3G": 3, "1D": 1, "2D": 2, "3D": 3}
         return category_order.get(actual, 99) <= category_order.get(required, 0)
 
-
 class Inspection(models.Model):
     """Prüfung eines Betriebsmittels nach BetrSichV"""
 
@@ -122,7 +119,6 @@ class Inspection(models.Model):
         FAILED = "failed", "Nicht bestanden"
         PENDING = "pending", "Ausstehend"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     equipment = models.ForeignKey(Equipment, on_delete=models.CASCADE, related_name="inspections")
@@ -161,14 +157,12 @@ class Inspection(models.Model):
     # explosionsschutz.services.create_inspection() to keep
     # the model free of hidden side-effects (F-07).
 
-
 class EquipmentATEXCheck(models.Model):
     """
     Archivierter ATEX-Eignungsnachweis für ein Betriebsmittel.
     Wird explizit in create_equipment_with_atex_check() angelegt (kein Signal).
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     equipment = models.ForeignKey(

@@ -15,7 +15,6 @@ from django_tenancy.managers import TenantManager
 
 __all__ = ["Membership", "Organization", "Site"]
 
-
 class Organization(models.Model):
     """Tenant entity. One Organization = one tenant."""
 
@@ -25,7 +24,6 @@ class Organization(models.Model):
         SUSPENDED = "suspended", _("Suspended")
         DELETED = "deleted", _("Deleted")
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(default=uuid.uuid4, editable=False, unique=True, db_index=True)
     slug = models.SlugField(max_length=63, unique=True)
     name = models.CharField(max_length=200)
@@ -74,7 +72,6 @@ class Organization(models.Model):
     def is_active(self) -> bool:
         return self.status in (self.Status.TRIAL, self.Status.ACTIVE)
 
-
 class Membership(models.Model):
     """Links a User to an Organization with a role."""
 
@@ -85,7 +82,6 @@ class Membership(models.Model):
         VIEWER = "viewer", _("Viewer")
         EXTERNAL = "external", _("External")
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     organization = models.ForeignKey(
         Organization, on_delete=models.CASCADE, related_name="memberships"
@@ -127,15 +123,9 @@ class Membership(models.Model):
     def __str__(self) -> str:
         return f"{self.user} @ {self.organization} ({self.role})"
 
-
 class Site(models.Model):
     """Physical site/location within an organization."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     organization = models.ForeignKey(
         Organization,

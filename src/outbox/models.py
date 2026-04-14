@@ -10,7 +10,6 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
-
 class OutboxMessage(models.Model):
     """
     Transactional outbox message for reliable event publishing.
@@ -20,7 +19,6 @@ class OutboxMessage(models.Model):
     the outbox publisher worker.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, null=True, blank=True)
 
     topic = models.CharField(

@@ -14,13 +14,11 @@ from django_tenancy.managers import TenantManager
 from gbu.models.reference import HazardCategoryRef, MeasureTemplate, TOPSType
 from substances.models import TenantScopedModel
 
-
 class ActivityFrequency(StrEnum):
     DAILY = "daily"
     WEEKLY = "weekly"
     OCCASIONAL = "occasional"
     RARE = "rare"
-
 
 class QuantityClass(StrEnum):
     XS = "xs"
@@ -28,20 +26,17 @@ class QuantityClass(StrEnum):
     M = "m"
     L = "l"
 
-
 class RiskScore(StrEnum):
     LOW = "low"
     MEDIUM = "medium"
     HIGH = "high"
     CRITICAL = "critical"
 
-
 class ActivityStatus(StrEnum):
     DRAFT = "draft"
     REVIEW = "review"
     APPROVED = "approved"
     OUTDATED = "outdated"
-
 
 class HazardAssessmentActivity(TenantScopedModel):
     """
@@ -163,7 +158,6 @@ class HazardAssessmentActivity(TenantScopedModel):
     def is_approved(self) -> bool:
         return self.status == ActivityStatus.APPROVED
 
-
 class ActivityMeasure(models.Model):
     """
     Konkrete Schutzmaßnahme einer GBU-Tätigkeit.
@@ -171,7 +165,6 @@ class ActivityMeasure(models.Model):
     tenant_id denormalisiert für RLS ohne JOIN auf activity.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(
         db_index=True,
         help_text="Denormalisiert von HazardAssessmentActivity.tenant_id (ADR-003)",

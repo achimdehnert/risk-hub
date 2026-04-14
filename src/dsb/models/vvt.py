@@ -13,7 +13,6 @@ from .lookups import (
 )
 from .mandate import Mandate
 
-
 class ProcessingActivity(models.Model):
     """Verarbeitungstätigkeit gemäß Art. 30 DSGVO (VVT)."""
 
@@ -43,11 +42,6 @@ class ProcessingActivity(models.Model):
         HIGH = "high", "Hoch"
         VERY_HIGH = "very_high", "Sehr hoch"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,
@@ -137,7 +131,6 @@ class ProcessingActivity(models.Model):
     def __str__(self) -> str:
         return f"{self.number}. {self.name}"
 
-
 class ThirdCountryTransfer(models.Model):
     """Drittlandübermittlung zu einer Verarbeitungstätigkeit (Art. 44ff)."""
 
@@ -149,11 +142,6 @@ class ThirdCountryTransfer(models.Model):
         CONSENT = "consent", "Einwilligung (Art. 49)"
         OTHER = "other", "Sonstige"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     processing_activity = models.ForeignKey(
         ProcessingActivity,
@@ -191,15 +179,9 @@ class ThirdCountryTransfer(models.Model):
         entity = f" ({self.recipient_entity})" if self.recipient_entity else ""
         return f"{self.country}{entity}"
 
-
 class RetentionRule(models.Model):
     """Löschfrist/Aufbewahrungsregel einer Verarbeitungstätigkeit."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     processing_activity = models.ForeignKey(
         ProcessingActivity,

@@ -8,7 +8,6 @@ from .lookups import Category, SubjectGroup
 from .mandate import Mandate
 from .vvt import ProcessingActivity
 
-
 class DataProcessingAgreement(models.Model):
     """Auftragsverarbeitungsvertrag (AVV) gemäß Art. 28 DSGVO."""
 
@@ -23,11 +22,6 @@ class DataProcessingAgreement(models.Model):
         PROCESSOR = "processor", "Auftragsverarbeiter"
         JOINT_CONTROLLER = "joint", "Gemeinsam Verantwortliche"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,

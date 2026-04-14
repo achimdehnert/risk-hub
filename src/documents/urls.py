@@ -11,12 +11,12 @@ urlpatterns = [
     path("upload/", views.document_upload, name="upload"),
     path("upload-bulk/", views.document_bulk_upload, name="bulk_upload"),
     path(
-        "<uuid:document_id>/",
+        "<int:document_id>/",
         views.document_detail,
         name="document_detail",
     ),
     path(
-        "download/<uuid:version_id>/",
+        "download/<int:version_id>/",
         views.document_download,
         name="download",
     ),

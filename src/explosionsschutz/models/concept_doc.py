@@ -15,7 +15,6 @@ from django_tenancy.managers import TenantManager
 
 from .concept import ExplosionConcept
 
-
 class ExConceptDocument(models.Model):
     """Unterlage zu einem Explosionsschutzkonzept (ADR-147).
 
@@ -31,7 +30,6 @@ class ExConceptDocument(models.Model):
         ANALYZED = "analyzed", "Analysiert"
         FAILED = "failed", "Fehlgeschlagen"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     concept = models.ForeignKey(
         ExplosionConcept,
@@ -103,7 +101,6 @@ class ExConceptDocument(models.Model):
     def has_template(self) -> bool:
         return bool(self.template_json)
 
-
 class ExConceptTemplateStore(models.Model):
     """Persistiertes Konzept-Template für Explosionsschutz (ADR-147).
 
@@ -119,7 +116,6 @@ class ExConceptTemplateStore(models.Model):
         MERGED = "merged", "Zusammengeführt"
         MANUAL = "manual", "Manuell erstellt"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     name = models.CharField(max_length=200)
     scope = models.CharField(max_length=30, default="explosionsschutz")
@@ -161,7 +157,6 @@ class ExConceptTemplateStore(models.Model):
     def __str__(self) -> str:
         return f"{self.name} v{self.version} ({self.get_source_display()})"
 
-
 class ExFilledTemplate(models.Model):
     """Ausgefülltes Template für ein Explosionsschutzkonzept (ADR-147).
 
@@ -175,7 +170,6 @@ class ExFilledTemplate(models.Model):
         APPROVED = "approved", "Freigegeben"
         EXPORTED = "exported", "Exportiert"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     concept = models.ForeignKey(
         ExplosionConcept,

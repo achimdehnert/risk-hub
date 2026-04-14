@@ -5,7 +5,6 @@ import uuid
 from django.db import models
 from django_tenancy.managers import TenantManager
 
-
 class Assessment(models.Model):
     """Risk assessment / Gefährdungsbeurteilung."""
 
@@ -22,7 +21,6 @@ class Assessment(models.Model):
         ARBEITSSCHUTZ = "arbeitsschutz", "Arbeitsschutz"
         GENERAL = "general", "Allgemein"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     title = models.CharField(max_length=240)
@@ -77,7 +75,6 @@ class Assessment(models.Model):
     def __str__(self) -> str:
         return self.title
 
-
 class Hazard(models.Model):
     """Individual hazard within an assessment."""
 
@@ -101,7 +98,6 @@ class Hazard(models.Model):
         MITIGATED = "mitigated", "Gemindert"
         ACCEPTED = "accepted", "Akzeptiert"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     assessment = models.ForeignKey(
         Assessment,

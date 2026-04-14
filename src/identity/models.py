@@ -6,19 +6,16 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django_tenancy.managers import TenantManager
 
-
 class User(AbstractUser):
     """Custom user model with tenant association."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
 
     class Meta:
         db_table = "identity_user"
 
-
 class ApiKey(models.Model):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
     tenant_id = models.UUIDField(db_index=True)
     user = models.ForeignKey(
         User,

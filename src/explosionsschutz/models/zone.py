@@ -19,7 +19,6 @@ from .master_data import ReferenceStandard
 
 User = get_user_model()
 
-
 class ZoneDefinition(models.Model):
     """Zoneneinteilung nach ATEX"""
 
@@ -32,7 +31,6 @@ class ZoneDefinition(models.Model):
         ZONE_22 = "22", "Zone 22 (Staub, selten)"
         NON_EX = "non_ex", "Nicht Ex-Bereich"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     concept = models.ForeignKey(ExplosionConcept, on_delete=models.CASCADE, related_name="zones")
@@ -104,7 +102,6 @@ class ZoneDefinition(models.Model):
         }
         return mapping.get(self.zone_type, "unknown")
 
-
 class IgnitionSource(models.TextChoices):
     """13 Zündquellen nach EN 1127-1"""
 
@@ -122,13 +119,11 @@ class IgnitionSource(models.TextChoices):
     S12_ADIABATIC = "S12", "Adiabatische Kompression / Stoßwellen"
     S13_EXOTHERMIC = "S13", "Exotherme Reaktionen"
 
-
 class ZoneIgnitionSourceAssessment(models.Model):
     """
     Bewertung der 13 Zündquellen pro Zone nach EN 1127-1.
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     zone = models.ForeignKey(
@@ -169,7 +164,6 @@ class ZoneIgnitionSourceAssessment(models.Model):
         )
         return f"{self.zone.name} - {self.get_ignition_source_display()}: {status}"
 
-
 class ZoneCalculationResult(models.Model):
     """
     Archivierter TRGS 721 Zonenberechnungs-Nachweis.
@@ -180,7 +174,6 @@ class ZoneCalculationResult(models.Model):
     PostgreSQL RLS verhindert DELETE auf DB-Ebene (siehe Migration).
     """
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     zone = models.ForeignKey(

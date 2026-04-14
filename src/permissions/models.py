@@ -8,7 +8,6 @@ from django.conf import settings
 from django.db import models
 from django_tenancy.managers import TenantManager
 
-
 class Permission(models.Model):
     """Permission definition (ADR-003 §2.3)."""
 
@@ -21,11 +20,6 @@ class Permission(models.Model):
         EXPORT = "export", "Export"
         APPROVE = "approve", "Approve"
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     code = models.CharField(max_length=100, unique=True)
     module = models.CharField(max_length=50, db_index=True)
     resource = models.CharField(max_length=50)
@@ -51,15 +45,9 @@ class Permission(models.Model):
     def __str__(self) -> str:
         return self.code
 
-
 class Role(models.Model):
     """Role with permissions, per tenant or system (ADR-003 §2.4)."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(null=True, blank=True, db_index=True)
     name = models.CharField(max_length=120)
     description = models.TextField(blank=True, default="")
@@ -86,15 +74,9 @@ class Role(models.Model):
     def __str__(self) -> str:
         return self.name
 
-
 class RolePermission(models.Model):
     """Role → Permission mapping."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     permission = models.ForeignKey(Permission, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -109,7 +91,6 @@ class RolePermission(models.Model):
             ),
         ]
 
-
 class Scope(models.Model):
     """Scope for permission assignment (ADR-003 §2.5)."""
 
@@ -122,11 +103,6 @@ class Scope(models.Model):
         (SCOPE_ASSET, "Asset"),
     ]
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     scope_type = models.CharField(max_length=12, choices=SCOPE_CHOICES)
     site_id = models.UUIDField(null=True, blank=True, db_index=True)
@@ -161,15 +137,9 @@ class Scope(models.Model):
             return f"SITE:{self.site_id}"
         return f"ASSET:{self.asset_id}"
 
-
 class Assignment(models.Model):
     """User → Role → Scope assignment (ADR-003 §2.5)."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     user_id = models.UUIDField(db_index=True)
     role = models.ForeignKey(
@@ -200,15 +170,9 @@ class Assignment(models.Model):
             ),
         ]
 
-
 class PermissionOverride(models.Model):
     """Explicit grant/deny override per membership (ADR-003 §2.4)."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     membership = models.ForeignKey(
         "tenancy.Membership",
         on_delete=models.CASCADE,

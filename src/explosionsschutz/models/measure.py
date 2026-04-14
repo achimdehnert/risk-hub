@@ -14,7 +14,6 @@ from .master_data import MeasureCatalog, SafetyFunction
 
 User = get_user_model()
 
-
 class ProtectionMeasure(models.Model):
     """Schutzmaßnahme (primär, sekundär, tertiär, organisatorisch)"""
 
@@ -31,7 +30,6 @@ class ProtectionMeasure(models.Model):
         VERIFIED = "verified", "Verifiziert"
         OBSOLETE = "obsolete", "Obsolet"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
 
     concept = models.ForeignKey(ExplosionConcept, on_delete=models.CASCADE, related_name="measures")

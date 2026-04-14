@@ -6,7 +6,6 @@ from django.db import models
 
 from .mandate import Mandate
 
-
 class DeletionRequestStatus(models.TextChoices):
     PENDING = "pending", "Beantragt"
     AUTH_SENT = "auth_sent", "Authentifizierung angefordert"
@@ -16,7 +15,6 @@ class DeletionRequestStatus(models.TextChoices):
     NOTIFIED = "notified", "Betroffener benachrichtigt"
     CLOSED = "closed", "Abgeschlossen"
     REJECTED = "rejected", "Abgelehnt"
-
 
 WORKFLOW_TRANSITIONS = {
     DeletionRequestStatus.PENDING: [
@@ -53,11 +51,9 @@ STEP_LABELS = {
     DeletionRequestStatus.REJECTED: ("✗", "Abgelehnt"),
 }
 
-
 class DeletionRequest(models.Model):
     """Löschantrag gemäß Art. 17 DSGVO mit vollständigem Workflow."""
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,

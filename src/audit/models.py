@@ -9,7 +9,6 @@ import uuid
 from django.db import models
 from django.utils import timezone
 
-
 class AuditEvent(models.Model):
     """
     Audit event for tracking user actions.
@@ -31,7 +30,6 @@ class AuditEvent(models.Model):
         REJECT = "reject", "Reject"
         OTHER = "other", "Other"
 
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     tenant_id = models.UUIDField(db_index=True, null=True, blank=True)
     user_id = models.UUIDField(db_index=True, null=True, blank=True)
 

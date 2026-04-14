@@ -8,15 +8,9 @@ from .lookups import Category
 from .mandate import Mandate
 from .vvt import ProcessingActivity
 
-
 class DeletionLog(models.Model):
     """Löschprotokoll gemäß Art. 17 DSGVO."""
 
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
     tenant_id = models.UUIDField(db_index=True)
     mandate = models.ForeignKey(
         Mandate,

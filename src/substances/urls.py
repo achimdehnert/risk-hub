@@ -24,8 +24,8 @@ urlpatterns = [
     # API Endpoints
     path("", include(router.urls)),
     # Custom Endpoints
-    path("substances/<uuid:pk>/sds/upload/", views.SdsUploadView.as_view(), name="sds-upload"),
-    path("sds/<uuid:pk>/approve/", views.SdsApproveView.as_view(), name="sds-approve"),
+    path("substances/<int:pk>/sds/upload/", views.SdsUploadView.as_view(), name="sds-upload"),
+    path("sds/<int:pk>/approve/", views.SdsApproveView.as_view(), name="sds-approve"),
     path(
         "exports/hazard-register/",
         views.HazardRegisterExportView.as_view(),
