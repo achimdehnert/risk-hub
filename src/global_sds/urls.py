@@ -3,7 +3,7 @@
 
 from django.urls import path
 
-from global_sds import views
+from global_sds import views, views_partials
 
 app_name = "global_sds"
 
@@ -51,5 +51,11 @@ urlpatterns = [
         "compliance/defer/<int:pk>/",
         views.defer_update,
         name="defer",
+    ),
+    # HTMX: SDS Datacard (ADR-017 §8)
+    path(
+        "datacard/<int:pk>/",
+        views_partials.sds_datacard_partial,
+        name="datacard",
     ),
 ]

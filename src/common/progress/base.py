@@ -90,11 +90,7 @@ class DocumentProgress:
 
     @property
     def error_count(self) -> int:
-        return sum(
-            1
-            for s in self.steps
-            if s.state in (StepState.ERROR, StepState.BLOCKED)
-        )
+        return sum(1 for s in self.steps if s.state in (StepState.ERROR, StepState.BLOCKED))
 
     @property
     def total_steps(self) -> int:
@@ -161,9 +157,7 @@ class BaseProgressService:
 
     @staticmethod
     def _empty(issue: str, **kwargs: Any) -> StepStatus:
-        return StepStatus(
-            step=0, label="", state=StepState.EMPTY, issues=[issue], **kwargs
-        )
+        return StepStatus(step=0, label="", state=StepState.EMPTY, issues=[issue], **kwargs)
 
     @staticmethod
     def _partial(issues: list[str], pct: int = 50, **kwargs: Any) -> StepStatus:
@@ -189,12 +183,8 @@ class BaseProgressService:
 
     @staticmethod
     def _error(issues: list[str], **kwargs: Any) -> StepStatus:
-        return StepStatus(
-            step=0, label="", state=StepState.ERROR, issues=issues, **kwargs
-        )
+        return StepStatus(step=0, label="", state=StepState.ERROR, issues=issues, **kwargs)
 
     @staticmethod
     def _blocked(issue: str, **kwargs: Any) -> StepStatus:
-        return StepStatus(
-            step=0, label="", state=StepState.BLOCKED, issues=[issue], **kwargs
-        )
+        return StepStatus(step=0, label="", state=StepState.BLOCKED, issues=[issue], **kwargs)

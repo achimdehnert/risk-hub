@@ -1,0 +1,123 @@
+{% comment %}
+SDS Datacard — Read-only Gefahrstoff-Info aus globaler SDS-Revision (ADR-017 §8).
+
+Usage:
+  {% include "components/_sds_datacard.html" with revision=sds_revision %}
+
+Shows: Produktname, CAS, Hersteller, H-Sätze (farbcodiert), Ex-Kenngrößen.
+Used in GBU Step 1 and Ex-Konzept Step 1.
+{% endcomment %}
+
+{% if revision %}
+<div class="bg-white rounded-xl border border-gray-200 p-4 mb-4" data-testid="sds-datacard">
+  <div class="flex items-center justify-between mb-3">
+    <h3 class="text-sm font-semibold text-gray-700 flex items-center gap-2">
+      <i data-lucide="file-text" class="w-4 h-4 text-blue-500"></i>
+      SDS-Daten
+    </h3>
+    {% if revision.pk %}
+    <a href="{% url 'global_sds:revision-detail' pk=revision.pk %}"
+       class="text-xs text-blue-600 hover:underline">
+      Details
+    </a>
+    {% endif %}
+  </div>
+
+  {# ── Identifikation ──────────────────────────────────────── #}
+  <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+    <div>
+      <span class="text-xs text-gray-400">Produkt</span>
+      <p class="font-medium text-gray-900">{{ revision.product_name|default:"—" }}</p>
+    </div>
+    <div>
+      <span class="text-xs text-gray-400">Hersteller</span>
+      <p class="text-gray-700">{{ revision.manufacturer_name|default:"—" }}</p>
+    </div>
+    <div>
+      <span class="text-xs text-gray-400">CAS-Nr.</span>
+      <p class="text-gray-700 font-mono text-xs">{{ revision.substance.cas_number|default:"—" }}</p>
+    </div>
+    <div>
+      <span class="text-xs text-gray-400">Version / Datum</span>
+      <p class="text-gray-700">{{ revision.version_number|default:"?" }} · {{ revision.revision_date|date:"d.m.Y"|default:"—" }}</p>
+    </div>
+  </div>
+
+  {# ── Signalwort ──────────────────────────────────────────── #}
+  {% if revision.signal_word %}
+  <div class="mt-3">
+    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold
+      {% if revision.signal_word == 'danger' %}bg-red-100 text-red-800
+      {% elif revision.signal_word == 'warning' %}bg-yellow-100 text-yellow-800
+      {% else %}bg-gray-100 text-gray-600{% endif %}">
+      {% if revision.signal_word == 'danger' %}GEFAHR{% elif revision.signal_word == 'warning' %}ACHTUNG{% else %}{{ revision.signal_word }}{% endif %}
+    </span>
+  </div>
+  {% endif %}
+
+  {# ── H-Sätze (farbcodiert) ──────────────────────────────── #}
+  {% with h_statements=revision.hazard_statements.all %}
+  {% if h_statements %}
+  <div class="mt-3">
+    <span class="text-xs text-gray-400">H-Sätze</span>
+    <div class="flex flex-wrap gap-1 mt-1">
+      {% for h in h_statements %}
+      <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-mono
+        {% if h.code|slice:':2' == 'H2' %}bg-red-50 text-red-700 border border-red-200
+        {% elif h.code|slice:':2' == 'H3' %}bg-orange-50 text-orange-700 border border-orange-200
+        {% else %}bg-gray-50 text-gray-700 border border-gray-200{% endif %}"
+             title="{{ h.text_de|default:h.text_en }}">
+        {{ h.code }}
+      </span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endwith %}
+
+  {# ── Ex-Kenngrößen (für Ex-Schutzkonzept) ───────────────── #}
+  {% if revision.flash_point_c is not None or revision.ignition_temperature_c is not None or revision.lower_explosion_limit is not None %}
+  <div class="mt-3 pt-3 border-t border-gray-100">
+    <span class="text-xs text-gray-400 mb-1 block">Ex-Kenngrößen</span>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+      {% if revision.flash_point_c is not None %}
+      <div class="bg-orange-50 rounded px-2 py-1.5">
+        <span class="text-gray-500">Flammpunkt</span>
+        <p class="font-bold text-orange-700">{{ revision.flash_point_c }} °C</p>
+      </div>
+      {% endif %}
+      {% if revision.ignition_temperature_c is not None %}
+      <div class="bg-red-50 rounded px-2 py-1.5">
+        <span class="text-gray-500">Zündtemp.</span>
+        <p class="font-bold text-red-700">{{ revision.ignition_temperature_c }} °C</p>
+      </div>
+      {% endif %}
+      {% if revision.lower_explosion_limit is not None %}
+      <div class="bg-yellow-50 rounded px-2 py-1.5">
+        <span class="text-gray-500">UEG</span>
+        <p class="font-bold text-yellow-700">{{ revision.lower_explosion_limit }} Vol.%</p>
+      </div>
+      {% endif %}
+      {% if revision.upper_explosion_limit is not None %}
+      <div class="bg-yellow-50 rounded px-2 py-1.5">
+        <span class="text-gray-500">OEG</span>
+        <p class="font-bold text-yellow-700">{{ revision.upper_explosion_limit }} Vol.%</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endif %}
+
+  {# ── WGK / Lagerklasse (für Compliance) ──────────────────── #}
+  {% if revision.wgk or revision.storage_class_trgs510 %}
+  <div class="mt-2 flex gap-3 text-xs">
+    {% if revision.wgk %}
+    <span class="text-gray-500">WGK <strong class="text-gray-700">{{ revision.wgk }}</strong></span>
+    {% endif %}
+    {% if revision.storage_class_trgs510 %}
+    <span class="text-gray-500">LGK <strong class="text-gray-700">{{ revision.storage_class_trgs510 }}</strong></span>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}

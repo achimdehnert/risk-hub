@@ -6,6 +6,7 @@ from django.contrib import admin
 from django.contrib.auth import views as auth_views
 from django.urls import include, path
 
+from common.progress.views import progress_rail_partial
 from config.api import api
 from config.views import (
     custom_403,
@@ -68,4 +69,10 @@ urlpatterns = [
     path("projects/", include("projects.urls")),
     path("doc-templates/", include("doc_templates.urls")),
     path("sds/", include("global_sds.urls")),
+    # Shared Progress Rail (ADR-017 §8)
+    path(
+        "progress/<str:doc_type>/<str:doc_id>/",
+        progress_rail_partial,
+        name="progress-rail",
+    ),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
