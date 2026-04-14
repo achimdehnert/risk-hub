@@ -2,9 +2,7 @@
 """Tests für GbuProgressService."""
 
 import datetime
-from unittest.mock import MagicMock, PropertyMock
-
-import pytest
+from unittest.mock import MagicMock
 
 from common.progress.base import StepState
 from gbu.services.progress import GbuProgressService

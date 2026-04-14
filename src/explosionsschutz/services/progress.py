@@ -12,7 +12,6 @@ from typing import Any
 
 from common.progress.base import BaseProgressService, StepDef, StepState, StepStatus
 
-
 # ATEX-Kategorie vs. Zone Validierungsmatrix (ATEX 1999/92/EG Anhang II)
 ATEX_ZONE_MATRIX: dict[str, set[str]] = {
     "1G": {"0", "1", "2"},
@@ -162,7 +161,6 @@ class ExProgressService(BaseProgressService):
         if not equipment:
             return self._empty("Keine Ex-Betriebsmittel erfasst")
 
-        zones = list(concept.zones.all()) if hasattr(concept, "zones") else []
         errors = []
         for eq in equipment:
             eq_zone = getattr(eq, "zone", None)

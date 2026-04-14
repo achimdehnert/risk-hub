@@ -67,21 +67,51 @@ def set_db_tenant(tenant_id: UUID | None) -> None:
     variable persists across autocommit queries until the
     next request resets it via middleware.
     No-op on SQLite (test environment).
+
+    Also resets ``app.is_service_account`` to ``false`` — normal
+    request context is never a service account.
     """
     from django.db import connection
 
     if connection.vendor != "postgresql":
         return
 
-    if tenant_id is not None:
-        with connection.cursor() as cursor:
+    with connection.cursor() as cursor:
+        if tenant_id is not None:
             cursor.execute(
                 "SET app.tenant_id = %s",
                 [str(tenant_id)],
             )
-    else:
-        with connection.cursor() as cursor:
+        else:
             cursor.execute("RESET app.tenant_id")
+        cursor.execute("SET app.is_service_account = 'false'")
+
+
+def set_db_service_account(enabled: bool = True) -> None:
+    """Set PostgreSQL session variable for service-account RLS bypass (ADR-161 §3.2).
+
+    Service accounts may INSERT into global_sds tables.
+    Normal users may only SELECT.
+
+    Usage in Celery tasks / management commands::
+
+        from common.context import set_db_service_account
+        set_db_service_account(True)
+        try:
+            GlobalSubstance.objects.create(...)
+        finally:
+            set_db_service_account(False)
+    """
+    from django.db import connection
+
+    if connection.vendor != "postgresql":
+        return
+
+    with connection.cursor() as cursor:
+        cursor.execute(
+            "SET app.is_service_account = %s",
+            ["true" if enabled else "false"],
+        )
 
 
 def clear_context() -> None:

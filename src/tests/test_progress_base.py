@@ -1,7 +1,6 @@
 # tests/test_progress_base.py
 """Tests für BaseProgressService (common/progress)."""
 
-import pytest
 
 from common.progress.base import (
     BaseProgressService,
@@ -10,7 +9,6 @@ from common.progress.base import (
     StepState,
     StepStatus,
 )
-
 
 # ── Fixture: Concrete subclass for testing ─────────────────────────────────────
 
