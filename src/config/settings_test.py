@@ -14,11 +14,14 @@ from urllib.parse import urlparse
 from .settings import *  # noqa: F401,F403
 
 # Remove private packages from INSTALLED_APPS if not installed (CI without PROJECT_PAT)
+# Apps without migrations that break test DB creation (FK to identity_user)
+_EXCLUDE_IN_TESTS = {"iil_learnfw"}
 _OPTIONAL_APPS = ["platform_context", "django_module_shop", "aifw"]
 INSTALLED_APPS = [  # noqa: F405
     app
     for app in INSTALLED_APPS  # noqa: F405
-    if app not in _OPTIONAL_APPS or importlib.util.find_spec(app.replace("-", "_")) is not None
+    if app not in _EXCLUDE_IN_TESTS
+    and (app not in _OPTIONAL_APPS or importlib.util.find_spec(app.replace("-", "_")) is not None)
 ]
 
 DEBUG = False
