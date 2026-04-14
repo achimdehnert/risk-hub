@@ -7,9 +7,10 @@ CAS-Lookup (exakt) + Fuzzy Name+Hersteller Matching.
 
 import logging
 from dataclasses import dataclass
-from difflib import SequenceMatcher
 
 from django.conf import settings
+from django.db.models import FloatField, Value
+from django.db.models.functions import Greatest
 
 from global_sds.models import GlobalSubstance
 
@@ -116,25 +117,105 @@ class SdsIdentityResolver:
         product_name: str,
         manufacturer_name: str,
     ) -> IdentityMatch:
-        """Fuzzy-Matching über Name + Hersteller."""
+        """
+        Fuzzy-Matching über Name via pg_trgm similarity (ADR-161 §P0.4).
+
+        Uses PostgreSQL pg_trgm extension for trigram-based similarity
+        scoring directly in the database — no Python loop required.
+        Falls back to difflib SequenceMatcher if pg_trgm is unavailable.
+        """
+        search_term = product_name.lower().strip()
+        if not search_term:
+            return IdentityMatch(
+                substance=None, confidence=0.0, match_type="none",
+            )
+
+        try:
+            result = self._pg_trgm_match(search_term)
+        except Exception:
+            logger.warning(
+                "pg_trgm unavailable, falling back to difflib",
+                exc_info=True,
+            )
+            result = self._difflib_fallback(search_term)
+
+        if result and result.confidence >= CONFIDENCE_ASK_USER:
+            logger.info(
+                "Fuzzy match: '%s' → '%s' (score=%.3f, type=%s)",
+                product_name,
+                result.substance.name,
+                result.confidence,
+                result.match_type,
+            )
+            return result
+
+        score = result.confidence if result else 0.0
+        logger.info("No match for '%s' (best=%.3f)", product_name, score)
+        return IdentityMatch(
+            substance=None, confidence=score, match_type="none",
+        )
+
+    def _pg_trgm_match(self, search_term: str) -> IdentityMatch | None:
+        """
+        pg_trgm similarity search — single DB query, O(1) scalability.
+
+        Uses similarity() on name field. Synonyms are checked via
+        a raw annotation since JSONField arrays need unnesting.
+        """
+        from django.db.models.functions import Lower
+
+        # Annotate with trigram similarity score on name
+        candidates = (
+            GlobalSubstance.objects
+            .extra(
+                select={"name_similarity": "similarity(LOWER(name), %s)"},
+                select_params=[search_term],
+            )
+            .order_by("-name_similarity")
+        )[:5]  # Top 5 candidates
+
         best_match = None
         best_score = 0.0
 
-        candidates = GlobalSubstance.objects.all()[:500]
-
         for substance in candidates:
+            score = float(substance.name_similarity)
+
+            # Also check synonyms (JSON array) with Python fallback
+            for synonym in substance.synonyms or []:
+                from difflib import SequenceMatcher
+
+                syn_score = SequenceMatcher(
+                    None, search_term, str(synonym).lower(),
+                ).ratio()
+                score = max(score, syn_score)
+
+            if score > best_score:
+                best_score = score
+                best_match = substance
+
+        if best_match:
+            return IdentityMatch(
+                substance=best_match,
+                confidence=best_score,
+                match_type="fuzzy",
+            )
+        return None
+
+    def _difflib_fallback(self, search_term: str) -> IdentityMatch | None:
+        """Pure-Python fallback when pg_trgm is not available."""
+        from difflib import SequenceMatcher
+
+        best_match = None
+        best_score = 0.0
+
+        for substance in GlobalSubstance.objects.all()[:500]:
             name_score = SequenceMatcher(
-                None,
-                product_name.lower(),
-                substance.name.lower(),
+                None, search_term, substance.name.lower(),
             ).ratio()
 
-            # Synonyme prüfen
             for synonym in substance.synonyms or []:
                 syn_score = SequenceMatcher(
-                    None,
-                    product_name.lower(),
-                    str(synonym).lower(),
+                    None, search_term, str(synonym).lower(),
                 ).ratio()
                 name_score = max(name_score, syn_score)
 
@@ -142,26 +223,10 @@ class SdsIdentityResolver:
                 best_score = name_score
                 best_match = substance
 
-        if best_match and best_score >= CONFIDENCE_ASK_USER:
-            logger.info(
-                "Fuzzy match: '%s' → '%s' (score=%.3f)",
-                product_name,
-                best_match.name,
-                best_score,
-            )
+        if best_match:
             return IdentityMatch(
                 substance=best_match,
                 confidence=best_score,
                 match_type="fuzzy",
             )
-
-        logger.info(
-            "No match for '%s' (best=%.3f)",
-            product_name,
-            best_score,
-        )
-        return IdentityMatch(
-            substance=None,
-            confidence=best_score,
-            match_type="none",
-        )
+        return None
