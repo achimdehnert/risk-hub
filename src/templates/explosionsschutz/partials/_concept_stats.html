@@ -1,0 +1,20 @@
+<div id="concept-stats" class="grid grid-cols-1 md:grid-cols-4 gap-6"{% if hx_oob %} hx-swap-oob="true"{% endif %}>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-sm text-gray-500">Bereich</p>
+        <a href="{% url 'explosionsschutz:area-detail-html' concept.area.id %}" class="text-lg font-semibold text-orange-600 hover:text-orange-700">
+            {{ concept.area.name }}
+        </a>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-sm text-gray-500">Stoff</p>
+        <p class="text-lg font-semibold text-gray-900">{{ concept.substance_name|default:"Unbekannt" }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-sm text-gray-500">Zonen</p>
+        <p class="text-lg font-semibold text-gray-900">{{ concept.zones.count }}</p>
+    </div>
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+        <p class="text-sm text-gray-500">Maßnahmen</p>
+        <p class="text-lg font-semibold text-gray-900">{{ concept.measures.count }}</p>
+    </div>
+</div>

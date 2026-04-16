@@ -7,7 +7,7 @@ import datetime as dt
 
 from django.contrib import messages
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
 
@@ -234,6 +234,8 @@ class AreaDetailView(View):
 
         zones_count = sum(c.zones.count() for c in concepts)
 
+        site_name = self._resolve_site_name(area.site_id)
+
         return render(
             request,
             self.template_name,
@@ -242,8 +244,24 @@ class AreaDetailView(View):
                 "concepts": concepts,
                 "equipment": equipment,
                 "zones_count": zones_count,
+                "site_name": site_name,
             },
         )
+
+    @staticmethod
+    def _resolve_site_name(site_id):
+        """Resolve site_id UUID to a human-readable name."""
+        if not site_id:
+            return "—"
+        from tenancy.models import Organization, Site
+
+        site = Site.objects.filter(pk=site_id).first()
+        if site:
+            return site.name
+        org = Organization.objects.filter(tenant_id=site_id).first()
+        if org:
+            return org.name
+        return "—"
 
 
 class ConceptListView(View):
@@ -472,11 +490,14 @@ class AreaCreateView(View):
 
     def post(self, request):
         tenant_id = getattr(request, "tenant_id", None)
+        if not tenant_id:
+            messages.error(request, "Mandant konnte nicht ermittelt werden. Bitte erneut anmelden.")
+            return redirect("explosionsschutz:area-list-html")
         form = AreaForm(request.POST)
         if form.is_valid():
             area = form.save(commit=False)
             area.tenant_id = tenant_id
-            area.site_id = tenant_id  # Use tenant as site for now
+            area.site_id = tenant_id
             area.save()
             return redirect("explosionsschutz:area-detail-html", pk=area.pk)
         return render(
@@ -547,6 +568,9 @@ class ConceptCreateView(View):
 
     def post(self, request):
         tenant_id = getattr(request, "tenant_id", None)
+        if not tenant_id:
+            messages.error(request, "Mandant konnte nicht ermittelt werden. Bitte erneut anmelden.")
+            return redirect("explosionsschutz:concept-list-html")
         form = ExplosionConceptForm(request.POST, tenant_id=tenant_id)
         if form.is_valid():
             concept = form.save(commit=False)
@@ -635,6 +659,9 @@ class EquipmentCreateView(View):
 
     def post(self, request):
         tenant_id = getattr(request, "tenant_id", None)
+        if not tenant_id:
+            messages.error(request, "Mandant konnte nicht ermittelt werden. Bitte erneut anmelden.")
+            return redirect("explosionsschutz:equipment-list-html")
         form = EquipmentForm(request.POST, tenant_id=tenant_id)
         if form.is_valid():
             equipment = form.save(commit=False)
@@ -1235,7 +1262,9 @@ class HtmxAddZoneView(View):
 
     def post(self, request, concept_pk):
         tenant_id = getattr(request, "tenant_id", None)
-        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        if not tenant_id:
+            return HttpResponseForbidden("Mandant nicht ermittelt.")
+        base_filter = Q(tenant_id=tenant_id)
         concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=concept_pk)
 
         form = ZoneDefinitionForm(request.POST)
@@ -1250,7 +1279,7 @@ class HtmxAddZoneView(View):
         return render(
             request,
             self.partial_template,
-            {"concept": concept, "zones": zones, "zone_form": zone_form},
+            {"concept": concept, "zones": zones, "zone_form": zone_form, "htmx_response": True},
         )
 
 
@@ -1271,7 +1300,7 @@ class HtmxDeleteZoneView(View):
         return render(
             request,
             self.partial_template,
-            {"concept": concept, "zones": zones, "zone_form": zone_form},
+            {"concept": concept, "zones": zones, "zone_form": zone_form, "htmx_response": True},
         )
 
 
@@ -1285,7 +1314,9 @@ class HtmxAddMeasureView(View):
 
     def post(self, request, concept_pk):
         tenant_id = getattr(request, "tenant_id", None)
-        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        if not tenant_id:
+            return HttpResponseForbidden("Mandant nicht ermittelt.")
+        base_filter = Q(tenant_id=tenant_id)
         concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=concept_pk)
 
         form = ProtectionMeasureForm(request.POST)
@@ -1300,7 +1331,7 @@ class HtmxAddMeasureView(View):
         return render(
             request,
             self.partial_template,
-            {"concept": concept, "measures": measures, "measure_form": measure_form},
+            {"concept": concept, "measures": measures, "measure_form": measure_form, "htmx_response": True},
         )
 
 
@@ -1321,7 +1352,7 @@ class HtmxDeleteMeasureView(View):
         return render(
             request,
             self.partial_template,
-            {"concept": concept, "measures": measures, "measure_form": measure_form},
+            {"concept": concept, "measures": measures, "measure_form": measure_form, "htmx_response": True},
         )
 
 
@@ -1335,7 +1366,9 @@ class HtmxAddDocumentView(View):
 
     def post(self, request, concept_pk):
         tenant_id = getattr(request, "tenant_id", None)
-        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        if not tenant_id:
+            return HttpResponseForbidden("Mandant nicht ermittelt.")
+        base_filter = Q(tenant_id=tenant_id)
         concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=concept_pk)
 
         form = VerificationDocumentForm(request.POST, request.FILES)

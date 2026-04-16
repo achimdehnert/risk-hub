@@ -30,7 +30,7 @@ def get_or_create_site(
     organization=None,
 ):
     """Resolve or auto-create a Site for a tenant."""
-    from projects.models import Site
+    from tenancy.models import Site
 
     site, created = Site.objects.get_or_create(
         tenant_id=tenant_id,

@@ -23,6 +23,11 @@ class AreaForm(forms.ModelForm):
     class Meta:
         model = Area
         fields = ["code", "name", "description"]
+        labels = {
+            "code": "Bereichscode",
+            "name": "Bereichsname",
+            "description": "Beschreibung",
+        }
         widgets = {
             "code": forms.TextInput(
                 attrs={
@@ -52,6 +57,11 @@ class ExplosionConceptForm(forms.ModelForm):
     class Meta:
         model = ExplosionConcept
         fields = ["area", "title", "substance_name"]
+        labels = {
+            "area": "Bereich",
+            "title": "Titel",
+            "substance_name": "Gefahrstoff",
+        }
         widgets = {
             "area": forms.Select(
                 attrs={
@@ -84,6 +94,12 @@ class ZoneDefinitionForm(forms.ModelForm):
     class Meta:
         model = ZoneDefinition
         fields = ["zone_type", "name", "description", "justification"]
+        labels = {
+            "zone_type": "Zonentyp",
+            "name": "Bezeichnung",
+            "description": "Beschreibung",
+            "justification": "Begründung",
+        }
         widgets = {
             "zone_type": forms.Select(
                 attrs={
@@ -126,6 +142,15 @@ class EquipmentForm(forms.ModelForm):
             "installation_date",
             "location_detail",
         ]
+        labels = {
+            "area": "Bereich",
+            "zone": "Zone",
+            "equipment_type": "Gerätetyp",
+            "serial_number": "Seriennummer",
+            "asset_number": "Anlagennummer",
+            "installation_date": "Inbetriebnahme",
+            "location_detail": "Standort",
+        }
         widgets = {
             "area": forms.Select(
                 attrs={
@@ -238,6 +263,12 @@ class ProtectionMeasureForm(forms.ModelForm):
     class Meta:
         model = ProtectionMeasure
         fields = ["category", "title", "description", "due_date"]
+        labels = {
+            "category": "Kategorie",
+            "title": "Titel",
+            "description": "Beschreibung",
+            "due_date": "Fälligkeitsdatum",
+        }
         widgets = {
             "category": forms.Select(attrs={"class": _INPUT_CSS}),
             "title": forms.TextInput(
@@ -347,6 +378,12 @@ class VerificationDocumentForm(forms.ModelForm):
     class Meta:
         model = VerificationDocument
         fields = ["title", "document_type", "file", "issued_by"]
+        labels = {
+            "title": "Titel",
+            "document_type": "Dokumenttyp",
+            "file": "Datei",
+            "issued_by": "Ausgestellt von",
+        }
         widgets = {
             "title": forms.TextInput(attrs={"class": _INPUT_CSS, "placeholder": "Dokumenttitel"}),
             "document_type": forms.Select(attrs={"class": _INPUT_CSS}),

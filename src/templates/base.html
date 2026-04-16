@@ -172,6 +172,7 @@
 
 <script>
     lucide.createIcons();
+    htmx.process(document.body);
     document.addEventListener('htmx:afterSwap', function() { lucide.createIcons(); });
     document.addEventListener("click", function(e) {
         var toggle = e.target.closest("[data-toggle]");

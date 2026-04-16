@@ -34,18 +34,34 @@ def resolve_tenant_id(request: HttpRequest):
 
 
 def get_active_modules(request: HttpRequest) -> set[str]:
-    """Return set of active module codes for the current tenant."""
+    """Return set of module codes the current user may access.
+
+    Intersects tenant-level ModuleSubscription (active/trial) with
+    user-level ModuleMembership.  Staff users see all subscribed modules.
+    """
     tenant_id = resolve_tenant_id(request)
     if not tenant_id:
         return set()
+    user = getattr(request, "user", None)
+    if not user or not getattr(user, "is_authenticated", False):
+        return set()
     try:
-        from django_tenancy.module_models import ModuleSubscription
+        from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 
-        return set(
+        subscribed = set(
             ModuleSubscription.objects.filter(
                 tenant_id=tenant_id,
                 status__in=["trial", "active"],
             ).values_list("module", flat=True)
         )
+        if user.is_staff:
+            return subscribed
+        user_modules = set(
+            ModuleMembership.objects.filter(
+                tenant_id=tenant_id,
+                user=user,
+            ).values_list("module", flat=True)
+        )
+        return subscribed & user_modules
     except Exception:
         return set()

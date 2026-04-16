@@ -77,3 +77,4 @@
     </form>
     {% endif %}
 </div>
+{% if htmx_response %}{% include "explosionsschutz/partials/_concept_stats.html" with hx_oob=True %}{% endif %}

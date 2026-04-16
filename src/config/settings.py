@@ -117,6 +117,12 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+LANGUAGE_CODE = "de-de"
+TIME_ZONE = "Europe/Berlin"
+USE_I18N = True
+USE_L10N = True
+USE_TZ = True
+
 # Tenancy
 TENANT_BASE_DOMAINS = [
     d.strip() for d in os.getenv("TENANT_BASE_DOMAINS", "").split(",") if d.strip()
@@ -148,6 +154,8 @@ MODULE_URL_MAP = {
 
 # CSRF
 CSRF_TRUSTED_ORIGINS = [o for o in read_secret("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
+if DEBUG:
+    CSRF_TRUSTED_ORIGINS += ["http://localhost:*", "http://127.0.0.1:*"]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
