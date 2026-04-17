@@ -1388,6 +1388,7 @@ class HtmxAddDocumentView(View):
                 "concept": concept,
                 "documents": documents,
                 "document_form": document_form,
+                "htmx_response": True,
             },
         )
 

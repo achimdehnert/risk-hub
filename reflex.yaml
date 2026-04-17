@@ -1,0 +1,72 @@
+# REFLEX Configuration — risk-hub (Explosionsschutz / GBU)
+# ADR-162: Reflexive Evidence-based Loop for UI Development
+
+hub_name: risk-hub
+vertical: chemical_safety
+
+domain_keywords:
+  - Explosionsschutz
+  - Gefährdungsbeurteilung
+  - GBU
+  - ATEX
+  - Sicherheitsdatenblatt
+  - SDS
+  - Gefahrstoff
+  - Zoneneinteilung
+  - Ex-Schutz-Dokument
+  - Betriebsmittel
+  - Zündquellenanalyse
+  - Schutzmaßnahme
+  - CAS-Nummer
+  - H-Sätze
+  - Flammpunkt
+  - UEG
+  - OEG
+
+quality:
+  min_acceptance_criteria: 2
+  max_uc_steps: 7
+  require_error_cases: true
+  require_specific_actor: true
+  forbid_implementation_details: true
+  forbid_soft_language: true
+
+viewports:
+  - name: desktop
+    width: 1280
+    height: 800
+  - name: tablet
+    width: 768
+    height: 1024
+  - name: mobile
+    width: 375
+    height: 812
+
+htmx_patterns:
+  banned:
+    - hx-boost
+  required_on_forms:
+    - hx-indicator
+    - hx-disabled-elt
+
+permissions_matrix:
+  /ex/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    anonymous: 302
+  /ex/areas/create/:
+    admin: 200
+    editor: 200
+    viewer: 403
+    anonymous: 302
+  /ex/concepts/new/:
+    admin: 200
+    editor: 200
+    viewer: 403
+    anonymous: 302
+  /ex/equipment/create/:
+    admin: 200
+    editor: 200
+    viewer: 403
+    anonymous: 302
