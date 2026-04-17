@@ -36,7 +36,7 @@ iil-concept-templates>=0.4.0
 # Document Templates — reusable Django template system
 iil-doc-templates>=0.3.0
 # REFLEX — UC quality checks + domain research (ADR-162)
-iil-reflex>=0.1.1
+iil-reflex[web]>=0.2.1
 # Safety Framework — riskfw inlined in src/riskfw/ (ADR-146 Phase 1)
 # CAD / BIM — nl2cad-core mono-distribution (ADR-146 Phase 2)
 # nl2cad-core[gaeb]>=0.2.0  # TODO: uncomment when published to PyPI
