@@ -3,6 +3,7 @@
 
 from global_sds.services.diff_service import SdsRevisionDiffService
 from global_sds.services.dtos import ParsedSdsData
+from global_sds.services.enrichment_service import SdsEnrichmentService
 from global_sds.services.identity_resolver import SdsIdentityResolver
 from global_sds.services.supersession_service import SdsSupersessionService
 from global_sds.services.upload_pipeline import SdsUploadPipeline
@@ -11,6 +12,7 @@ from global_sds.services.version_detector import SdsVersionDetector
 
 __all__ = [
     "ParsedSdsData",
+    "SdsEnrichmentService",
     "SdsIdentityResolver",
     "SdsVersionDetector",
     "SdsRevisionDiffService",

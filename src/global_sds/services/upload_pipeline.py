@@ -17,6 +17,9 @@ from django.db import transaction
 
 from global_sds.models import GlobalSdsRevision, GlobalSubstance
 from global_sds.services.diff_service import SdsRevisionDiffService
+from global_sds.services.enrichment_service import (
+    SdsEnrichmentService,
+)
 from global_sds.services.identity_resolver import (
     SdsIdentityResolver,
 )
@@ -68,6 +71,7 @@ class SdsUploadPipeline:
     """
 
     def __init__(self):
+        self.enrichment_service = SdsEnrichmentService()
         self.identity_resolver = SdsIdentityResolver()
         self.version_detector = SdsVersionDetector()
         self.diff_service = SdsRevisionDiffService()
@@ -107,6 +111,19 @@ class SdsUploadPipeline:
                 outcome=UploadOutcome.DUPLICATE,
                 revision=existing,
                 message="PDF bereits importiert (SHA-256 Match)",
+            )
+
+        # ── Stufe 1b: Web-Enrichment (CAS/GHS aus PubChem) ──
+        enrichment = self.enrichment_service.enrich(parse_result)
+        if enrichment.enriched:
+            parse_result = self.enrichment_service.merge_into_parse_result(
+                parse_result,
+                enrichment,
+            )
+            logger.info(
+                "Enriched parse_result (source=%s, CAS=%s)",
+                enrichment.source,
+                enrichment.cas_number or "—",
             )
 
         # ── Stufe 2: Identitätsauflösung ──
