@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Kataster-Import — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  <nav class="text-sm text-gray-500 mb-4">
+    <a href="{% url 'kataster:dashboard' %}" class="hover:text-gray-700">Kataster</a>
+    <span class="mx-1">/</span>
+    <span class="text-gray-900">Excel-Import</span>
+  </nav>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <div class="mb-6">
+      <h1 class="text-xl font-bold text-gray-900">Gefahrstoffkataster importieren</h1>
+      <p class="text-sm text-gray-500 mt-1">Laden Sie eine Excel-Datei mit Ihrem Gefahrstoffkataster hoch. Im nächsten Schritt ordnen Sie die Spalten zu.</p>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="space-y-5">
+      {% csrf_token %}
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.import_file.label }}</label>
+        {{ form.import_file }}
+        {% if form.import_file.help_text %}<p class="mt-1 text-xs text-gray-500">{{ form.import_file.help_text }}</p>{% endif %}
+        {% if form.import_file.errors %}<p class="mt-1 text-xs text-red-600">{{ form.import_file.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.target_site.label }}</label>
+        {{ form.target_site }}
+        {% if form.target_site.errors %}<p class="mt-1 text-xs text-red-600">{{ form.target_site.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div class="flex">
+          <i data-lucide="info" class="w-5 h-5 text-blue-500 mt-0.5 mr-3 flex-shrink-0"></i>
+          <div class="text-sm text-blue-700">
+            <p class="font-medium">Hinweise zum Import</p>
+            <ul class="mt-1 list-disc list-inside space-y-1 text-blue-600">
+              <li>Die erste Zeile muss Spaltenüberschriften enthalten</li>
+              <li>Mindestens eine Spalte mit dem Produktnamen ist erforderlich</li>
+              <li>Duplikate werden anhand des Produktnamens erkannt und aktualisiert</li>
+              <li>Der Import kann rückgängig gemacht werden</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <a href="{% url 'kataster:dashboard' %}"
+           class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+          Abbrechen
+        </a>
+        <button type="submit"
+                class="px-4 py-2 text-sm text-white bg-orange-500 rounded-lg hover:bg-orange-600">
+          <i data-lucide="upload" class="w-4 h-4 inline mr-1"></i>
+          Hochladen & Vorschau
+        </button>
+      </div>
+    </form>
+  </div>
+
+  {# Import History Link #}
+  <div class="mt-4 text-center">
+    <a href="{% url 'kataster:import-list' %}" class="text-sm text-gray-500 hover:text-gray-700">
+      <i data-lucide="history" class="w-4 h-4 inline mr-1"></i>
+      Vergangene Importe anzeigen
+    </a>
+  </div>
+
+</div>
+{% endblock %}

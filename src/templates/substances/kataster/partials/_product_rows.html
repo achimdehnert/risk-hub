@@ -1,0 +1,29 @@
+{% for product in products %}
+<tr class="hover:bg-gray-50">
+  <td class="px-6 py-4">
+    <p class="text-sm font-medium text-gray-900">{{ product.trade_name }}</p>
+    <p class="text-xs text-gray-400 mt-0.5">{{ product.components.count }} Komponente{{ product.components.count|pluralize:",n" }}</p>
+  </td>
+  <td class="px-6 py-4 text-sm text-gray-600">{{ product.manufacturer.name|default:"—" }}</td>
+  <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ product.material_number|default:"—" }}</td>
+  <td class="px-6 py-4">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+      {% if product.status == 'active' %}bg-green-100 text-green-800
+      {% elif product.status == 'inactive' %}bg-yellow-100 text-yellow-800
+      {% elif product.status == 'archived' %}bg-red-100 text-red-800
+      {% else %}bg-gray-100 text-gray-800{% endif %}">
+      {{ product.get_status_display }}
+    </span>
+  </td>
+  <td class="px-6 py-4 text-right">
+    <a href="{% url 'kataster:product-detail' pk=product.pk %}"
+       class="text-orange-600 hover:text-orange-800 text-sm font-medium">Detail →</a>
+  </td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="5" class="px-6 py-10 text-center text-sm text-gray-400">
+    Keine Produkte gefunden.
+  </td>
+</tr>
+{% endfor %}

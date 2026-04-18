@@ -1,0 +1,62 @@
+# Local dev stack — uses locally built image
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: risk_hub_local_db
+    environment:
+      POSTGRES_USER: risk_hub
+      POSTGRES_PASSWORD: risk_hub
+      POSTGRES_DB: risk_hub
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - risk_hub_local_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U risk_hub -d risk_hub"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - risk_hub_local
+
+  redis:
+    image: redis:7-alpine
+    container_name: risk_hub_local_redis
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - risk_hub_local
+
+  web:
+    image: risk-hub-app:latest
+    container_name: risk_hub_local_web
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://risk_hub:risk_hub@db:5432/risk_hub
+      DJANGO_DEBUG: "1"
+      DJANGO_SECRET_KEY: local-dev-secret-key-not-for-prod
+      DJANGO_ALLOWED_HOSTS: ".localhost,localhost,127.0.0.1"
+      DJANGO_SETTINGS_MODULE: config.settings
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+    ports:
+      - "127.0.0.1:8090:8000"
+    entrypoint: ["/entrypoint.sh"]
+    command: ["web"]
+    networks:
+      - risk_hub_local
+
+
+volumes:
+  risk_hub_local_pgdata:
+
+networks:
+  risk_hub_local:
+    driver: bridge

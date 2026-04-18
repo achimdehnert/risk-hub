@@ -6,6 +6,7 @@ Template-basierte Views für Explosionsschutz-Modul (HTML-Seiten)
 import datetime as dt
 
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -38,7 +39,7 @@ from .models import (
 )
 
 
-class HomeView(View):
+class HomeView(LoginRequiredMixin, View):
     """Homepage für Explosionsschutz-Modul"""
 
     template_name = "explosionsschutz/home.html"
@@ -180,7 +181,7 @@ class HomeView(View):
         return activities[:limit]
 
 
-class AreaListView(View):
+class AreaListView(LoginRequiredMixin, View):
     """Liste aller Bereiche"""
 
     template_name = "explosionsschutz/areas/list.html"
@@ -219,7 +220,7 @@ class AreaListView(View):
         return render(request, self.template_name, {"areas": areas_list})
 
 
-class AreaDetailView(View):
+class AreaDetailView(LoginRequiredMixin, View):
     """Detailansicht eines Bereichs"""
 
     template_name = "explosionsschutz/areas/detail.html"
@@ -264,7 +265,7 @@ class AreaDetailView(View):
         return "—"
 
 
-class ConceptListView(View):
+class ConceptListView(LoginRequiredMixin, View):
     """Liste aller Ex-Konzepte"""
 
     template_name = "explosionsschutz/concepts/list.html"
@@ -292,7 +293,7 @@ class ConceptListView(View):
         return render(request, self.template_name, {"concepts": concepts})
 
 
-class ConceptDetailView(View):
+class ConceptDetailView(LoginRequiredMixin, View):
     """Detailansicht eines Ex-Konzepts"""
 
     template_name = "explosionsschutz/concepts/detail.html"
@@ -416,7 +417,7 @@ class ConceptDetailView(View):
         return redirect("explosionsschutz:concept-detail-html", pk=pk)
 
 
-class EquipmentListView(View):
+class EquipmentListView(LoginRequiredMixin, View):
     """Liste aller Betriebsmittel"""
 
     template_name = "explosionsschutz/equipment/list.html"
@@ -442,7 +443,7 @@ class EquipmentListView(View):
         return render(request, self.template_name, {"equipment": equipment})
 
 
-class EquipmentDetailView(View):
+class EquipmentDetailView(LoginRequiredMixin, View):
     """Detailansicht eines Betriebsmittels"""
 
     template_name = "explosionsschutz/equipment/detail.html"
@@ -472,7 +473,7 @@ class EquipmentDetailView(View):
 # =============================================================================
 
 
-class AreaCreateView(View):
+class AreaCreateView(LoginRequiredMixin, View):
     """Bereich erstellen"""
 
     template_name = "explosionsschutz/areas/form.html"
@@ -510,7 +511,7 @@ class AreaCreateView(View):
         )
 
 
-class AreaEditView(View):
+class AreaEditView(LoginRequiredMixin, View):
     """Bereich bearbeiten"""
 
     template_name = "explosionsschutz/areas/form.html"
@@ -549,7 +550,7 @@ class AreaEditView(View):
         )
 
 
-class ConceptCreateView(View):
+class ConceptCreateView(LoginRequiredMixin, View):
     """Konzept erstellen"""
 
     template_name = "explosionsschutz/concepts/form.html"
@@ -587,7 +588,7 @@ class ConceptCreateView(View):
         )
 
 
-class ConceptEditView(View):
+class ConceptEditView(LoginRequiredMixin, View):
     """Konzept bearbeiten"""
 
     template_name = "explosionsschutz/concepts/form.html"
@@ -624,7 +625,7 @@ class ConceptEditView(View):
         )
 
 
-class ConceptValidateView(View):
+class ConceptValidateView(LoginRequiredMixin, View):
     """Konzept validieren (Status → in_review)"""
 
     def post(self, request, pk):
@@ -640,7 +641,7 @@ class ConceptValidateView(View):
         return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
 
 
-class EquipmentCreateView(View):
+class EquipmentCreateView(LoginRequiredMixin, View):
     """Equipment erstellen"""
 
     template_name = "explosionsschutz/equipment/form.html"
@@ -678,7 +679,7 @@ class EquipmentCreateView(View):
         )
 
 
-class ToolsView(View):
+class ToolsView(LoginRequiredMixin, View):
     """Berechnungstools für Explosionsschutz"""
 
     template_name = "explosionsschutz/tools.html"
@@ -695,7 +696,7 @@ class ToolsView(View):
         )
 
 
-class AreaDxfUploadView(View):
+class AreaDxfUploadView(LoginRequiredMixin, View):
     """DXF-Upload für einen Bereich — parst Räume/Flächen via nl2cad-core/areas."""
 
     template_name = "explosionsschutz/areas/dxf_upload.html"
@@ -822,7 +823,7 @@ class AreaDxfUploadView(View):
         return redirect("explosionsschutz:area-brandschutz", pk=area.pk)
 
 
-class AreaIFCUploadView(View):
+class AreaIFCUploadView(LoginRequiredMixin, View):
     """IFC-Upload für einen Bereich — parst Räume/Geschosse via nl2cad-core IFCParser."""
 
     template_name = "explosionsschutz/areas/ifc_upload.html"
@@ -926,7 +927,7 @@ class AreaIFCUploadView(View):
         return redirect("explosionsschutz:area-brandschutz", pk=area.pk)
 
 
-class ZoneCalculateView(View):
+class ZoneCalculateView(LoginRequiredMixin, View):
     """
     TRGS 721 Zonenberechnung via riskfw.
     GET  → leeres Formular für eine Zone
@@ -1058,7 +1059,7 @@ class ZoneCalculateView(View):
         return redirect("explosionsschutz:concept-detail-html", pk=zone.concept_id)
 
 
-class ConceptDxfImportView(View):
+class ConceptDxfImportView(LoginRequiredMixin, View):
     """
     DXF-Import für Ex-Zonen via nl2cad-brandschutz.
     GET  → Upload-Formular
@@ -1167,7 +1168,7 @@ class ConceptDxfImportView(View):
         return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
 
 
-class AreaBrandschutzView(View):
+class AreaBrandschutzView(LoginRequiredMixin, View):
     """Brandschutz-Layer-Analyse für einen Bereich via nl2cad-brandschutz."""
 
     template_name = "explosionsschutz/areas/brandschutz.html"
@@ -1252,7 +1253,7 @@ class AreaBrandschutzView(View):
 # =============================================================================
 
 
-class HtmxAddZoneView(View):
+class HtmxAddZoneView(LoginRequiredMixin, View):
     """
     HTMX: Zone inline zu Concept hinzufügen.
     POST → Zone erstellen, Partial mit aktueller Zonenliste zurückgeben.
@@ -1283,7 +1284,7 @@ class HtmxAddZoneView(View):
         )
 
 
-class HtmxDeleteZoneView(View):
+class HtmxDeleteZoneView(LoginRequiredMixin, View):
     """HTMX: Zone löschen, aktualisierte Liste zurückgeben."""
 
     partial_template = "explosionsschutz/partials/_zone_list.html"
@@ -1304,7 +1305,7 @@ class HtmxDeleteZoneView(View):
         )
 
 
-class HtmxAddMeasureView(View):
+class HtmxAddMeasureView(LoginRequiredMixin, View):
     """
     HTMX: Schutzmaßnahme inline zu Concept hinzufügen.
     POST → Measure erstellen, Partial mit aktueller Liste zurückgeben.
@@ -1335,7 +1336,7 @@ class HtmxAddMeasureView(View):
         )
 
 
-class HtmxDeleteMeasureView(View):
+class HtmxDeleteMeasureView(LoginRequiredMixin, View):
     """HTMX: Maßnahme löschen, aktualisierte Liste zurückgeben."""
 
     partial_template = "explosionsschutz/partials/_measure_list.html"
@@ -1356,7 +1357,7 @@ class HtmxDeleteMeasureView(View):
         )
 
 
-class HtmxAddDocumentView(View):
+class HtmxAddDocumentView(LoginRequiredMixin, View):
     """
     HTMX: Nachweisdokument inline zu Concept hinzufügen.
     POST → Document erstellen, Partial mit aktueller Liste zurückgeben.
@@ -1393,7 +1394,7 @@ class HtmxAddDocumentView(View):
         )
 
 
-class HtmxIgnitionAssessmentView(View):
+class HtmxIgnitionAssessmentView(LoginRequiredMixin, View):
     """
     HTMX: Zündquellenbewertung für eine Zone.
     GET  → Formular mit 13 Zündquellen
@@ -1459,7 +1460,7 @@ class HtmxIgnitionAssessmentView(View):
         )
 
 
-class HtmxZoneProposalView(View):
+class HtmxZoneProposalView(LoginRequiredMixin, View):
     """
     HTMX: Zonenvorschlag basierend auf TRGS 721 Regelmatrix.
     POST → ZoneClassificationEngine aufrufen, Ergebnis als Partial.
@@ -1491,7 +1492,7 @@ class HtmxZoneProposalView(View):
         )
 
 
-class InspectionCreateView(View):
+class InspectionCreateView(LoginRequiredMixin, View):
     """Prüfung erfassen für ein Betriebsmittel"""
 
     template_name = "explosionsschutz/equipment/inspection_form.html"

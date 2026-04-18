@@ -1,5 +1,7 @@
 """URL configuration for Risk-Hub."""
 
+import importlib
+
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
@@ -56,6 +58,7 @@ urlpatterns = [
     path("ex/", include("explosionsschutz.html_urls")),
     path("api/substances/", include("substances.urls")),
     path("substances/", include("substances.html_urls")),
+    path("kataster/", include("substances.kataster_urls")),
     path(
         "notifications/",
         include("notifications.urls"),
@@ -64,10 +67,18 @@ urlpatterns = [
     path("dsb/", include("dsb.urls")),
     path("gbu/", include("gbu.urls")),
     path("tenants/", include("tenancy.urls")),
-    path("billing/modules/", include("django_module_shop.urls")),
+    *(
+        [path("billing/modules/", include("django_module_shop.urls"))]
+        if importlib.util.find_spec("django_module_shop")
+        else []
+    ),
     path("brandschutz/", include("brandschutz.urls")),
     path("projects/", include("projects.urls")),
-    path("doc-templates/", include("doc_templates.urls")),
+    *(
+        [path("doc-templates/", include("doc_templates.urls"))]
+        if importlib.util.find_spec("doc_templates")
+        else []
+    ),
     path("sds/", include("global_sds.urls")),
     # Shared Progress Rail (ADR-017 §8)
     path(

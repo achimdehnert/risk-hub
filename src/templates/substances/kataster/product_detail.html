@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}{{ product.trade_name }} — Kataster — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8 space-y-6">
+
+  {# Breadcrumb + Actions #}
+  <div class="flex items-center justify-between">
+    <div>
+      <nav class="text-sm text-gray-500 mb-1">
+        <a href="{% url 'kataster:dashboard' %}" class="hover:text-gray-700">Kataster</a>
+        <span class="mx-1">/</span>
+        <a href="{% url 'kataster:product-list' %}" class="hover:text-gray-700">Produkte</a>
+        <span class="mx-1">/</span>
+        <span class="text-gray-900">{{ product.trade_name }}</span>
+      </nav>
+      <h1 class="text-2xl font-bold text-gray-900">{{ product.trade_name }}</h1>
+    </div>
+    <a href="{% url 'kataster:product-edit' pk=product.pk %}"
+       class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+      <i data-lucide="pencil" class="w-4 h-4 mr-2"></i>Bearbeiten
+    </a>
+  </div>
+
+  {# Stammdaten #}
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-lg font-medium text-gray-900 mb-4">Stammdaten</h2>
+    <dl class="grid grid-cols-1 md:grid-cols-3 gap-x-6 gap-y-4">
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase">Handelsname</dt>
+        <dd class="mt-1 text-sm text-gray-900">{{ product.trade_name }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase">Materialnummer</dt>
+        <dd class="mt-1 text-sm text-gray-900 font-mono">{{ product.material_number|default:"—" }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase">Status</dt>
+        <dd class="mt-1">
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+            {% if product.status == 'active' %}bg-green-100 text-green-800
+            {% elif product.status == 'inactive' %}bg-yellow-100 text-yellow-800
+            {% else %}bg-gray-100 text-gray-800{% endif %}">
+            {{ product.get_status_display }}
+          </span>
+        </dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase">Hersteller</dt>
+        <dd class="mt-1 text-sm text-gray-900">{{ product.manufacturer.name|default:"—" }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase">Lieferant</dt>
+        <dd class="mt-1 text-sm text-gray-900">{{ product.supplier.name|default:"—" }}</dd>
+      </div>
+      <div>
+        <dt class="text-xs font-medium text-gray-500 uppercase">SDS-Revision</dt>
+        <dd class="mt-1 text-sm text-gray-900">{{ product.sds_revision|default:"—" }}</dd>
+      </div>
+      {% if product.description %}
+      <div class="md:col-span-3">
+        <dt class="text-xs font-medium text-gray-500 uppercase">Beschreibung</dt>
+        <dd class="mt-1 text-sm text-gray-900">{{ product.description }}</dd>
+      </div>
+      {% endif %}
+    </dl>
+  </div>
+
+  {# Komponenten #}
+  <div class="bg-white rounded-xl border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-medium text-gray-900">Inhaltsstoffe ({{ components|length }})</h2>
+    </div>
+    {% if components %}
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Substanz</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">CAS-Nr.</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Konzentration</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for comp in components %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-3 text-sm text-gray-900">{{ comp.substance.name }}</td>
+          <td class="px-6 py-3 text-sm text-gray-600 font-mono">{{ comp.substance.cas_number|default:"—" }}</td>
+          <td class="px-6 py-3 text-sm text-gray-600">
+            {% if comp.concentration_min and comp.concentration_max %}
+              {{ comp.concentration_min }}–{{ comp.concentration_max }}%
+            {% elif comp.concentration_exact %}
+              {{ comp.concentration_exact }}%
+            {% else %}
+              —
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <div class="px-6 py-8 text-center text-sm text-gray-400">
+      <i data-lucide="flask-conical" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
+      Noch keine Inhaltsstoffe erfasst.
+    </div>
+    {% endif %}
+  </div>
+
+  {# Verwendungen #}
+  <div class="bg-white rounded-xl border border-gray-200">
+    <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+      <h2 class="text-lg font-medium text-gray-900">Verwendungen ({{ usages|length }})</h2>
+      <a href="{% url 'kataster:usage-create' %}?product={{ product.pk }}"
+         class="text-sm text-orange-600 hover:text-orange-700 font-medium">
+        <i data-lucide="plus" class="w-4 h-4 inline mr-1"></i>Verwendung hinzufügen
+      </a>
+    </div>
+    {% if usages %}
+    <div class="divide-y divide-gray-200">
+      {% for usage in usages %}
+      <a href="{% url 'kataster:usage-detail' pk=usage.pk %}"
+         class="flex items-center justify-between px-6 py-3 hover:bg-gray-50">
+        <div>
+          <p class="text-sm font-medium text-gray-900">{{ usage.site.name }}{% if usage.department %} · {{ usage.department.name }}{% endif %}</p>
+          <p class="text-xs text-gray-500">{{ usage.usage_description|truncatechars:80|default:"—" }}</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+            {% if usage.status == 'active' %}bg-green-100 text-green-800
+            {% else %}bg-gray-100 text-gray-800{% endif %}">
+            {{ usage.get_status_display }}
+          </span>
+          {% if usage.storage_class %}
+          <span class="text-xs text-gray-500 font-mono">LGK {{ usage.storage_class }}</span>
+          {% endif %}
+          <i data-lucide="chevron-right" class="w-4 h-4 text-gray-400"></i>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="px-6 py-8 text-center text-sm text-gray-400">
+      <i data-lucide="map-pin" class="w-8 h-8 text-gray-300 mx-auto mb-2"></i>
+      Noch keine Standort-Verwendungen erfasst.
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

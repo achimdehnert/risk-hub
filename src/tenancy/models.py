@@ -13,7 +13,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_tenancy.managers import TenantManager
 
-__all__ = ["Membership", "Organization", "Site"]
+__all__ = ["Department", "Membership", "Organization", "Site"]
 
 
 class Organization(models.Model):
@@ -127,7 +127,14 @@ class Membership(models.Model):
 
 
 class Site(models.Model):
-    """Physical site/location within an organization."""
+    """Physical site/location within an organization (UC-004)."""
+
+    class SiteType(models.TextChoices):
+        PLANT = "plant", _("Werk")
+        WAREHOUSE = "warehouse", _("Lager")
+        OFFICE = "office", _("Büro")
+        LAB = "lab", _("Labor")
+        OTHER = "other", _("Sonstiges")
 
     tenant_id = models.UUIDField(db_index=True)
     organization = models.ForeignKey(
@@ -136,7 +143,20 @@ class Site(models.Model):
         related_name="sites",
     )
     name = models.CharField(max_length=200)
+    code = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text=_("Standortkürzel (z.B. 'A', 'FR')"),
+    )
+    site_type = models.CharField(
+        max_length=20,
+        choices=SiteType.choices,
+        default=SiteType.PLANT,
+        help_text=_("Standorttyp"),
+    )
     address = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -145,12 +165,65 @@ class Site(models.Model):
     class Meta:
         app_label = "tenancy"
         db_table = "tenancy_site"
+        ordering = ["name"]
         constraints = [
             models.UniqueConstraint(
                 fields=["tenant_id", "name"],
                 name="uq_site_name_per_tenant",
             ),
+            models.UniqueConstraint(
+                fields=["tenant_id", "code"],
+                name="uq_site_code_per_tenant",
+                condition=~models.Q(code=""),
+            ),
         ]
 
     def __str__(self) -> str:
+        if self.code:
+            return f"{self.name} ({self.code})"
         return self.name
+
+
+class Department(models.Model):
+    """Department within an organization, optionally bound to a site (UC-004)."""
+
+    tenant_id = models.UUIDField(db_index=True)
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="departments",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="departments",
+        help_text=_("Standort (leer = standortübergreifend)"),
+    )
+    name = models.CharField(max_length=200)
+    code = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text=_("Abteilungskürzel (z.B. 'PROD', 'HT')"),
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
+
+    class Meta:
+        app_label = "tenancy"
+        db_table = "tenancy_department"
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant_id", "organization", "site", "name"],
+                name="uq_department_per_org_site",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        site_label = f" @ {self.site.name}" if self.site else ""
+        return f"{self.name}{site_label}"

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Import-Ergebnis — Kataster — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8 space-y-6">
+
+  <nav class="text-sm text-gray-500 mb-2">
+    <a href="{% url 'kataster:dashboard' %}" class="hover:text-gray-700">Kataster</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'kataster:import' %}" class="hover:text-gray-700">Import</a>
+    <span class="mx-1">/</span>
+    <span class="text-gray-900">Ergebnis</span>
+  </nav>
+
+  <div class="flex items-center justify-between">
+    <h1 class="text-xl font-bold text-gray-900">Import abgeschlossen</h1>
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium
+      {% if stats.errors %}bg-yellow-100 text-yellow-800
+      {% else %}bg-green-100 text-green-800{% endif %}">
+      {{ batch.get_status_display }}
+    </span>
+  </div>
+
+  {# Stats Cards #}
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+      <p class="text-2xl font-bold text-green-600">{{ stats.created }}</p>
+      <p class="text-xs text-gray-500 mt-1">Neu angelegt</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+      <p class="text-2xl font-bold text-blue-600">{{ stats.updated }}</p>
+      <p class="text-xs text-gray-500 mt-1">Aktualisiert</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+      <p class="text-2xl font-bold text-gray-400">{{ stats.skipped }}</p>
+      <p class="text-xs text-gray-500 mt-1">Übersprungen</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+      <p class="text-2xl font-bold {% if stats.errors %}text-red-600{% else %}text-gray-400{% endif %}">{{ stats.errors|length }}</p>
+      <p class="text-xs text-gray-500 mt-1">Fehler</p>
+    </div>
+  </div>
+
+  {# Errors #}
+  {% if stats.errors %}
+  <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+    <h3 class="text-sm font-medium text-red-800 mb-2">
+      <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>
+      {{ stats.errors|length }} Fehler
+    </h3>
+    <ul class="text-sm text-red-700 space-y-1 list-disc list-inside">
+      {% for err in stats.errors %}
+      <li>{{ err }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {# Warnings #}
+  {% if stats.warnings %}
+  <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+    <h3 class="text-sm font-medium text-yellow-800 mb-2">Warnungen</h3>
+    <ul class="text-sm text-yellow-700 space-y-1 list-disc list-inside">
+      {% for warn in stats.warnings %}
+      <li>{{ warn }}</li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {# Batch Info #}
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-lg font-medium text-gray-900 mb-3">Batch-Details</h2>
+    <dl class="grid grid-cols-2 gap-3 text-sm">
+      <div>
+        <dt class="text-gray-500">Datei</dt>
+        <dd class="font-mono text-gray-900">{{ batch.file_name }}</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">Ziel-Standort</dt>
+        <dd class="text-gray-900">{{ batch.target_site.name }}</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">Batch-ID</dt>
+        <dd class="font-mono text-gray-900">#{{ batch.pk }}</dd>
+      </div>
+      <div>
+        <dt class="text-gray-500">Importiert am</dt>
+        <dd class="text-gray-900">{{ batch.imported_at|date:"d.m.Y H:i"|default:"—" }}</dd>
+      </div>
+    </dl>
+  </div>
+
+  {# Actions #}
+  <div class="flex justify-center gap-4">
+    <a href="{% url 'kataster:product-list' %}"
+       class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+      <i data-lucide="package" class="w-4 h-4 mr-2"></i>Produkte anzeigen
+    </a>
+    <a href="{% url 'kataster:import' %}"
+       class="inline-flex items-center px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium">
+      <i data-lucide="upload" class="w-4 h-4 mr-2"></i>Weiteren Import
+    </a>
+  </div>
+
+</div>
+{% endblock %}

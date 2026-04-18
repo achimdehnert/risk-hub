@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Kataster — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  <nav class="text-sm text-gray-500 mb-4">
+    <a href="{% url 'kataster:dashboard' %}" class="hover:text-gray-700">Kataster</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'kataster:usage-list' %}" class="hover:text-gray-700">Verwendungen</a>
+    <span class="mx-1">/</span>
+    <span class="text-gray-900">{{ title }}</span>
+  </nav>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h1 class="text-xl font-bold text-gray-900 mb-6">{{ title }}</h1>
+
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label for="id_product" class="block text-sm font-medium text-gray-700 mb-1">Produkt *</label>
+          {{ form.product }}
+          {% if form.product.errors %}<p class="mt-1 text-xs text-red-600">{{ form.product.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="id_site" class="block text-sm font-medium text-gray-700 mb-1">Standort *</label>
+          {{ form.site }}
+          {% if form.site.errors %}<p class="mt-1 text-xs text-red-600">{{ form.site.errors.0 }}</p>{% endif %}
+        </div>
+        <div>
+          <label for="id_department" class="block text-sm font-medium text-gray-700 mb-1">Abteilung</label>
+          {{ form.department }}
+        </div>
+      </div>
+
+      <div>
+        <label for="id_usage_description" class="block text-sm font-medium text-gray-700 mb-1">Verwendungsbeschreibung</label>
+        {{ form.usage_description }}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div>
+          <label for="id_storage_location" class="block text-sm font-medium text-gray-700 mb-1">Lagerort</label>
+          {{ form.storage_location }}
+        </div>
+        <div>
+          <label for="id_storage_class" class="block text-sm font-medium text-gray-700 mb-1">Lagerklasse</label>
+          {{ form.storage_class }}
+        </div>
+        <div>
+          <label for="id_aggregate_state" class="block text-sm font-medium text-gray-700 mb-1">Aggregatzustand</label>
+          {{ form.aggregate_state }}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="id_max_storage_qty" class="block text-sm font-medium text-gray-700 mb-1">Max. Lagermenge</label>
+            {{ form.max_storage_qty }}
+          </div>
+          <div>
+            <label for="id_max_storage_unit" class="block text-sm font-medium text-gray-700 mb-1">Einheit</label>
+            {{ form.max_storage_unit }}
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label for="id_annual_consumption" class="block text-sm font-medium text-gray-700 mb-1">Jahresverbrauch</label>
+            {{ form.annual_consumption }}
+          </div>
+          <div>
+            <label for="id_annual_consumption_unit" class="block text-sm font-medium text-gray-700 mb-1">Einheit</label>
+            {{ form.annual_consumption_unit }}
+          </div>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="id_substitution_status" class="block text-sm font-medium text-gray-700 mb-1">Substitutionsstatus</label>
+          {{ form.substitution_status }}
+        </div>
+        <div>
+          <label for="id_status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          {{ form.status }}
+        </div>
+      </div>
+
+      <div>
+        <label for="id_substitution_notes" class="block text-sm font-medium text-gray-700 mb-1">Substitutionshinweise</label>
+        {{ form.substitution_notes }}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="id_last_reviewed" class="block text-sm font-medium text-gray-700 mb-1">Letzte Überprüfung</label>
+          {{ form.last_reviewed }}
+        </div>
+      </div>
+
+      <div>
+        <label for="id_notes" class="block text-sm font-medium text-gray-700 mb-1">Notizen</label>
+        {{ form.notes }}
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <a href="{% url 'kataster:usage-list' %}"
+           class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+          Abbrechen
+        </a>
+        <button type="submit"
+                class="px-4 py-2 text-sm text-white bg-orange-500 rounded-lg hover:bg-orange-600">
+          {% if usage %}Speichern{% else %}Erfassen{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -14,6 +14,9 @@ class ApprovalWorkflow(models.Model):
         EX_CONCEPT = "ex_concept", "Ex-Schutz-Konzept"
         RISK_ASSESSMENT = "risk_assessment", "Risikobewertung"
         PROTECTION_MEASURE = "protection_measure", "Schutzmaßnahme"
+        KATASTER_REVISION = "kataster_revision", "Kataster-Revision"
+        SDS_REVIEW = "sds_review", "SDS-Prüfung"
+        GEFBU_REVIEW = "gefbu_review", "GefBu-Prüfung"
 
     tenant_id = models.UUIDField(db_index=True)
     workflow_type = models.CharField(

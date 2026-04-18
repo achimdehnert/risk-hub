@@ -163,7 +163,7 @@ class TestSdsDatacardView:
         content = response.content.decode()
         assert "-22" in content
         assert "233" in content
-        assert "1.1" in content
+        assert "1,1" in content  # DecimalField(decimal_places=3) + German locale → "1,100"
 
 
 # ── Compliance Dashboard View ─────────────────────────────────────────

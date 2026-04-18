@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Produkte — Kataster — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Handelsprodukte</h1>
+      <p class="text-sm text-gray-500 mt-1">Alle im Kataster erfassten Produkte</p>
+    </div>
+    <div class="flex gap-3">
+      <a href="{% url 'kataster:dashboard' %}"
+         class="inline-flex items-center px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i>Kataster
+      </a>
+      <a href="{% url 'kataster:product-create' %}"
+         class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>Neues Produkt
+      </a>
+    </div>
+  </div>
+
+  {# Filter #}
+  <div class="bg-white rounded-xl border border-gray-200 p-4 mb-5 flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Suche</label>
+      <input type="text" name="search" id="filter-search" value="{{ filters.search }}"
+             placeholder="Produktname, Materialnr., Hersteller..."
+             hx-get="{% url 'kataster:product-list' %}"
+             hx-target="#product-table-body"
+             hx-include="#filter-search, #filter-status, #filter-site"
+             hx-trigger="keyup changed delay:300ms"
+             class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 w-64">
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+      <select name="status" id="filter-status"
+              hx-get="{% url 'kataster:product-list' %}"
+              hx-target="#product-table-body"
+              hx-include="#filter-search, #filter-status, #filter-site"
+              hx-trigger="change"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="">Alle Status</option>
+        <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Aktiv</option>
+        <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inaktiv</option>
+        <option value="archived" {% if filters.status == 'archived' %}selected{% endif %}>Archiviert</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Standort</label>
+      <select name="site" id="filter-site"
+              hx-get="{% url 'kataster:product-list' %}"
+              hx-target="#product-table-body"
+              hx-include="#filter-search, #filter-status, #filter-site"
+              hx-trigger="change"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="">Alle Standorte</option>
+        {% for site in sites %}
+        <option value="{{ site.pk }}" {% if filters.site == site.pk|stringformat:"d" %}selected{% endif %}>{{ site.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="ml-auto text-xs text-gray-400 self-center">{{ products|length }} Produkt{{ products|length|pluralize:",e" }}</div>
+  </div>
+
+  {# Table #}
+  {% if products %}
+  <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produkt</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Hersteller</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Material-Nr.</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody id="product-table-body" class="divide-y divide-gray-200">
+        {% include "substances/kataster/partials/_product_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div id="product-table-body">
+    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
+      <i data-lucide="package" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+      <p class="text-gray-500 font-medium">Noch keine Produkte im Kataster.</p>
+      <div class="mt-4 flex justify-center gap-3">
+        <a href="{% url 'kataster:import' %}" class="inline-flex items-center px-4 py-2 bg-white text-orange-600 border border-orange-300 rounded-lg hover:bg-orange-50 text-sm">
+          <i data-lucide="upload" class="w-4 h-4 mr-2"></i>Excel-Import
+        </a>
+        <a href="{% url 'kataster:product-create' %}" class="inline-flex items-center px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm">
+          <i data-lucide="plus" class="w-4 h-4 mr-2"></i>Manuell anlegen
+        </a>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

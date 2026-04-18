@@ -237,8 +237,8 @@ def test_should_generate_documents_task_returns_ids(db):
         mock_inst.write_pdf.return_value = fake_pdf
         mock_html_cls.return_value = mock_inst
 
-        result = generate_documents_task(str(activity.id), str(tenant_id))
+        result = generate_documents_task(activity.id, str(tenant_id))
 
     assert "gbu_version_id" in result
     assert "ba_version_id" in result
-    assert result["activity_id"] == str(activity.id)
+    assert str(result["activity_id"]) == str(activity.id)

@@ -27,10 +27,10 @@ router = Router(tags=["gbu"])
 
 
 class ActivityOut(Schema):
-    id: UUID
+    id: int
     tenant_id: UUID
-    site_id: UUID
-    sds_revision_id: UUID
+    site_id: int
+    sds_revision_id: int
     activity_description: str
     activity_frequency: str
     duration_minutes: int
@@ -41,15 +41,15 @@ class ActivityOut(Schema):
     approved_by_name: str
     approved_at: datetime.datetime | None
     next_review_date: datetime.date | None
-    gbu_document_id: UUID | None
-    ba_document_id: UUID | None
+    gbu_document_id: int | None
+    ba_document_id: int | None
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
 
 class ActivityCreateIn(Schema):
-    site_id: UUID
-    sds_revision_id: UUID
+    site_id: int
+    sds_revision_id: int
     activity_description: str
     activity_frequency: str
     duration_minutes: int
@@ -185,7 +185,7 @@ def api_create_activity(request, payload: ActivityCreateIn):
 
 
 @router.get("/activities/{activity_id}", response=ActivityOut)
-def api_get_activity(request, activity_id: UUID):
+def api_get_activity(request, activity_id: int):
     """GBU-Tätigkeit Detail."""
     from gbu.models.activity import HazardAssessmentActivity
 
@@ -204,7 +204,7 @@ def api_get_activity(request, activity_id: UUID):
 
 
 @router.post("/activities/{activity_id}/approve", response=ActivityOut)
-def api_approve_activity(request, activity_id: UUID, payload: ActivityApproveIn):
+def api_approve_activity(request, activity_id: int, payload: ActivityApproveIn):
     """
     GBU-Tätigkeit freigeben.
 

@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Verwendung: {{ usage.product.trade_name }} — Kataster — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+
+  {# Breadcrumb + Actions #}
+  <div class="flex items-center justify-between">
+    <div>
+      <nav class="text-sm text-gray-500 mb-1">
+        <a href="{% url 'kataster:dashboard' %}" class="hover:text-gray-700">Kataster</a>
+        <span class="mx-1">/</span>
+        <a href="{% url 'kataster:usage-list' %}" class="hover:text-gray-700">Verwendungen</a>
+        <span class="mx-1">/</span>
+        <span class="text-gray-900">{{ usage.product.trade_name }}</span>
+      </nav>
+      <h1 class="text-2xl font-bold text-gray-900">{{ usage.product.trade_name }}</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ usage.site.name }}{% if usage.department %} · {{ usage.department.name }}{% endif %}</p>
+    </div>
+    <a href="{% url 'kataster:usage-edit' pk=usage.pk %}"
+       class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+      <i data-lucide="pencil" class="w-4 h-4 mr-2"></i>Bearbeiten
+    </a>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    {# Verwendungs-Details #}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-lg font-medium text-gray-900 mb-4">Verwendungsdetails</h2>
+      <dl class="space-y-3">
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Produkt</dt>
+          <dd class="text-sm font-medium text-gray-900">
+            <a href="{% url 'kataster:product-detail' pk=usage.product.pk %}" class="text-orange-600 hover:text-orange-800">
+              {{ usage.product.trade_name }}
+            </a>
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Standort</dt>
+          <dd class="text-sm text-gray-900">{{ usage.site.name }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Abteilung</dt>
+          <dd class="text-sm text-gray-900">{{ usage.department.name|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Status</dt>
+          <dd>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+              {% if usage.status == 'active' %}bg-green-100 text-green-800
+              {% else %}bg-gray-100 text-gray-800{% endif %}">
+              {{ usage.get_status_display }}
+            </span>
+          </dd>
+        </div>
+        {% if usage.usage_description %}
+        <div>
+          <dt class="text-sm text-gray-500 mb-1">Verwendungsbeschreibung</dt>
+          <dd class="text-sm text-gray-900">{{ usage.usage_description }}</dd>
+        </div>
+        {% endif %}
+      </dl>
+    </div>
+
+    {# Lagerung & Mengen #}
+    <div class="bg-white rounded-xl border border-gray-200 p-6">
+      <h2 class="text-lg font-medium text-gray-900 mb-4">Lagerung & Mengen</h2>
+      <dl class="space-y-3">
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Lagerort</dt>
+          <dd class="text-sm text-gray-900">{{ usage.storage_location|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Lagerklasse</dt>
+          <dd class="text-sm text-gray-900 font-mono">{{ usage.storage_class|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Aggregatzustand</dt>
+          <dd class="text-sm text-gray-900">{{ usage.get_aggregate_state_display|default:"—" }}</dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Max. Lagermenge</dt>
+          <dd class="text-sm text-gray-900">
+            {% if usage.max_storage_qty %}{{ usage.max_storage_qty }} {{ usage.get_max_storage_unit_display }}{% else %}—{% endif %}
+          </dd>
+        </div>
+        <div class="flex justify-between">
+          <dt class="text-sm text-gray-500">Jahresverbrauch</dt>
+          <dd class="text-sm text-gray-900">
+            {% if usage.annual_consumption %}{{ usage.annual_consumption }} {{ usage.get_annual_consumption_unit_display }}{% else %}—{% endif %}
+          </dd>
+        </div>
+      </dl>
+    </div>
+
+  </div>
+
+  {# Substitution #}
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h2 class="text-lg font-medium text-gray-900 mb-4">Substitution & Überprüfung</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <p class="text-sm text-gray-500">Substitutionsstatus</p>
+        <span class="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+          {% if usage.substitution_status == 'open' %}bg-yellow-100 text-yellow-800
+          {% elif usage.substitution_status == 'done' %}bg-green-100 text-green-800
+          {% elif usage.substitution_status == 'not_required' %}bg-gray-100 text-gray-600
+          {% else %}bg-gray-100 text-gray-600{% endif %}">
+          {{ usage.get_substitution_status_display }}
+        </span>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500">Letzte Überprüfung</p>
+        <p class="mt-1 text-sm text-gray-900">{{ usage.last_reviewed|date:"d.m.Y"|default:"—" }}</p>
+      </div>
+      <div>
+        <p class="text-sm text-gray-500">Betriebsanweisung</p>
+        <p class="mt-1 text-sm text-gray-900">
+          {% if usage.operating_instruction %}
+          <a href="#" class="text-orange-600 hover:text-orange-800">{{ usage.operating_instruction }}</a>
+          {% else %}—{% endif %}
+        </p>
+      </div>
+    </div>
+    {% if usage.substitution_notes %}
+    <div class="mt-4">
+      <p class="text-sm text-gray-500">Substitutionshinweise</p>
+      <p class="mt-1 text-sm text-gray-900">{{ usage.substitution_notes }}</p>
+    </div>
+    {% endif %}
+    {% if usage.notes %}
+    <div class="mt-4">
+      <p class="text-sm text-gray-500">Notizen</p>
+      <p class="mt-1 text-sm text-gray-900">{{ usage.notes }}</p>
+    </div>
+    {% endif %}
+  </div>
+
+</div>
+{% endblock %}

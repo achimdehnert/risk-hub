@@ -18,7 +18,7 @@ class CreateAssessmentCmd:
     title: str
     description: str = ""
     category: str = "general"
-    site_id: UUID | None = None
+    site_id: int | None = None
 
 
 @dataclass(frozen=True)

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Spalten-Zuordnung — Kataster-Import — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8 space-y-6">
+
+  <nav class="text-sm text-gray-500 mb-2">
+    <a href="{% url 'kataster:dashboard' %}" class="hover:text-gray-700">Kataster</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'kataster:import' %}" class="hover:text-gray-700">Import</a>
+    <span class="mx-1">/</span>
+    <span class="text-gray-900">Spalten-Zuordnung</span>
+  </nav>
+
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-xl font-bold text-gray-900">Spalten zuordnen</h1>
+      <p class="text-sm text-gray-500 mt-1">
+        {{ total_rows }} Zeilen erkannt in <span class="font-mono">{{ batch.file_name }}</span>
+      </p>
+    </div>
+    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+      Schritt 2 von 3
+    </span>
+  </div>
+
+  <form method="post" action="{% url 'kataster:import' %}">
+    {% csrf_token %}
+    <input type="hidden" name="confirm_import" value="1">
+
+    {# Column Mapping #}
+    <div class="bg-white rounded-xl border border-gray-200 p-6 mb-6">
+      <h2 class="text-lg font-medium text-gray-900 mb-4">Spalten-Zuordnung</h2>
+      <p class="text-sm text-gray-500 mb-4">Ordnen Sie die Excel-Spalten den Zielfeldern zu. Felder mit * sind Pflichtfelder.</p>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {% for field_key, field_label in target_fields %}
+        <div class="flex items-center gap-3">
+          <label class="w-48 text-sm font-medium text-gray-700 flex-shrink-0">{{ field_label }}</label>
+          <select name="map_{{ field_key }}"
+                  class="flex-1 text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+            <option value="">— nicht zuordnen —</option>
+            {% for col in excel_columns %}
+            <option value="{{ col }}"
+              {% if col|lower == field_key|lower or field_key in col|lower %}selected{% endif %}>
+              {{ col }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Preview #}
+    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="text-lg font-medium text-gray-900">Vorschau (erste 5 Zeilen)</h2>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200 text-xs">
+          <thead class="bg-gray-50">
+            <tr>
+              {% for col in excel_columns %}
+              <th class="px-4 py-2 text-left font-medium text-gray-500 uppercase whitespace-nowrap">{{ col }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200">
+            {% for row in preview_rows %}
+            <tr class="hover:bg-gray-50">
+              {% for col in excel_columns %}
+              <td class="px-4 py-2 text-gray-700 whitespace-nowrap max-w-xs truncate">{% for k, v in row.items %}{% if k == col %}{{ v }}{% endif %}{% endfor %}</td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# Actions #}
+    <div class="flex justify-end gap-3">
+      <a href="{% url 'kataster:import' %}"
+         class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+        Zurück
+      </a>
+      <button type="submit"
+              class="px-6 py-2 text-sm text-white bg-orange-500 rounded-lg hover:bg-orange-600 font-medium">
+        <i data-lucide="play" class="w-4 h-4 inline mr-1"></i>
+        {{ total_rows }} Zeilen importieren
+      </button>
+    </div>
+  </form>
+
+</div>
+{% endblock %}

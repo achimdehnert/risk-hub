@@ -74,7 +74,7 @@ class TestOrgCreateView:
     def test_should_create_org_on_post(self, staff_client):
         resp = staff_client.post(
             "/tenants/new/",
-            {"slug": "new-org", "name": "New Org"},
+            {"slug": "new-org", "name": "New Org", "status": "active", "plan_code": "free"},
         )
         assert resp.status_code == 302
         assert Organization.objects.filter(slug="new-org").exists()
@@ -110,7 +110,7 @@ class TestOrgEditView:
     def test_should_update_org(self, staff_client, org):
         resp = staff_client.post(
             f"/tenants/{org.pk}/edit/",
-            {"slug": org.slug, "name": "Updated Name"},
+            {"slug": org.slug, "name": "Updated Name", "status": "active", "plan_code": "free"},
         )
         assert resp.status_code == 302
         org.refresh_from_db()

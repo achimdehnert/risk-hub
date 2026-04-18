@@ -3,6 +3,7 @@
 from uuid import UUID
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.http import (
     HttpRequest,
     HttpResponse,
@@ -15,6 +16,7 @@ from documents.models import Document, DocumentVersion
 from documents.services import download_url, upload_document
 
 
+@login_required
 def document_list(request: HttpRequest) -> HttpResponse:
     """List all documents."""
     err = _require_tenant(request)
@@ -33,6 +35,7 @@ def document_list(request: HttpRequest) -> HttpResponse:
     )
 
 
+@login_required
 def document_detail(
     request: HttpRequest,
     document_id: UUID,
@@ -55,6 +58,7 @@ def document_detail(
     )
 
 
+@login_required
 def document_upload(request: HttpRequest) -> HttpResponse:
     """Upload a new document or new version."""
     err = _require_tenant(request)
@@ -100,6 +104,7 @@ def document_upload(request: HttpRequest) -> HttpResponse:
     )
 
 
+@login_required
 def document_bulk_upload(request: HttpRequest) -> HttpResponse:
     """Bulk upload multiple documents with shared category."""
     err = _require_tenant(request)
@@ -160,6 +165,7 @@ def document_bulk_upload(request: HttpRequest) -> HttpResponse:
     )
 
 
+@login_required
 def document_download(
     request: HttpRequest,
     version_id: UUID,

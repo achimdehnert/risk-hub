@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Verwendungen — Kataster — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Verwendungen</h1>
+      <p class="text-sm text-gray-500 mt-1">Produkt-Verwendungen nach Standort und Abteilung</p>
+    </div>
+    <div class="flex gap-3">
+      <a href="{% url 'kataster:dashboard' %}"
+         class="inline-flex items-center px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg">
+        <i data-lucide="arrow-left" class="w-4 h-4 mr-1.5"></i>Kataster
+      </a>
+      <a href="{% url 'kataster:usage-create' %}"
+         class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>Neue Verwendung
+      </a>
+    </div>
+  </div>
+
+  {# Filter #}
+  <div class="bg-white rounded-xl border border-gray-200 p-4 mb-5 flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Suche</label>
+      <input type="text" name="search" id="filter-search" value="{{ filters.search }}"
+             placeholder="Produkt, Lagerort..."
+             hx-get="{% url 'kataster:usage-list' %}"
+             hx-target="#usage-table-body"
+             hx-include="#filter-search, #filter-status, #filter-site, #filter-substitution"
+             hx-trigger="keyup changed delay:300ms"
+             class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500 w-56">
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Standort</label>
+      <select name="site" id="filter-site"
+              hx-get="{% url 'kataster:usage-list' %}"
+              hx-target="#usage-table-body"
+              hx-include="#filter-search, #filter-status, #filter-site, #filter-substitution"
+              hx-trigger="change"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="">Alle Standorte</option>
+        {% for site in sites %}
+        <option value="{{ site.pk }}" {% if filters.site == site.pk|stringformat:"d" %}selected{% endif %}>{{ site.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+      <select name="status" id="filter-status"
+              hx-get="{% url 'kataster:usage-list' %}"
+              hx-target="#usage-table-body"
+              hx-include="#filter-search, #filter-status, #filter-site, #filter-substitution"
+              hx-trigger="change"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="">Alle</option>
+        <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Aktiv</option>
+        <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inaktiv</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Substitution</label>
+      <select name="substitution" id="filter-substitution"
+              hx-get="{% url 'kataster:usage-list' %}"
+              hx-target="#usage-table-body"
+              hx-include="#filter-search, #filter-status, #filter-site, #filter-substitution"
+              hx-trigger="change"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="">Alle</option>
+        <option value="open" {% if filters.substitution == 'open' %}selected{% endif %}>Offen</option>
+        <option value="done" {% if filters.substitution == 'done' %}selected{% endif %}>Durchgeführt</option>
+        <option value="not_required" {% if filters.substitution == 'not_required' %}selected{% endif %}>Nicht erforderlich</option>
+      </select>
+    </div>
+    <div class="ml-auto text-xs text-gray-400 self-center">{{ usages|length }} Verwendung{{ usages|length|pluralize:",en" }}</div>
+  </div>
+
+  {# Table #}
+  {% if usages %}
+  <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Produkt</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Standort</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Abteilung</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Lagerklasse</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Substitution</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody id="usage-table-body" class="divide-y divide-gray-200">
+        {% include "substances/kataster/partials/_usage_rows.html" %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div id="usage-table-body">
+    <div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
+      <i data-lucide="map-pin" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+      <p class="text-gray-500 font-medium">Noch keine Verwendungen erfasst.</p>
+      <a href="{% url 'kataster:usage-create' %}"
+         class="mt-4 inline-block px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
+        Erste Verwendung erfassen
+      </a>
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

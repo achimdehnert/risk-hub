@@ -15,6 +15,7 @@ import logging
 from uuid import UUID
 
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
@@ -40,7 +41,7 @@ def _require_tenant(request):
 # ── Document Upload + Analyse ────────────────────────────────────
 
 
-class ExDocumentUploadView(View):
+class ExDocumentUploadView(LoginRequiredMixin, View):
     """Upload PDF for concept + trigger async analysis."""
 
     def post(self, request: HttpRequest, concept_pk: UUID) -> HttpResponse:
@@ -106,7 +107,7 @@ class ExDocumentUploadView(View):
         )
 
 
-class ExConceptDocAnalyzeView(View):
+class ExConceptDocAnalyzeView(LoginRequiredMixin, View):
     """Re-trigger analysis for an ExConceptDocument."""
 
     def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
@@ -150,7 +151,7 @@ class ExConceptDocAnalyzeView(View):
 # ── Template-Auswahl ────────────────────────────────────────────
 
 
-class ExTemplateSelectView(View):
+class ExTemplateSelectView(LoginRequiredMixin, View):
     """Choose or create a template for a concept."""
 
     template_name = "explosionsschutz/concepts/template_select.html"
@@ -242,7 +243,7 @@ class ExTemplateSelectView(View):
 # ── Filled Template Edit ─────────────────────────────────────────
 
 
-class ExFilledTemplateEditView(View):
+class ExFilledTemplateEditView(LoginRequiredMixin, View):
     """Edit a filled template with dynamic form."""
 
     template_name = "explosionsschutz/concepts/filled_template_edit.html"
@@ -347,7 +348,7 @@ class ExFilledTemplateEditView(View):
 # ── LLM Prefill ──────────────────────────────────────────────────
 
 
-class ExFilledTemplateLLMPrefillView(View):
+class ExFilledTemplateLLMPrefillView(LoginRequiredMixin, View):
     """HTMX endpoint: AI-prefill a single field."""
 
     def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
@@ -410,7 +411,7 @@ class ExFilledTemplateLLMPrefillView(View):
 # ── PDF Export ────────────────────────────────────────────────────
 
 
-class ExFilledTemplatePDFView(View):
+class ExFilledTemplatePDFView(LoginRequiredMixin, View):
     """Generate and download PDF from a filled template."""
 
     def get(self, request: HttpRequest, pk: UUID) -> HttpResponse:

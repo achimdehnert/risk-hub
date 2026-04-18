@@ -3,6 +3,7 @@
 import csv
 import io
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import render
 from django.views import View
@@ -10,7 +11,7 @@ from django.views import View
 from audit.models import AuditEvent
 
 
-class AuditLogView(View):
+class AuditLogView(LoginRequiredMixin, View):
     """Full audit log with filtering."""
 
     template_name = "audit/log.html"
@@ -65,7 +66,7 @@ class AuditLogView(View):
         )
 
 
-class AuditLogCsvExportView(View):
+class AuditLogCsvExportView(LoginRequiredMixin, View):
     """Export filtered audit log as CSV."""
 
     def get(self, request: HttpRequest) -> HttpResponse:

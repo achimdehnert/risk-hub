@@ -258,16 +258,14 @@ class TestWizardStep5Post:
         )
         mock_activity = MagicMock()
         mock_activity.id = uuid.uuid4()
-        with patch("gbu.views.create_activity", return_value=mock_activity):
-            with patch("gbu.views.set_risk_score"):
-                with patch("gbu.views.approve_activity"):
-                    with patch("gbu.tasks.generate_documents_task") as mock_task:
-                        mock_task.delay = MagicMock()
-                        try:
-                            resp = views.wizard_step5(r)
-                            assert resp.status_code in (302, 200, 500)
-                        except Exception:
-                            pass
+        with patch("gbu.views.finalize_wizard", return_value=mock_activity):
+            with patch("gbu.tasks.generate_documents_task") as mock_task:
+                mock_task.delay = MagicMock()
+                try:
+                    resp = views.wizard_step5(r)
+                    assert resp.status_code in (302, 200, 500)
+                except Exception:
+                    pass
 
 
 # =============================================================================

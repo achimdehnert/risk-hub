@@ -4,6 +4,7 @@ import io
 import logging
 from decimal import Decimal
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
 from django.http import FileResponse, HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, render
@@ -15,7 +16,7 @@ from .models import Equipment, ExplosionConcept, ProtectionMeasure
 logger = logging.getLogger(__name__)
 
 
-class ConceptExportDocxView(View):
+class ConceptExportDocxView(LoginRequiredMixin, View):
     """Download Ex-Schutz-Dokument as DOCX."""
 
     def get(self, request: HttpRequest, pk) -> HttpResponse:
@@ -42,7 +43,7 @@ class ConceptExportDocxView(View):
         )
 
 
-class ConceptExportPdfView(View):
+class ConceptExportPdfView(LoginRequiredMixin, View):
     """Download Ex-Schutz-Dokument as PDF via WeasyPrint."""
 
     def get(self, request: HttpRequest, pk) -> HttpResponse:
@@ -85,7 +86,7 @@ class ConceptExportPdfView(View):
         )
 
 
-class ConceptPreviewView(View):
+class ConceptPreviewView(LoginRequiredMixin, View):
     """HTML preview of the Ex-Schutz-Dokument."""
 
     def get(self, request: HttpRequest, pk) -> HttpResponse:
@@ -110,7 +111,7 @@ class ConceptPreviewView(View):
         )
 
 
-class ZoneMapView(View):
+class ZoneMapView(LoginRequiredMixin, View):
     """Interactive SVG zone map for a concept."""
 
     def get(self, request: HttpRequest, pk) -> HttpResponse:
@@ -142,7 +143,7 @@ class ZoneMapView(View):
         )
 
 
-class ConceptExportGAEBView(View):
+class ConceptExportGAEBView(LoginRequiredMixin, View):
     """GAEB X84 Export der Schutzmaßnahmen eines Explosionsschutzkonzepts."""
 
     _CATEGORY_MAP = {

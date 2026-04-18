@@ -1,5 +1,6 @@
 """Notification views — HTMX-powered bell dropdown + list."""
 
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, render
 from django.views import View
@@ -12,7 +13,7 @@ from notifications.services import (
 )
 
 
-class NotificationListView(View):
+class NotificationListView(LoginRequiredMixin, View):
     """Full notification list page."""
 
     template_name = "notifications/list.html"
@@ -37,7 +38,7 @@ class NotificationListView(View):
         )
 
 
-class NotificationDropdownView(View):
+class NotificationDropdownView(LoginRequiredMixin, View):
     """HTMX partial: bell icon dropdown with unread notifications."""
 
     template_name = "notifications/partials/dropdown.html"
@@ -59,7 +60,7 @@ class NotificationDropdownView(View):
         )
 
 
-class NotificationBadgeView(View):
+class NotificationBadgeView(LoginRequiredMixin, View):
     """HTMX partial: just the badge count for polling."""
 
     template_name = "notifications/partials/badge.html"
@@ -77,7 +78,7 @@ class NotificationBadgeView(View):
         )
 
 
-class NotificationMarkReadView(View):
+class NotificationMarkReadView(LoginRequiredMixin, View):
     """Mark a single notification as read."""
 
     def post(self, request: HttpRequest, pk) -> HttpResponse:
@@ -94,7 +95,7 @@ class NotificationMarkReadView(View):
         return JsonResponse({"status": "ok"})
 
 
-class NotificationMarkAllReadView(View):
+class NotificationMarkAllReadView(LoginRequiredMixin, View):
     """Mark all notifications as read for the current user."""
 
     def post(self, request: HttpRequest) -> HttpResponse:

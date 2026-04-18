@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} — Kataster — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 py-8">
+
+  <nav class="text-sm text-gray-500 mb-4">
+    <a href="{% url 'kataster:dashboard' %}" class="hover:text-gray-700">Kataster</a>
+    <span class="mx-1">/</span>
+    <a href="{% url 'kataster:product-list' %}" class="hover:text-gray-700">Produkte</a>
+    <span class="mx-1">/</span>
+    <span class="text-gray-900">{{ title }}</span>
+  </nav>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-6">
+    <h1 class="text-xl font-bold text-gray-900 mb-6">{{ title }}</h1>
+
+    <form method="post" class="space-y-5">
+      {% csrf_token %}
+
+      <div>
+        <label for="id_trade_name" class="block text-sm font-medium text-gray-700 mb-1">Produktname / Handelsname *</label>
+        {{ form.trade_name }}
+        {% if form.trade_name.errors %}<p class="mt-1 text-xs text-red-600">{{ form.trade_name.errors.0 }}</p>{% endif %}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="id_manufacturer" class="block text-sm font-medium text-gray-700 mb-1">Hersteller</label>
+          {{ form.manufacturer }}
+        </div>
+        <div>
+          <label for="id_supplier" class="block text-sm font-medium text-gray-700 mb-1">Lieferant</label>
+          {{ form.supplier }}
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label for="id_material_number" class="block text-sm font-medium text-gray-700 mb-1">Materialnummer</label>
+          {{ form.material_number }}
+        </div>
+        <div>
+          <label for="id_status" class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+          {{ form.status }}
+        </div>
+      </div>
+
+      <div>
+        <label for="id_description" class="block text-sm font-medium text-gray-700 mb-1">Beschreibung</label>
+        {{ form.description }}
+      </div>
+
+      <div class="flex justify-end gap-3 pt-4 border-t border-gray-200">
+        <a href="{% if product %}{% url 'kataster:product-detail' pk=product.pk %}{% else %}{% url 'kataster:product-list' %}{% endif %}"
+           class="px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+          Abbrechen
+        </a>
+        <button type="submit"
+                class="px-4 py-2 text-sm text-white bg-orange-500 rounded-lg hover:bg-orange-600">
+          {% if product %}Speichern{% else %}Anlegen{% endif %}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

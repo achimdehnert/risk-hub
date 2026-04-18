@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     "gbu",
     "brandschutz",
     "projects",
+    "training",
 ]
 
 
@@ -155,7 +156,12 @@ MODULE_URL_MAP = {
 # CSRF
 CSRF_TRUSTED_ORIGINS = [o for o in read_secret("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
 if DEBUG:
-    CSRF_TRUSTED_ORIGINS += ["http://localhost:*", "http://127.0.0.1:*"]
+    # Django doesn't support port wildcards — trust all localhost in dev
+    CSRF_TRUSTED_ORIGINS += [
+        f"http://localhost:{p}" for p in range(3000, 9001)
+    ] + [
+        f"http://127.0.0.1:{p}" for p in range(40000, 50001)
+    ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 

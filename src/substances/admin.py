@@ -4,14 +4,24 @@
 from django.contrib import admin
 
 from .models import (
+    ComplianceReview,
     HazardStatementRef,
     Identifier,
+    ImportBatch,
+    ImportRow,
+    KatasterRevision,
     Party,
     PictogramRef,
     PrecautionaryStatementRef,
+    Product,
+    ProductComponent,
+    RPhrase,
+    SdsChangeLog,
     SdsRevision,
     SiteInventoryItem,
+    SPhrase,
     Substance,
+    SubstanceUsage,
 )
 
 
@@ -184,3 +194,110 @@ class PictogramRefAdmin(admin.ModelAdmin):
     list_display = ["code", "name_de", "name_en"]
     search_fields = ["code", "name_de", "name_en"]
     ordering = ["code"]
+
+
+# =========================================================================
+# UC-004: Gefahrstoffkataster — Neue Models
+# =========================================================================
+
+
+class ProductComponentInline(admin.TabularInline):
+    model = ProductComponent
+    extra = 1
+    autocomplete_fields = ["substance"]
+
+
+@admin.register(Product)
+class ProductAdmin(admin.ModelAdmin):
+    list_display = ["trade_name", "manufacturer", "material_number", "status", "tenant_id"]
+    list_filter = ["status", "tenant_id"]
+    search_fields = ["trade_name", "material_number"]
+    ordering = ["trade_name"]
+    inlines = [ProductComponentInline]
+    autocomplete_fields = ["manufacturer", "supplier", "sds_revision"]
+
+
+@admin.register(SubstanceUsage)
+class SubstanceUsageAdmin(admin.ModelAdmin):
+    list_display = [
+        "product",
+        "site",
+        "department",
+        "storage_class",
+        "status",
+        "substitution_status",
+        "last_reviewed",
+    ]
+    list_filter = ["status", "substitution_status", "storage_class", "site", "tenant_id"]
+    search_fields = ["product__trade_name", "usage_description", "storage_location"]
+    ordering = ["product__trade_name"]
+    autocomplete_fields = ["product", "site", "department"]
+
+
+class ImportRowInline(admin.TabularInline):
+    model = ImportRow
+    extra = 0
+    readonly_fields = ["row_number", "raw_data", "resolved_product", "status", "messages"]
+    can_delete = False
+
+
+@admin.register(ImportBatch)
+class ImportBatchAdmin(admin.ModelAdmin):
+    list_display = ["file_name", "target_site", "status", "imported_at", "tenant_id"]
+    list_filter = ["status", "tenant_id"]
+    search_fields = ["file_name"]
+    ordering = ["-created_at"]
+    readonly_fields = ["file_hash", "stats"]
+    inlines = [ImportRowInline]
+
+
+@admin.register(RPhrase)
+class RPhraseAdmin(admin.ModelAdmin):
+    list_display = ["r_code", "r_text_short"]
+    search_fields = ["r_code", "r_text_de"]
+    ordering = ["r_code"]
+    filter_horizontal = ["mapped_h_codes"]
+
+    @admin.display(description="Text (DE)")
+    def r_text_short(self, obj):
+        return obj.r_text_de[:80] + "..." if len(obj.r_text_de) > 80 else obj.r_text_de
+
+
+@admin.register(SPhrase)
+class SPhraseAdmin(admin.ModelAdmin):
+    list_display = ["s_code", "s_text_short"]
+    search_fields = ["s_code", "s_text_de"]
+    ordering = ["s_code"]
+    filter_horizontal = ["mapped_p_codes"]
+
+    @admin.display(description="Text (DE)")
+    def s_text_short(self, obj):
+        return obj.s_text_de[:80] + "..." if len(obj.s_text_de) > 80 else obj.s_text_de
+
+
+# =========================================================================
+# Normalisierungs-Models (UC-005/006/007)
+# =========================================================================
+
+
+@admin.register(SdsChangeLog)
+class SdsChangeLogAdmin(admin.ModelAdmin):
+    list_display = ("product", "old_revision", "new_revision", "impact", "reviewed_at")
+    list_filter = ("impact",)
+    search_fields = ("notes",)
+    readonly_fields = ("created_at",)
+
+
+@admin.register(ComplianceReview)
+class ComplianceReviewAdmin(admin.ModelAdmin):
+    list_display = ("substance_usage", "review_date", "result", "next_review_date")
+    list_filter = ("result",)
+    search_fields = ("comment",)
+
+
+@admin.register(KatasterRevision)
+class KatasterRevisionAdmin(admin.ModelAdmin):
+    list_display = ("site", "revision_number", "status", "approved_at")
+    list_filter = ("status",)
+    search_fields = ("notes",)
+    readonly_fields = ("approved_by", "approved_at")

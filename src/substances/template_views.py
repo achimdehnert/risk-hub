@@ -6,6 +6,7 @@ Template-basierte Views für Gefahrstoff-Management (HTML-Seiten mit HTMX)
 import contextlib
 
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -25,7 +26,7 @@ from .models import (
 from .services import ExIntegrationService, SubstanceService
 
 
-class SubstanceHomeView(View):
+class SubstanceHomeView(LoginRequiredMixin, View):
     """Dashboard für Gefahrstoff-Management"""
 
     template_name = "substances/home.html"
@@ -72,7 +73,7 @@ class SubstanceHomeView(View):
         )
 
 
-class SubstanceListView(View):
+class SubstanceListView(LoginRequiredMixin, View):
     """Liste aller Gefahrstoffe"""
 
     template_name = "substances/substance_list.html"
@@ -137,7 +138,7 @@ class SubstanceListView(View):
         )
 
 
-class SubstanceDetailView(View):
+class SubstanceDetailView(LoginRequiredMixin, View):
     """Detail-Ansicht eines Gefahrstoffs"""
 
     template_name = "substances/substance_detail.html"
@@ -176,7 +177,7 @@ class SubstanceDetailView(View):
         )
 
 
-class SubstanceCreateView(View):
+class SubstanceCreateView(LoginRequiredMixin, View):
     """Neuen Gefahrstoff anlegen"""
 
     template_name = "substances/substance_form.html"
@@ -229,7 +230,7 @@ class SubstanceCreateView(View):
         )
 
 
-class SubstanceEditView(View):
+class SubstanceEditView(LoginRequiredMixin, View):
     """Gefahrstoff bearbeiten"""
 
     template_name = "substances/substance_form.html"
@@ -270,7 +271,7 @@ class SubstanceEditView(View):
         )
 
 
-class SdsUploadView(View):
+class SdsUploadView(LoginRequiredMixin, View):
     """SDS-PDF Upload mit OCR-Parsing"""
 
     template_name = "substances/sds_upload.html"
@@ -370,7 +371,7 @@ class SdsUploadView(View):
         )
 
 
-class SdsApproveView(View):
+class SdsApproveView(LoginRequiredMixin, View):
     """SDS-Revision freigeben"""
 
     def post(self, request, pk):
@@ -398,7 +399,7 @@ class SdsApproveView(View):
         return redirect("substances:detail", pk=sds.substance.pk)
 
 
-class SubstanceSearchView(View):
+class SubstanceSearchView(LoginRequiredMixin, View):
     """HTMX-basierte Schnellsuche"""
 
     def get(self, request):
@@ -415,7 +416,7 @@ class SubstanceSearchView(View):
         )
 
 
-class HazardRegisterView(View):
+class HazardRegisterView(LoginRequiredMixin, View):
     """Gefahrstoffverzeichnis (GefStoffV §6)"""
 
     template_name = "substances/hazard_register.html"
@@ -445,7 +446,7 @@ class HazardRegisterView(View):
         )
 
 
-class PartyListView(View):
+class PartyListView(LoginRequiredMixin, View):
     """Liste Hersteller/Lieferanten"""
 
     template_name = "substances/party_list.html"
@@ -474,7 +475,7 @@ class PartyListView(View):
         )
 
 
-class SubstanceImportView(View):
+class SubstanceImportView(LoginRequiredMixin, View):
     """Gefahrstoff-Import: Upload → KI-Vorschau → Auswahl → Übernahme."""
 
     template_name = "substances/substance_import.html"
@@ -658,7 +659,7 @@ class SubstanceImportView(View):
             raise ValueError(f"Format {ext} ohne KI nicht unterstützt.")
 
 
-class SubstanceLookupView(View):
+class SubstanceLookupView(LoginRequiredMixin, View):
     """Gefahrstoff-Lookup aus externen Datenbanken (PubChem, ECHA C&L)."""
 
     template_name = "substances/substance_lookup.html"

@@ -42,6 +42,9 @@
                     <a href="/substances/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':12' == '/substances/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Gefahrstoffe
                     </a>
+                    <a href="/kataster/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/kataster/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                        Kataster
+                    </a>
                     {% endif %}
                     {% if "ex" in active_modules or "substances" in active_modules %}
                     <a href="/sds/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/sds/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">

@@ -35,7 +35,14 @@ class Assessment(models.Model):
         default=Status.DRAFT,
     )
 
-    site_id = models.UUIDField(null=True, blank=True, db_index=True)
+    site = models.ForeignKey(
+        "tenancy.Site",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="risk_assessments",
+        help_text="Standort / Bereich",
+    )
 
     created_by_id = models.UUIDField(null=True, blank=True)
     approved_by_id = models.UUIDField(null=True, blank=True)
@@ -136,11 +143,13 @@ class Hazard(models.Model):
         blank=True,
         help_text="Fälligkeitsdatum der Maßnahme",
     )
-    substance_id = models.UUIDField(
+    product = models.ForeignKey(
+        "substances.Product",
+        on_delete=models.SET_NULL,
         null=True,
         blank=True,
-        db_index=True,
-        help_text="Verknüpfter Gefahrstoff (substances.Substance, optional)",
+        related_name="hazard_entries",
+        help_text="Verknüpftes Handelsprodukt (UC-004+)",
     )
 
     created_at = models.DateTimeField(auto_now_add=True)
@@ -188,3 +197,220 @@ class Hazard(models.Model):
             )
             and self.due_date < timezone.now().date()
         )
+
+
+# =============================================================================
+# PROTECTIVE MEASURE (UC-008: STOP-Hierarchie)
+# =============================================================================
+
+
+class ProtectiveMeasure(models.Model):
+    """Strukturierte Schutzmaßnahme nach STOP-Hierarchie (UC-008).
+
+    Ersetzt das Freitextfeld Hazard.mitigation durch normalisierte
+    Maßnahmen mit Typ, Status, Verantwortlichkeit und Wirksamkeitsprüfung.
+    """
+
+    class MeasureType(models.TextChoices):
+        SUBSTITUTION = "substitution", "Substitution (S)"
+        TECHNICAL = "technical", "Technische Maßnahme (T)"
+        ORGANIZATIONAL = "organizational", "Organisatorische Maßnahme (O)"
+        PERSONAL = "personal", "Persönliche Schutzausrüstung (P)"
+
+    class Status(models.TextChoices):
+        OPEN = "open", "Offen"
+        IN_PROGRESS = "in_progress", "In Bearbeitung"
+        IMPLEMENTED = "implemented", "Umgesetzt"
+        NOT_POSSIBLE = "not_possible", "Nicht umsetzbar"
+
+    class EffectivenessResult(models.TextChoices):
+        EFFECTIVE = "effective", "Wirksam"
+        PARTIALLY = "partially", "Teilweise wirksam"
+        INEFFECTIVE = "ineffective", "Unwirksam"
+        NOT_CHECKED = "not_checked", "Nicht geprüft"
+
+    tenant_id = models.UUIDField(db_index=True)
+    assessment = models.ForeignKey(
+        Assessment,
+        on_delete=models.CASCADE,
+        related_name="protective_measures",
+    )
+    hazard = models.ForeignKey(
+        Hazard,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="protective_measures",
+        help_text="Verknüpfte Gefährdung (NULL = Assessment-übergreifend)",
+    )
+    measure_type = models.CharField(
+        max_length=20,
+        choices=MeasureType.choices,
+        db_index=True,
+    )
+    description = models.TextField(help_text="Beschreibung der Maßnahme")
+    specification = models.TextField(
+        blank=True,
+        default="",
+        help_text="PSA-Details, Produktspezifikation (z.B. 'Nitrilhandschuhe, Durchbruchzeit >480 min')",
+    )
+    norm_reference = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Norm-Referenz (z.B. 'EN 374', 'TRGS 510')",
+    )
+
+    site = models.ForeignKey(
+        "tenancy.Site",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="protective_measures",
+    )
+    department = models.ForeignKey(
+        "tenancy.Department",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="protective_measures",
+    )
+
+    responsible_user_id = models.UUIDField(
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    due_date = models.DateField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.OPEN,
+        db_index=True,
+    )
+
+    effectiveness_checked_at = models.DateTimeField(null=True, blank=True)
+    effectiveness_result = models.CharField(
+        max_length=15,
+        choices=EffectivenessResult.choices,
+        default=EffectivenessResult.NOT_CHECKED,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
+
+    class Meta:
+        db_table = "risk_protective_measure"
+        verbose_name = "Schutzmaßnahme"
+        verbose_name_plural = "Schutzmaßnahmen"
+        ordering = ["measure_type", "-created_at"]
+        indexes = [
+            models.Index(
+                fields=["tenant_id", "status"],
+                name="idx_measure_tenant_status",
+            ),
+            models.Index(
+                fields=["tenant_id", "measure_type"],
+                name="idx_measure_tenant_type",
+            ),
+            models.Index(
+                fields=["tenant_id", "due_date"],
+                name="idx_measure_tenant_due",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"[{self.get_measure_type_display()}] {self.description[:80]}"
+
+    @property
+    def is_overdue(self) -> bool:
+        from django.utils import timezone
+
+        if not self.due_date:
+            return False
+        return (
+            self.status not in (self.Status.IMPLEMENTED, self.Status.NOT_POSSIBLE)
+            and self.due_date < timezone.now().date()
+        )
+
+
+# =============================================================================
+# SUBSTITUTION CHECK (UC-008: Substitutionsprüfung)
+# =============================================================================
+
+
+class SubstitutionCheck(models.Model):
+    """Dokumentierte Substitutionsprüfung nach GefStoffV §6 (UC-008).
+
+    Verknüpft einen SubstanceUsage mit einer ggf. gefundenen Alternative
+    und dem Prüfergebnis.
+    """
+
+    class Result(models.TextChoices):
+        POSSIBLE = "possible", "Substitution möglich"
+        NOT_POSSIBLE = "not_possible", "Nicht möglich (begründet)"
+        NOT_REQUIRED = "not_required", "Nicht erforderlich"
+
+    tenant_id = models.UUIDField(db_index=True)
+    substance_usage = models.ForeignKey(
+        "substances.SubstanceUsage",
+        on_delete=models.CASCADE,
+        related_name="substitution_checks",
+    )
+    assessment = models.ForeignKey(
+        Assessment,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="substitution_checks",
+    )
+    current_product = models.ForeignKey(
+        "substances.Product",
+        on_delete=models.CASCADE,
+        related_name="substitution_checks_current",
+    )
+    alternative_product = models.ForeignKey(
+        "substances.Product",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="substitution_checks_alternative",
+        help_text="Vorgeschlagenes Alternativprodukt (NULL wenn nicht möglich)",
+    )
+
+    result = models.CharField(
+        max_length=20,
+        choices=Result.choices,
+    )
+    justification = models.TextField(
+        help_text="Begründung (insbes. bei 'nicht möglich')",
+    )
+    checked_by = models.UUIDField(db_index=True)
+    checked_at = models.DateTimeField()
+    implementation_deadline = models.DateField(
+        null=True,
+        blank=True,
+        help_text="Umsetzungsfrist bei positivem Ergebnis",
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
+
+    class Meta:
+        db_table = "risk_substitution_check"
+        verbose_name = "Substitutionsprüfung"
+        verbose_name_plural = "Substitutionsprüfungen"
+        ordering = ["-checked_at"]
+        indexes = [
+            models.Index(
+                fields=["tenant_id", "result"],
+                name="idx_subst_check_result",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.current_product} — {self.get_result_display()}"

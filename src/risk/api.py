@@ -20,15 +20,15 @@ router = Router(tags=["risk"])
 
 
 class AssessmentOut(Schema):
-    id: UUID
+    id: int
     tenant_id: UUID
     title: str
     description: str
     category: str
     status: str
-    site_id: UUID | None
-    created_by_id: UUID | None
-    approved_by_id: UUID | None
+    site_id: int | None
+    created_by_id: int | None
+    approved_by_id: int | None
     approved_at: datetime | None
     created_at: datetime
     updated_at: datetime
@@ -38,13 +38,13 @@ class AssessmentCreateIn(Schema):
     title: str
     description: str = ""
     category: str = "general"
-    site_id: UUID | None = None
+    site_id: int | None = None
 
 
 class HazardOut(Schema):
-    id: UUID
+    id: int
     tenant_id: UUID
-    assessment_id: UUID
+    assessment_id: int
     title: str
     description: str
     severity: int
@@ -101,7 +101,7 @@ def api_create_assessment(request, payload: AssessmentCreateIn):
 
 
 @router.get("/assessments/{assessment_id}", response=AssessmentOut)
-def api_get_assessment(request, assessment_id: UUID):
+def api_get_assessment(request, assessment_id: int):
     try:
         return _to_assessment_out(get_assessment(assessment_id=assessment_id))
     except PermissionDenied as exc:
@@ -111,7 +111,7 @@ def api_get_assessment(request, assessment_id: UUID):
 
 
 @router.post("/assessments/{assessment_id}/approve", response=AssessmentOut)
-def api_approve_assessment(request, assessment_id: UUID):
+def api_approve_assessment(request, assessment_id: int):
     try:
         assessment = approve_assessment(
             ApproveAssessmentCmd(
@@ -147,7 +147,7 @@ def _to_hazard_out(h) -> HazardOut:
 @router.get("/hazards", response=list[HazardOut])
 def api_list_hazards(
     request,
-    assessment_id: UUID | None = None,
+    assessment_id: int | None = None,
     limit: int = 100,
     offset: int = 0,
 ):
@@ -165,7 +165,7 @@ def api_list_hazards(
 
 
 @router.get("/hazards/{hazard_id}", response=HazardOut)
-def api_get_hazard(request, hazard_id: UUID):
+def api_get_hazard(request, hazard_id: int):
     try:
         return _to_hazard_out(get_hazard(hazard_id=hazard_id))
     except PermissionDenied as exc:

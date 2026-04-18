@@ -65,6 +65,13 @@ BRANDSCHUTZ_URLS = [
     "/brandschutz/",
 ]
 
+KATASTER_URLS = [
+    "/kataster/",
+    "/kataster/produkte/",
+    "/kataster/verwendungen/",
+    "/kataster/import/batches/",
+]
+
 TENANCY_URLS = [
     "/tenants/",
 ]
@@ -89,6 +96,7 @@ ALL_AUTHENTICATED_URLS = (
     + DOCUMENTS_URLS
     + NOTIFICATIONS_URLS
     + BRANDSCHUTZ_URLS
+    + KATASTER_URLS
     + TENANCY_URLS
 )
 
@@ -303,6 +311,16 @@ def test_notifications_smoke(tenant_client, url):
 @pytest.mark.django_db
 @pytest.mark.parametrize("url", BRANDSCHUTZ_URLS)
 def test_brandschutz_smoke(tenant_client, url):
+    resp = _get(tenant_client, url)
+    _assert_not_error(resp, url)
+
+
+# ─── Kataster (UC-004) ────────────────────────────────────────────────────────
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("url", KATASTER_URLS)
+def test_kataster_smoke(tenant_client, url):
     resp = _get(tenant_client, url)
     _assert_not_error(resp, url)
 

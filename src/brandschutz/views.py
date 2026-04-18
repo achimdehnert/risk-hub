@@ -3,6 +3,7 @@
 from uuid import UUID
 
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import View
@@ -34,7 +35,7 @@ from .services import (
 )
 
 
-class ConceptListView(View):
+class ConceptListView(LoginRequiredMixin, View):
     template_name = "brandschutz/concept_list.html"
 
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -49,7 +50,7 @@ class ConceptListView(View):
         return render(request, self.template_name, {"concepts": concepts})
 
 
-class ConceptDetailView(View):
+class ConceptDetailView(LoginRequiredMixin, View):
     template_name = "brandschutz/concept_detail.html"
 
     def get(self, request: HttpRequest, pk: UUID) -> HttpResponse:
@@ -87,7 +88,7 @@ class ConceptDetailView(View):
         )
 
 
-class ConceptCreateView(View):
+class ConceptCreateView(LoginRequiredMixin, View):
     """Brandschutzkonzept erstellen."""
 
     template_name = "brandschutz/concept_form.html"
@@ -118,7 +119,7 @@ class ConceptCreateView(View):
         )
 
 
-class ConceptEditView(View):
+class ConceptEditView(LoginRequiredMixin, View):
     """Brandschutzkonzept bearbeiten."""
 
     template_name = "brandschutz/concept_form.html"
@@ -152,7 +153,7 @@ class ConceptEditView(View):
         )
 
 
-class ExtinguisherListView(View):
+class ExtinguisherListView(LoginRequiredMixin, View):
     """Alle Feuerlöscher eines Tenants — Übersicht / Prüfkalender."""
 
     template_name = "brandschutz/extinguisher_list.html"
@@ -180,7 +181,7 @@ class ExtinguisherListView(View):
         )
 
 
-class EscapeRouteListView(View):
+class EscapeRouteListView(LoginRequiredMixin, View):
     """Alle Fluchtwege eines Tenants — Übersicht / Mängelstatus."""
 
     template_name = "brandschutz/escape_route_list.html"
@@ -208,7 +209,7 @@ class EscapeRouteListView(View):
         )
 
 
-class MeasureUpdateView(View):
+class MeasureUpdateView(LoginRequiredMixin, View):
     """HTMX-partial: Maßnahmenstatus aktualisieren."""
 
     def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
@@ -233,7 +234,7 @@ class MeasureUpdateView(View):
         return redirect("brandschutz:concept-detail", pk=measure.concept_id)
 
 
-class SectionCreateView(View):
+class SectionCreateView(LoginRequiredMixin, View):
     """Brandabschnitt zu einem Konzept hinzufügen."""
 
     template_name = "brandschutz/section_form.html"
@@ -282,7 +283,7 @@ class SectionCreateView(View):
         )
 
 
-class DocumentUploadView(View):
+class DocumentUploadView(LoginRequiredMixin, View):
     """Unterlage zu einem Brandschutzkonzept hochladen (ADR-147 Phase A)."""
 
     template_name = "brandschutz/document_upload.html"
@@ -346,7 +347,7 @@ class DocumentUploadView(View):
         return redirect("brandschutz:concept-detail", pk=concept.pk)
 
 
-class ConceptDocAnalyzeView(View):
+class ConceptDocAnalyzeView(LoginRequiredMixin, View):
     """Re-trigger analysis for a ConceptDocument (ADR-147 Phase C)."""
 
     def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
@@ -369,7 +370,7 @@ class ConceptDocAnalyzeView(View):
 # ── Phase E: Template-Auswahl, Formular, Speichern ─────────────
 
 
-class TemplateSelectView(View):
+class TemplateSelectView(LoginRequiredMixin, View):
     """Choose or create a template for a concept (ADR-147 Phase E)."""
 
     template_name = "brandschutz/template_select.html"
@@ -456,7 +457,7 @@ class TemplateSelectView(View):
         )
 
 
-class FilledTemplateEditView(View):
+class FilledTemplateEditView(LoginRequiredMixin, View):
     """Edit a filled template with dynamic form (ADR-147 Phase E)."""
 
     template_name = "brandschutz/filled_template_edit.html"
@@ -527,7 +528,7 @@ class FilledTemplateEditView(View):
         )
 
 
-class FilledTemplateLLMPrefillView(View):
+class FilledTemplateLLMPrefillView(LoginRequiredMixin, View):
     """HTMX endpoint: AI-prefill a single field (ADR-147 Phase E)."""
 
     def post(self, request: HttpRequest, pk: UUID) -> HttpResponse:
@@ -558,7 +559,7 @@ class FilledTemplateLLMPrefillView(View):
         )
 
 
-class FilledTemplatePDFView(View):
+class FilledTemplatePDFView(LoginRequiredMixin, View):
     """Generate and download PDF from a filled template (ADR-147 Phase E)."""
 
     def get(self, request: HttpRequest, pk: UUID) -> HttpResponse:

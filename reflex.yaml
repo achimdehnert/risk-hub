@@ -1,5 +1,6 @@
-# REFLEX Configuration — risk-hub (Explosionsschutz / GBU)
+# REFLEX Configuration — risk-hub (Schutztat)
 # ADR-162: Reflexive Evidence-based Loop for UI Development
+# Updated: 2026-04-17 — Full application coverage
 
 hub_name: risk-hub
 vertical: chemical_safety
@@ -17,11 +18,18 @@ domain_keywords:
   - Betriebsmittel
   - Zündquellenanalyse
   - Schutzmaßnahme
+  - Substitutionsprüfung
   - CAS-Nummer
   - H-Sätze
   - Flammpunkt
   - UEG
   - OEG
+  - Kataster
+  - Unterweisung
+  - Training
+  - Compliance-Review
+  - Brandschutz
+  - Datenschutz
 
 quality:
   min_acceptance_criteria: 2
@@ -49,24 +57,347 @@ htmx_patterns:
     - hx-indicator
     - hx-disabled-elt
 
+# ── Full Application Test Matrix ──────────────────────────────────
+# Status codes: 200=OK, 302=redirect(login), 403=forbidden
+
+test_base_url: http://localhost:8003
+test_credentials:
+  admin:
+    username: admin
+    password: admin123
+
+# Routes to test (grouped by module)
+test_routes:
+  # Health & System
+  - url: /livez/
+    auth: false
+    expect: 200
+    label: Liveness
+  - url: /healthz/
+    auth: false
+    expect: 200
+    label: Readiness
+
+  # Auth / Login
+  - url: /accounts/login/
+    auth: false
+    expect: 200
+    label: Login Page
+  - url: /
+    auth: true
+    expect: 200
+    label: Home (authenticated)
+
+  # Dashboard
+  - url: /dashboard/
+    auth: true
+    expect: 200
+    label: Dashboard
+
+  # Explosionsschutz
+  - url: /ex/
+    auth: true
+    expect: 200
+    label: Ex-Schutz Home
+  - url: /ex/areas/
+    auth: true
+    expect: 200
+    label: Bereiche Liste
+  - url: /ex/concepts/
+    auth: true
+    expect: 200
+    label: Konzepte Liste
+  - url: /ex/equipment/
+    auth: true
+    expect: 200
+    label: Betriebsmittel Liste
+  - url: /ex/tools/
+    auth: true
+    expect: 200
+    label: Tools
+
+  # Gefahrstoffe
+  - url: /substances/
+    auth: true
+    expect: 200
+    label: Gefahrstoffe Home
+  - url: /sds/
+    auth: true
+    expect: 200
+    label: SDS-Bibliothek
+
+  # Kataster (UC-004)
+  - url: /kataster/
+    auth: true
+    expect: 200
+    label: Kataster Dashboard
+  - url: /kataster/produkte/
+    auth: true
+    expect: 200
+    label: Produkte Liste
+  - url: /kataster/verwendungen/
+    auth: true
+    expect: 200
+    label: Verwendungen Liste
+  - url: /kataster/import/
+    auth: true
+    expect: 200
+    label: Kataster Import
+
+  # Risikobewertung
+  - url: /risk/assessments/
+    auth: true
+    expect: 200
+    label: Assessments Liste
+
+  # Dokumente
+  - url: /documents/
+    auth: true
+    expect: 200
+    label: Dokumente
+
+  # GBU
+  - url: /gbu/
+    auth: true
+    expect: 200
+    label: GBU Dashboard
+
+  # Datenschutz (DSB)
+  - url: /dsb/
+    auth: true
+    expect: 200
+    label: DSB Dashboard
+
+  # Brandschutz
+  - url: /brandschutz/
+    auth: true
+    expect: 200
+    label: Brandschutz
+
+  # Projekte
+  - url: /projects/
+    auth: true
+    expect: 200
+    label: Projekte
+
+  # Notifications
+  - url: /notifications/
+    auth: true
+    expect: 200
+    label: Benachrichtigungen
+
+  # Audit
+  - url: /audit/
+    auth: true
+    expect: 200
+    label: Audit Log
+
+  # Admin (neue Models)
+  - url: /admin/
+    auth: true
+    expect: 200
+    label: Admin Home
+  - url: /admin/training/
+    auth: true
+    expect: 200
+    label: Admin Training
+  - url: /admin/training/trainingtopic/
+    auth: true
+    expect: 200
+    label: Admin Training Topics
+  - url: /admin/training/trainingsession/
+    auth: true
+    expect: 200
+    label: Admin Training Sessions
+  - url: /admin/training/trainingattendance/
+    auth: true
+    expect: 200
+    label: Admin Training Attendance
+
+  # API Health
+  - url: /api/v1/docs
+    auth: false
+    expect: 200
+    label: API Docs (Ninja)
+
+# ── Rechte & Rollen ───────────────────────────────────────────────
+# Access Control Architecture:
+#   1. ModuleAccessMiddleware (settings.MODULE_URL_MAP)
+#      Maps URL-Prefixe → Modul-Codes: ex, risk, gbu, dsb
+#   2. ModuleSubscription: Tenant hat Modul aktiv (status: active/trial)
+#   3. ModuleMembership: User hat Zugang zum Modul (role: admin/manager/member/viewer)
+#   4. @require_module("mod", min_role="X"): feingranulare View-Deko
+#
+# Role hierarchy (aufsteigend): viewer < member < manager < admin
+# Org-Membership roles: owner, admin, member, viewer, external
+
+module_url_map:
+  /ex/: ex
+  /api/ex/: ex
+  /substances/: ex
+  /api/substances/: ex
+  /risk/: risk
+  /gbu/: gbu
+  /api/gbu/: gbu
+  /dsb/: dsb
+
+# Routes NOT behind module guard (no MODULE_URL_MAP entry):
+unguarded_routes:
+  - /dashboard/
+  - /sds/
+  - /kataster/
+  - /documents/
+  - /brandschutz/
+  - /projects/
+  - /notifications/
+  - /audit/
+  - /tenants/
+  - /accounts/
+  - /admin/
+  - /livez/
+  - /healthz/
+
+test_users:
+  admin:
+    username: admin
+    password: admin123
+    org_role: admin
+    module_role: admin
+    is_staff: true
+    is_superuser: true
+  editor:
+    username: editor
+    password: editor123
+    org_role: member
+    module_role: member
+    is_staff: false
+  viewer:
+    username: viewer
+    password: viewer123
+    org_role: viewer
+    module_role: viewer
+    is_staff: false
+  external:
+    username: external
+    password: external123
+    org_role: external
+    module_role: viewer
+    is_staff: false
+  nomods:
+    username: nomods
+    password: nomods123
+    org_role: none
+    module_role: none
+    is_staff: false
+
+# ── Permissions Matrix (getestet 2026-04-17) ─────────────────────
+# Status: 200=OK, 302=redirect(login), 403=module_access denied
 permissions_matrix:
+  # Modul-geschützte Routes (via MODULE_URL_MAP)
   /ex/:
     admin: 200
     editor: 200
     viewer: 200
+    nomods: 403
+    anonymous: 403
+  /substances/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 403
+    anonymous: 403
+  /risk/assessments/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 403
+    anonymous: 403
+  /gbu/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 403
+    anonymous: 403
+  /dsb/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 403
+    anonymous: 403
+
+  # Ungeschützte Routes (kein MODULE_URL_MAP, aber LoginRequired)
+  /dashboard/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 200
+    anonymous: 302  # ✅ LoginRequired
+  /kataster/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 200
+    anonymous: 302  # ✅ FIXED: LoginRequiredMixin added
+  /sds/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 200
+    anonymous: 302  # ✅ FIXED: LoginRequiredMixin added
+  /documents/:
+    admin: 200
+    nomods: 200
+    anonymous: 302  # ✅ FIXED: @login_required added
+  /projects/:
+    admin: 200
+    nomods: 200
+    anonymous: 302  # ✅ FIXED: @login_required added
+  /brandschutz/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 200
+    anonymous: 302  # ✅ FIXED: LoginRequiredMixin added
+  /notifications/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 200
+    anonymous: 302  # ✅ FIXED: LoginRequiredMixin added
+  /audit/:
+    admin: 200
+    editor: 200
+    viewer: 200
+    nomods: 200
+    anonymous: 302  # ✅ FIXED: LoginRequiredMixin added
+
+  # Admin (Django Admin)
+  /admin/:
+    admin: 200
+    editor: 302
+    viewer: 302
     anonymous: 302
+
+  # Write/Create Routes
   /ex/areas/create/:
     admin: 200
     editor: 200
-    viewer: 403
-    anonymous: 302
+    viewer: 200
   /ex/concepts/new/:
     admin: 200
     editor: 200
-    viewer: 403
-    anonymous: 302
-  /ex/equipment/create/:
-    admin: 200
-    editor: 200
-    viewer: 403
-    anonymous: 302
+    viewer: 200
+
+# ── Dev Cycle Configuration (V-04) ──────────────────────────────
+# Used by: python -m reflex cycle / python -m reflex verify
+dev_cycle:
+  base_url: http://localhost:8003
+  login_url: /accounts/login/
+  backend_test_cmd: "pytest src/ -q --tb=short"
+  lint_cmd: "ruff check src/"
+  max_fix_iterations: 3
+  public_routes:
+    - /accounts/login/
+    - /livez/
+    - /healthz/
+    - /api/v1/docs

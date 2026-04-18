@@ -148,7 +148,7 @@ def test_should_raise_404_for_unknown_activity(db, api_context):
         pass
 
     with pytest.raises(HttpError) as exc_info:
-        api_get_activity(FakeRequest(), activity_id=uuid.uuid4())
+        api_get_activity(FakeRequest(), activity_id=999999)
     assert exc_info.value.status_code == 404
 
 

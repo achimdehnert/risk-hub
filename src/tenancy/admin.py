@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 
-from tenancy.models import Organization, Site
+from tenancy.models import Department, Organization, Site
 
 
 @admin.register(Organization)
@@ -13,9 +13,16 @@ class OrganizationAdmin(admin.ModelAdmin):
 
 @admin.register(Site)
 class SiteAdmin(admin.ModelAdmin):
-    list_display = ("name", "tenant_id", "organization", "created_at")
-    list_filter = ("organization",)
-    search_fields = ("name",)
+    list_display = ("name", "code", "site_type", "is_active", "tenant_id", "organization", "created_at")
+    list_filter = ("organization", "site_type", "is_active")
+    search_fields = ("name", "code")
+
+
+@admin.register(Department)
+class DepartmentAdmin(admin.ModelAdmin):
+    list_display = ("name", "code", "organization", "site", "tenant_id")
+    list_filter = ("organization", "site")
+    search_fields = ("name", "code")
 
 
 @admin.register(ModuleSubscription)

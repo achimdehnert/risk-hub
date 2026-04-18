@@ -1,0 +1,37 @@
+{% for usage in usages %}
+<tr class="hover:bg-gray-50">
+  <td class="px-6 py-4">
+    <p class="text-sm font-medium text-gray-900">{{ usage.product.trade_name }}</p>
+    <p class="text-xs text-gray-400 mt-0.5">{{ usage.product.manufacturer.name|default:"" }}</p>
+  </td>
+  <td class="px-6 py-4 text-sm text-gray-600">{{ usage.site.name }}</td>
+  <td class="px-6 py-4 text-sm text-gray-600">{{ usage.department.name|default:"—" }}</td>
+  <td class="px-6 py-4 text-sm text-gray-600 font-mono">{{ usage.storage_class|default:"—" }}</td>
+  <td class="px-6 py-4">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+      {% if usage.status == 'active' %}bg-green-100 text-green-800
+      {% else %}bg-gray-100 text-gray-800{% endif %}">
+      {{ usage.get_status_display }}
+    </span>
+  </td>
+  <td class="px-6 py-4">
+    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+      {% if usage.substitution_status == 'open' %}bg-yellow-100 text-yellow-800
+      {% elif usage.substitution_status == 'done' %}bg-green-100 text-green-800
+      {% elif usage.substitution_status == 'not_required' %}bg-gray-100 text-gray-600
+      {% else %}bg-gray-100 text-gray-600{% endif %}">
+      {{ usage.get_substitution_status_display }}
+    </span>
+  </td>
+  <td class="px-6 py-4 text-right">
+    <a href="{% url 'kataster:usage-detail' pk=usage.pk %}"
+       class="text-orange-600 hover:text-orange-800 text-sm font-medium">Detail →</a>
+  </td>
+</tr>
+{% empty %}
+<tr>
+  <td colspan="7" class="px-6 py-10 text-center text-sm text-gray-400">
+    Keine Verwendungen gefunden.
+  </td>
+</tr>
+{% endfor %}
