@@ -1,125 +1,170 @@
-# Risk-Hub - Enterprise SaaS Risikomanagement
+# Schutztat (risk-hub) — Enterprise SaaS for Safety Management
 
-Plattform für Risikomanagement: Brandschutz, Explosionsschutz, Arbeitssicherheit, Audits, Maßnahmen, Dokumente.
+> **Production:** https://schutztat.de | **Demo:** https://demo.schutztat.de
+> **Stand:** April 2026
 
-## Lokale Entwicklung
+Multi-Tenant SaaS platform for occupational safety, explosion protection, hazardous substances, fire safety, data privacy, and compliance management.
 
-Risk-Hub ist Teil der Multi-Hub-Architektur und kann zusammen mit BFAgent und Travel Beat parallel betrieben werden.
+## Module
 
-### Hub Control Center
-
-```bash
-# Alle Hubs parallel starten (vom bfagent-Verzeichnis)
-make -f Makefile.parallel start-all
-
-# Control Center öffnen
-open http://localhost:8888
-```
-
-**Port-Schema:**
-| Service | Port | Beschreibung |
-|---------|------|--------------|
-| Control Center | 8888 | Landing Page mit Links zu allen Hubs |
-| BFAgent | 8000 | Expert Hub für KI-Beratung |
-| Travel Beat | 9000 | Reiseplanung und Buchung |
-| Risk-Hub | 8001 | Risikomanagement (dieser Hub) |
-| LLM Gateway | 8100 | Shared LLM Service |
-
-### Risk-Hub einzeln starten
-
-```bash
-cd risk-hub
-docker compose up -d
-
-# Öffnen: http://localhost:8001
-# Login: demo / demo
-```
-
-## Features
-
-- **Multi-Tenancy**: Subdomain-basierte Mandantentrennung mit Postgres RLS
-- **RBAC**: Hierarchisches Berechtigungssystem (Tenant/Site/Asset)
-- **Gefährdungsbeurteilung**: Risikobewertung mit KI-Unterstützung
-- **Dokumentenmanagement**: S3-kompatibles Storage mit Versionierung
-- **Audit Trail**: Vollständige Nachverfolgbarkeit aller Änderungen
-- **Export/Reporting**: PDF/Excel Exports als auditierbare Artefakte
+| Modul | URL-Prefix | Beschreibung |
+|-------|-----------|--------------|
+| **Explosionsschutz** | `/ex/` | ATEX-Zonen, Konzepte, Betriebsmittel, Zündquellenanalyse |
+| **Gefahrstoffe** | `/substances/` | Stoffdatenbank, SDS-Management, CAS-Nummern |
+| **SDS-Bibliothek** | `/sds/` | Globale Sicherheitsdatenblätter, periodische Reviews |
+| **Kataster** | `/kataster/` | Gefahrstoffkataster mit Produkten, Verwendungen, Import |
+| **Risikobewertung** | `/risk/` | Gefährdungsbeurteilungen, Bewertungsmatrix |
+| **GBU** | `/gbu/` | Gefährdungsbeurteilungen (erweitertes Modul) |
+| **Brandschutz** | `/brandschutz/` | Brandschutzkonzepte, Fluchtpläne |
+| **Datenschutz (DSB)** | `/dsb/` | Verarbeitungsverzeichnis, TOMs, DSFA |
+| **Dokumente** | `/documents/` | Versioniertes Dokumentenmanagement |
+| **Projekte** | `/projects/` | Projektbasierte Workflows |
+| **Training** | `/training/` | Unterweisungen, Themen, Teilnahme-Tracking |
+| **Audit** | `/audit/` | Vollständiger Audit-Trail aller Änderungen |
+| **Dashboard** | `/dashboard/` | Compliance-Übersicht, Statistiken |
+| **Benachrichtigungen** | `/notifications/` | Systemweite Alerts und Hinweise |
 
 ## Tech Stack
 
-- **Backend**: Django 5 + HTMX
-- **Database**: PostgreSQL 16 mit RLS
-- **Storage**: S3-kompatibel (MinIO/Hetzner Object Storage)
-- **LLM**: bfagent-llm (Prompt Framework)
-- **Infrastructure**: Docker, Hetzner Cloud
+| Komponente | Technologie |
+|-----------|------------|
+| **Backend** | Django 5.1, Gunicorn |
+| **Frontend** | HTMX 1.9 (raw headers, kein `django-htmx`), Bootstrap 5 |
+| **API** | Django Ninja (`/api/v1/`) |
+| **Database** | PostgreSQL 16 |
+| **Queue** | Celery + Redis 7 |
+| **LLM** | `iil-aifw` (`aifw.service.sync_completion`) |
+| **Multi-Tenancy** | Subdomain-basiert, `ModuleAccessMiddleware` |
+| **Auth** | Django built-in + OIDC (mozilla-django-oidc) |
+| **Infrastructure** | Docker, Hetzner Cloud, Cloudflare |
 
-## Quick Start
+## Quick Start (lokal)
 
 ```bash
-# Repository klonen
 git clone https://github.com/achimdehnert/risk-hub.git
 cd risk-hub
-
-# Environment einrichten
 cp .env.example .env
 
-# Container starten
 docker compose up --build -d
-
-# Migrationen ausführen
-docker compose exec app python manage.py migrate
-
-# Demo-Daten laden
-docker compose exec app python manage.py seed_demo
-
-# Superuser erstellen
-docker compose exec app python manage.py createsuperuser
+docker compose exec risk-hub-web python manage.py migrate --no-input
+docker compose exec risk-hub-web python manage.py seed_demo
+docker compose exec -it risk-hub-web python manage.py createsuperuser
 ```
 
-Öffnen:
-- App: http://localhost:8001/risk/assessments/
-- Admin: http://localhost:8001/admin/
-- MinIO Console: http://localhost:9003 (minio/minio123)
+Zugriff:
+- **App:** http://localhost:8090/dashboard/
+- **Admin:** http://localhost:8090/admin/
+- **API Docs:** http://localhost:8090/api/v1/docs
+- **Login:** `/accounts/login/`
 
-**Hinweis:** Subdomain-basierte Tenancy (demo.localhost) erfordert hosts-Eintrag. Für lokale Entwicklung funktioniert localhost direkt.
+## Docker Services (Production)
 
-## RLS aktivieren (Prod/Staging)
+| Service | Container | Port |
+|---------|-----------|------|
+| Web (Gunicorn) | `risk-hub-web` | 8090 (→ 8000 intern) |
+| Worker (Celery) | `risk-hub-worker` | — |
+| Database | `risk-hub-db` | 5432 |
+| Redis | `risk-hub-redis` | 6379 |
+| MinIO (dev only) | `risk-hub-minio` | 9000/9001 |
+
+## Deployment
 
 ```bash
-docker compose exec db psql -U app -d app -f /app/scripts/enable_rls.sql
+# Via ship.sh (thin wrapper → platform/scripts/ship.sh)
+bash scripts/ship.sh
+
+# Config: .ship.conf (SSOT, ADR-120)
+# Health: https://schutztat.de/healthz/
+# Image: ghcr.io/achimdehnert/risk-hub/risk-hub-web
 ```
+
+Detailliert: [docs/deployment/DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md)
 
 ## Architektur
 
 ```
 risk-hub/
 ├── src/
-│   ├── config/           # Django Settings & URLs
-│   ├── common/           # Shared: Middleware, Context, S3
-│   ├── tenancy/          # Mandanten, Organisationen, Sites
-│   ├── identity/         # User, Auth
-│   ├── permissions/      # RBAC, Scopes, Assignments
-│   ├── risk/             # Gefährdungsbeurteilung
-│   ├── actions/          # Maßnahmen, Tasks
-│   ├── documents/        # Dokumente, Versionierung
-│   ├── reporting/        # Export Jobs, Retention
-│   ├── audit/            # Audit Events
-│   └── outbox/           # Event Outbox
-├── docker/
-├── scripts/
-└── docker-compose.yml
+│   ├── config/            # Settings, URLs, API, Celery, WSGI
+│   ├── common/            # Middleware, Context Processors, S3, Progress
+│   ├── core/              # Health Checks (/livez/, /healthz/)
+│   ├── tenancy/           # Organization, Site, Tenant-Middleware
+│   ├── identity/          # Custom User Model
+│   ├── permissions/       # RBAC: Role, Scope, Assignment, ModuleAccess
+│   ├── audit/             # AuditEvent, Compliance-Log
+│   ├── outbox/            # Event Outbox (Celery)
+│   ├── explosionsschutz/  # ATEX-Zonen, Konzepte, Betriebsmittel
+│   ├── substances/        # Gefahrstoffe, SDS-Upload
+│   ├── global_sds/        # Globale SDS-Bibliothek
+│   ├── risk/              # Gefährdungsbeurteilung
+│   ├── gbu/               # GBU-Erweiterung
+│   ├── dsb/               # Datenschutzbeauftragter
+│   ├── brandschutz/       # Brandschutz
+│   ├── documents/         # Dokumente, Versionen, S3
+│   ├── actions/           # Maßnahmen, Tasks
+│   ├── projects/          # Projektbasierte Workflows
+│   ├── training/          # Unterweisungen
+│   ├── reporting/         # Export Jobs (PDF/Excel)
+│   ├── notifications/     # Benachrichtigungen
+│   ├── dashboard/         # Compliance-Dashboard
+│   ├── approvals/         # Freigabe-Workflows
+│   ├── ai_analysis/       # KI-gestützte Analyse (aifw)
+│   └── templates/         # Shared Templates (project root)
+├── docker/app/Dockerfile
+├── docker-compose.prod.yml
+├── .ship.conf             # Deployment SSOT (ADR-120)
+├── reflex.yaml            # REFLEX Test-Config (ADR-162)
+└── docs/
+    ├── AGENT_HANDOVER.md
+    ├── architecture/
+    ├── deployment/
+    ├── use-cases/         # UC-001 bis UC-010
+    └── adr/               # ADR-001 bis ADR-042
 ```
 
-## Shared Packages
+Detailliert: [docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)
 
-Risk-Hub nutzt die gemeinsamen Packages aus dem Platform-Repo:
+## Access Control
+
+```
+Request → SubdomainTenantMiddleware
+        → AuthenticationMiddleware
+        → ModuleAccessMiddleware (MODULE_URL_MAP)
+        → View (@login_required / @require_module)
+```
+
+| URL-Prefix | Modul | Guard |
+|------------|-------|-------|
+| `/ex/`, `/substances/` | `ex` | ModuleAccess + LoginRequired |
+| `/risk/` | `risk` | ModuleAccess + LoginRequired |
+| `/gbu/` | `gbu` | ModuleAccess + LoginRequired |
+| `/dsb/` | `dsb` | ModuleAccess + LoginRequired |
+| `/dashboard/`, `/kataster/`, `/sds/` | — | LoginRequired (kein Modul-Guard) |
+| `/livez/`, `/healthz/`, `/api/v1/docs` | — | Public |
+
+Rollen-Hierarchie: `viewer < member < manager < admin`
+
+## iil-Packages
 
 ```python
-# bfagent-core: Tenancy, Audit, Outbox
-from bfagent_core import emit_audit_event, get_context
-
-# bfagent-llm: LLM Integration
-from bfagent_llm import PromptFramework
+from aifw.service import sync_completion     # LLM-Calls
+from platform_context import get_context     # Request-Middleware
+from django_tenancy import TenantMixin       # Multi-Tenancy
+from django_module_shop import ...           # Modul-Shop/Billing
 ```
+
+## Dokumentation
+
+| Dokument | Inhalt |
+|----------|--------|
+| [README.md](README.md) | Übersicht (diese Datei) |
+| [AGENT_HANDOVER.md](docs/AGENT_HANDOVER.md) | Agent-Kontext für AI-Sessions |
+| [ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md) | Technische Architektur |
+| [DEPLOYMENT.md](docs/deployment/DEPLOYMENT.md) | Deployment-Guide |
+| [USER_GUIDE.md](docs/USER_GUIDE.md) | Benutzerhandbuch |
+| [reflex.yaml](reflex.yaml) | REFLEX Test-Konfiguration |
+| [docs/use-cases/](docs/use-cases/) | Use Cases UC-001 bis UC-010 |
+| [docs/adr/](docs/adr/) | Architecture Decision Records |
 
 ## License
 

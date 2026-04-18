@@ -1,374 +1,241 @@
-# risk-hub Architektur
+# risk-hub — Technische Architektur
 
-## 📁 Repository-Struktur
+> **Stand:** April 2026 | **Domain:** schutztat.de | **Port:** 8090
+
+## Repository-Struktur
 
 ```
 risk-hub/
-├── 📄 README.md                    # Projekt-Dokumentation
-├── 📄 pyproject.toml               # Python Dependencies (uv/pip)
-├── 📄 docker-compose.yml           # Local Development
-├── 📄 Makefile                     # Dev Commands
-├── 📄 .env.example                 # Environment Template
-├── 📄 .gitignore                   # Git Ignore Rules
+├── src/                              # Django Application (PYTHONPATH root)
+│   ├── manage.py
+│   ├── config/                       # Django Configuration
+│   │   ├── settings.py               # Single-file + overlays (dev/prod/test)
+│   │   ├── urls.py                   # URL Routing (all modules)
+│   │   ├── api.py                    # Django Ninja API (/api/v1/)
+│   │   ├── celery.py                 # Celery Configuration
+│   │   └── wsgi.py                   # WSGI Entry Point
+│   │
+│   ├── common/                       # Shared Utilities
+│   │   ├── middleware.py             # Tenant Resolution, Module Access
+│   │   ├── context_processors.py    # Template Context
+│   │   ├── progress/                # Progress Rail (ADR-017)
+│   │   └── s3.py                    # S3 Client Helper
+│   │
+│   ├── core/                         # Health Checks
+│   │   └── healthz.py               # /livez/, /healthz/, /readyz/
+│   │
+│   ├── tenancy/                      # Multi-Tenancy
+│   │   ├── models.py                # Organization, Site, OrgMembership
+│   │   ├── middleware.py            # SubdomainTenantMiddleware
+│   │   └── management/commands/     # seed_demo, etc.
+│   │
+│   ├── identity/                     # User Management
+│   │   └── models.py                # Custom User (AUTH_USER_MODEL)
+│   │
+│   ├── permissions/                  # RBAC + Module Access
+│   │   ├── models.py                # Role, Permission, Scope, ModuleSubscription
+│   │   ├── services.py              # authorize(), has_permission()
+│   │   ├── middleware.py            # ModuleAccessMiddleware
+│   │   └── decorators.py           # @require_module()
+│   │
+│   ├── audit/                        # Audit Trail
+│   ├── outbox/                       # Event Outbox (Celery)
+│   ├── notifications/                # System Notifications
+│   ├── dashboard/                    # Compliance Dashboard
+│   ├── approvals/                    # Approval Workflows
+│   │
+│   ├── explosionsschutz/             # ATEX Zones, Concepts, Equipment
+│   │   ├── models.py                # Area, Concept, Zone, Equipment
+│   │   ├── html_urls.py             # /ex/ Frontend Routes
+│   │   ├── urls.py                  # /api/ex/ API Routes
+│   │   └── views/                   # HTMX views
+│   │
+│   ├── substances/                   # Hazardous Substances
+│   │   ├── models.py                # Substance, SDS
+│   │   ├── html_urls.py             # /substances/ Frontend
+│   │   └── urls.py                  # /api/substances/ API
+│   │
+│   ├── global_sds/                   # Global SDS Library (/sds/)
+│   ├── risk/                         # Risk Assessment (/risk/)
+│   ├── gbu/                          # Extended GBU (/gbu/)
+│   ├── dsb/                          # Data Privacy Officer (/dsb/)
+│   ├── brandschutz/                  # Fire Safety (/brandschutz/)
+│   ├── documents/                    # Document Management (/documents/)
+│   ├── actions/                      # Action Items (/actions/)
+│   ├── projects/                     # Project Workflows (/projects/)
+│   ├── training/                     # Training Management (/training/)
+│   ├── reporting/                    # Export Jobs (PDF/Excel)
+│   ├── ai_analysis/                  # LLM Analysis (aifw)
+│   ├── media/                        # Media handling
+│   ├── riskfw/                       # Risk framework utils
+│   │
+│   └── templates/                    # Shared Templates (project root)
+│       ├── base.html
+│       ├── dashboard/
+│       ├── explosionsschutz/
+│       ├── substances/
+│       └── ...
 │
-├── 📁 src/                         # Django Application
-│   ├── 📄 manage.py                # Django CLI
-│   │
-│   ├── 📁 config/                  # Django Configuration
-│   │   ├── 📄 __init__.py          # Celery App Loading
-│   │   ├── 📄 settings.py          # Settings (Pydantic-based)
-│   │   ├── 📄 urls.py              # URL Routing
-│   │   ├── 📄 api.py               # Django Ninja API
-│   │   ├── 📄 celery.py            # Celery Configuration
-│   │   └── 📄 wsgi.py              # WSGI Entry Point
-│   │
-│   ├── 📁 apps/                    # Django Apps (Bounded Contexts)
-│   │   │
-│   │   ├── 📁 core/                # ═══ SHARED UTILITIES ═══
-│   │   │   ├── 📄 models.py        # Base Models (TenantModel, TimestampedModel)
-│   │   │   ├── 📄 middleware.py    # Request Context, Tenant Resolution
-│   │   │   ├── 📄 request_context.py # Thread-safe Context (tenant_id, user_id)
-│   │   │   ├── 📄 views.py         # Health Check
-│   │   │   ├── 📄 logging.py       # JSON Logging
-│   │   │   └── 📄 context_processors.py # Template Context
-│   │   │
-│   │   ├── 📁 tenancy/             # ═══ MULTI-TENANCY ═══
-│   │   │   ├── 📄 models.py        # Organization, Site
-│   │   │   ├── 📄 admin.py         # Django Admin
-│   │   │   └── 📁 management/commands/
-│   │   │       └── 📄 seed_demo.py # Demo Tenant erstellen
-│   │   │
-│   │   ├── 📁 identity/            # ═══ USER MANAGEMENT ═══
-│   │   │   ├── 📄 models.py        # Custom User Model
-│   │   │   └── 📄 admin.py         # User Admin
-│   │   │
-│   │   ├── 📁 permissions/         # ═══ RBAC + SCOPES ═══
-│   │   │   ├── 📄 models.py        # Permission, Role, Scope, Assignment
-│   │   │   ├── 📄 services.py      # authorize(), has_permission()
-│   │   │   └── 📄 admin.py         # Permissions Admin
-│   │   │
-│   │   ├── 📁 audit/               # ═══ AUDIT TRAIL ═══
-│   │   │   ├── 📄 models.py        # AuditEvent
-│   │   │   ├── 📄 services.py      # emit_audit_event()
-│   │   │   └── 📄 admin.py         # Audit Log Viewer
-│   │   │
-│   │   ├── 📁 outbox/              # ═══ EVENT OUTBOX ═══
-│   │   │   ├── 📄 models.py        # OutboxMessage
-│   │   │   ├── 📄 services.py      # publish_event()
-│   │   │   └── 📄 tasks.py         # Celery Publisher Task
-│   │   │
-│   │   ├── 📁 risk/                # ═══ DOMAIN: RISK ═══
-│   │   │   ├── 📄 models.py        # Assessment, Hazard, Control
-│   │   │   ├── 📄 services.py      # create_assessment(), approve_assessment()
-│   │   │   ├── 📄 views.py         # HTMX Views
-│   │   │   ├── 📄 urls.py          # URL Routing
-│   │   │   └── 📁 templates/risk/  # Templates
-│   │   │
-│   │   ├── 📁 actions/             # ═══ DOMAIN: MASSNAHMEN ═══
-│   │   │   ├── 📄 models.py        # ActionItem, ActionComment
-│   │   │   ├── 📄 services.py      # create_action(), close_action()
-│   │   │   ├── 📄 views.py         # Views
-│   │   │   └── 📄 urls.py          # URL Routing
-│   │   │
-│   │   ├── 📁 documents/           # ═══ DOMAIN: DOKUMENTE ═══
-│   │   │   ├── 📄 models.py        # Document, DocumentVersion
-│   │   │   ├── 📄 services.py      # upload_document(), create_version()
-│   │   │   ├── 📄 views.py         # Views
-│   │   │   ├── 📄 urls.py          # URL Routing
-│   │   │   └── 📄 s3.py            # S3 Client Helper
-│   │   │
-│   │   └── 📁 reporting/           # ═══ DOMAIN: EXPORTS ═══
-│   │       ├── 📄 models.py        # ExportJob, RetentionPolicy
-│   │       ├── 📄 services.py      # create_export_job()
-│   │       ├── 📄 generators/      # PDF/Excel Generators
-│   │       ├── 📄 tasks.py         # Async Export Tasks
-│   │       └── 📄 urls.py          # URL Routing
-│   │
-│   └── 📁 templates/               # Shared Templates
-│       ├── 📄 base.html            # Base Layout
-│       └── 📁 components/          # Reusable Components
+├── docker/app/Dockerfile             # Multi-stage build
+├── docker-compose.yml                # Local development
+├── docker-compose.prod.yml           # Production
+├── .ship.conf                        # Deployment SSOT (ADR-120)
+├── reflex.yaml                       # REFLEX Test-Config (ADR-162)
+├── requirements.txt                  # Python dependencies
 │
-├── 📁 tests/                       # Test Suite
-│   ├── 📁 unit/                    # Unit Tests
-│   ├── 📁 integration/             # Integration Tests
-│   └── 📁 e2e/                     # End-to-End Tests
+├── scripts/
+│   └── ship.sh                       # Thin wrapper → platform/scripts/ship.sh
 │
-├── 📁 infra/                       # Infrastructure as Code
-│   │
-│   ├── 📁 terraform/               # Hetzner Cloud Provisioning
-│   │   ├── 📄 main.tf              # Main Configuration
-│   │   ├── 📄 variables.tf         # Input Variables
-│   │   ├── 📄 outputs.tf           # Output Values
-│   │   └── 📁 environments/
-│   │       ├── 📁 dev/             # Development
-│   │       ├── 📁 staging/         # Staging
-│   │       └── 📁 prod/            # Production
-│   │           └── 📄 prod.tfvars  # Production Variables
-│   │
-│   ├── 📁 ansible/                 # Server Configuration
-│   │   ├── 📁 inventory/           # Server Inventory
-│   │   │   ├── 📄 dev              # Development Hosts
-│   │   │   ├── 📄 staging          # Staging Hosts
-│   │   │   └── 📄 prod             # Production Hosts
-│   │   │
-│   │   ├── 📁 playbooks/           # Ansible Playbooks
-│   │   │   ├── 📄 site.yml         # Full Site Deployment
-│   │   │   ├── 📄 deploy.yml       # App Deployment Only
-│   │   │   └── 📄 backup.yml       # Backup Operations
-│   │   │
-│   │   └── 📁 roles/               # Ansible Roles
-│   │       ├── 📁 common/          # Base Server Setup
-│   │       ├── 📁 docker/          # Docker Installation
-│   │       ├── 📁 postgres/        # PostgreSQL + PgBouncer
-│   │       ├── 📁 redis/           # Redis Setup
-│   │       ├── 📁 app/             # Django App Deployment
-│   │       ├── 📁 worker/          # Celery Worker
-│   │       └── 📁 nginx/           # Nginx Reverse Proxy
-│   │
-│   └── 📁 docker/                  # Docker Configurations
-│       ├── 📁 app/
-│       │   └── 📄 Dockerfile       # Multi-stage Django Build
-│       ├── 📁 nginx/
-│       │   └── 📄 nginx.dev.conf   # Nginx Dev Config
-│       └── 📁 postgres/
-│           └── 📄 init.sql         # Database Initialization
+├── reflex-audit/                     # REFLEX Audit Reports
+│   ├── REFLEX-AUDIT-FULL-APP.md
+│   ├── REFLEX-AUDIT-RECHTE-ROLLEN.md
+│   └── REFLEX-AUDIT-EXPLOSIONSSCHUTZ.md
 │
-├── 📁 scripts/                     # Utility Scripts
-│   ├── 📄 deploy.sh                # Deployment Script
-│   ├── 📄 backup.sh                # Backup Script
-│   └── 📄 generate_inventory.py    # Terraform → Ansible Inventory
-│
-└── 📁 docs/                        # Documentation
-    ├── 📁 architecture/            # Architecture Docs
-    ├── 📁 api/                     # API Documentation
-    └── 📁 deployment/              # Deployment Guides
+└── docs/
+    ├── AGENT_HANDOVER.md             # AI Agent Context
+    ├── architecture/ARCHITECTURE.md  # This file
+    ├── deployment/DEPLOYMENT.md      # Deployment Guide
+    ├── USER_GUIDE.md                 # User Manual
+    ├── use-cases/UC-*.md             # Use Cases
+    └── adr/ADR-*.md                  # Architecture Decision Records
+```
+
+**Wichtig:** Apps liegen direkt in `src/` (kein `apps.` Prefix). `src/` ist im `PYTHONPATH`.
+
+---
+
+## Architektur-Schichten
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         PLATFORM LAYER                           │
+│  tenancy  identity  permissions  audit  outbox  notifications    │
+│  common   core      dashboard   approvals                        │
+├─────────────────────────────────────────────────────────────────┤
+│                         DOMAIN LAYER                             │
+│  explosionsschutz  substances  global_sds  risk  gbu  dsb       │
+│  brandschutz  documents  actions  projects  training  reporting  │
+│  ai_analysis  riskfw  media                                      │
+├─────────────────────────────────────────────────────────────────┤
+│                         iil-PACKAGES                             │
+│  aifw  platform_context  django_tenancy  django_module_shop      │
+│  doc_templates  iil_learnfw                                      │
+├─────────────────────────────────────────────────────────────────┤
+│                         INFRASTRUCTURE                           │
+│  Django 5.1  PostgreSQL 16  Redis 7  Celery  Gunicorn  Nginx    │
+│  Docker  Hetzner Cloud  Cloudflare                               │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🏛️ Architektur-Übersicht
-
-### Bounded Contexts (Module)
+## Datenfluss
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              risk-hub                                        │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                         CORE MODULES                                  │   │
-│  │                                                                       │   │
-│  │   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │   │
-│  │   │   tenancy   │  │  identity   │  │ permissions │  │   audit    │  │   │
-│  │   │             │  │             │  │             │  │            │  │   │
-│  │   │ • Org       │  │ • User      │  │ • Role      │  │ • Event    │  │   │
-│  │   │ • Site      │  │ • Profile   │  │ • Scope     │  │ • Trail    │  │   │
-│  │   │ • Tenant    │  │ • Auth      │  │ • Assignment│  │            │  │   │
-│  │   └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │   │
-│  │                                                                       │   │
-│  │   ┌─────────────┐  ┌─────────────┐                                    │   │
-│  │   │   outbox    │  │    core     │                                    │   │
-│  │   │             │  │             │                                    │   │
-│  │   │ • Events    │  │ • Context   │                                    │   │
-│  │   │ • Publisher │  │ • Middleware│                                    │   │
-│  │   └─────────────┘  └─────────────┘                                    │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                                                              │
-│  ┌──────────────────────────────────────────────────────────────────────┐   │
-│  │                        DOMAIN MODULES                                 │   │
-│  │                                                                       │   │
-│  │   ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌────────────┐  │   │
-│  │   │    risk     │  │   actions   │  │  documents  │  │ reporting  │  │   │
-│  │   │             │  │             │  │             │  │            │  │   │
-│  │   │ • Assessment│  │ • Action    │  │ • Document  │  │ • ExportJob│  │   │
-│  │   │ • Hazard    │  │ • Task      │  │ • Version   │  │ • PDF Gen  │  │   │
-│  │   │ • Control   │  │ • Escalation│  │ • S3 Upload │  │ • Excel Gen│  │   │
-│  │   └─────────────┘  └─────────────┘  └─────────────┘  └────────────┘  │   │
-│  │                                                                       │   │
-│  └──────────────────────────────────────────────────────────────────────┘   │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
-### Datenfluss
-
-```
-┌─────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│ Browser │────▶│   Nginx     │────▶│   Django    │────▶│  Postgres   │
-│  HTMX   │◀────│ (Subdomain) │◀────│  (App)      │◀────│  (+ RLS)    │
-└─────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-                                           │
-                                           ▼
-                                    ┌─────────────┐
-                                    │   Celery    │
-                                    │  (Worker)   │
-                                    └──────┬──────┘
-                                           │
-                       ┌───────────────────┼───────────────────┐
-                       ▼                   ▼                   ▼
-                ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-                │   Redis     │     │  MinIO/S3   │     │   Email     │
-                │  (Queue)    │     │  (Docs)     │     │  (SMTP)     │
-                └─────────────┘     └─────────────┘     └─────────────┘
+Browser (HTMX) ──▶ Cloudflare ──▶ Nginx ──▶ Gunicorn (Django)
+                                                   │
+          ┌────────────────────────────────────────┤
+          ▼                                        ▼
+    PostgreSQL 16                           Celery Worker
+    (risk_hub DB)                                  │
+                                     ┌─────────────┼──────────┐
+                                     ▼             ▼          ▼
+                                   Redis      MinIO/S3     Email
+                                  (Queue)     (Docs)       (SMTP)
 ```
 
 ---
 
-## 🔐 RBAC + Scope System
+## Multi-Tenancy
 
 ```
-┌──────────────────────────────────────────────────────────────────────┐
-│                         Permission System                             │
-├──────────────────────────────────────────────────────────────────────┤
-│                                                                       │
-│  Permission                    Role                      Scope        │
-│  ───────────                   ────                      ─────        │
-│  risk.assessment.read    ◀───  EHS Manager     ───▶  TENANT (all)    │
-│  risk.assessment.write         (has 15 perms)         or              │
-│  risk.assessment.approve                              SITE (Berlin)   │
-│  actions.action.read                                  or              │
-│  actions.action.write                                 ASSET (Anlage1) │
-│  documents.document.read                                              │
-│  ...                                                                  │
-│                                                                       │
-│  Assignment: User ──▶ Role ──▶ Scope                                 │
-│  ══════════════════════════════════════                               │
-│  Max Mustermann ──▶ "Site Safety Officer" ──▶ Site: Berlin           │
-│  Anna Schmidt   ──▶ "EHS Manager"         ──▶ Tenant: Alle Sites     │
-│                                                                       │
-└──────────────────────────────────────────────────────────────────────┘
+Request: https://demo.schutztat.de/ex/areas/
+         ▼
+SubdomainTenantMiddleware:
+  1. Extract subdomain "demo" from Host header
+  2. Lookup Organization by slug="demo"
+  3. Set request.tenant = Organization
+  4. Set request.org = Organization
+         ▼
+ModuleAccessMiddleware:
+  1. Match URL /ex/ → module_code="ex"
+  2. Check ModuleSubscription(tenant, "ex") → active?
+  3. Check ModuleMembership(user, "ex") → role >= viewer?
+  4. If no: return 403
+         ▼
+View: All queries MUST filter by tenant_id
 ```
+
+**Kritisch:** `Organization.id != Organization.tenant_id`. Immer `tenant_id` für Queries verwenden.
 
 ---
 
-## 🗄️ Datenbank-Schema (Vereinfacht)
+## Access Control Architecture
 
-```sql
--- TENANCY
-tenancy_organization (id, tenant_id, slug, name, ...)
-tenancy_site (id, tenant_id, organization_id, name, code, ...)
-
--- IDENTITY
-identity_user (id, tenant_id, username, email, ...)
-
--- PERMISSIONS
-permissions_permission (id, code, name, module)
-permissions_role (id, tenant_id, name, is_system)
-permissions_role_permission (role_id, permission_id)
-permissions_scope (id, tenant_id, scope_type, site_id, asset_id)
-permissions_assignment (id, tenant_id, user_id, role_id, scope_id)
-
--- AUDIT
-audit_event (id, tenant_id, actor_user_id, category, action, 
-             entity_type, entity_id, payload, created_at)
-
--- OUTBOX
-outbox_message (id, tenant_id, topic, payload, published_at, created_at)
-
--- RISK (Domain)
-risk_assessment (id, tenant_id, site_id, title, status, ...)
-risk_hazard (id, tenant_id, assessment_id, description, ...)
-risk_control (id, tenant_id, hazard_id, measure, ...)
-
--- ACTIONS (Domain)
-actions_action (id, tenant_id, title, status, due_date, assignee_id, ...)
-
--- DOCUMENTS (Domain)
-documents_document (id, tenant_id, title, category, ...)
-documents_version (id, tenant_id, document_id, version, s3_key, sha256, ...)
-
--- REPORTING (Domain)
-reporting_export_job (id, tenant_id, type, status, params, output_doc_id, ...)
-reporting_retention_policy (id, name, years, legal_hold_allowed, ...)
 ```
+ModuleAccessMiddleware (MODULE_URL_MAP)
+  │
+  ├── /ex/, /api/ex/, /substances/, /api/substances/ → module "ex"
+  ├── /risk/ → module "risk"
+  ├── /gbu/, /api/gbu/ → module "gbu"
+  └── /dsb/ → module "dsb"
+
+Unguarded (nur @login_required):
+  /dashboard/, /sds/, /kataster/, /documents/, /brandschutz/,
+  /projects/, /notifications/, /audit/, /training/
+
+Public:
+  /livez/, /healthz/, /readyz/, /api/v1/docs, /accounts/login/
+```
+
+Role hierarchy: `viewer < member < manager < admin`
+Org membership: `owner > admin > member > viewer > external`
 
 ---
 
-## 🚀 Deployment-Architektur (Hetzner)
+## HTMX-Konvention
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           Hetzner Cloud                                      │
-│                                                                              │
-│  ┌────────────────────────────────────────────────────────────────────────┐ │
-│  │                        Cloud Network (10.0.0.0/16)                      │ │
-│  │                                                                         │ │
-│  │  ┌─────────────────────────────────────────────────────────────────┐   │ │
-│  │  │                    Public Subnet (LB)                            │   │ │
-│  │  │                                                                  │   │ │
-│  │  │   ┌─────────────────────────────────────────────────────────┐   │   │ │
-│  │  │   │              Hetzner Load Balancer                       │   │   │ │
-│  │  │   │                   (lb11, €5/mo)                          │   │   │ │
-│  │  │   │                                                          │   │   │ │
-│  │  │   │  *.risk-hub.de ──▶ HTTPS (443) ──▶ App Servers (8000)   │   │   │ │
-│  │  │   └─────────────────────────────────────────────────────────┘   │   │ │
-│  │  │                              │                                   │   │ │
-│  │  └──────────────────────────────┼───────────────────────────────────┘   │ │
-│  │                                 │                                        │ │
-│  │  ┌──────────────────────────────┼───────────────────────────────────┐   │ │
-│  │  │              App Subnet (10.0.1.0/24)                             │   │ │
-│  │  │                              │                                    │   │ │
-│  │  │   ┌──────────────────────────┴───────────────────────────┐       │   │ │
-│  │  │   │                                                       │       │   │ │
-│  │  │   ▼                                                       ▼       │   │ │
-│  │  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────────────────┐  │   │ │
-│  │  │  │  App-1      │  │  App-2      │  │       Worker            │  │   │ │
-│  │  │  │ cpx31 (€25) │  │ cpx31 (€25) │  │     cpx21 (€15)         │  │   │ │
-│  │  │  │             │  │             │  │                         │  │   │ │
-│  │  │  │ • Django    │  │ • Django    │  │ • Celery Worker         │  │   │ │
-│  │  │  │ • Gunicorn  │  │ • Gunicorn  │  │ • Celery Beat           │  │   │ │
-│  │  │  │ 10.0.1.10   │  │ 10.0.1.11   │  │ 10.0.1.50               │  │   │ │
-│  │  │  └─────────────┘  └─────────────┘  └─────────────────────────┘  │   │ │
-│  │  │                                                                  │   │ │
-│  │  └──────────────────────────────────────────────────────────────────┘   │ │
-│  │                                 │                                        │ │
-│  │  ┌──────────────────────────────┼───────────────────────────────────┐   │ │
-│  │  │              DB Subnet (10.0.2.0/24)                              │   │ │
-│  │  │                              │                                    │   │ │
-│  │  │                              ▼                                    │   │ │
-│  │  │  ┌─────────────────────────────────────────────────────────────┐ │   │ │
-│  │  │  │                    Database Server                          │ │   │ │
-│  │  │  │                    cpx41 (€40/mo)                           │ │   │ │
-│  │  │  │                                                             │ │   │ │
-│  │  │  │  ┌───────────┐  ┌───────────┐  ┌───────────────────────┐  │ │   │ │
-│  │  │  │  │ Postgres  │  │ PgBouncer │  │        Redis          │  │ │   │ │
-│  │  │  │  │  :5432    │  │  :6432    │  │        :6379          │  │ │   │ │
-│  │  │  │  └───────────┘  └───────────┘  └───────────────────────┘  │ │   │ │
-│  │  │  │                                                             │ │   │ │
-│  │  │  │  10.0.2.10  +  50GB Volume (DB Data)                       │ │   │ │
-│  │  │  └─────────────────────────────────────────────────────────────┘ │   │ │
-│  │  │                                                                  │   │ │
-│  │  └──────────────────────────────────────────────────────────────────┘   │ │
-│  │                                                                         │ │
-│  └─────────────────────────────────────────────────────────────────────────┘ │
-│                                                                              │
-│  ┌─────────────────────────────────────────────────────────────────────────┐│
-│  │                      External Services                                   ││
-│  │                                                                          ││
-│  │  ┌──────────────────┐  ┌──────────────────┐  ┌────────────────────────┐ ││
-│  │  │ Object Storage   │  │  Backup Storage  │  │   DNS (Cloudflare)     │ ││
-│  │  │ (Documents)      │  │  (wal-g/restic)  │  │                        │ ││
-│  │  │ €5-20/mo         │  │  €5/mo           │  │   *.risk-hub.de        │ ││
-│  │  └──────────────────┘  └──────────────────┘  └────────────────────────┘ ││
-│  │                                                                          ││
-│  └─────────────────────────────────────────────────────────────────────────┘│
-│                                                                              │
-│  Geschätzte Kosten: ~€120-150/Monat                                         │
-│                                                                              │
-└──────────────────────────────────────────────────────────────────────────────┘
-```
+- HTMX 1.9 via CDN (kein `django-htmx` Package)
+- Detection: `request.headers.get('HX-Request') == 'true'`
+- **Verboten:** `request.htmx`, `hx-boost`
+- **Pflicht auf Forms:** `hx-indicator`, `hx-disabled-elt`
 
 ---
 
-## 📋 Key Design Decisions
+## API (Django Ninja)
 
-| Aspekt | Entscheidung | Begründung |
-|--------|--------------|------------|
-| **Framework** | Django + HTMX | Schnelle Entwicklung, gute Ecosystem, HTMX für reaktive UIs ohne SPA |
-| **Multi-Tenancy** | Subdomain + RLS | Saubere Tenant-Isolation, RLS als Defense-in-Depth |
-| **Auth/Permissions** | RBAC + Scopes | Enterprise-tauglich, auditierbar, erweiterbar auf ABAC |
-| **Background Jobs** | Celery + Redis | Bewährt, gut skalierbar, Redis auch für Caching |
-| **Documents** | S3-kompatibel | MinIO dev, Hetzner Object Storage prod, später AWS S3 |
-| **Database** | Postgres 16 | Best-in-class, RLS, JSONB, Constraints |
-| **IaC** | Terraform + Ansible | Terraform für Infrastruktur, Ansible für Konfiguration |
-| **Hosting** | Hetzner | Kosten-effizient, DSGVO-konform, gute API |
+- Base: `/api/v1/`
+- Auth: Bearer Token via `ApiKeyAuth`
+- Docs: `/api/v1/docs` (OpenAPI, public)
+- Module-spezifische APIs: `/api/ex/`, `/api/substances/`, `/api/gbu/`
+
+---
+
+## Docker Services (Production)
+
+| Service | Container | Image | Port |
+|---------|-----------|-------|------|
+| Web | risk-hub-web | `ghcr.io/achimdehnert/risk-hub/risk-hub-web` | 8000→8090 |
+| Worker | risk-hub-worker | same image | — |
+| DB | risk-hub-db | postgres:16 | 5432 |
+| Redis | risk-hub-redis | redis:7 | 6379 |
+
+---
+
+## Key Design Decisions
+
+| Aspekt | Entscheidung | ADR |
+|--------|-------------|-----|
+| **Framework** | Django 5.1 + HTMX 1.9 | — |
+| **Multi-Tenancy** | Subdomain + ModuleAccess | ADR-003 |
+| **HTMX Detection** | Raw headers (kein django-htmx) | — |
+| **Settings** | Single-file with overlays | — |
+| **Apps Layout** | `src/` (kein `apps.` Prefix) | — |
+| **API** | Django Ninja (nicht DRF) | ADR-004 |
+| **PKs** | BigAutoField (nicht UUIDs) | ADR-022 |
+| **Health Endpoint** | `/healthz/` (ADR-022) | ADR-022 |
+| **LLM Integration** | `iil-aifw` (nie direkt litellm/openai) | — |
+| **Background Jobs** | Celery + Redis | ADR-005 |
+| **Documents** | S3-kompatibel (MinIO dev) | — |
+| **Deployment** | `.ship.conf` SSOT + CI/CD | ADR-120 |
+| **Hosting** | Hetzner Cloud, Cloudflare DNS | — |
