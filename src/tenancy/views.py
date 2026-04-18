@@ -587,7 +587,9 @@ def site_create(request: HttpRequest) -> HttpResponse:
             next_url = request.GET.get("next", "")
             if next_url:
                 return redirect(next_url)
-            return redirect("tenancy:org-detail", pk=org.pk)
+            if _require_staff(request):
+                return redirect("tenancy:org-detail", pk=org.pk)
+            return redirect("kataster:dashboard")
     else:
         form = SiteForm()
 

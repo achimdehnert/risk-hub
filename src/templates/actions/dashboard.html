@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}Maßnahmen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Maßnahmen-Tracking</h1>
+      <p class="text-sm text-gray-500 mt-1">Offene und abgeschlossene Schutzmaßnahmen</p>
+    </div>
+    <div class="flex gap-3">
+      <a href="{% url 'actions:action-list' %}"
+         class="inline-flex items-center px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+        <i data-lucide="list" class="w-4 h-4 mr-1.5"></i>
+        Alle Maßnahmen
+      </a>
+      <a href="{% url 'actions:action-create' %}"
+         class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors">
+        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+        Neue Maßnahme
+      </a>
+    </div>
+  </div>
+
+  {# ─ KPI Cards ──────────────────────────────────────────────── #}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-50 rounded-lg"><i data-lucide="circle-dot" class="w-5 h-5 text-blue-600"></i></div>
+        <div>
+          <p class="text-xs text-gray-500">Offen</p>
+          <p class="text-xl font-bold text-gray-900">{{ open_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-yellow-50 rounded-lg"><i data-lucide="loader" class="w-5 h-5 text-yellow-600"></i></div>
+        <div>
+          <p class="text-xs text-gray-500">In Bearbeitung</p>
+          <p class="text-xl font-bold text-gray-900">{{ in_progress_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-green-50 rounded-lg"><i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i></div>
+        <div>
+          <p class="text-xs text-gray-500">Erledigt</p>
+          <p class="text-xl font-bold text-gray-900">{{ completed_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-red-50 rounded-lg"><i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i></div>
+        <div>
+          <p class="text-xs text-gray-500">Überfällig</p>
+          <p class="text-xl font-bold text-gray-900">{{ overdue_count }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    {# Overdue #}
+    <div class="bg-white rounded-xl border border-gray-200">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-red-700">
+          <i data-lucide="alert-triangle" class="w-4 h-4 inline mr-1"></i>
+          Überfällige Maßnahmen
+        </h2>
+        <a href="{% url 'actions:action-list' %}?status=open" class="text-xs text-orange-600 hover:underline">Alle →</a>
+      </div>
+      <div class="divide-y divide-gray-100">
+        {% for a in overdue %}
+        <a href="{% url 'actions:action-detail' a.pk %}" class="flex items-center justify-between px-5 py-3 hover:bg-red-50">
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ a.title }}</p>
+            <p class="text-xs text-red-500">Fällig: {{ a.due_date|date:"d.m.Y" }}</p>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+            {% if a.priority >= 3 %}bg-red-100 text-red-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+            {{ a.get_priority_display }}
+          </span>
+        </a>
+        {% empty %}
+        <div class="px-5 py-6 text-center text-sm text-gray-400">Keine überfälligen Maßnahmen</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Upcoming #}
+    <div class="bg-white rounded-xl border border-gray-200">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-900">Anstehende Maßnahmen</h2>
+        <a href="{% url 'actions:action-list' %}" class="text-xs text-orange-600 hover:underline">Alle →</a>
+      </div>
+      <div class="divide-y divide-gray-100">
+        {% for a in upcoming %}
+        <a href="{% url 'actions:action-detail' a.pk %}" class="flex items-center justify-between px-5 py-3 hover:bg-gray-50">
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ a.title }}</p>
+            <p class="text-xs text-gray-500">Fällig: {{ a.due_date|date:"d.m.Y" }}</p>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium
+            {% if a.priority >= 3 %}bg-red-100 text-red-700{% elif a.priority == 2 %}bg-yellow-100 text-yellow-700{% else %}bg-gray-100 text-gray-600{% endif %}">
+            {{ a.get_priority_display }}
+          </span>
+        </a>
+        {% empty %}
+        <div class="px-5 py-6 text-center text-sm text-gray-400">Keine anstehenden Maßnahmen</div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

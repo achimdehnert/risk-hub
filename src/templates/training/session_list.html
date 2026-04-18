@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Unterweisungen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <nav class="text-xs text-gray-500 mb-1"><a href="{% url 'training:dashboard' %}" class="hover:underline">Unterweisungen</a> / Sitzungen</nav>
+      <h1 class="text-2xl font-bold text-gray-900">Alle Unterweisungen</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ sessions|length }} Einträge</p>
+    </div>
+    <a href="{% url 'training:session-create' %}"
+       class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors">
+      <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+      Neue Unterweisung
+    </a>
+  </div>
+
+  {# ─ Filter ─────────────────────────────────────────── #}
+  <div class="bg-white rounded-xl border border-gray-200 p-4 mb-5 flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+      <select onchange="window.location='?status='+this.value"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="" {% if not current_status %}selected{% endif %}>Alle Status</option>
+        <option value="planned" {% if current_status == 'planned' %}selected{% endif %}>Geplant</option>
+        <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Durchgeführt</option>
+        <option value="cancelled" {% if current_status == 'cancelled' %}selected{% endif %}>Abgesagt</option>
+      </select>
+    </div>
+    <div class="ml-auto text-xs text-gray-400 self-center">{{ sessions|length }} Einträge</div>
+  </div>
+
+  {% if sessions %}
+  <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thema</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Datum</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Teilnehmer</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for s in sessions %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4">
+            <a href="{% url 'training:session-detail' s.pk %}" class="text-sm font-medium text-gray-900 hover:text-orange-600">{{ s.topic.title }}</a>
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-600">{{ s.session_date|date:"d.m.Y" }}</td>
+          <td class="px-6 py-4 text-sm text-gray-600">{{ s.attendee_count }}</td>
+          <td class="px-6 py-4">
+            {% if s.status == "planned" %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Geplant</span>
+            {% elif s.status == "completed" %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Durchgeführt</span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">{{ s.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 text-right">
+            <a href="{% url 'training:session-detail' s.pk %}" class="text-sm text-orange-600 hover:underline">Anzeigen</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
+    <i data-lucide="calendar" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+    <p class="text-gray-500 font-medium">Keine Unterweisungen gefunden.</p>
+    <a href="{% url 'training:session-create' %}"
+       class="mt-4 inline-block px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
+      Erste Unterweisung planen
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

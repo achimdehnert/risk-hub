@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <nav class="text-sm text-gray-500">
+        <a href="{% url 'compliance:review_dashboard' %}" class="hover:text-gray-700">Compliance-Prüfungen</a>
+        <span class="mx-2">/</span>
+        <span>Neue Prüfung</span>
+    </nav>
+
+    <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+
+    <!-- Usage Info -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Produkt</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ usage.product.trade_name }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Standort</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ usage.site|default:"—" }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Abteilung</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ usage.department|default:"—" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Prüfergebnis</label>
+                <select name="result"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
+                    {% for value, label in result_choices %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Nächste Prüfung fällig am</label>
+                <input type="date" name="next_review_date"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
+                <p class="text-xs text-gray-400 mt-0.5">Wenn leer: automatisch +2 Jahre</p>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Kommentar</label>
+                <textarea name="comment" rows="3"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          placeholder="Ergebnis, Auffälligkeiten, nächste Schritte..."></textarea>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <button type="submit"
+                        class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                    Prüfung speichern
+                </button>
+                <a href="{% url 'compliance:review_dashboard' %}"
+                   class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
+                    Abbrechen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

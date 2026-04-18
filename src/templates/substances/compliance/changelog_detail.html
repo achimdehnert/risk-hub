@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Änderungsprotokoll: {{ log.product.trade_name }} — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <nav class="text-sm text-gray-500">
+        <a href="{% url 'compliance:changelog_list' %}" class="hover:text-gray-700">Änderungsprotokolle</a>
+        <span class="mx-2">/</span>
+        <span>{{ log.product.trade_name }}</span>
+    </nav>
+
+    <div class="flex items-center gap-3">
+        <h1 class="text-2xl font-bold text-gray-900">{{ log }}</h1>
+        <span class="text-xs px-2 py-1 rounded
+            {% if log.impact == 'action_required' %}bg-red-100 text-red-700
+            {% elif log.impact == 'informational' %}bg-blue-100 text-blue-700
+            {% else %}bg-gray-100 text-gray-600{% endif %}">
+            {{ log.get_impact_display }}
+        </span>
+    </div>
+
+    <!-- Meta -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Produkt</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ log.product.trade_name }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Alte Revision</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{% if log.old_revision %}Rev.{{ log.old_revision.revision_number }}{% else %}Ersterfassung{% endif %}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Neue Revision</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">Rev.{{ log.new_revision.revision_number }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Erstellt</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ log.created_at|date:"d.m.Y H:i" }}</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Changes (JSON Diff) -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Änderungen</h2>
+        {% if log.changes %}
+            {% for category, diff in log.changes.items %}
+            <div class="mb-4">
+                <h3 class="text-sm font-medium text-gray-700 mb-2">{{ category }}</h3>
+                {% if diff.added %}
+                <div class="mb-2">
+                    <span class="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded">+ Hinzugefügt</span>
+                    <ul class="mt-1 text-sm text-gray-700 space-y-0.5">
+                        {% for item in diff.added %}<li class="bg-green-50 px-3 py-1 rounded">{{ item }}</li>{% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                {% if diff.removed %}
+                <div class="mb-2">
+                    <span class="text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded">− Entfernt</span>
+                    <ul class="mt-1 text-sm text-gray-700 space-y-0.5">
+                        {% for item in diff.removed %}<li class="bg-red-50 px-3 py-1 rounded">{{ item }}</li>{% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        {% else %}
+        <p class="text-sm text-gray-500">Keine strukturierten Änderungen hinterlegt.</p>
+        {% endif %}
+    </div>
+
+    <!-- Review Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Prüfung</h2>
+        {% if log.reviewed_at %}
+        <div class="flex items-center gap-2 text-sm text-green-700">
+            <span class="text-green-600">✓</span>
+            Geprüft am {{ log.reviewed_at|date:"d.m.Y H:i" }}
+        </div>
+        {% if log.notes %}
+        <p class="text-sm text-gray-700 mt-2">{{ log.notes }}</p>
+        {% endif %}
+        {% else %}
+        <form method="post" class="space-y-3">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Anmerkungen</label>
+                <textarea name="notes" rows="2"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          placeholder="Optionale Anmerkungen...">{{ log.notes }}</textarea>
+            </div>
+            <button type="submit" name="mark_reviewed" value="1"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                Als geprüft markieren
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'compliance:changelog_list' %}" class="text-sm text-gray-500 hover:text-gray-700">← Zurück</a>
+</div>
+{% endblock %}

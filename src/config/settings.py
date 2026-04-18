@@ -151,6 +151,10 @@ MODULE_URL_MAP = {
     "/api/substances/": "ex",
     "/gbu/": "gbu",
     "/api/gbu/": "gbu",
+    "/training/": "training",
+    "/actions/": "actions",
+    "/compliance/": "compliance",
+    "/kataster/": "kataster",
 }
 
 # CSRF

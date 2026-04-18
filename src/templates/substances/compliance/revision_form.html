@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <nav class="text-sm text-gray-500">
+        <a href="{% url 'compliance:revision_list' %}" class="hover:text-gray-700">Kataster-Revisionen</a>
+        <span class="mx-2">/</span>
+        <span>{{ title }}</span>
+    </nav>
+
+    <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <p class="text-sm text-gray-600 mb-4">
+            Eine neue Revision erstellt einen Snapshot des aktuellen Katasters für den gewählten Standort
+            und berechnet automatisch den Changelog zur letzten Revision.
+        </p>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Standort</label>
+                <select name="site" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
+                    <option value="">— Standort wählen —</option>
+                    {% for site in sites %}
+                    <option value="{{ site.pk }}">{{ site.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Anmerkungen</label>
+                <textarea name="notes" rows="3"
+                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                          placeholder="Anlass der Revision, Änderungsbeschreibung..."></textarea>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <button type="submit"
+                        class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                    Revision erstellen
+                </button>
+                <a href="{% url 'compliance:revision_list' %}"
+                   class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
+                    Abbrechen
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

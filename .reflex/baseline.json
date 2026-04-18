@@ -1,0 +1,1365 @@
+{
+  "created_at": "2026-04-18T11:04:47.792915+00:00",
+  "findings": [
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-001-explosionsschutz-modul: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-001-explosionsschutz-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-001-explosionsschutz-modul: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-001-explosionsschutz-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-001-explosionsschutz-modul: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-001-explosionsschutz-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-001-explosionsschutz-modul: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-001-explosionsschutz-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-001-explosionsschutz-modul: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-001-explosionsschutz-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-001-explosionsschutz-modul: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-001-explosionsschutz-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-001-explosionsschutz-modul: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-001-explosionsschutz-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-002-substances-sds-modul: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-002-substances-sds-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-002-substances-sds-modul: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-002-substances-sds-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-002-substances-sds-modul: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-002-substances-sds-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-002-substances-sds-modul: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-002-substances-sds-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-002-substances-sds-modul: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-002-substances-sds-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-002-substances-sds-modul: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-002-substances-sds-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-002-substances-sds-modul: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-002-substances-sds-modul.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-003-tenant-rbac-architektur: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-003-tenant-rbac-architektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-003-tenant-rbac-architektur: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-003-tenant-rbac-architektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-003-tenant-rbac-architektur: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-003-tenant-rbac-architektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-003-tenant-rbac-architektur: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-003-tenant-rbac-architektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-003-tenant-rbac-architektur: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-003-tenant-rbac-architektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-003-tenant-rbac-architektur: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-003-tenant-rbac-architektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-003-tenant-rbac-architektur: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-003-tenant-rbac-architektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-004-api-versionierung: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-004-api-versionierung.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-004-api-versionierung: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-004-api-versionierung.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-004-api-versionierung: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-004-api-versionierung.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-004-api-versionierung: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-004-api-versionierung.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-004-api-versionierung: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-004-api-versionierung.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-004-api-versionierung: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-004-api-versionierung.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-004-api-versionierung: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-004-api-versionierung.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-005-event-driven-architecture: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-005-event-driven-architecture.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-005-event-driven-architecture: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-005-event-driven-architecture.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-005-event-driven-architecture: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-005-event-driven-architecture.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-005-event-driven-architecture: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-005-event-driven-architecture.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-005-event-driven-architecture: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-005-event-driven-architecture.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-005-event-driven-architecture: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-005-event-driven-architecture.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-005-event-driven-architecture: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-005-event-driven-architecture.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-006-audit-compliance: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-006-audit-compliance.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-006-audit-compliance: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-006-audit-compliance.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-006-audit-compliance: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-006-audit-compliance.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-006-audit-compliance: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-006-audit-compliance.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-006-audit-compliance: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-006-audit-compliance.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-006-audit-compliance: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-006-audit-compliance.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-006-audit-compliance: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-006-audit-compliance.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-007-explosionsschutz-brandschutz-paketarchitektur: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-007-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-007-explosionsschutz-brandschutz-paketarchitektur: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-007-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-007-explosionsschutz-brandschutz-paketarchitektur: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-007-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-007-explosionsschutz-brandschutz-paketarchitektur: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-007-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-007-explosionsschutz-brandschutz-paketarchitektur: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-007-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-007-explosionsschutz-brandschutz-paketarchitektur: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-007-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-007-explosionsschutz-brandschutz-paketarchitektur: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-007-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-008-module-1-3-gbu-compliance-ex-dokument: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-008-module-1-3-gbu-compliance-ex-dokument.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-008-module-1-3-gbu-compliance-ex-dokument: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-008-module-1-3-gbu-compliance-ex-dokument.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-008-module-1-3-gbu-compliance-ex-dokument: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-008-module-1-3-gbu-compliance-ex-dokument.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-008-module-1-3-gbu-compliance-ex-dokument: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-008-module-1-3-gbu-compliance-ex-dokument.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-008-module-1-3-gbu-compliance-ex-dokument: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-008-module-1-3-gbu-compliance-ex-dokument.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-008-module-1-3-gbu-compliance-ex-dokument: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-008-module-1-3-gbu-compliance-ex-dokument.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-008-module-1-3-gbu-compliance-ex-dokument: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-008-module-1-3-gbu-compliance-ex-dokument.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-010-explosionsschutz-brandschutz-paketarchitektur: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-010-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-010-explosionsschutz-brandschutz-paketarchitektur: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-010-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-010-explosionsschutz-brandschutz-paketarchitektur: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-010-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-010-explosionsschutz-brandschutz-paketarchitektur: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-010-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-010-explosionsschutz-brandschutz-paketarchitektur: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-010-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-010-explosionsschutz-brandschutz-paketarchitektur: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-010-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-010-explosionsschutz-brandschutz-paketarchitektur: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-010-explosionsschutz-brandschutz-paketarchitektur.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-011-arbeitssicherheit-dokumentenmanagement: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-011-arbeitssicherheit-dokumentenmanagement.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-011-arbeitssicherheit-dokumentenmanagement: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-011-arbeitssicherheit-dokumentenmanagement.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-011-arbeitssicherheit-dokumentenmanagement: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-011-arbeitssicherheit-dokumentenmanagement.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-011-arbeitssicherheit-dokumentenmanagement: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-011-arbeitssicherheit-dokumentenmanagement.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-011-arbeitssicherheit-dokumentenmanagement: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-011-arbeitssicherheit-dokumentenmanagement.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-038-dsb-datenschutzbeauftragter-module: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-038-dsb-datenschutzbeauftragter-module.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-038-dsb-datenschutzbeauftragter-module: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-038-dsb-datenschutzbeauftragter-module.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-038-dsb-datenschutzbeauftragter-module: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-038-dsb-datenschutzbeauftragter-module.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-038-dsb-datenschutzbeauftragter-module: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-038-dsb-datenschutzbeauftragter-module.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-038-dsb-datenschutzbeauftragter-module: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-038-dsb-datenschutzbeauftragter-module.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-039-Review: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-Review.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-039-Review: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-Review.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-039-Review: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-Review.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-039-Review: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-Review.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-039-Review: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-Review.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-039-Review: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-Review.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-039-Review: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-Review.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-039-windsurf-agent-workflows-standard: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-windsurf-agent-workflows-standard.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-039-windsurf-agent-workflows-standard: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-windsurf-agent-workflows-standard.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-039-windsurf-agent-workflows-standard: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-windsurf-agent-workflows-standard.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-039-windsurf-agent-workflows-standard: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-windsurf-agent-workflows-standard.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-039-windsurf-agent-workflows-standard: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-windsurf-agent-workflows-standard.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-039-windsurf-agent-workflows-standard: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-windsurf-agent-workflows-standard.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-039-windsurf-agent-workflows-standard: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-039-windsurf-agent-workflows-standard.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-040-shared-stripe-billing-package: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-040-shared-stripe-billing-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-040-shared-stripe-billing-package: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-040-shared-stripe-billing-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-040-shared-stripe-billing-package: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-040-shared-stripe-billing-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-040-shared-stripe-billing-package: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-040-shared-stripe-billing-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-040-shared-stripe-billing-package: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-040-shared-stripe-billing-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-040-shared-stripe-billing-package: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-040-shared-stripe-billing-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-040-shared-stripe-billing-package: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-040-shared-stripe-billing-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-041-project-based-workflow: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-041-project-based-workflow.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-041-project-based-workflow: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-041-project-based-workflow.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-041-project-based-workflow: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-041-project-based-workflow.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-041-project-based-workflow: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-041-project-based-workflow.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-041-project-based-workflow: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-041-project-based-workflow.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-041-project-based-workflow: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-041-project-based-workflow.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-041-project-based-workflow: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-041-project-based-workflow.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_title",
+      "severity": "block",
+      "message": "ADR-042-iil-fieldprefill-package: Missing required frontmatter field 'title'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-042-iil-fieldprefill-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_status",
+      "severity": "block",
+      "message": "ADR-042-iil-fieldprefill-package: Missing required frontmatter field 'status'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-042-iil-fieldprefill-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_frontmatter_date",
+      "severity": "block",
+      "message": "ADR-042-iil-fieldprefill-package: Missing required frontmatter field 'date'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-042-iil-fieldprefill-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "adr.missing_section_context",
+      "severity": "warn",
+      "message": "ADR-042-iil-fieldprefill-package: Missing recommended section containing 'context'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-042-iil-fieldprefill-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_drivers",
+      "severity": "warn",
+      "message": "ADR-042-iil-fieldprefill-package: Missing recommended section containing 'decision drivers'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-042-iil-fieldprefill-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_considered_options",
+      "severity": "warn",
+      "message": "ADR-042-iil-fieldprefill-package: Missing recommended section containing 'considered options'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-042-iil-fieldprefill-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "adr.missing_section_decision_outcome",
+      "severity": "warn",
+      "message": "ADR-042-iil-fieldprefill-package: Missing recommended section containing 'decision outcome'",
+      "adr_ref": "MADR 4.0",
+      "fix_hint": null,
+      "file_path": "docs/adr/ADR-042-iil-fieldprefill-package.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "compose.healthcheck_in_dockerfile",
+      "severity": "block",
+      "message": "HEALTHCHECK in docker/app/Dockerfile — must be per-service in docker-compose.prod.yml only (coach-hub incident)",
+      "adr_ref": "ADR-021 §3.4",
+      "fix_hint": "Remove HEALTHCHECK from docker/app/Dockerfile, add per-service in compose",
+      "file_path": "docker/app/Dockerfile",
+      "auto_fixable": true,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "security.hardcoded_secret",
+      "severity": "block",
+      "message": "docs/deployment/DEPLOYMENT.md: Hardcoded secret detected in source code",
+      "adr_ref": null,
+      "fix_hint": "Move to .env file and use os.getenv()",
+      "file_path": "docs/deployment/DEPLOYMENT.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "security.hardcoded_secret",
+      "severity": "block",
+      "message": "docs/_archive/inputs/risk-hub-project/docs/deployment/DEPLOYMENT.md: Hardcoded secret detected in source code",
+      "adr_ref": null,
+      "fix_hint": "Move to .env file and use os.getenv()",
+      "file_path": "docs/_archive/inputs/risk-hub-project/docs/deployment/DEPLOYMENT.md",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "security.hardcoded_secret",
+      "severity": "block",
+      "message": "src/config/settings_test.py: Hardcoded secret detected in source code",
+      "adr_ref": null,
+      "fix_hint": "Move to .env file and use os.getenv()",
+      "file_path": "src/config/settings_test.py",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "security.hardcoded_secret",
+      "severity": "block",
+      "message": "packages/bfagent-llm/src/bfagent_llm/adapters.py: Hardcoded secret detected in source code",
+      "adr_ref": null,
+      "fix_hint": "Move to .env file and use os.getenv()",
+      "file_path": "packages/bfagent-llm/src/bfagent_llm/adapters.py",
+      "auto_fixable": false,
+      "fix_complexity": "simple"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-001-area-create: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-001-area-create.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-001-area-create: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-001-area-create.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-002-ex-concept-create: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-002-ex-concept-create.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-002-ex-concept-create: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-002-ex-concept-create.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-003-sds-upload: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-003-sds-upload.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-003-sds-upload: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-003-sds-upload.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-004-hazardous-substance-register: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-004-hazardous-substance-register.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-004-hazardous-substance-register: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-004-hazardous-substance-register.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-005-sds-update-cycle: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-005-sds-update-cycle.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-005-sds-update-cycle: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-005-sds-update-cycle.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-006-sds-periodic-review: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-006-sds-periodic-review.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-006-sds-periodic-review: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-006-sds-periodic-review.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-007-kataster-versioning: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-007-kataster-versioning.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-007-kataster-versioning: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-007-kataster-versioning.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-008-risk-assessment-update: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-008-risk-assessment-update.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-008-risk-assessment-update: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-008-risk-assessment-update.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-009-training-management: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-009-training-management.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-009-training-management: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-009-training-management.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-010-product-equipment-recommendation: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-010-product-equipment-recommendation.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-010-product-equipment-recommendation: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-010-product-equipment-recommendation.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_section_ziel",
+      "severity": "block",
+      "message": "UC-PROJECT-WORKFLOW: Missing required section 'ziel'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-PROJECT-WORKFLOW.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_nachbedingung",
+      "severity": "info",
+      "message": "UC-PROJECT-WORKFLOW: Missing recommended section 'nachbedingung'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-PROJECT-WORKFLOW.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    },
+    {
+      "rule_id": "uc.missing_recommended_hauptszenario",
+      "severity": "info",
+      "message": "UC-PROJECT-WORKFLOW: Missing recommended section 'hauptszenario'",
+      "adr_ref": "ADR-162",
+      "fix_hint": null,
+      "file_path": "docs/use-cases/UC-PROJECT-WORKFLOW.md",
+      "auto_fixable": false,
+      "fix_complexity": "moderate"
+    }
+  ]
+}

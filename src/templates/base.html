@@ -76,6 +76,15 @@
                         Brandschutz
                     </a>
                     {% endif %}
+                    <a href="/training/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/training/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                        Unterweisungen
+                    </a>
+                    <a href="/actions/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':9' == '/actions/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                        Maßnahmen
+                    </a>
+                    <a href="/compliance/reviews/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':12' == '/compliance/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                        Compliance
+                    </a>
                     {% if user.is_staff %}
                     <a href="/tenants/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':9' == '/tenants/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Mandanten

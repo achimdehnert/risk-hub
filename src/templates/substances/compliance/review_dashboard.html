@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Compliance-Prüfungen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Compliance-Prüfungen</h1>
+            <p class="text-sm text-gray-500 mt-1">UC-006: Periodische SDS- und Katasterprüfungen</p>
+        </div>
+        <a href="{% url 'compliance:review_list' %}"
+           class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm">
+            Alle Prüfungen →
+        </a>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Verwendungen</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats.total_usages }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-red-200 p-5 {% if stats.overdue %}bg-red-50{% endif %}">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Überfällig</p>
+            <p class="text-3xl font-bold {% if stats.overdue %}text-red-600{% else %}text-gray-900{% endif %} mt-1">{{ stats.overdue }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-orange-200 p-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Fällig (30 Tage)</p>
+            <p class="text-3xl font-bold text-orange-600 mt-1">{{ stats.upcoming }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Geprüft</p>
+            <p class="text-3xl font-bold text-green-600 mt-1">{{ stats.total_reviews }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Overdue -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h2 class="text-sm font-semibold text-red-700">Überfällige Prüfungen</h2>
+            </div>
+            {% if overdue_usages %}
+            <div class="divide-y divide-gray-50">
+                {% for u in overdue_usages %}
+                <div class="px-6 py-3 flex justify-between items-center hover:bg-gray-50">
+                    <div>
+                        <p class="text-sm font-medium text-gray-900">{{ u.product.trade_name }}</p>
+                        <p class="text-xs text-gray-500">{{ u.site.name|default:"—" }} · {{ u.department|default:"—" }}</p>
+                    </div>
+                    <a href="{% url 'compliance:review_create' u.pk %}"
+                       class="px-3 py-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-xs font-medium">
+                        Prüfen
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i data-lucide="check-circle" class="w-8 h-8 mx-auto text-green-300 mb-2"></i>
+                <p class="text-sm">Keine überfälligen Prüfungen.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Recent Reviews -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h2 class="text-sm font-semibold text-gray-900">Letzte Prüfungen</h2>
+            </div>
+            {% if recent_reviews %}
+            <div class="divide-y divide-gray-50">
+                {% for r in recent_reviews %}
+                <div class="px-6 py-3">
+                    <div class="flex justify-between items-center">
+                        <p class="text-sm font-medium text-gray-900">{{ r.substance_usage.product.trade_name }}</p>
+                        <span class="text-xs px-2 py-0.5 rounded
+                            {% if r.result == 'current' %}bg-green-100 text-green-700
+                            {% elif r.result == 'update_required' %}bg-orange-100 text-orange-700
+                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                            {{ r.get_result_display }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500">{{ r.review_date|date:"d.m.Y" }} · Nächste: {{ r.next_review_date|date:"d.m.Y" }}</p>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <p class="text-sm">Noch keine Prüfungen durchgeführt.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

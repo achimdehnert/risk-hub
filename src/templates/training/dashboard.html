@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Unterweisungen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Unterweisungen</h1>
+      <p class="text-sm text-gray-500 mt-1">Gefahrstoff-Unterweisungen nach GefStoffV §14</p>
+    </div>
+    <div class="flex gap-3">
+      <a href="{% url 'training:topic-list' %}"
+         class="inline-flex items-center px-3 py-2 border border-gray-300 bg-white hover:bg-gray-50 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+        <i data-lucide="book-open" class="w-4 h-4 mr-1.5"></i>
+        Themen
+      </a>
+      <a href="{% url 'training:session-create' %}"
+         class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors">
+        <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+        Neue Unterweisung
+      </a>
+    </div>
+  </div>
+
+  {# ─ KPI Cards ──────────────────────────────────────────────── #}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-blue-50 rounded-lg"><i data-lucide="book-open" class="w-5 h-5 text-blue-600"></i></div>
+        <div>
+          <p class="text-xs text-gray-500">Themen</p>
+          <p class="text-xl font-bold text-gray-900">{{ topics_count }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-yellow-50 rounded-lg"><i data-lucide="calendar" class="w-5 h-5 text-yellow-600"></i></div>
+        <div>
+          <p class="text-xs text-gray-500">Geplant</p>
+          <p class="text-xl font-bold text-gray-900">{{ sessions_planned }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-green-50 rounded-lg"><i data-lucide="check-circle" class="w-5 h-5 text-green-600"></i></div>
+        <div>
+          <p class="text-xs text-gray-500">Durchgeführt</p>
+          <p class="text-xl font-bold text-gray-900">{{ sessions_completed }}</p>
+        </div>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-red-50 rounded-lg"><i data-lucide="alert-triangle" class="w-5 h-5 text-red-600"></i></div>
+        <div>
+          <p class="text-xs text-gray-500">Überfällig</p>
+          <p class="text-xl font-bold text-gray-900">{{ overdue_count }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  {# ─ Two-column layout ──────────────────────────────────────── #}
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+    {# Upcoming #}
+    <div class="bg-white rounded-xl border border-gray-200">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-900">Anstehende Unterweisungen</h2>
+        <a href="{% url 'training:session-list' %}?status=planned" class="text-xs text-orange-600 hover:underline">Alle →</a>
+      </div>
+      <div class="divide-y divide-gray-100">
+        {% for s in upcoming %}
+        <a href="{% url 'training:session-detail' s.pk %}" class="flex items-center justify-between px-5 py-3 hover:bg-gray-50">
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ s.topic.title }}</p>
+            <p class="text-xs text-gray-500">{{ s.session_date|date:"d.m.Y" }}</p>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Geplant</span>
+        </a>
+        {% empty %}
+        <div class="px-5 py-6 text-center text-sm text-gray-400">Keine anstehenden Unterweisungen</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {# Recent #}
+    <div class="bg-white rounded-xl border border-gray-200">
+      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-gray-900">Kürzlich durchgeführt</h2>
+        <a href="{% url 'training:session-list' %}?status=completed" class="text-xs text-orange-600 hover:underline">Alle →</a>
+      </div>
+      <div class="divide-y divide-gray-100">
+        {% for s in recent %}
+        <a href="{% url 'training:session-detail' s.pk %}" class="flex items-center justify-between px-5 py-3 hover:bg-gray-50">
+          <div>
+            <p class="text-sm font-medium text-gray-900">{{ s.topic.title }}</p>
+            <p class="text-xs text-gray-500">{{ s.session_date|date:"d.m.Y" }}</p>
+          </div>
+          <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Durchgeführt</span>
+        </a>
+        {% empty %}
+        <div class="px-5 py-6 text-center text-sm text-gray-400">Noch keine durchgeführten Unterweisungen</div>
+        {% endfor %}
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -59,6 +59,7 @@ urlpatterns = [
     path("api/substances/", include("substances.urls")),
     path("substances/", include("substances.html_urls")),
     path("kataster/", include("substances.kataster_urls")),
+    path("compliance/", include("substances.compliance_urls")),
     path(
         "notifications/",
         include("notifications.urls"),
@@ -80,6 +81,7 @@ urlpatterns = [
         else []
     ),
     path("sds/", include("global_sds.urls")),
+    path("training/", include("training.urls")),
     # Shared Progress Rail (ADR-017 §8)
     path(
         "progress/<str:doc_type>/<str:doc_id>/",

@@ -171,9 +171,9 @@ class TrainingAttendance(models.Model):
         on_delete=models.CASCADE,
         related_name="attendances",
     )
-    user_id = models.UUIDField(
+    user_id = models.PositiveBigIntegerField(
         db_index=True,
-        help_text="User-ID des Teilnehmers",
+        help_text="User-ID des Teilnehmers (FK zu identity.User.pk)",
     )
     status = models.CharField(
         max_length=10,

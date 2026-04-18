@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}{{ title }} — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <nav class="text-sm text-gray-500">
+        <a href="{% url 'risk:dashboard' %}" class="hover:text-gray-700">Risikomanagement</a>
+        <span class="mx-2">/</span>
+        <a href="{% url 'risk:assessment_detail' assessment.id %}" class="hover:text-gray-700">{{ assessment.title|truncatechars:25 }}</a>
+        <span class="mx-2">/</span>
+        <span>{{ title }}</span>
+    </nav>
+
+    <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {% for field in form %}
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}</label>
+                {{ field }}
+                {% if field.help_text %}<p class="text-xs text-gray-400 mt-0.5">{{ field.help_text }}</p>{% endif %}
+                {% if field.errors %}<p class="text-xs text-red-600 mt-1">{{ field.errors.0 }}</p>{% endif %}
+            </div>
+            {% endfor %}
+
+            <!-- Risk Score Preview -->
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-xs text-gray-500 uppercase tracking-wider mb-1">Risikomatrix</p>
+                <p class="text-sm text-gray-700">Schwere × Wahrscheinlichkeit = <strong id="risk-score">—</strong></p>
+            </div>
+
+            <div class="flex gap-3 pt-4">
+                <button type="submit"
+                        class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                    Speichern
+                </button>
+                <a href="{% url 'risk:assessment_detail' assessment.id %}"
+                   class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
+                    Abbrechen
+                </a>
+                {% if hazard %}
+                <form method="post" action="{% url 'risk:hazard_delete' assessment.id hazard.id %}" class="ml-auto">
+                    {% csrf_token %}
+                    <button type="submit" onclick="return confirm('Gefährdung wirklich löschen?')"
+                            class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm">
+                        Löschen
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const sev = document.querySelector('[name="severity"]');
+    const prob = document.querySelector('[name="probability"]');
+    const display = document.getElementById('risk-score');
+    function update() {
+        const s = parseInt(sev.value) || 0;
+        const p = parseInt(prob.value) || 0;
+        const score = s * p;
+        display.textContent = score || '—';
+        display.className = score >= 15 ? 'text-red-600 font-bold' : score >= 8 ? 'text-orange-600 font-bold' : 'font-bold';
+    }
+    if (sev && prob) { sev.addEventListener('change', update); prob.addEventListener('change', update); update(); }
+});
+</script>
+{% endblock %}

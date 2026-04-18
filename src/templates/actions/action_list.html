@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Alle Maßnahmen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <nav class="text-xs text-gray-500 mb-1"><a href="{% url 'actions:dashboard' %}" class="hover:underline">Maßnahmen</a> / Liste</nav>
+      <h1 class="text-2xl font-bold text-gray-900">Alle Maßnahmen</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ actions|length }} Einträge</p>
+    </div>
+    <a href="{% url 'actions:action-create' %}"
+       class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors">
+      <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+      Neue Maßnahme
+    </a>
+  </div>
+
+  {# ─ Filter ─────────────────────────────────────────── #}
+  <div class="bg-white rounded-xl border border-gray-200 p-4 mb-5 flex flex-wrap gap-3 items-end">
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
+      <select onchange="var p=new URLSearchParams(window.location.search);p.set('status',this.value);window.location.search=p"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="" {% if not current_status %}selected{% endif %}>Alle Status</option>
+        <option value="open" {% if current_status == 'open' %}selected{% endif %}>Offen</option>
+        <option value="in_progress" {% if current_status == 'in_progress' %}selected{% endif %}>In Bearbeitung</option>
+        <option value="completed" {% if current_status == 'completed' %}selected{% endif %}>Erledigt</option>
+        <option value="cancelled" {% if current_status == 'cancelled' %}selected{% endif %}>Abgebrochen</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-medium text-gray-600 mb-1">Priorität</label>
+      <select onchange="var p=new URLSearchParams(window.location.search);p.set('priority',this.value);window.location.search=p"
+              class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
+        <option value="" {% if not current_priority %}selected{% endif %}>Alle</option>
+        <option value="4" {% if current_priority == '4' %}selected{% endif %}>Kritisch</option>
+        <option value="3" {% if current_priority == '3' %}selected{% endif %}>Hoch</option>
+        <option value="2" {% if current_priority == '2' %}selected{% endif %}>Mittel</option>
+        <option value="1" {% if current_priority == '1' %}selected{% endif %}>Niedrig</option>
+      </select>
+    </div>
+    <div class="ml-auto text-xs text-gray-400 self-center">{{ actions|length }} Einträge</div>
+  </div>
+
+  {% if actions %}
+  <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Maßnahme</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Priorität</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fällig</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for action in actions %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4">
+            <a href="{% url 'actions:action-detail' action.pk %}" class="text-sm font-medium text-gray-900 hover:text-orange-600">{{ action.title }}</a>
+            {% if action.description %}<p class="text-xs text-gray-500 mt-0.5 truncate max-w-sm">{{ action.description|truncatewords:10 }}</p>{% endif %}
+          </td>
+          <td class="px-6 py-4">
+            {% if action.priority >= 3 %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">{{ action.get_priority_display }}</span>
+            {% elif action.priority == 2 %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">{{ action.get_priority_display }}</span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">{{ action.get_priority_display }}</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-600">
+            {% if action.due_date %}{{ action.due_date|date:"d.m.Y" }}{% else %}—{% endif %}
+          </td>
+          <td class="px-6 py-4">
+            {% if action.status == "open" %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">Offen</span>
+            {% elif action.status == "in_progress" %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">In Bearbeitung</span>
+            {% elif action.status == "completed" %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Erledigt</span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">{{ action.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 text-right">
+            <a href="{% url 'actions:action-detail' action.pk %}" class="text-sm text-orange-600 hover:underline">Anzeigen</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
+    <i data-lucide="target" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+    <p class="text-gray-500 font-medium">Keine Maßnahmen gefunden.</p>
+    <a href="{% url 'actions:action-create' %}"
+       class="mt-4 inline-block px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
+      Erste Maßnahme anlegen
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

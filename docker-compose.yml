@@ -6,7 +6,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-app}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
     ports:
-      - "5436:5432"
+      - "127.0.0.1:5436:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -32,7 +32,7 @@ services:
       minio:
         condition: service_started
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
     command: ["web"]
 
   worker:
@@ -52,7 +52,7 @@ services:
     depends_on:
       - app
     ports:
-      - "8080:80"
+      - "127.0.0.1:8080:80"
 
   minio:
     image: minio/minio:RELEASE.2024-10-13T13-34-11Z
@@ -61,8 +61,8 @@ services:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minio}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?Set MINIO_ROOT_PASSWORD}
     ports:
-      - "9002:9000"
-      - "9003:9001"
+      - "127.0.0.1:9002:9000"
+      - "127.0.0.1:9003:9001"
     volumes:
       - miniodata:/data
 

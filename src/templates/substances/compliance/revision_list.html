@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}Kataster-Revisionen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Kataster-Revisionen</h1>
+            <p class="text-sm text-gray-500 mt-1">UC-007: Versionierung und Freigabe des Gefahrstoffkatasters</p>
+        </div>
+        <a href="{% url 'compliance:revision_create' %}"
+           class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+            + Neue Revision
+        </a>
+    </div>
+
+    <!-- KPIs -->
+    <div class="grid grid-cols-3 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Revisionen</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ stats.total }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Entwürfe</p>
+            <p class="text-3xl font-bold text-orange-600 mt-1">{{ stats.draft }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Freigegeben</p>
+            <p class="text-3xl font-bold text-green-600 mt-1">{{ stats.approved }}</p>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        {% if revisions %}
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 text-left text-gray-500">
+                    <th class="py-3 px-6">Standort</th>
+                    <th class="py-3 px-3">Rev.</th>
+                    <th class="py-3 px-3">Status</th>
+                    <th class="py-3 px-3">Einträge</th>
+                    <th class="py-3 px-3">Erstellt</th>
+                    <th class="py-3 px-3"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rev in revisions %}
+                <tr class="border-b border-gray-50 hover:bg-gray-50">
+                    <td class="py-3 px-6 font-medium text-gray-900">{{ rev.site.name }}</td>
+                    <td class="py-3 px-3 text-gray-700 font-mono">{{ rev.revision_number }}</td>
+                    <td class="py-3 px-3">
+                        <span class="text-xs px-2 py-0.5 rounded
+                            {% if rev.status == 'approved' %}bg-green-100 text-green-700
+                            {% elif rev.status == 'submitted' %}bg-yellow-100 text-yellow-700
+                            {% elif rev.status == 'superseded' %}bg-gray-100 text-gray-500
+                            {% else %}bg-orange-100 text-orange-700{% endif %}">
+                            {{ rev.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-3 text-gray-600">{{ rev.snapshot|length }}</td>
+                    <td class="py-3 px-3 text-gray-500 text-xs">{{ rev.created_at|date:"d.m.Y" }}</td>
+                    <td class="py-3 px-3">
+                        <a href="{% url 'compliance:revision_detail' rev.pk %}" class="text-orange-600 hover:text-orange-700 text-xs">Details →</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-12 text-gray-500">
+            <i data-lucide="history" class="w-10 h-10 mx-auto text-gray-300 mb-3"></i>
+            <p class="font-medium">Keine Revisionen</p>
+            <p class="text-sm mt-1">Erstelle eine erste Kataster-Revision für einen Standort.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    {% include "includes/pagination.html" %}
+</div>
+{% endblock %}

@@ -357,6 +357,8 @@ class SubstitutionCheck(models.Model):
     substance_usage = models.ForeignKey(
         "substances.SubstanceUsage",
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name="substitution_checks",
     )
     assessment = models.ForeignKey(
@@ -369,6 +371,8 @@ class SubstitutionCheck(models.Model):
     current_product = models.ForeignKey(
         "substances.Product",
         on_delete=models.CASCADE,
+        null=True,
+        blank=True,
         related_name="substitution_checks_current",
     )
     alternative_product = models.ForeignKey(

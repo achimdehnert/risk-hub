@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Unterweisungsthemen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 py-8">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <nav class="text-xs text-gray-500 mb-1"><a href="{% url 'training:dashboard' %}" class="hover:underline">Unterweisungen</a> / Themen</nav>
+      <h1 class="text-2xl font-bold text-gray-900">Unterweisungsthemen</h1>
+      <p class="text-sm text-gray-500 mt-1">{{ topics|length }} Themen definiert</p>
+    </div>
+    <a href="{% url 'training:topic-create' %}"
+       class="inline-flex items-center px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg transition-colors">
+      <i data-lucide="plus" class="w-4 h-4 mr-2"></i>
+      Neues Thema
+    </a>
+  </div>
+
+  {% if topics %}
+  <div class="bg-white shadow-sm rounded-xl border border-gray-200 overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-gray-50">
+        <tr>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Thema</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Intervall</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Standort</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Sitzungen</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+          <th class="px-6 py-3"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200">
+        {% for topic in topics %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-6 py-4">
+            <a href="{% url 'training:topic-detail' topic.pk %}" class="text-sm font-medium text-gray-900 hover:text-orange-600">{{ topic.title }}</a>
+            {% if topic.description %}<p class="text-xs text-gray-500 mt-0.5 truncate max-w-xs">{{ topic.description|truncatewords:12 }}</p>{% endif %}
+          </td>
+          <td class="px-6 py-4 text-sm text-gray-600">{{ topic.get_interval_display }}</td>
+          <td class="px-6 py-4 text-sm text-gray-600">{{ topic.site|default:"—" }}</td>
+          <td class="px-6 py-4 text-sm text-gray-600">{{ topic.session_count }}</td>
+          <td class="px-6 py-4">
+            {% if topic.is_active %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Aktiv</span>
+            {% else %}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">Inaktiv</span>
+            {% endif %}
+          </td>
+          <td class="px-6 py-4 text-right">
+            <a href="{% url 'training:topic-detail' topic.pk %}" class="text-sm text-orange-600 hover:underline mr-3">Anzeigen</a>
+            <a href="{% url 'training:topic-edit' topic.pk %}" class="text-sm text-gray-500 hover:underline">Bearbeiten</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-16 bg-white rounded-xl border border-dashed border-gray-300">
+    <i data-lucide="book-open" class="w-12 h-12 text-gray-300 mx-auto mb-4"></i>
+    <p class="text-gray-500 font-medium">Noch keine Unterweisungsthemen definiert.</p>
+    <a href="{% url 'training:topic-create' %}"
+       class="mt-4 inline-block px-4 py-2 bg-orange-500 text-white rounded-lg text-sm hover:bg-orange-600">
+      Erstes Thema anlegen
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

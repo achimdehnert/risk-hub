@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Kataster Rev.{{ revision.revision_number }} — {{ revision.site.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <nav class="text-sm text-gray-500">
+        <a href="{% url 'compliance:revision_list' %}" class="hover:text-gray-700">Kataster-Revisionen</a>
+        <span class="mx-2">/</span>
+        <span>{{ revision.site.name }} Rev.{{ revision.revision_number }}</span>
+    </nav>
+
+    <div class="flex justify-between items-start">
+        <div class="flex items-center gap-3">
+            <h1 class="text-2xl font-bold text-gray-900">{{ revision.site.name }} — Revision {{ revision.revision_number }}</h1>
+            <span class="text-xs px-2 py-1 rounded
+                {% if revision.status == 'approved' %}bg-green-100 text-green-700
+                {% elif revision.status == 'submitted' %}bg-yellow-100 text-yellow-700
+                {% elif revision.status == 'superseded' %}bg-gray-100 text-gray-500
+                {% else %}bg-orange-100 text-orange-700{% endif %}">
+                {{ revision.get_status_display }}
+            </span>
+        </div>
+        {% if revision.status != 'approved' and revision.status != 'superseded' %}
+        <form method="post" action="{% url 'compliance:revision_approve' revision.pk %}">
+            {% csrf_token %}
+            <button type="submit"
+                    class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 text-sm font-medium">
+                Freigeben
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Meta -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Standort</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ revision.site.name }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Einträge</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ snapshot_count }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Erstellt</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ revision.created_at|date:"d.m.Y H:i" }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Freigegeben</p>
+                <p class="text-sm font-medium text-gray-900 mt-1">{{ revision.approved_at|date:"d.m.Y H:i"|default:"—" }}</p>
+            </div>
+        </div>
+        {% if revision.notes %}
+        <div class="mt-4 pt-4 border-t border-gray-100">
+            <p class="text-sm text-gray-700">{{ revision.notes }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Changelog -->
+    {% if changelog %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">Änderungen zur Vorgängerrevision</h2>
+        <div class="space-y-3">
+            {% if changelog.added %}
+            <div>
+                <span class="text-xs font-medium text-green-700 bg-green-50 px-2 py-0.5 rounded">+ {{ changelog.added|length }} Produkt{{ changelog.added|length|pluralize:"e" }} hinzugefügt</span>
+                <div class="mt-2 space-y-1">
+                    {% for item in changelog.added %}
+                    <div class="text-sm bg-green-50 px-3 py-2 rounded">
+                        {{ item.trade_name }}{% if item.manufacturer %} ({{ item.manufacturer }}){% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if changelog.removed %}
+            <div>
+                <span class="text-xs font-medium text-red-700 bg-red-50 px-2 py-0.5 rounded">− {{ changelog.removed|length }} Produkt{{ changelog.removed|length|pluralize:"e" }} entfernt</span>
+                <div class="mt-2 space-y-1">
+                    {% for item in changelog.removed %}
+                    <div class="text-sm bg-red-50 px-3 py-2 rounded">
+                        {{ item.trade_name }}{% if item.manufacturer %} ({{ item.manufacturer }}){% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if not changelog.added and not changelog.removed %}
+            <p class="text-sm text-gray-500">Keine Änderungen zur Vorgängerrevision.</p>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Snapshot Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-100">
+            <h2 class="text-sm font-semibold text-gray-900">Kataster-Snapshot ({{ snapshot_count }} Einträge)</h2>
+        </div>
+        {% if revision.snapshot %}
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 text-left text-gray-500">
+                    <th class="py-2 px-6">Produkt</th>
+                    <th class="py-2 px-3">Hersteller</th>
+                    <th class="py-2 px-3">Abteilung</th>
+                    <th class="py-2 px-3">Lagerort</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in revision.snapshot %}
+                <tr class="border-b border-gray-50">
+                    <td class="py-2 px-6 font-medium text-gray-900">{{ item.trade_name }}</td>
+                    <td class="py-2 px-3 text-gray-600">{{ item.manufacturer|default:"—" }}</td>
+                    <td class="py-2 px-3 text-gray-600">{{ item.department|default:"—" }}</td>
+                    <td class="py-2 px-3 text-gray-600">{{ item.storage_location|default:"—" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="text-center py-8 text-gray-500">
+            <p class="text-sm">Snapshot ist leer.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <a href="{% url 'compliance:revision_list' %}" class="text-sm text-gray-500 hover:text-gray-700">← Zurück</a>
+</div>
+{% endblock %}

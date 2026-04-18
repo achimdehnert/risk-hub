@@ -7,6 +7,7 @@ import contextlib
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.db import IntegrityError
 from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -204,7 +205,15 @@ class SubstanceCreateView(LoginRequiredMixin, View):
             substance = form.save(commit=False)
             substance.tenant_id = tenant_id
             substance.created_by = user_id
-            substance.save()
+            try:
+                substance.save()
+            except IntegrityError:
+                form.add_error("name", "Ein Gefahrstoff mit diesem Namen existiert bereits.")
+                return render(
+                    request,
+                    self.template_name,
+                    {"form": form, "title": "Neuen Gefahrstoff anlegen"},
+                )
 
             # CAS-Nummer speichern falls angegeben
             cas_number = form.cleaned_data.get("cas_number")

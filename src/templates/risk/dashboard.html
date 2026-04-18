@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Risikomanagement — Schutztat{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <div class="flex justify-between items-start">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Risikomanagement</h1>
+            <p class="text-sm text-gray-500 mt-1">Übersicht Gefährdungsbeurteilungen und Schutzmaßnahmen</p>
+        </div>
+        <a href="{% url 'risk:assessment_create' %}"
+           class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+            + Neue Bewertung
+        </a>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Bewertungen</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ total_assessments }}</p>
+            <p class="text-xs text-gray-500 mt-1">{{ draft_count }} Entwurf · {{ approved_count }} freigegeben</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Gefährdungen</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ total_hazards }}</p>
+            <p class="text-xs text-orange-600 mt-1">{{ open_hazards }} offen</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-red-200 p-5 {% if overdue_hazards %}bg-red-50{% endif %}">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Überfällig</p>
+            <p class="text-3xl font-bold {% if overdue_hazards %}text-red-600{% else %}text-gray-900{% endif %} mt-1">{{ overdue_hazards }}</p>
+            <p class="text-xs text-gray-500 mt-1">Maßnahmen fällig</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+            <p class="text-xs text-gray-500 uppercase tracking-wider">Maßnahmen</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1">{{ measures_implemented }}</p>
+            <p class="text-xs text-green-600 mt-1">umgesetzt · {{ measures_open }} offen</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Assessments -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center">
+                <h2 class="text-sm font-semibold text-gray-900">Aktuelle Bewertungen</h2>
+                <a href="{% url 'risk:assessment_list' %}" class="text-xs text-orange-600 hover:text-orange-700">Alle →</a>
+            </div>
+            {% if recent_assessments %}
+            <div class="divide-y divide-gray-50">
+                {% for a in recent_assessments %}
+                <a href="{% url 'risk:assessment_detail' a.id %}" class="block px-6 py-3 hover:bg-gray-50">
+                    <div class="flex justify-between items-center">
+                        <p class="text-sm font-medium text-gray-900">{{ a.title|truncatechars:40 }}</p>
+                        <span class="text-xs px-2 py-0.5 rounded
+                            {% if a.status == 'approved' %}bg-green-100 text-green-700
+                            {% elif a.status == 'in_review' %}bg-yellow-100 text-yellow-700
+                            {% else %}bg-gray-100 text-gray-600{% endif %}">
+                            {{ a.get_status_display }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-500">{{ a.get_category_display }} · {{ a.updated_at|date:"d.m.Y" }}</p>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <p class="text-sm">Noch keine Bewertungen vorhanden.</p>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Overdue Items -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-100">
+                <h2 class="text-sm font-semibold text-gray-900">Überfällige Maßnahmen</h2>
+            </div>
+            {% if overdue_items %}
+            <div class="divide-y divide-gray-50">
+                {% for h in overdue_items %}
+                <a href="{% url 'risk:assessment_detail' h.assessment_id %}" class="block px-6 py-3 hover:bg-gray-50">
+                    <div class="flex justify-between items-center">
+                        <p class="text-sm font-medium text-red-700">{{ h.title|truncatechars:40 }}</p>
+                        <span class="text-xs text-red-600">fällig {{ h.due_date|date:"d.m.Y" }}</span>
+                    </div>
+                    <p class="text-xs text-gray-500">{{ h.assessment.title|truncatechars:30 }}</p>
+                </a>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8 text-gray-500">
+                <i data-lucide="check-circle" class="w-8 h-8 mx-auto text-green-300 mb-2"></i>
+                <p class="text-sm">Keine überfälligen Maßnahmen.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
