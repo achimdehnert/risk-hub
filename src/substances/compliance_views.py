@@ -50,12 +50,16 @@ def changelog_list(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(logs, ITEMS_PER_PAGE)
     page = paginator.get_page(request.GET.get("page"))
 
-    return render(request, "substances/compliance/changelog_list.html", {
-        "logs": page,
-        "page_obj": page,
-        "stats": stats,
-        "impact_filter": impact_filter,
-    })
+    return render(
+        request,
+        "substances/compliance/changelog_list.html",
+        {
+            "logs": page,
+            "page_obj": page,
+            "stats": stats,
+            "impact_filter": impact_filter,
+        },
+    )
 
 
 @login_required
@@ -88,13 +92,14 @@ def review_dashboard(request: HttpRequest) -> HttpResponse:
     soon = today + timedelta(days=30)
 
     usages = SubstanceUsage.objects.filter(tenant_id=tenant_id).select_related(
-        "product", "site", "department",
+        "product",
+        "site",
+        "department",
     )
     reviews = ComplianceReview.objects.filter(tenant_id=tenant_id)
 
     overdue_usages = usages.filter(
-        Q(compliance_reviews__next_review_date__lt=today)
-        | Q(compliance_reviews__isnull=True),
+        Q(compliance_reviews__next_review_date__lt=today) | Q(compliance_reviews__isnull=True),
     ).distinct()
 
     upcoming_usages = usages.filter(
@@ -114,16 +119,21 @@ def review_dashboard(request: HttpRequest) -> HttpResponse:
     }
 
     recent_reviews = reviews.select_related(
-        "substance_usage__product", "substance_usage__site",
+        "substance_usage__product",
+        "substance_usage__site",
     ).order_by("-review_date")[:10]
 
-    return render(request, "substances/compliance/review_dashboard.html", {
-        "stats": stats,
-        "overdue_usages": overdue_usages[:20],
-        "upcoming_usages": upcoming_usages[:20],
-        "recent_reviews": recent_reviews,
-        "today": today,
-    })
+    return render(
+        request,
+        "substances/compliance/review_dashboard.html",
+        {
+            "stats": stats,
+            "overdue_usages": overdue_usages[:20],
+            "upcoming_usages": upcoming_usages[:20],
+            "recent_reviews": recent_reviews,
+            "today": today,
+        },
+    )
 
 
 @login_required
@@ -152,11 +162,15 @@ def review_create(request: HttpRequest, usage_id: int) -> HttpResponse:
         messages.success(request, f"Prüfung für '{usage.product.trade_name}' dokumentiert.")
         return redirect("compliance:review_dashboard")
 
-    return render(request, "substances/compliance/review_form.html", {
-        "usage": usage,
-        "title": f"Compliance-Prüfung: {usage.product.trade_name}",
-        "result_choices": ComplianceReview.Result.choices,
-    })
+    return render(
+        request,
+        "substances/compliance/review_form.html",
+        {
+            "usage": usage,
+            "title": f"Compliance-Prüfung: {usage.product.trade_name}",
+            "result_choices": ComplianceReview.Result.choices,
+        },
+    )
 
 
 @login_required
@@ -170,10 +184,14 @@ def review_list(request: HttpRequest) -> HttpResponse:
     )
     paginator = Paginator(qs, ITEMS_PER_PAGE)
     page = paginator.get_page(request.GET.get("page"))
-    return render(request, "substances/compliance/review_list.html", {
-        "reviews": page,
-        "page_obj": page,
-    })
+    return render(
+        request,
+        "substances/compliance/review_list.html",
+        {
+            "reviews": page,
+            "page_obj": page,
+        },
+    )
 
 
 # =========================================================================
@@ -200,11 +218,15 @@ def revision_list(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(qs, ITEMS_PER_PAGE)
     page = paginator.get_page(request.GET.get("page"))
 
-    return render(request, "substances/compliance/revision_list.html", {
-        "revisions": page,
-        "page_obj": page,
-        "stats": stats,
-    })
+    return render(
+        request,
+        "substances/compliance/revision_list.html",
+        {
+            "revisions": page,
+            "page_obj": page,
+            "stats": stats,
+        },
+    )
 
 
 @login_required
@@ -213,11 +235,15 @@ def revision_detail(request: HttpRequest, pk: int) -> HttpResponse:
     tenant_id = _tid(request)
     rev = get_object_or_404(KatasterRevision, pk=pk, tenant_id=tenant_id)
 
-    return render(request, "substances/compliance/revision_detail.html", {
-        "revision": rev,
-        "snapshot_count": len(rev.snapshot) if isinstance(rev.snapshot, list) else 0,
-        "changelog": rev.changelog if isinstance(rev.changelog, dict) else {},
-    })
+    return render(
+        request,
+        "substances/compliance/revision_detail.html",
+        {
+            "revision": rev,
+            "snapshot_count": len(rev.snapshot) if isinstance(rev.snapshot, list) else 0,
+            "changelog": rev.changelog if isinstance(rev.changelog, dict) else {},
+        },
+    )
 
 
 @login_required
@@ -235,19 +261,30 @@ def revision_create(request: HttpRequest) -> HttpResponse:
 
         if not site_id:
             messages.error(request, "Bitte einen Standort wählen.")
-            return render(request, "substances/compliance/revision_form.html", {
-                "sites": sites, "title": "Neue Kataster-Revision",
-            })
+            return render(
+                request,
+                "substances/compliance/revision_form.html",
+                {
+                    "sites": sites,
+                    "title": "Neue Kataster-Revision",
+                },
+            )
 
         site = get_object_or_404(Site, pk=site_id, tenant_id=tenant_id)
 
-        last_rev = KatasterRevision.objects.filter(
-            tenant_id=tenant_id, site=site,
-        ).order_by("-revision_number").first()
+        last_rev = (
+            KatasterRevision.objects.filter(
+                tenant_id=tenant_id,
+                site=site,
+            )
+            .order_by("-revision_number")
+            .first()
+        )
         next_num = (last_rev.revision_number + 1) if last_rev else 1
 
         usages = SubstanceUsage.objects.filter(
-            tenant_id=tenant_id, site=site,
+            tenant_id=tenant_id,
+            site=site,
         ).select_related("product")
 
         snapshot = [
@@ -266,7 +303,9 @@ def revision_create(request: HttpRequest) -> HttpResponse:
             old_ids = {e.get("product_id") for e in last_rev.snapshot}
             new_ids = {e["product_id"] for e in snapshot}
             changelog["added"] = [e for e in snapshot if e["product_id"] not in old_ids]
-            changelog["removed"] = [e for e in last_rev.snapshot if e.get("product_id") not in new_ids]
+            changelog["removed"] = [
+                e for e in last_rev.snapshot if e.get("product_id") not in new_ids
+            ]
 
         rev = KatasterRevision.objects.create(
             tenant_id=tenant_id,
@@ -280,10 +319,14 @@ def revision_create(request: HttpRequest) -> HttpResponse:
         messages.success(request, f"Kataster-Revision {next_num} für {site.name} erstellt.")
         return redirect("compliance:revision_detail", pk=rev.pk)
 
-    return render(request, "substances/compliance/revision_form.html", {
-        "sites": sites,
-        "title": "Neue Kataster-Revision",
-    })
+    return render(
+        request,
+        "substances/compliance/revision_form.html",
+        {
+            "sites": sites,
+            "title": "Neue Kataster-Revision",
+        },
+    )
 
 
 @login_required
@@ -300,7 +343,9 @@ def revision_approve(request: HttpRequest, pk: int) -> HttpResponse:
         return redirect("compliance:revision_detail", pk=pk)
 
     KatasterRevision.objects.filter(
-        tenant_id=tenant_id, site=rev.site, status="approved",
+        tenant_id=tenant_id,
+        site=rev.site,
+        status="approved",
     ).update(status="superseded")
 
     rev.status = "approved"

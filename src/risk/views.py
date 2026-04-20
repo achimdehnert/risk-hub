@@ -61,7 +61,9 @@ def risk_dashboard(request: HttpRequest) -> HttpResponse:
         "overdue_items": hazards.filter(
             mitigation_status__in=["open", "in_progress"],
             due_date__lt=today,
-        ).select_related("assessment").order_by("due_date")[:10],
+        )
+        .select_related("assessment")
+        .order_by("due_date")[:10],
     }
     return render(request, "risk/dashboard.html", ctx)
 
@@ -97,13 +99,17 @@ def assessment_list(request: HttpRequest) -> HttpResponse:
     paginator = Paginator(qs, ITEMS_PER_PAGE)
     page = paginator.get_page(request.GET.get("page"))
 
-    return render(request, "risk/assessment_list.html", {
-        "assessments": page,
-        "page_obj": page,
-        "filters": {"status": status_filter, "category": category_filter},
-        "status_choices": Assessment.Status.choices,
-        "category_choices": Assessment.Category.choices,
-    })
+    return render(
+        request,
+        "risk/assessment_list.html",
+        {
+            "assessments": page,
+            "page_obj": page,
+            "filters": {"status": status_filter, "category": category_filter},
+            "status_choices": Assessment.Status.choices,
+            "category_choices": Assessment.Category.choices,
+        },
+    )
 
 
 @login_required
@@ -125,10 +131,14 @@ def assessment_create(request: HttpRequest) -> HttpResponse:
     else:
         form = AssessmentForm()
 
-    return render(request, "risk/assessment_form.html", {
-        "form": form,
-        "title": "Neue Gefährdungsbeurteilung",
-    })
+    return render(
+        request,
+        "risk/assessment_form.html",
+        {
+            "form": form,
+            "title": "Neue Gefährdungsbeurteilung",
+        },
+    )
 
 
 @login_required
@@ -141,19 +151,29 @@ def assessment_detail(request: HttpRequest, assessment_id: int) -> HttpResponse:
     assessment = get_object_or_404(Assessment, id=assessment_id, tenant_id=tenant_id)
     hazards = assessment.hazards.order_by("-severity", "-probability")
     measures = ProtectiveMeasure.objects.filter(
-        tenant_id=tenant_id, assessment=assessment,
+        tenant_id=tenant_id,
+        assessment=assessment,
     ).order_by("measure_type", "-created_at")
-    substitution_checks = SubstitutionCheck.objects.filter(
-        tenant_id=tenant_id, assessment=assessment,
-    ).select_related("current_product", "alternative_product").order_by("-checked_at")
+    substitution_checks = (
+        SubstitutionCheck.objects.filter(
+            tenant_id=tenant_id,
+            assessment=assessment,
+        )
+        .select_related("current_product", "alternative_product")
+        .order_by("-checked_at")
+    )
 
-    return render(request, "risk/assessment_detail.html", {
-        "assessment": assessment,
-        "hazards": hazards,
-        "measures": measures,
-        "substitution_checks": substitution_checks,
-        "stop_types": ProtectiveMeasure.MeasureType,
-    })
+    return render(
+        request,
+        "risk/assessment_detail.html",
+        {
+            "assessment": assessment,
+            "hazards": hazards,
+            "measures": measures,
+            "substitution_checks": substitution_checks,
+            "stop_types": ProtectiveMeasure.MeasureType,
+        },
+    )
 
 
 @login_required
@@ -174,11 +194,15 @@ def assessment_edit(request: HttpRequest, assessment_id: int) -> HttpResponse:
     else:
         form = AssessmentForm(instance=assessment)
 
-    return render(request, "risk/assessment_form.html", {
-        "form": form,
-        "assessment": assessment,
-        "title": f"Bewertung bearbeiten: {assessment.title}",
-    })
+    return render(
+        request,
+        "risk/assessment_form.html",
+        {
+            "form": form,
+            "assessment": assessment,
+            "title": f"Bewertung bearbeiten: {assessment.title}",
+        },
+    )
 
 
 @login_required
@@ -243,11 +267,15 @@ def hazard_create(request: HttpRequest, assessment_id: int) -> HttpResponse:
     else:
         form = HazardForm()
 
-    return render(request, "risk/hazard_form.html", {
-        "form": form,
-        "assessment": assessment,
-        "title": "Neue Gefährdung",
-    })
+    return render(
+        request,
+        "risk/hazard_form.html",
+        {
+            "form": form,
+            "assessment": assessment,
+            "title": "Neue Gefährdung",
+        },
+    )
 
 
 @login_required
@@ -269,12 +297,16 @@ def hazard_edit(request: HttpRequest, assessment_id: int, hazard_id: int) -> Htt
     else:
         form = HazardForm(instance=hazard)
 
-    return render(request, "risk/hazard_form.html", {
-        "form": form,
-        "assessment": assessment,
-        "hazard": hazard,
-        "title": f"Gefährdung bearbeiten: {hazard.title}",
-    })
+    return render(
+        request,
+        "risk/hazard_form.html",
+        {
+            "form": form,
+            "assessment": assessment,
+            "hazard": hazard,
+            "title": f"Gefährdung bearbeiten: {hazard.title}",
+        },
+    )
 
 
 @login_required
@@ -327,13 +359,17 @@ def measure_create(request: HttpRequest, assessment_id: int) -> HttpResponse:
         form = ProtectiveMeasureForm(initial=initial)
 
     hazards = assessment.hazards.all()
-    return render(request, "risk/measure_form.html", {
-        "form": form,
-        "assessment": assessment,
-        "hazards": hazards,
-        "selected_hazard": int(hazard_id) if hazard_id else None,
-        "title": "Neue Schutzmaßnahme (STOP)",
-    })
+    return render(
+        request,
+        "risk/measure_form.html",
+        {
+            "form": form,
+            "assessment": assessment,
+            "hazards": hazards,
+            "selected_hazard": int(hazard_id) if hazard_id else None,
+            "title": "Neue Schutzmaßnahme (STOP)",
+        },
+    )
 
 
 @login_required
@@ -344,7 +380,9 @@ def measure_edit(request: HttpRequest, assessment_id: int, measure_id: int) -> H
         return err
 
     assessment = get_object_or_404(Assessment, id=assessment_id, tenant_id=tenant_id)
-    measure = get_object_or_404(ProtectiveMeasure, id=measure_id, tenant_id=tenant_id, assessment=assessment)
+    measure = get_object_or_404(
+        ProtectiveMeasure, id=measure_id, tenant_id=tenant_id, assessment=assessment
+    )
 
     if request.method == "POST":
         form = ProtectiveMeasureForm(request.POST, instance=measure)
@@ -355,13 +393,17 @@ def measure_edit(request: HttpRequest, assessment_id: int, measure_id: int) -> H
     else:
         form = ProtectiveMeasureForm(instance=measure)
 
-    return render(request, "risk/measure_form.html", {
-        "form": form,
-        "assessment": assessment,
-        "measure": measure,
-        "hazards": assessment.hazards.all(),
-        "title": "Schutzmaßnahme bearbeiten",
-    })
+    return render(
+        request,
+        "risk/measure_form.html",
+        {
+            "form": form,
+            "assessment": assessment,
+            "measure": measure,
+            "hazards": assessment.hazards.all(),
+            "title": "Schutzmaßnahme bearbeiten",
+        },
+    )
 
 
 @login_required
@@ -375,7 +417,10 @@ def measure_complete(request: HttpRequest, assessment_id: int, measure_id: int) 
         return HttpResponseBadRequest("POST required")
 
     measure = get_object_or_404(
-        ProtectiveMeasure, id=measure_id, tenant_id=tenant_id, assessment_id=assessment_id,
+        ProtectiveMeasure,
+        id=measure_id,
+        tenant_id=tenant_id,
+        assessment_id=assessment_id,
     )
     measure.status = "implemented"
     measure.effectiveness_checked_at = timezone.now()
@@ -395,7 +440,10 @@ def measure_delete(request: HttpRequest, assessment_id: int, measure_id: int) ->
         return HttpResponseBadRequest("POST required")
 
     measure = get_object_or_404(
-        ProtectiveMeasure, id=measure_id, tenant_id=tenant_id, assessment_id=assessment_id,
+        ProtectiveMeasure,
+        id=measure_id,
+        tenant_id=tenant_id,
+        assessment_id=assessment_id,
     )
     measure.delete()
     messages.success(request, "Schutzmaßnahme gelöscht.")
@@ -438,12 +486,16 @@ def substitution_create(request: HttpRequest, assessment_id: int) -> HttpRespons
 
     products = Product.objects.filter(tenant_id=tenant_id, status="active").order_by("trade_name")
 
-    return render(request, "risk/substitution_form.html", {
-        "form": form,
-        "assessment": assessment,
-        "products": products,
-        "title": "Substitutionsprüfung",
-    })
+    return render(
+        request,
+        "risk/substitution_form.html",
+        {
+            "form": form,
+            "assessment": assessment,
+            "products": products,
+            "title": "Substitutionsprüfung",
+        },
+    )
 
 
 @login_required
@@ -454,7 +506,9 @@ def substitution_edit(request: HttpRequest, assessment_id: int, check_id: int) -
         return err
 
     assessment = get_object_or_404(Assessment, id=assessment_id, tenant_id=tenant_id)
-    check = get_object_or_404(SubstitutionCheck, id=check_id, tenant_id=tenant_id, assessment=assessment)
+    check = get_object_or_404(
+        SubstitutionCheck, id=check_id, tenant_id=tenant_id, assessment=assessment
+    )
 
     if request.method == "POST":
         form = SubstitutionCheckForm(request.POST, instance=check)
@@ -469,13 +523,17 @@ def substitution_edit(request: HttpRequest, assessment_id: int, check_id: int) -
 
     products = Product.objects.filter(tenant_id=tenant_id, status="active").order_by("trade_name")
 
-    return render(request, "risk/substitution_form.html", {
-        "form": form,
-        "assessment": assessment,
-        "check": check,
-        "products": products,
-        "title": "Substitutionsprüfung bearbeiten",
-    })
+    return render(
+        request,
+        "risk/substitution_form.html",
+        {
+            "form": form,
+            "assessment": assessment,
+            "check": check,
+            "products": products,
+            "title": "Substitutionsprüfung bearbeiten",
+        },
+    )
 
 
 @login_required
@@ -489,7 +547,10 @@ def substitution_delete(request: HttpRequest, assessment_id: int, check_id: int)
         return HttpResponseBadRequest("POST required")
 
     check = get_object_or_404(
-        SubstitutionCheck, id=check_id, tenant_id=tenant_id, assessment_id=assessment_id,
+        SubstitutionCheck,
+        id=check_id,
+        tenant_id=tenant_id,
+        assessment_id=assessment_id,
     )
     check.delete()
     messages.success(request, "Substitutionsprüfung gelöscht.")

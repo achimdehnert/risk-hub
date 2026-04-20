@@ -51,10 +51,7 @@ class SdsEnrichmentService:
 
                 self._pubchem = PubChemAdapter()
             except ImportError:
-                logger.warning(
-                    "iil-reflex[web] not installed — "
-                    "PubChem enrichment unavailable"
-                )
+                logger.warning("iil-reflex[web] not installed — PubChem enrichment unavailable")
         return self._pubchem
 
     def _get_gestis(self):
@@ -65,10 +62,7 @@ class SdsEnrichmentService:
 
                 self._gestis = GESTISAdapter()
             except ImportError:
-                logger.warning(
-                    "iil-reflex[web] not installed — "
-                    "GESTIS enrichment unavailable"
-                )
+                logger.warning("iil-reflex[web] not installed — GESTIS enrichment unavailable")
         return self._gestis
 
     def enrich(self, parse_result: dict) -> EnrichmentResult:
@@ -161,10 +155,7 @@ class SdsEnrichmentService:
                 logger.info("Enriched P-statements: +%d", len(new))
 
         # Signalwort ergänzen wenn fehlend
-        if (
-            merged.get("signal_word", "none") == "none"
-            and enrichment.signal_word
-        ):
+        if merged.get("signal_word", "none") == "none" and enrichment.signal_word:
             merged["signal_word"] = enrichment.signal_word.lower()
 
         return merged

@@ -33,7 +33,9 @@ class ProductService:
     """CRUD und Suche für Handelsprodukte."""
 
     @staticmethod
-    def list_products(tenant_id: UUID, *, search: str = "", status: str = "", site_id: int | None = None):
+    def list_products(
+        tenant_id: UUID, *, search: str = "", status: str = "", site_id: int | None = None
+    ):
         from substances.models import Product
 
         qs = (
@@ -60,8 +62,9 @@ class ProductService:
         from substances.models import Product
 
         return get_object_or_404(
-            Product.objects.select_related("manufacturer", "supplier", "sds_revision")
-            .prefetch_related(
+            Product.objects.select_related(
+                "manufacturer", "supplier", "sds_revision"
+            ).prefetch_related(
                 "components__substance",
                 "usages__site",
                 "usages__department",
@@ -95,9 +98,8 @@ class UsageService:
     ):
         from substances.models import SubstanceUsage
 
-        qs = (
-            SubstanceUsage.objects.filter(tenant_id=tenant_id)
-            .select_related("product__manufacturer", "site", "department")
+        qs = SubstanceUsage.objects.filter(tenant_id=tenant_id).select_related(
+            "product__manufacturer", "site", "department"
         )
         if site_id:
             qs = qs.filter(site_id=site_id)
@@ -196,9 +198,7 @@ class KatasterImportService:
 
         file_hash = hashlib.sha256(file_content).hexdigest()
 
-        existing = ImportBatch.objects.filter(
-            tenant_id=self.tenant_id, file_hash=file_hash
-        ).first()
+        existing = ImportBatch.objects.filter(tenant_id=self.tenant_id, file_hash=file_hash).first()
         if existing:
             return existing, True
 
@@ -214,10 +214,18 @@ class KatasterImportService:
 
     # Target fields the import pipeline understands
     TARGET_FIELDS = (
-        "trade_name", "manufacturer_name", "material_number",
-        "cas_number", "usage_description", "storage_location",
-        "storage_class", "department_name", "hazard_symbols",
-        "h_statements", "p_statements", "wgk",
+        "trade_name",
+        "manufacturer_name",
+        "material_number",
+        "cas_number",
+        "usage_description",
+        "storage_location",
+        "storage_class",
+        "department_name",
+        "hazard_symbols",
+        "h_statements",
+        "p_statements",
+        "wgk",
     )
 
     def parse_excel(self, file_content: bytes) -> list[dict]:
@@ -338,8 +346,14 @@ class KatasterImportService:
     def _analyze_rule_based(raw_rows: list[tuple]) -> dict:
         """Fallback: regelbasierte Header-Erkennung + bekannte Spaltenpositionen."""
         header_keywords = {
-            "handelsname", "produkt", "hersteller", "firma",
-            "materialnummer", "lfdnr", "bezeichnung", "gefahrstoff",
+            "handelsname",
+            "produkt",
+            "hersteller",
+            "firma",
+            "materialnummer",
+            "lfdnr",
+            "bezeichnung",
+            "gefahrstoff",
         }
         header_row_idx = 0
         for idx, row in enumerate(raw_rows[:30]):
@@ -497,7 +511,9 @@ class KatasterImportService:
                     manufacturer=None,
                     defaults={
                         "created_by": self.user_id,
-                        "material_number": self._map_field(row_data, column_mapping, "material_number"),
+                        "material_number": self._map_field(
+                            row_data, column_mapping, "material_number"
+                        ),
                         "status": Product.Status.ACTIVE,
                     },
                 )

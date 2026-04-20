@@ -27,12 +27,22 @@ class ProductForm(forms.ModelForm):
             "description",
         ]
         widgets = {
-            "trade_name": forms.TextInput(attrs={"class": _INPUT, "placeholder": "Produktname / Handelsname"}),
+            "trade_name": forms.TextInput(
+                attrs={"class": _INPUT, "placeholder": "Produktname / Handelsname"}
+            ),
             "manufacturer": forms.Select(attrs={"class": _SELECT}),
             "supplier": forms.Select(attrs={"class": _SELECT}),
-            "material_number": forms.TextInput(attrs={"class": _INPUT, "placeholder": "z.B. MAT-12345"}),
+            "material_number": forms.TextInput(
+                attrs={"class": _INPUT, "placeholder": "z.B. MAT-12345"}
+            ),
             "status": forms.Select(attrs={"class": _SELECT}),
-            "description": forms.Textarea(attrs={"class": _TEXTAREA, "rows": 3, "placeholder": "Beschreibung / Verwendungszweck"}),
+            "description": forms.Textarea(
+                attrs={
+                    "class": _TEXTAREA,
+                    "rows": 3,
+                    "placeholder": "Beschreibung / Verwendungszweck",
+                }
+            ),
         }
 
     def __init__(self, *args, tenant_id=None, **kwargs):
@@ -76,13 +86,25 @@ class SubstanceUsageForm(forms.ModelForm):
             "product": forms.Select(attrs={"class": _SELECT}),
             "site": forms.Select(attrs={"class": _SELECT}),
             "department": forms.Select(attrs={"class": _SELECT}),
-            "usage_description": forms.Textarea(attrs={"class": _TEXTAREA, "rows": 2, "placeholder": "Wofür wird das Produkt verwendet?"}),
-            "storage_location": forms.TextInput(attrs={"class": _INPUT, "placeholder": "z.B. Gefahrstofflager Halle 3"}),
+            "usage_description": forms.Textarea(
+                attrs={
+                    "class": _TEXTAREA,
+                    "rows": 2,
+                    "placeholder": "Wofür wird das Produkt verwendet?",
+                }
+            ),
+            "storage_location": forms.TextInput(
+                attrs={"class": _INPUT, "placeholder": "z.B. Gefahrstofflager Halle 3"}
+            ),
             "storage_class": forms.Select(attrs={"class": _SELECT}),
             "aggregate_state": forms.Select(attrs={"class": _SELECT}),
-            "max_storage_qty": forms.NumberInput(attrs={"class": _INPUT, "placeholder": "0.000", "step": "0.001"}),
+            "max_storage_qty": forms.NumberInput(
+                attrs={"class": _INPUT, "placeholder": "0.000", "step": "0.001"}
+            ),
             "max_storage_unit": forms.Select(attrs={"class": _SELECT}),
-            "annual_consumption": forms.NumberInput(attrs={"class": _INPUT, "placeholder": "0.000", "step": "0.001"}),
+            "annual_consumption": forms.NumberInput(
+                attrs={"class": _INPUT, "placeholder": "0.000", "step": "0.001"}
+            ),
             "annual_consumption_unit": forms.Select(attrs={"class": _SELECT}),
             "substitution_status": forms.Select(attrs={"class": _SELECT}),
             "substitution_notes": forms.Textarea(attrs={"class": _TEXTAREA, "rows": 2}),
@@ -95,11 +117,17 @@ class SubstanceUsageForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.tenant_id = tenant_id
         if tenant_id:
-            self.fields["product"].queryset = Product.objects.filter(tenant_id=tenant_id).order_by("trade_name")
+            self.fields["product"].queryset = Product.objects.filter(tenant_id=tenant_id).order_by(
+                "trade_name"
+            )
             from tenancy.models import Department, Site
 
-            self.fields["site"].queryset = Site.objects.filter(tenant_id=tenant_id, is_active=True).order_by("name")
-            self.fields["department"].queryset = Department.objects.filter(tenant_id=tenant_id).order_by("name")
+            self.fields["site"].queryset = Site.objects.filter(
+                tenant_id=tenant_id, is_active=True
+            ).order_by("name")
+            self.fields["department"].queryset = Department.objects.filter(
+                tenant_id=tenant_id
+            ).order_by("name")
         self.fields["department"].required = False
 
 

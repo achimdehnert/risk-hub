@@ -42,11 +42,15 @@ class KatasterDashboardView(LoginRequiredMixin, View):
         sites = KatasterDashboardService.get_site_summary(tenant_id)
         recent_products = KatasterDashboardService.get_recent_products(tenant_id)
 
-        return render(request, self.template_name, {
-            "stats": stats,
-            "sites": sites,
-            "recent_products": recent_products,
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "stats": stats,
+                "sites": sites,
+                "recent_products": recent_products,
+            },
+        )
 
 
 # =========================================================================
@@ -94,10 +98,14 @@ class ProductCreateView(LoginRequiredMixin, View):
     def get(self, request):
         tenant_id = _tenant_id(request)
         form = ProductForm(tenant_id=tenant_id)
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neues Produkt anlegen",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neues Produkt anlegen",
+            },
+        )
 
     def post(self, request):
         tenant_id = _tenant_id(request)
@@ -110,10 +118,14 @@ class ProductCreateView(LoginRequiredMixin, View):
             messages.success(request, f"Produkt '{product.trade_name}' angelegt.")
             return redirect("kataster:product-detail", pk=product.pk)
 
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neues Produkt anlegen",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neues Produkt anlegen",
+            },
+        )
 
 
 class ProductDetailView(LoginRequiredMixin, View):
@@ -124,11 +136,15 @@ class ProductDetailView(LoginRequiredMixin, View):
     def get(self, request, pk):
         tenant_id = _tenant_id(request)
         product = ProductService.get_product(pk, tenant_id)
-        return render(request, self.template_name, {
-            "product": product,
-            "components": product.components.select_related("substance").all(),
-            "usages": product.usages.select_related("site", "department").all(),
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "product": product,
+                "components": product.components.select_related("substance").all(),
+                "usages": product.usages.select_related("site", "department").all(),
+            },
+        )
 
 
 class ProductEditView(LoginRequiredMixin, View):
@@ -140,11 +156,15 @@ class ProductEditView(LoginRequiredMixin, View):
         tenant_id = _tenant_id(request)
         product = ProductService.get_product(pk, tenant_id)
         form = ProductForm(instance=product, tenant_id=tenant_id)
-        return render(request, self.template_name, {
-            "form": form,
-            "product": product,
-            "title": f"Produkt bearbeiten: {product.trade_name}",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "product": product,
+                "title": f"Produkt bearbeiten: {product.trade_name}",
+            },
+        )
 
     def post(self, request, pk):
         tenant_id = _tenant_id(request)
@@ -155,11 +175,15 @@ class ProductEditView(LoginRequiredMixin, View):
             messages.success(request, f"Produkt '{product.trade_name}' aktualisiert.")
             return redirect("kataster:product-detail", pk=product.pk)
 
-        return render(request, self.template_name, {
-            "form": form,
-            "product": product,
-            "title": f"Produkt bearbeiten: {product.trade_name}",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "product": product,
+                "title": f"Produkt bearbeiten: {product.trade_name}",
+            },
+        )
 
 
 # =========================================================================
@@ -189,7 +213,12 @@ class UsageListView(LoginRequiredMixin, View):
 
         ctx = {
             "usages": usages,
-            "filters": {"search": search, "status": status, "site": site_id, "substitution": sub_status},
+            "filters": {
+                "search": search,
+                "status": status,
+                "site": site_id,
+                "substitution": sub_status,
+            },
         }
 
         if request.headers.get("HX-Request"):
@@ -209,10 +238,14 @@ class UsageCreateView(LoginRequiredMixin, View):
     def get(self, request):
         tenant_id = _tenant_id(request)
         form = SubstanceUsageForm(tenant_id=tenant_id)
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neue Verwendung erfassen",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neue Verwendung erfassen",
+            },
+        )
 
     def post(self, request):
         tenant_id = _tenant_id(request)
@@ -225,10 +258,14 @@ class UsageCreateView(LoginRequiredMixin, View):
             messages.success(request, "Verwendung erfasst.")
             return redirect("kataster:usage-list")
 
-        return render(request, self.template_name, {
-            "form": form,
-            "title": "Neue Verwendung erfassen",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "title": "Neue Verwendung erfassen",
+            },
+        )
 
 
 class UsageEditView(LoginRequiredMixin, View):
@@ -240,11 +277,15 @@ class UsageEditView(LoginRequiredMixin, View):
         tenant_id = _tenant_id(request)
         usage = UsageService.get_usage(pk, tenant_id)
         form = SubstanceUsageForm(instance=usage, tenant_id=tenant_id)
-        return render(request, self.template_name, {
-            "form": form,
-            "usage": usage,
-            "title": f"Verwendung bearbeiten: {usage.product.trade_name}",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "usage": usage,
+                "title": f"Verwendung bearbeiten: {usage.product.trade_name}",
+            },
+        )
 
     def post(self, request, pk):
         tenant_id = _tenant_id(request)
@@ -255,11 +296,15 @@ class UsageEditView(LoginRequiredMixin, View):
             messages.success(request, "Verwendung aktualisiert.")
             return redirect("kataster:usage-list")
 
-        return render(request, self.template_name, {
-            "form": form,
-            "usage": usage,
-            "title": f"Verwendung bearbeiten: {usage.product.trade_name}",
-        })
+        return render(
+            request,
+            self.template_name,
+            {
+                "form": form,
+                "usage": usage,
+                "title": f"Verwendung bearbeiten: {usage.product.trade_name}",
+            },
+        )
 
 
 class UsageDetailView(LoginRequiredMixin, View):
@@ -310,18 +355,24 @@ class KatasterImportView(LoginRequiredMixin, View):
 
         if is_duplicate:
             messages.warning(request, f"Diese Datei wurde bereits importiert (Batch #{batch.pk}).")
-            return render(request, self.template_name, {"form": KatasterImportForm(tenant_id=tenant_id)})
+            return render(
+                request, self.template_name, {"form": KatasterImportForm(tenant_id=tenant_id)}
+            )
 
         try:
             rows = service.parse_excel(file_content)
         except Exception:
             logger.exception("Excel parsing failed")
             messages.error(request, "Fehler beim Lesen der Excel-Datei.")
-            return render(request, self.template_name, {"form": KatasterImportForm(tenant_id=tenant_id)})
+            return render(
+                request, self.template_name, {"form": KatasterImportForm(tenant_id=tenant_id)}
+            )
 
         if not rows:
             messages.warning(request, "Keine Daten in der Datei gefunden.")
-            return render(request, self.template_name, {"form": KatasterImportForm(tenant_id=tenant_id)})
+            return render(
+                request, self.template_name, {"form": KatasterImportForm(tenant_id=tenant_id)}
+            )
 
         excel_columns = list(rows[0].keys())
         excel_columns = [c for c in excel_columns if not c.startswith("_")]
@@ -341,13 +392,17 @@ class KatasterImportView(LoginRequiredMixin, View):
         request.session["kataster_import_batch_id"] = batch.pk
         request.session["kataster_import_rows"] = rows
 
-        return render(request, "substances/kataster/import_mapping.html", {
-            "batch": batch,
-            "preview_rows": rows[:5],
-            "excel_columns": excel_columns,
-            "target_fields": target_fields,
-            "total_rows": len(rows),
-        })
+        return render(
+            request,
+            "substances/kataster/import_mapping.html",
+            {
+                "batch": batch,
+                "preview_rows": rows[:5],
+                "excel_columns": excel_columns,
+                "target_fields": target_fields,
+                "total_rows": len(rows),
+            },
+        )
 
     def _execute_import(self, request, tenant_id, user_id):
         """Step 3: Führe den Import mit bestätigtem Mapping aus."""
@@ -390,10 +445,14 @@ class KatasterImportView(LoginRequiredMixin, View):
                 f"{stats.skipped} übersprungen.",
             )
 
-        return render(request, "substances/kataster/import_result.html", {
-            "batch": batch,
-            "stats": stats,
-        })
+        return render(
+            request,
+            "substances/kataster/import_result.html",
+            {
+                "batch": batch,
+                "stats": stats,
+            },
+        )
 
 
 class ImportBatchListView(LoginRequiredMixin, View):

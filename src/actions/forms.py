@@ -14,10 +14,17 @@ class ActionItemForm(forms.ModelForm):
         fields = ["title", "description", "status", "priority", "due_date"]
         widgets = {
             "title": forms.TextInput(
-                attrs={"class": "form-input", "placeholder": "z.B. Absauganlage in Halle 2 installieren"}
+                attrs={
+                    "class": "form-input",
+                    "placeholder": "z.B. Absauganlage in Halle 2 installieren",
+                }
             ),
             "description": forms.Textarea(
-                attrs={"class": "form-textarea", "rows": 3, "placeholder": "Beschreibung der Maßnahme…"}
+                attrs={
+                    "class": "form-textarea",
+                    "rows": 3,
+                    "placeholder": "Beschreibung der Maßnahme…",
+                }
             ),
             "status": forms.Select(attrs={"class": "form-select"}),
             "priority": forms.Select(attrs={"class": "form-select"}),

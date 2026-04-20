@@ -161,9 +161,7 @@ MODULE_URL_MAP = {
 CSRF_TRUSTED_ORIGINS = [o for o in read_secret("CSRF_TRUSTED_ORIGINS", default="").split(",") if o]
 if DEBUG:
     # Django doesn't support port wildcards — trust all localhost in dev
-    CSRF_TRUSTED_ORIGINS += [
-        f"http://localhost:{p}" for p in range(3000, 9001)
-    ] + [
+    CSRF_TRUSTED_ORIGINS += [f"http://localhost:{p}" for p in range(3000, 9001)] + [
         f"http://127.0.0.1:{p}" for p in range(40000, 50001)
     ]
 

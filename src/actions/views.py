@@ -16,6 +16,7 @@ def _tenant(request):
 
 # ─── Dashboard ──────────────────────────────────────────────────────────────
 
+
 @login_required
 def dashboard(request):
     tenant_id = _tenant(request)
@@ -41,18 +42,23 @@ def dashboard(request):
         due_date__gte=timezone.now().date(),
     ).order_by("due_date")[:5]
 
-    return render(request, "actions/dashboard.html", {
-        "open_count": open_count,
-        "in_progress_count": in_progress_count,
-        "completed_count": completed_count,
-        "overdue_count": overdue_count,
-        "recent": recent,
-        "overdue": overdue,
-        "upcoming": upcoming,
-    })
+    return render(
+        request,
+        "actions/dashboard.html",
+        {
+            "open_count": open_count,
+            "in_progress_count": in_progress_count,
+            "completed_count": completed_count,
+            "overdue_count": overdue_count,
+            "recent": recent,
+            "overdue": overdue,
+            "upcoming": upcoming,
+        },
+    )
 
 
 # ─── List ───────────────────────────────────────────────────────────────────
+
 
 @login_required
 def action_list(request):
@@ -70,14 +76,19 @@ def action_list(request):
     if priority_filter:
         actions = actions.filter(priority=int(priority_filter))
 
-    return render(request, "actions/action_list.html", {
-        "actions": actions,
-        "current_status": status_filter,
-        "current_priority": priority_filter,
-    })
+    return render(
+        request,
+        "actions/action_list.html",
+        {
+            "actions": actions,
+            "current_status": status_filter,
+            "current_priority": priority_filter,
+        },
+    )
 
 
 # ─── Create ─────────────────────────────────────────────────────────────────
+
 
 @login_required
 def action_create(request):
@@ -96,13 +107,18 @@ def action_create(request):
     else:
         form = ActionItemForm()
 
-    return render(request, "actions/action_form.html", {
-        "form": form,
-        "title": "Neue Maßnahme",
-    })
+    return render(
+        request,
+        "actions/action_form.html",
+        {
+            "form": form,
+            "title": "Neue Maßnahme",
+        },
+    )
 
 
 # ─── Detail ─────────────────────────────────────────────────────────────────
+
 
 @login_required
 def action_detail(request, pk):
@@ -112,6 +128,7 @@ def action_detail(request, pk):
 
 
 # ─── Edit ───────────────────────────────────────────────────────────────────
+
 
 @login_required
 def action_edit(request, pk):
@@ -127,14 +144,19 @@ def action_edit(request, pk):
     else:
         form = ActionItemForm(instance=action)
 
-    return render(request, "actions/action_form.html", {
-        "form": form,
-        "title": "Maßnahme bearbeiten",
-        "action_obj": action,
-    })
+    return render(
+        request,
+        "actions/action_form.html",
+        {
+            "form": form,
+            "title": "Maßnahme bearbeiten",
+            "action_obj": action,
+        },
+    )
 
 
 # ─── Complete ───────────────────────────────────────────────────────────────
+
 
 @login_required
 def action_complete(request, pk):

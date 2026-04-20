@@ -38,10 +38,12 @@ class TestEnrichmentService:
         mock_get_pubchem.return_value = adapter
 
         service = SdsEnrichmentService()
-        result = service.enrich({
-            "product_name": "Acetone",
-            "cas_number": "",
-        })
+        result = service.enrich(
+            {
+                "product_name": "Acetone",
+                "cas_number": "",
+            }
+        )
 
         assert result.enriched is True
         assert result.cas_number == "67-64-1"
@@ -65,10 +67,12 @@ class TestEnrichmentService:
         mock_get_pubchem.return_value = adapter
 
         service = SdsEnrichmentService()
-        result = service.enrich({
-            "product_name": "Ethanol",
-            "cas_number": "64-17-5",
-        })
+        result = service.enrich(
+            {
+                "product_name": "Ethanol",
+                "cas_number": "64-17-5",
+            }
+        )
 
         assert result.enriched is True
         adapter.lookup_by_cas.assert_called_once_with("64-17-5")

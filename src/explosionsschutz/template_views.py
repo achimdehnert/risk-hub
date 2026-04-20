@@ -1332,7 +1332,12 @@ class HtmxAddMeasureView(LoginRequiredMixin, View):
         return render(
             request,
             self.partial_template,
-            {"concept": concept, "measures": measures, "measure_form": measure_form, "htmx_response": True},
+            {
+                "concept": concept,
+                "measures": measures,
+                "measure_form": measure_form,
+                "htmx_response": True,
+            },
         )
 
 
@@ -1353,7 +1358,12 @@ class HtmxDeleteMeasureView(LoginRequiredMixin, View):
         return render(
             request,
             self.partial_template,
-            {"concept": concept, "measures": measures, "measure_form": measure_form, "htmx_response": True},
+            {
+                "concept": concept,
+                "measures": measures,
+                "measure_form": measure_form,
+                "htmx_response": True,
+            },
         )
 
 

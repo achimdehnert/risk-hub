@@ -20,6 +20,7 @@ def _tenant(request):
 
 # ─── Dashboard ──────────────────────────────────────────────────────────────
 
+
 @login_required
 def dashboard(request):
     tenant_id = _tenant(request)
@@ -39,17 +40,22 @@ def dashboard(request):
         sessions__isnull=True,
     ).count()
 
-    return render(request, "training/dashboard.html", {
-        "topics_count": topics.count(),
-        "sessions_planned": sessions.filter(status="planned").count(),
-        "sessions_completed": sessions.filter(status="completed").count(),
-        "overdue_count": overdue_count,
-        "upcoming": upcoming,
-        "recent": recent,
-    })
+    return render(
+        request,
+        "training/dashboard.html",
+        {
+            "topics_count": topics.count(),
+            "sessions_planned": sessions.filter(status="planned").count(),
+            "sessions_completed": sessions.filter(status="completed").count(),
+            "overdue_count": overdue_count,
+            "upcoming": upcoming,
+            "recent": recent,
+        },
+    )
 
 
 # ─── Topic CRUD ─────────────────────────────────────────────────────────────
+
 
 @login_required
 def topic_list(request):
@@ -83,10 +89,14 @@ def topic_create(request):
     else:
         form = TrainingTopicForm(tenant_id=tenant_id)
 
-    return render(request, "training/topic_form.html", {
-        "form": form,
-        "title": "Neues Unterweisungsthema",
-    })
+    return render(
+        request,
+        "training/topic_form.html",
+        {
+            "form": form,
+            "title": "Neues Unterweisungsthema",
+        },
+    )
 
 
 @login_required
@@ -94,10 +104,14 @@ def topic_detail(request, pk):
     tenant_id = _tenant(request)
     topic = get_object_or_404(TrainingTopic, pk=pk, tenant_id=tenant_id)
     sessions = topic.sessions.order_by("-session_date")
-    return render(request, "training/topic_detail.html", {
-        "topic": topic,
-        "sessions": sessions,
-    })
+    return render(
+        request,
+        "training/topic_detail.html",
+        {
+            "topic": topic,
+            "sessions": sessions,
+        },
+    )
 
 
 @login_required
@@ -114,14 +128,19 @@ def topic_edit(request, pk):
     else:
         form = TrainingTopicForm(instance=topic, tenant_id=tenant_id)
 
-    return render(request, "training/topic_form.html", {
-        "form": form,
-        "title": f"Thema bearbeiten: {topic.title}",
-        "topic": topic,
-    })
+    return render(
+        request,
+        "training/topic_form.html",
+        {
+            "form": form,
+            "title": f"Thema bearbeiten: {topic.title}",
+            "topic": topic,
+        },
+    )
 
 
 # ─── Session CRUD ───────────────────────────────────────────────────────────
+
 
 @login_required
 def session_list(request):
@@ -139,10 +158,14 @@ def session_list(request):
     if status_filter:
         sessions = sessions.filter(status=status_filter)
 
-    return render(request, "training/session_list.html", {
-        "sessions": sessions,
-        "current_status": status_filter,
-    })
+    return render(
+        request,
+        "training/session_list.html",
+        {
+            "sessions": sessions,
+            "current_status": status_filter,
+        },
+    )
 
 
 @login_required
@@ -169,10 +192,14 @@ def session_create(request):
         initial["session_date"] = timezone.now().date().isoformat()
         form = TrainingSessionForm(tenant_id=tenant_id, initial=initial)
 
-    return render(request, "training/session_form.html", {
-        "form": form,
-        "title": "Neue Unterweisung planen",
-    })
+    return render(
+        request,
+        "training/session_form.html",
+        {
+            "form": form,
+            "title": "Neue Unterweisung planen",
+        },
+    )
 
 
 @login_required
@@ -180,7 +207,8 @@ def session_detail(request, pk):
     tenant_id = _tenant(request)
     session = get_object_or_404(
         TrainingSession.objects.select_related("topic"),
-        pk=pk, tenant_id=tenant_id,
+        pk=pk,
+        tenant_id=tenant_id,
     )
     attendances = session.attendances.order_by("status", "created_at")
 
@@ -190,10 +218,14 @@ def session_detail(request, pk):
     for att in attendances:
         att.user_obj = users.get(att.user_id)
 
-    return render(request, "training/session_detail.html", {
-        "session": session,
-        "attendances": attendances,
-    })
+    return render(
+        request,
+        "training/session_detail.html",
+        {
+            "session": session,
+            "attendances": attendances,
+        },
+    )
 
 
 @login_required
@@ -210,11 +242,15 @@ def session_edit(request, pk):
     else:
         form = TrainingSessionForm(instance=session, tenant_id=tenant_id)
 
-    return render(request, "training/session_form.html", {
-        "form": form,
-        "title": "Unterweisung bearbeiten",
-        "session": session,
-    })
+    return render(
+        request,
+        "training/session_form.html",
+        {
+            "form": form,
+            "title": "Unterweisung bearbeiten",
+            "session": session,
+        },
+    )
 
 
 @login_required
@@ -231,16 +267,19 @@ def session_complete(request, pk):
 
 # ─── Attendance ─────────────────────────────────────────────────────────────
 
+
 @login_required
 def attendance_manage(request, pk):
     tenant_id = _tenant(request)
     session = get_object_or_404(TrainingSession, pk=pk, tenant_id=tenant_id)
 
     # Available users in tenant
-    member_user_ids = Membership.objects.filter(
-        organization__tenant_id=tenant_id
-    ).values_list("user_id", flat=True)
-    available_users = User.objects.filter(pk__in=member_user_ids).order_by("last_name", "first_name")
+    member_user_ids = Membership.objects.filter(organization__tenant_id=tenant_id).values_list(
+        "user_id", flat=True
+    )
+    available_users = User.objects.filter(pk__in=member_user_ids).order_by(
+        "last_name", "first_name"
+    )
 
     if request.method == "POST":
         # Process attendance form
@@ -263,8 +302,12 @@ def attendance_manage(request, pk):
 
     existing = {a.user_id: a for a in session.attendances.all()}
 
-    return render(request, "training/attendance_form.html", {
-        "session": session,
-        "available_users": available_users,
-        "existing": existing,
-    })
+    return render(
+        request,
+        "training/attendance_form.html",
+        {
+            "session": session,
+            "available_users": available_users,
+            "existing": existing,
+        },
+    )

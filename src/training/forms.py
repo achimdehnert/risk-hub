@@ -16,10 +16,17 @@ class TrainingTopicForm(forms.ModelForm):
         fields = ["title", "description", "interval", "site", "department"]
         widgets = {
             "title": forms.TextInput(
-                attrs={"class": "form-input", "placeholder": "z.B. Umgang mit brennbaren Flüssigkeiten"}
+                attrs={
+                    "class": "form-input",
+                    "placeholder": "z.B. Umgang mit brennbaren Flüssigkeiten",
+                }
             ),
             "description": forms.Textarea(
-                attrs={"class": "form-textarea", "rows": 3, "placeholder": "Inhalt der Unterweisung…"}
+                attrs={
+                    "class": "form-textarea",
+                    "rows": 3,
+                    "placeholder": "Inhalt der Unterweisung…",
+                }
             ),
             "interval": forms.Select(attrs={"class": "form-select"}),
             "site": forms.Select(attrs={"class": "form-select"}),

@@ -13,7 +13,15 @@ class OrganizationAdmin(admin.ModelAdmin):
 
 @admin.register(Site)
 class SiteAdmin(admin.ModelAdmin):
-    list_display = ("name", "code", "site_type", "is_active", "tenant_id", "organization", "created_at")
+    list_display = (
+        "name",
+        "code",
+        "site_type",
+        "is_active",
+        "tenant_id",
+        "organization",
+        "created_at",
+    )
     list_filter = ("organization", "site_type", "is_active")
     search_fields = ("name", "code")
 
