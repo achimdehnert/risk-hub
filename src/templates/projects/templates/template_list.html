@@ -78,7 +78,7 @@
                             <i data-lucide="pencil" class="w-4 h-4 inline"></i>
                         </a>
                         <form method="post" action="{% url 'projects:template-delete' tmpl_pk=tmpl.pk %}" class="inline"
-                              onsubmit="return confirm('Vorlage wirklich löschen?')">
+                              data-confirm-submit="Vorlage wirklich löschen?">
                             {% csrf_token %}
                             <button type="submit" class="text-gray-400 hover:text-red-500 p-1 ml-1" title="Löschen">
                                 <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
@@ -110,4 +110,10 @@
     </div>
     {% endif %}
 </div>
+<script>
+document.addEventListener('submit', function(e) {
+    var f = e.target.closest('[data-confirm-submit]');
+    if (f && !confirm(f.dataset.confirmSubmit)) e.preventDefault();
+});
+</script>
 {% endblock %}

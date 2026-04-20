@@ -57,13 +57,13 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     {% for tom in tech_rows %}
-                    <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'dsb:tom-edit' tom.pk %}'">
+                    <tr class="hover:bg-gray-50 cursor-pointer" data-action="navigate-row" data-href="{% url 'dsb:tom-edit' tom.pk %}">
                         <td class="px-4 py-3 text-sm text-gray-500">{{ tom.category|default:"—" }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-blue-600 hover:underline">
                             <a href="{% url 'dsb:tom-edit' tom.pk %}">{{ tom.title }}</a>
                         </td>
                         <td class="px-4 py-3 text-sm">{% status_badge tom.status %}</td>
-                        <td class="px-4 py-3 text-sm text-right" onclick="event.stopPropagation()">
+                        <td class="px-4 py-3 text-sm text-right" data-no-row-click>
                             <a href="{% url 'dsb:tom-edit' tom.pk %}" class="text-blue-600 hover:text-blue-800" title="Bearbeiten">
                                 <i data-lucide="pencil" class="w-4 h-4 inline"></i>
                             </a>
@@ -99,13 +99,13 @@
                 </thead>
                 <tbody class="divide-y divide-gray-200">
                     {% for tom in org_rows %}
-                    <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'dsb:tom-edit' tom.pk %}'">
+                    <tr class="hover:bg-gray-50 cursor-pointer" data-action="navigate-row" data-href="{% url 'dsb:tom-edit' tom.pk %}">
                         <td class="px-4 py-3 text-sm text-gray-500">{{ tom.category|default:"—" }}</td>
                         <td class="px-4 py-3 text-sm font-medium text-blue-600 hover:underline">
                             <a href="{% url 'dsb:tom-edit' tom.pk %}">{{ tom.title }}</a>
                         </td>
                         <td class="px-4 py-3 text-sm">{% status_badge tom.status %}</td>
-                        <td class="px-4 py-3 text-sm text-right" onclick="event.stopPropagation()">
+                        <td class="px-4 py-3 text-sm text-right" data-no-row-click>
                             <a href="{% url 'dsb:tom-edit' tom.pk %}" class="text-blue-600 hover:text-blue-800" title="Bearbeiten">
                                 <i data-lucide="pencil" class="w-4 h-4 inline"></i>
                             </a>
@@ -126,5 +126,11 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>lucide.createIcons();</script>
+<script>lucide.createIcons();
+document.addEventListener('click', function(e) {
+    if (e.target.closest('[data-no-row-click]')) return;
+    var el = e.target.closest('[data-action]');
+    if (el && el.dataset.action === 'navigate-row') window.location = el.dataset.href;
+});
+</script>
 {% endblock %}

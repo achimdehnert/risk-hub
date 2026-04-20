@@ -118,7 +118,7 @@
                     </div>
                 </div>
                 <form method="post" action="{% url 'projects:document-delete' pk=project.pk doc_pk=doc.pk %}"
-                      onsubmit="return confirm('Unterlage wirklich löschen?')">
+                      data-confirm-submit="Unterlage wirklich löschen?">
                     {% csrf_token %}
                     <button type="submit" class="text-gray-400 hover:text-red-500 p-1" title="Löschen">
                         <i data-lucide="trash-2" class="w-4 h-4"></i>
@@ -215,4 +215,10 @@
     </div>
     {% endif %}
 </div>
+<script>
+document.addEventListener('submit', function(e) {
+    var f = e.target.closest('[data-confirm-submit]');
+    if (f && !confirm(f.dataset.confirmSubmit)) e.preventDefault();
+});
+</script>
 {% endblock %}

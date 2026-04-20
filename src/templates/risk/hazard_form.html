@@ -42,9 +42,10 @@
                     Abbrechen
                 </a>
                 {% if hazard %}
-                <form method="post" action="{% url 'risk:hazard_delete' assessment.id hazard.id %}" class="ml-auto">
+                <form method="post" action="{% url 'risk:hazard_delete' assessment.id hazard.id %}" class="ml-auto"
+                      data-confirm-submit="Gefährdung wirklich löschen?">
                     {% csrf_token %}
-                    <button type="submit" onclick="return confirm('Gefährdung wirklich löschen?')"
+                    <button type="submit"
                             class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm">
                         Löschen
                     </button>
@@ -68,6 +69,10 @@ document.addEventListener('DOMContentLoaded', function() {
         display.className = score >= 15 ? 'text-red-600 font-bold' : score >= 8 ? 'text-orange-600 font-bold' : 'font-bold';
     }
     if (sev && prob) { sev.addEventListener('change', update); prob.addEventListener('change', update); update(); }
+});
+document.addEventListener('submit', function(e) {
+    var f = e.target.closest('[data-confirm-submit]');
+    if (f && !confirm(f.dataset.confirmSubmit)) e.preventDefault();
 });
 </script>
 {% endblock %}

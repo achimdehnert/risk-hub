@@ -37,7 +37,7 @@
         <form method="post"
               action="{% url 'tenancy:module-membership-revoke' org.pk mm.module mm.pk %}"
               class="inline"
-              onsubmit="return confirm('Modulzugang entziehen?')">
+              data-confirm-submit="Modulzugang entziehen?">
             {% csrf_token %}
             <button type="submit" class="text-red-500 hover:text-red-700" title="Zugang entziehen">
                 <i data-lucide="user-minus" class="w-4 h-4 inline"></i>
@@ -45,3 +45,12 @@
         </form>
     </td>
 </tr>
+<script>
+if (!window._confirmSubmitBound) {
+    window._confirmSubmitBound = true;
+    document.addEventListener('submit', function(e) {
+        var f = e.target.closest('[data-confirm-submit]');
+        if (f && !confirm(f.dataset.confirmSubmit)) e.preventDefault();
+    });
+}
+</script>

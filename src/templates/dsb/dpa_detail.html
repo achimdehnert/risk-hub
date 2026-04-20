@@ -179,7 +179,7 @@
                     </a>
                     <a href="{% url 'dsb:document-delete' doc.pk %}"
                        class="text-red-400 hover:text-red-600 ml-2 flex-shrink-0"
-                       onclick="return confirm('Dokument löschen?')">
+                       data-confirm="Dokument löschen?">
                         <i data-lucide="trash-2" class="w-3 h-3"></i>
                     </a>
                 </li>
@@ -207,4 +207,10 @@
 
     </div>
 </div>
+<script>
+document.addEventListener('click', function(e) {
+    var el = e.target.closest('[data-confirm]');
+    if (el && !confirm(el.dataset.confirm)) e.preventDefault();
+});
+</script>
 {% endblock %}

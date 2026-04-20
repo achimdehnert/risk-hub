@@ -38,7 +38,7 @@
             </form>
             {% endif %}
             <form method="post" action="{% url 'risk:assessment_delete' assessment.id %}"
-                  onsubmit="return confirm('Bewertung wirklich l\u00f6schen? Alle Gef\u00e4hrdungen und Ma\u00dfnahmen werden ebenfalls gel\u00f6scht.')">
+                  data-confirm-submit="Bewertung wirklich löschen? Alle Gefährdungen und Maßnahmen werden ebenfalls gelöscht.">
                 {% csrf_token %}
                 <button type="submit"
                         class="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm">
@@ -184,7 +184,7 @@
                             {% endif %}
                             <a href="{% url 'risk:measure_edit' assessment.id m.id %}" class="text-xs text-gray-400 hover:text-gray-600">✎</a>
                             <form method="post" action="{% url 'risk:measure_delete' assessment.id m.id %}"
-                                  onsubmit="return confirm('Ma\u00dfnahme l\u00f6schen?')" class="inline">
+                                  data-confirm-submit="Maßnahme löschen?" class="inline">
                                 {% csrf_token %}
                                 <button type="submit" class="text-xs text-red-400 hover:text-red-600" title="L\u00f6schen">✕</button>
                             </form>
@@ -247,7 +247,7 @@
                     <td class="py-3 px-3">
                         <a href="{% url 'risk:substitution_edit' assessment.id sc.id %}" class="text-xs text-gray-400 hover:text-gray-600">✎</a>
                         <form method="post" action="{% url 'risk:substitution_delete' assessment.id sc.id %}"
-                              onsubmit="return confirm('Pr\u00fcfung l\u00f6schen?')" class="inline ml-2">
+                              data-confirm-submit="Prüfung löschen?" class="inline ml-2">
                             {% csrf_token %}
                             <button type="submit" class="text-xs text-red-400 hover:text-red-600">✕</button>
                         </form>
@@ -267,4 +267,10 @@
         ← Zurück zur Übersicht
     </a>
 </div>
+<script>
+document.addEventListener('submit', function(e) {
+    var f = e.target.closest('[data-confirm-submit]');
+    if (f && !confirm(f.dataset.confirmSubmit)) e.preventDefault();
+});
+</script>
 {% endblock %}

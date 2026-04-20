@@ -21,7 +21,7 @@
   <div class="bg-white rounded-xl border border-gray-200 p-4 mb-5 flex flex-wrap gap-3 items-end">
     <div>
       <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
-      <select onchange="window.location='?status='+this.value"
+      <select data-action="filter-status"
               class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
         <option value="" {% if not current_status %}selected{% endif %}>Alle Status</option>
         <option value="planned" {% if current_status == 'planned' %}selected{% endif %}>Geplant</option>
@@ -81,4 +81,10 @@
   {% endif %}
 
 </div>
+<script>
+document.addEventListener('change', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (el && el.dataset.action === 'filter-status') window.location = '?status=' + el.value;
+});
+</script>
 {% endblock %}

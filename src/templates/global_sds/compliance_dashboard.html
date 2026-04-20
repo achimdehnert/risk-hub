@@ -292,7 +292,7 @@
               <a href="{% url 'global_sds:revision-edit' pk=rev.pk %}"
                  class="text-xs text-blue-600 hover:underline">Bearbeiten</a>
               <form method="post" action="{% url 'global_sds:revision-delete' pk=rev.pk %}"
-                    onsubmit="return confirm('SDS löschen?');"
+                    data-confirm-submit="SDS löschen?"
                     class="inline">
                 {% csrf_token %}
                 <button type="submit" class="text-xs text-red-600 hover:underline">Löschen</button>
@@ -320,4 +320,10 @@
   <div id="defer-modal-container"></div>
 
 </div>
+<script>
+document.addEventListener('submit', function(e) {
+    var f = e.target.closest('[data-confirm-submit]');
+    if (f && !confirm(f.dataset.confirmSubmit)) e.preventDefault();
+});
+</script>
 {% endblock %}

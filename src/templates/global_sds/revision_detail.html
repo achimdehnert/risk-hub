@@ -29,7 +29,7 @@
         Bearbeiten
       </a>
       <form method="post" action="{% url 'global_sds:revision-delete' pk=revision.pk %}"
-            onsubmit="return confirm('SDS-Revision wirklich löschen?');"
+            data-confirm-submit="SDS-Revision wirklich löschen?"
             class="inline">
         {% csrf_token %}
         <button type="submit"
@@ -203,4 +203,10 @@
   {% endif %}
 
 </div>
+<script>
+document.addEventListener('submit', function(e) {
+    var f = e.target.closest('[data-confirm-submit]');
+    if (f && !confirm(f.dataset.confirmSubmit)) e.preventDefault();
+});
+</script>
 {% endblock %}

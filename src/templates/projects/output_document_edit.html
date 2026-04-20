@@ -142,5 +142,18 @@ function addTableRow(table) {
     }
     tbody.appendChild(tr);
 }
+
+document.addEventListener('click', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    switch (el.dataset.action) {
+        case 'add-table-row':
+            addTableRow(el.previousElementSibling.querySelector('table'));
+            break;
+        case 'llm-prefill':
+            llmPrefill(parseInt(el.dataset.sectionPk), el.dataset.fieldKey, el.dataset.label, el);
+            break;
+    }
+});
 </script>
 {% endblock %}

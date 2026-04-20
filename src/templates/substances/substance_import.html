@@ -102,7 +102,7 @@
                  class="border-2 border-dashed border-gray-300 rounded-xl p-8
                         text-center cursor-pointer hover:border-orange-400
                         hover:bg-orange-50/30 transition-colors"
-                 onclick="document.getElementById('id_import_file').click()">
+                 data-action="trigger-file-input">
                 <div class="flex flex-col items-center gap-2">
                     <svg class="w-10 h-10 text-gray-400" fill="none" stroke="currentColor"
                          viewBox="0 0 24 24">
@@ -131,7 +131,7 @@
                     <span id="file-name" class="text-sm font-medium text-gray-700"></span>
                     <span id="file-size" class="text-xs text-gray-400 ml-2"></span>
                 </div>
-                <button type="button" onclick="clearFile()" class="text-xs text-red-500 hover:text-red-700">
+                <button type="button" data-action="clear-file" class="text-xs text-red-500 hover:text-red-700">
                     Entfernen
                 </button>
             </div>
@@ -195,7 +195,7 @@
                         </p>
                     </div>
                     <div class="flex items-center gap-3">
-                        <button type="button" onclick="toggleAll()" id="toggle-btn"
+                        <button type="button" data-action="toggle-all" id="toggle-btn"
                                 class="px-3 py-1.5 text-sm text-purple-700 bg-purple-100 rounded-lg hover:bg-purple-200">
                             Alle abwählen
                         </button>
@@ -211,7 +211,7 @@
                         <tr>
                             <th class="px-4 py-3 text-center w-10">
                                 <input type="checkbox" id="select-all" checked
-                                       onchange="toggleAll(this.checked)"
+                                       data-action="toggle-all-checked"
                                        class="form-checkbox h-4 w-4 text-purple-600 rounded border-gray-300">
                             </th>
                             <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stoffname</th>
@@ -225,11 +225,11 @@
                     <tbody class="divide-y divide-gray-200">
                         {% for substance in ai_preview %}
                         <tr class="{% cycle '' 'bg-gray-50' %} hover:bg-purple-50/50 cursor-pointer substance-row"
-                            onclick="toggleRow(this)">
+                            data-action="toggle-row">
                             <td class="px-4 py-3 text-center">
                                 <input type="checkbox" name="selected" value="{{ forloop.counter0 }}" checked
                                        class="substance-cb form-checkbox h-4 w-4 text-purple-600 rounded border-gray-300"
-                                       onclick="event.stopPropagation(); updateCount()">
+                                       data-no-row-click>
                             </td>
                             <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ substance.name }}</td>
                             <td class="px-4 py-3 text-sm text-gray-600">{{ substance.cas|default:"-" }}</td>
@@ -371,5 +371,25 @@ function clearFile() {
     fileInput.value = '';
     updateFileInfo();
 }
+
+document.addEventListener('click', function(e) {
+    if (e.target.closest('[data-no-row-click]')) {
+        e.stopPropagation();
+        updateCount();
+        return;
+    }
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    switch (el.dataset.action) {
+        case 'trigger-file-input': document.getElementById('id_import_file').click(); break;
+        case 'clear-file': clearFile(); break;
+        case 'toggle-all': toggleAll(); break;
+        case 'toggle-row': toggleRow(el); break;
+    }
+});
+document.addEventListener('change', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (el && el.dataset.action === 'toggle-all-checked') toggleAll(el.checked);
+});
 </script>
 {% endblock %}

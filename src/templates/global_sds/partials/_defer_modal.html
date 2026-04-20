@@ -2,14 +2,14 @@
 
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
      id="defer-modal-overlay"
-     onclick="if(event.target===this) this.remove()">
+     data-action="close-overlay">
 
   <div class="bg-white rounded-xl shadow-xl border border-gray-200 w-full max-w-lg mx-4 p-6"
-       onclick="event.stopPropagation()">
+       data-no-row-click>
 
     <div class="flex items-center justify-between mb-4">
       <h3 class="text-lg font-semibold text-gray-900">Update zurückstellen</h3>
-      <button onclick="document.getElementById('defer-modal-overlay').remove()"
+      <button data-action="close-modal"
               class="text-gray-400 hover:text-gray-600">
         <i data-lucide="x" class="w-5 h-5"></i>
       </button>
@@ -60,7 +60,7 @@
 
       <div class="flex justify-end gap-3 pt-3 border-t border-gray-100">
         <button type="button"
-                onclick="document.getElementById('defer-modal-overlay').remove()"
+                data-action="close-modal"
                 class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 text-sm hover:bg-gray-50">
           Abbrechen
         </button>
@@ -73,3 +73,17 @@
 
   </div>
 </div>
+<script>
+document.addEventListener('click', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (!el) return;
+    switch (el.dataset.action) {
+        case 'close-overlay':
+            if (e.target === el) el.remove();
+            break;
+        case 'close-modal':
+            document.getElementById('defer-modal-overlay').remove();
+            break;
+    }
+});
+</script>

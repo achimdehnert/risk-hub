@@ -51,7 +51,7 @@
         <tbody class="bg-white divide-y divide-gray-200">
             {% for b in rows %}
             <tr class="hover:bg-gray-50 cursor-pointer {% if b.is_overdue %}bg-red-50{% endif %}"
-                onclick="window.location='{% url 'dsb:breach-detail' b.pk %}'">
+                data-action="navigate-row" data-href="{% url 'dsb:breach-detail' b.pk %}">
                 <td class="px-4 py-3">
                     <div class="text-sm font-medium text-blue-600">
                         <a href="{% url 'dsb:breach-detail' b.pk %}">{{ b.title|default:"Datenpanne" }}</a>
@@ -73,7 +73,7 @@
                     <span class="text-amber-600 text-xs">{{ b.deadline_72h|date:"d.m.Y H:i" }}</span>
                     {% endif %}
                 </td>
-                <td class="px-4 py-3 text-right" onclick="event.stopPropagation()">
+                <td class="px-4 py-3 text-right" data-no-row-click>
                     <a href="{% url 'dsb:breach-detail' b.pk %}"
                        class="text-blue-600 hover:text-blue-800">
                         <i data-lucide="arrow-right" class="w-4 h-4 inline"></i>
@@ -98,5 +98,11 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>lucide.createIcons();</script>
+<script>lucide.createIcons();
+document.addEventListener('click', function(e) {
+    if (e.target.closest('[data-no-row-click]')) return;
+    var el = e.target.closest('[data-action]');
+    if (el && el.dataset.action === 'navigate-row') window.location = el.dataset.href;
+});
+</script>
 {% endblock %}

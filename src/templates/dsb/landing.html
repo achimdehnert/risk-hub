@@ -448,7 +448,7 @@
                                    placeholder="mandant-name" aria-label="Tenant">
                             <span class="input-group-text">.schutztat.de</span>
                         </div>
-                        <button class="btn btn-dsb w-100 btn-lg" onclick="goToTenant()">
+                        <button class="btn btn-dsb w-100 btn-lg" data-action="go-to-tenant">
                             <i class="bi bi-box-arrow-in-right me-2"></i>DSB-Dashboard öffnen
                         </button>
                         <hr class="my-4">
@@ -494,6 +494,10 @@
         }
         document.getElementById('tenant-input').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') goToTenant();
+        });
+        document.addEventListener('click', function(e) {
+            var el = e.target.closest('[data-action]');
+            if (el && el.dataset.action === 'go-to-tenant') goToTenant();
         });
     </script>
 </body>

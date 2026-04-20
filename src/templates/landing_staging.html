@@ -556,10 +556,10 @@
 
                 <!-- Billing Toggle -->
                 <div class="billing-toggle d-inline-flex border rounded-3 p-1 gap-1" style="background:#f8f9fa;">
-                    <button id="btn-monthly" class="btn btn-sm active" onclick="toggleBilling('monthly')">
+                    <button id="btn-monthly" class="btn btn-sm active" data-action="toggle-billing" data-plan="monthly">
                         Monatlich
                     </button>
-                    <button id="btn-annual" class="btn btn-sm" onclick="toggleBilling('annual')">
+                    <button id="btn-annual" class="btn btn-sm" data-action="toggle-billing" data-plan="annual">
                         Jährlich <span class="badge text-bg-success ms-1" style="font-size:0.65rem;">-17%</span>
                     </button>
                 </div>
@@ -592,7 +592,7 @@
                             <div class="pricing-feature disabled"><i class="bi bi-x-circle text-muted"></i>API-Zugang</div>
                         </div>
                         <button class="btn btn-outline-secondary w-100 mt-4"
-                                onclick="openKonfigurator('starter')">
+                                data-action="open-konfigurator" data-plan="starter">
                             14 Tage testen
                         </button>
                     </div>
@@ -627,7 +627,7 @@
                             <div class="pricing-feature disabled"><i class="bi bi-x-circle text-muted"></i>Explosionsschutz &amp; Gefahrstoffe</div>
                         </div>
                         <button class="btn btn-brand w-100 mt-4"
-                                onclick="openKonfigurator('professional')">
+                                data-action="open-konfigurator" data-plan="professional">
                             14 Tage kostenlos starten
                         </button>
                     </div>
@@ -658,7 +658,7 @@
                             <div class="pricing-feature" style="color:rgba(255,255,255,0.9);"><i class="bi bi-check-circle-fill" style="color:#4ade80;"></i>Dedizierter Support</div>
                         </div>
                         <button class="btn w-100 mt-4" style="background:#fff; color:#1a1a2e; font-weight:600; border-radius:10px;"
-                                onclick="openKonfigurator('business')">
+                                data-action="open-konfigurator" data-plan="business">
                             14 Tage testen
                         </button>
                     </div>
@@ -814,7 +814,7 @@
     <!-- ══════════════════════════════════════════════════════════════
          MODUL-KONFIGURATOR MODAL
     ══════════════════════════════════════════════════════════════ -->
-    <div id="konfigOverlay" class="konfig-modal-overlay" onclick="handleOverlayClick(event)">
+    <div id="konfigOverlay" class="konfig-modal-overlay" data-action="overlay-click">
         <div class="konfig-modal">
 
             <!-- Header -->
@@ -827,7 +827,7 @@
                     <h4 class="fw-bold mb-0" id="konfigTitle">Welche Module brauchen Sie?</h4>
                     <p class="text-muted small mb-0 mt-1" id="konfigSubtitle">Wählen Sie Ihre Module aus — Sie können jederzeit erweitern.</p>
                 </div>
-                <button class="btn btn-sm btn-light rounded-circle" onclick="closeKonfigurator()" style="width:32px;height:32px;padding:0;">
+                <button class="btn btn-sm btn-light rounded-circle" data-action="close-konfigurator" style="width:32px;height:32px;padding:0;">
                     <i class="bi bi-x"></i>
                 </button>
             </div>
@@ -855,7 +855,7 @@
                     <div id="step1-plan-display" class="mb-3"></div>
                     <p class="text-muted" id="step1-plan-desc"></p>
                     <div id="step1-included-modules" class="mb-4"></div>
-                    <button class="btn btn-brand px-5" onclick="goToStep(2)">
+                    <button class="btn btn-brand px-5" data-action="go-to-step" data-step="2">
                         <i class="bi bi-arrow-right me-2"></i>Module konfigurieren
                     </button>
                 </div>
@@ -923,7 +923,7 @@
                     <h5 class="fw-bold mt-3 mb-2">Anfrage erhalten!</h5>
                     <p class="text-muted mb-1">Wir haben Ihre Anfrage erhalten und melden uns innerhalb von <strong>24 Stunden</strong>.</p>
                     <p class="text-muted small">Schauen Sie auch in Ihren Spam-Ordner.</p>
-                    <button class="btn btn-outline-secondary btn-sm mt-2" onclick="closeKonfigurator()">
+                    <button class="btn btn-outline-secondary btn-sm mt-2" data-action="close-konfigurator">
                         Schließen
                     </button>
                 </div>
@@ -931,12 +931,12 @@
 
             <!-- Footer -->
             <div class="konfig-footer d-flex align-items-center justify-content-between">
-                <button id="konfig-back-btn" class="btn btn-outline-secondary" onclick="goPrevStep()" style="display:none!important;">
+                <button id="konfig-back-btn" class="btn btn-outline-secondary" data-action="go-prev-step" style="display:none!important;">
                     <i class="bi bi-arrow-left me-1"></i>Zurück
                 </button>
                 <div class="ms-auto d-flex gap-2">
-                    <button class="btn btn-light" onclick="closeKonfigurator()">Abbrechen</button>
-                    <button id="konfig-next-btn" class="btn btn-brand px-4" onclick="goNextStep()">
+                    <button class="btn btn-light" data-action="close-konfigurator">Abbrechen</button>
+                    <button id="konfig-next-btn" class="btn btn-brand px-4" data-action="go-next-step">
                         <span id="konfig-next-label">Weiter</span>
                         <i class="bi bi-arrow-right ms-1" id="konfig-next-icon"></i>
                     </button>
@@ -1208,7 +1208,7 @@
                 <div class="col-md-6">
                     <div class="module-select-card ${isSelected ? 'selected' : ''} ${isLocked ? 'locked' : ''}"
                          id="mc-${mod.id}"
-                         onclick="${isLocked ? '' : `toggleModule('${mod.id}')`}">
+                         ${isLocked ? '' : `data-action="toggle-module" data-module-id="${mod.id}"`}>
                         <div class="check-icon"><i class="bi bi-check"></i></div>
                         ${isLocked ? '<i class="bi bi-lock-fill lock-icon"></i>' : ''}
                         <div class="d-flex align-items-center gap-3">
@@ -1355,6 +1355,22 @@
     /* Keyboard close */
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') closeKonfigurator();
+    });
+
+    /* Event Delegation */
+    document.addEventListener('click', function(e) {
+        var el = e.target.closest('[data-action]');
+        if (!el) return;
+        switch (el.dataset.action) {
+            case 'toggle-billing': toggleBilling(el.dataset.plan); break;
+            case 'open-konfigurator': openKonfigurator(el.dataset.plan); break;
+            case 'close-konfigurator': closeKonfigurator(); break;
+            case 'overlay-click': if (e.target === el) closeKonfigurator(); break;
+            case 'go-to-step': goToStep(parseInt(el.dataset.step)); break;
+            case 'go-prev-step': goPrevStep(); break;
+            case 'go-next-step': goNextStep(); break;
+            case 'toggle-module': toggleModule(el.dataset.moduleId); break;
+        }
     });
     </script>
 </body>

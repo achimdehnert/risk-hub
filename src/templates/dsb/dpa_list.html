@@ -50,7 +50,7 @@
             </thead>
             <tbody class="divide-y divide-gray-200">
                 {% for dpa in rows %}
-                <tr class="hover:bg-gray-50 cursor-pointer" onclick="window.location='{% url 'dsb:dpa-detail' dpa.pk %}'">
+                <tr class="hover:bg-gray-50 cursor-pointer" data-action="navigate-row" data-href="{% url 'dsb:dpa-detail' dpa.pk %}">
                     <td class="px-4 py-3">
                         <div class="text-sm font-medium text-blue-600">
                             <a href="{% url 'dsb:dpa-detail' dpa.pk %}">{{ dpa.partner_name }}</a>
@@ -60,7 +60,7 @@
                     <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.mandate.name }}</td>
                     <td class="px-4 py-3 text-sm">{% status_badge dpa.status %}</td>
                     <td class="px-4 py-3 text-sm text-gray-500">{{ dpa.expiry_date|default:"—" }}</td>
-                    <td class="px-4 py-3 text-right" onclick="event.stopPropagation()">
+                    <td class="px-4 py-3 text-right" data-no-row-click>
                         <a href="{% url 'dsb:dpa-detail' dpa.pk %}" class="text-gray-500 hover:text-gray-700 mr-2">
                             <i data-lucide="eye" class="w-4 h-4 inline"></i>
                         </a>
@@ -94,5 +94,11 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>lucide.createIcons();</script>
+<script>lucide.createIcons();
+document.addEventListener('click', function(e) {
+    if (e.target.closest('[data-no-row-click]')) return;
+    var el = e.target.closest('[data-action]');
+    if (el && el.dataset.action === 'navigate-row') window.location = el.dataset.href;
+});
+</script>
 {% endblock %}

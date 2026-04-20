@@ -53,9 +53,10 @@
                     Abbrechen
                 </a>
                 {% if check %}
-                <form method="post" action="{% url 'risk:substitution_delete' assessment.id check.id %}" class="ml-auto">
+                <form method="post" action="{% url 'risk:substitution_delete' assessment.id check.id %}" class="ml-auto"
+                      data-confirm-submit="Substitutionsprüfung wirklich löschen?">
                     {% csrf_token %}
-                    <button type="submit" onclick="return confirm('Substitutionsprüfung wirklich löschen?')"
+                    <button type="submit"
                             class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm">
                         Löschen
                     </button>
@@ -65,4 +66,10 @@
         </form>
     </div>
 </div>
+<script>
+document.addEventListener('submit', function(e) {
+    var f = e.target.closest('[data-confirm-submit]');
+    if (f && !confirm(f.dataset.confirmSubmit)) e.preventDefault();
+});
+</script>
 {% endblock %}

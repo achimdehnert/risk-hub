@@ -30,7 +30,7 @@
             <label class="block text-xs font-medium text-gray-500 mb-1">Dokumenttyp</label>
             <select name="ref_type"
                     class="rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-1.5 border"
-                    onchange="this.form.submit()">
+                    data-action="auto-submit">
                 <option value="">Alle Typen</option>
                 {% for val, label in ref_type_choices %}
                 <option value="{{ val }}" {% if val == ref_type %}selected{% endif %}>{{ label }}</option>
@@ -91,7 +91,7 @@
                             <i data-lucide="download" class="w-4 h-4 inline"></i>
                         </a>
                         <form method="post" action="{% url 'dsb:document-delete' doc.pk %}"
-                              onsubmit="return confirm('Dokument „{{ doc.title }}" wirklich löschen?')">
+                              data-confirm-submit="Dokument „{{ doc.title }}“ wirklich löschen?">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="{% url 'dsb:document-list' %}">
                             <button type="submit" class="text-red-500 hover:text-red-700" title="Löschen">
@@ -119,5 +119,14 @@
 {% endblock %}
 
 {% block extra_scripts %}
-<script>lucide.createIcons();</script>
+<script>lucide.createIcons();
+document.addEventListener('change', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (el && el.dataset.action === 'auto-submit') el.form.submit();
+});
+document.addEventListener('submit', function(e) {
+    var f = e.target.closest('[data-confirm-submit]');
+    if (f && !confirm(f.dataset.confirmSubmit)) e.preventDefault();
+});
+</script>
 {% endblock %}

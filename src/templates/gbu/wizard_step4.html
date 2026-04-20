@@ -30,7 +30,7 @@
             <input type="checkbox" name="measure_{{ tpl.id }}" value="{{ tpl.id }}"
                    {% if tpl.is_mandatory %}checked disabled{% endif %}
                    class="mt-0.5 mr-3"
-                   onchange="updateMeasureIds()">
+                   data-action="update-measure-ids">
             <div>
               <span class="text-sm font-medium text-gray-900">{{ tpl.title }}</span>
               {% if tpl.is_mandatory %}
@@ -72,5 +72,9 @@ function updateMeasureIds() {
   document.getElementById('id_confirmed_measure_ids').value = checked;
 }
 document.addEventListener('DOMContentLoaded', updateMeasureIds);
+document.addEventListener('change', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (el && el.dataset.action === 'update-measure-ids') updateMeasureIds();
+});
 </script>
 {% endblock %}

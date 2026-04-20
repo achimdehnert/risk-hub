@@ -21,7 +21,7 @@
   <div class="bg-white rounded-xl border border-gray-200 p-4 mb-5 flex flex-wrap gap-3 items-end">
     <div>
       <label class="block text-xs font-medium text-gray-600 mb-1">Status</label>
-      <select onchange="var p=new URLSearchParams(window.location.search);p.set('status',this.value);window.location.search=p"
+      <select data-action="filter-param" data-param="status"
               class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
         <option value="" {% if not current_status %}selected{% endif %}>Alle Status</option>
         <option value="open" {% if current_status == 'open' %}selected{% endif %}>Offen</option>
@@ -32,7 +32,7 @@
     </div>
     <div>
       <label class="block text-xs font-medium text-gray-600 mb-1">Priorität</label>
-      <select onchange="var p=new URLSearchParams(window.location.search);p.set('priority',this.value);window.location.search=p"
+      <select data-action="filter-param" data-param="priority"
               class="text-sm border-gray-300 rounded-md shadow-sm focus:ring-orange-500 focus:border-orange-500">
         <option value="" {% if not current_priority %}selected{% endif %}>Alle</option>
         <option value="4" {% if current_priority == '4' %}selected{% endif %}>Kritisch</option>
@@ -106,4 +106,14 @@
   {% endif %}
 
 </div>
+<script>
+document.addEventListener('change', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (el && el.dataset.action === 'filter-param') {
+        var p = new URLSearchParams(window.location.search);
+        p.set(el.dataset.param, el.value);
+        window.location.search = p;
+    }
+});
+</script>
 {% endblock %}

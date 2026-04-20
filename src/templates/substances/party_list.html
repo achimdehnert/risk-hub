@@ -15,7 +15,7 @@
     <div class="bg-white rounded-lg shadow p-4">
         <form method="get" class="flex items-center space-x-4">
             <label class="text-sm font-medium text-gray-700">Typ:</label>
-            <select name="type" onchange="this.form.submit()"
+            <select name="type" data-action="auto-submit"
                     class="rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500">
                 <option value="">Alle</option>
                 {% for value, label in party_types %}
@@ -83,4 +83,10 @@
         {% endfor %}
     </div>
 </div>
+<script>
+document.addEventListener('change', function(e) {
+    var el = e.target.closest('[data-action]');
+    if (el && el.dataset.action === 'auto-submit') el.form.submit();
+});
+</script>
 {% endblock %}
