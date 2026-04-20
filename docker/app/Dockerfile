@@ -1,20 +1,16 @@
-FROM python:3.12-slim
-
-# OCI Labels (ADR-022)
-ARG APP_NAME=risk-hub
-LABEL org.opencontainers.image.source="https://github.com/achimdehnert/${APP_NAME}"
-LABEL org.opencontainers.image.description="Schutztat - Occupational Safety SaaS"
+# ── Stage 1: Builder (has build-essential+git, removed from final) ──────
+FROM python:3.12-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# System deps (weasyprint needs pango/gdk-pixbuf/cairo; git for git+https requirements)
+# Build deps + runtime libs needed for compilation
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential git \
+    build-essential git libffi-dev \
     libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libfribidi0 \
-    libgdk-pixbuf-2.0-0 libcairo2 libffi-dev \
+    libgdk-pixbuf-2.0-0 libcairo2 \
     && rm -rf /var/lib/apt/lists/*
 
 # Build-time secret for private GitHub packages — injected via BuildKit --secret, never stored in layers
@@ -47,6 +43,34 @@ RUN --mount=type=secret,id=PROJECT_PAT \
     && rm -rf /tmp/platform /tmp/nl2cad /tmp/iil-fieldprefill \
     && git config --global --remove-section url."https://x-access-token:${PROJECT_PAT}@github.com/" 2>/dev/null || true
 
+# Install risk-hub's own django-tenancy in builder
+COPY packages /app/packages
+RUN pip install --no-cache-dir /app/packages/django-tenancy 2>&1 \
+    && echo "OK: risk-hub django-tenancy" || echo "SKIP: risk-hub django-tenancy"
+
+# ── Stage 2: Runtime (slim, no build tools) ─────────────────────────────
+FROM python:3.12-slim
+
+# OCI Labels (ADR-022)
+ARG APP_NAME=risk-hub
+LABEL org.opencontainers.image.source="https://github.com/achimdehnert/${APP_NAME}"
+LABEL org.opencontainers.image.description="Schutztat - Occupational Safety SaaS"
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+
+# Runtime-only system deps (weasyprint needs pango/gdk-pixbuf/cairo at runtime)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libfribidi0 \
+    libgdk-pixbuf-2.0-0 libcairo2 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy installed Python packages from builder
+COPY --from=builder /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+
 COPY docker/app/entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
@@ -55,10 +79,6 @@ COPY src /app/src
 WORKDIR /app/src
 
 ENV PYTHONPATH=/app/src
-
-# Install risk-hub's own django-tenancy (UUID PK, tenancy_organization table)
-RUN pip install --no-cache-dir /app/packages/django-tenancy 2>&1 \
-    && echo "OK: risk-hub django-tenancy" || echo "SKIP: risk-hub django-tenancy"
 
 # ADR-083: Collect static files with build-safe settings (no dummy env vars, no || true)
 RUN DJANGO_SETTINGS_MODULE=config.settings_build \
@@ -72,9 +92,6 @@ RUN groupadd --gid 1000 app && \
 USER app
 
 EXPOSE 8000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/livez/')" || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["web"]
