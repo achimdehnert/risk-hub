@@ -2,11 +2,10 @@
 """Django Forms für Unterweisungen (UC-009)."""
 
 from django import forms
-from django.db.models import Q
 
 from tenancy.models import Department, Site
 
-from .models import TrainingAttendance, TrainingSession, TrainingTopic
+from .models import TrainingSession, TrainingTopic
 
 
 class TrainingTopicForm(forms.ModelForm):

@@ -3,7 +3,7 @@
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q
+from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -212,7 +212,7 @@ def session_edit(request, pk):
 
     return render(request, "training/session_form.html", {
         "form": form,
-        "title": f"Unterweisung bearbeiten",
+        "title": "Unterweisung bearbeiten",
         "session": session,
     })
 
@@ -245,7 +245,7 @@ def attendance_manage(request, pk):
     if request.method == "POST":
         # Process attendance form
         selected_ids = request.POST.getlist("user_ids")
-        statuses = request.POST.getlist("att_status")
+        request.POST.getlist("att_status")
 
         # Delete existing and recreate
         session.attendances.all().delete()

@@ -383,10 +383,10 @@ class KatasterImportService:
             "wgk": ["wgk"],
             "cas_number": ["cas"],
         }
-        for field, keywords in field_keywords.items():
+        for field_name, keywords in field_keywords.items():
             for col_idx, h in enumerate(merged_headers):
                 if any(kw in h for kw in keywords):
-                    mapping[field] = col_idx
+                    mapping[field_name] = col_idx
                     break
 
         product_col = mapping.get("trade_name", 1)

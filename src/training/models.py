@@ -9,7 +9,6 @@ Enthält:
 from django.db import models
 from django_tenancy.managers import TenantManager
 
-
 # =============================================================================
 # TRAINING TOPIC (Unterweisungsthema)
 # =============================================================================

@@ -3,7 +3,6 @@
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
@@ -130,7 +129,7 @@ def action_edit(request, pk):
 
     return render(request, "actions/action_form.html", {
         "form": form,
-        "title": f"Maßnahme bearbeiten",
+        "title": "Maßnahme bearbeiten",
         "action_obj": action,
     })
 
