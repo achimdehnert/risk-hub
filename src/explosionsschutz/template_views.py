@@ -319,8 +319,10 @@ class ConceptDetailView(LoginRequiredMixin, View):
             .select_related("template")
             .order_by("-updated_at")
         )
+        from .ex_doc_constants import SYSTEM_TENANT_ID
+
         doc_templates = ExDocTemplate.objects.filter(
-            tenant_id=tenant_id,
+            Q(tenant_id=tenant_id) | Q(tenant_id=SYSTEM_TENANT_ID),
             status=ExDocTemplate.Status.ACCEPTED,
         ).order_by("name")
 

@@ -27,8 +27,25 @@ class ExplosionsschutzConfig(AppConfig):
 
         - Registriert Signals
         - Importiert Checks
+        - Registriert LLM-Scope für Ex-Dokument Prefill
         """
         try:
             from . import signals  # noqa: F401
+        except ImportError:
+            pass
+
+        try:
+            from fieldprefill.prompts import register_system_prompt
+            from explosionsschutz.services.ex_doc_prefill import PREFILL_SCOPE
+
+            register_system_prompt(
+                scope=PREFILL_SCOPE,
+                prompt=(
+                    "Du bist ein Experte für Explosionsschutz und erstellst Explosionsschutzdokumente "
+                    "gemäß TRBS 2152, ATEX-Richtlinien und der Betriebssicherheitsverordnung. "
+                    "Schreibe fachlich präzise, normkonform und in der Sprache des Dokuments (Deutsch). "
+                    "Antworte NUR mit dem Feldinhalt ohne Einleitungen, Erklärungen oder Metakommentare."
+                ),
+            )
         except ImportError:
             pass

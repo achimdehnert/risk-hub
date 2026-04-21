@@ -290,7 +290,7 @@ class GlobalSdsRevision(models.Model):
         ordering = ["-revision_date", "-created_at"]
         constraints = [
             models.CheckConstraint(
-                check=~Q(superseded_by=models.F("id")),
+                condition=~Q(superseded_by=models.F("id")),
                 name="chk_sdsrevision_no_self_supersession",
             ),
         ]

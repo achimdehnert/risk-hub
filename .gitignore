@@ -66,3 +66,4 @@ htmlcov/
 
 # IDE agent workflows (symlinked, not repo-specific)
 .windsurf/
+src/dev_db.sqlite3

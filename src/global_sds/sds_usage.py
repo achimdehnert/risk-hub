@@ -121,7 +121,7 @@ class SdsUsage(models.Model):
             # M-3: GefStoffV §6(4) — aktive Nutzung erfordert
             # namentliche Freigabe
             models.CheckConstraint(
-                check=(~Q(status="ACTIVE") | Q(approved_by__isnull=False)),
+                condition=(~Q(status="ACTIVE") | Q(approved_by__isnull=False)),
                 name="chk_sds_usage_active_requires_approver",
             ),
         ]

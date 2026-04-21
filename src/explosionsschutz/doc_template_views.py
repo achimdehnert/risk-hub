@@ -19,10 +19,12 @@ import re
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db import models
+from django.db.models import Q
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from .ex_doc_constants import SYSTEM_TENANT_ID
 from .models import ExDocInstance, ExDocTemplate
 
 logger = logging.getLogger(__name__)
@@ -517,7 +519,7 @@ def template_list(request: HttpRequest) -> HttpResponse:
     """Alle Dokumentvorlagen anzeigen."""
     tid = _tenant_id(request)
     templates = ExDocTemplate.objects.filter(
-        tenant_id=tid,
+        Q(tenant_id=tid) | Q(tenant_id=SYSTEM_TENANT_ID),
     ).order_by("-updated_at")
     instances = (
         ExDocInstance.objects.filter(
@@ -777,7 +779,7 @@ def instance_create(
     tmpl = get_object_or_404(
         ExDocTemplate,
         pk=template_pk,
-        tenant_id=tid,
+        tenant_id__in=[tid, SYSTEM_TENANT_ID],
     )
 
     if request.method == "GET":
@@ -853,7 +855,7 @@ def instance_create_for_concept(
     tmpl = get_object_or_404(
         ExDocTemplate,
         pk=template_pk,
-        tenant_id=tid,
+        tenant_id__in=[tid, SYSTEM_TENANT_ID],
     )
     concept = get_object_or_404(
         ExplosionConcept,

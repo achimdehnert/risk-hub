@@ -165,7 +165,7 @@ CSRF_TRUSTED_ORIGINS = [o for o in read_secret("CSRF_TRUSTED_ORIGINS", default="
 if DEBUG:
     # Django doesn't support port wildcards — trust all localhost in dev
     CSRF_TRUSTED_ORIGINS += [f"http://localhost:{p}" for p in range(3000, 9001)] + [
-        f"http://127.0.0.1:{p}" for p in range(40000, 50001)
+        f"http://127.0.0.1:{p}" for p in range(30000, 50001)
     ]
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
@@ -391,6 +391,9 @@ IIL_LEARNFW = {
     "ASSESSMENT_IP_HASH_SALT": read_secret("ASSESSMENT_IP_HASH_SALT", default="risk-hub-dev-salt"),
     "ASSESSMENT_REPORT_ENGINE": "weasyprint",
 }
+
+if DEBUG:
+    SILENCED_SYSTEM_CHECKS = ["models.E028", "models.E030", "models.E032"]
 
 LOGGING = {
     "version": 1,
