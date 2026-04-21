@@ -69,6 +69,7 @@ INSTALLED_APPS = [
 
 
 MIDDLEWARE = [
+    "platform_context.middleware.HealthBypassMiddleware",  # ADR-167 Tier 2: health probes bypass everything
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
