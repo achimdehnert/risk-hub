@@ -1,7 +1,6 @@
 """Tenancy views — Organization + User/Membership management."""
 
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -18,6 +17,18 @@ from tenancy.forms import (
     OrganizationForm,
 )
 from tenancy.models import Membership, Organization
+from tenancy.services import (
+    get_all_organizations,
+    get_module_memberships,
+    get_module_subscription_stats,
+    get_org_member_counts,
+    get_org_memberships,
+    get_org_module_counts,
+    get_org_roles,
+    get_org_subscriptions,
+    get_organization_by_tenant,
+    subscription_exists,
+)
 
 _ALL_MODULES = ["risk", "dsb", "ex", "substances", "gbu", "documents", "actions", "brandschutz"]
 
@@ -37,30 +48,21 @@ def org_list(request: HttpRequest) -> HttpResponse:
     if not _require_staff(request):
         return render(request, "403.html", status=403)
 
-    qs = Organization.objects.all().order_by("name")
-    member_counts = dict(
-        Membership.objects.values_list("tenant_id")
-        .annotate(cnt=Count("id"))
-        .values_list("tenant_id", "cnt")
-    )
-    module_counts = dict(
-        ModuleSubscription.objects.filter(status__in=["trial", "active"])
-        .values_list("tenant_id")
-        .annotate(cnt=Count("id"))
-        .values_list("tenant_id", "cnt")
-    )
+    qs = get_all_organizations()
+    member_counts = get_org_member_counts()
+    module_counts = get_org_module_counts()
     for org in qs:
         org.member_count = member_counts.get(org.tenant_id, 0)
         org.module_count = module_counts.get(org.tenant_id, 0)
 
     total = qs.count()
+    mod_stats = get_module_subscription_stats()
     stats = {
         "total": total,
         "active": qs.filter(status="active").count(),
         "trial": qs.filter(status="trial").count(),
         "suspended": qs.filter(status="suspended").count(),
-        "active_modules": ModuleSubscription.objects.filter(status="active").count(),
-        "trial_modules": ModuleSubscription.objects.filter(status="trial").count(),
+        **mod_stats,
     }
     return render(request, "tenancy/org_list.html", {"rows": qs, "stats": stats})
 
@@ -122,16 +124,10 @@ def org_detail(request: HttpRequest, pk) -> HttpResponse:
         return render(request, "403.html", status=403)
 
     org = get_object_or_404(Organization, pk=pk)
-    memberships = (
-        Membership.objects.filter(tenant_id=org.tenant_id)
-        .select_related("user")
-        .order_by("role", "user__username")
-    )
-    roles = Role.objects.filter(
-        tenant_id__in=[org.tenant_id, None],
-    ).order_by("-is_system", "name")
+    memberships = get_org_memberships(org.tenant_id).order_by("role", "user__username")
+    roles = get_org_roles(org.tenant_id).order_by("-is_system", "name")
     sites = org.sites.all().order_by("name")
-    subscriptions = ModuleSubscription.objects.filter(tenant_id=org.tenant_id).order_by("module")
+    subscriptions = get_org_subscriptions(org.tenant_id)
     subscribed_modules = {s.module for s in subscriptions}
     missing_modules = [m for m in _ALL_MODULES if m not in subscribed_modules]
 
@@ -331,10 +327,7 @@ def module_subscription_add(
         return render(request, "403.html", status=403)
 
     org = get_object_or_404(Organization, pk=org_pk)
-    if ModuleSubscription.objects.filter(
-        tenant_id=org.tenant_id,
-        module=module,
-    ).exists():
+    if subscription_exists(org.tenant_id, module):
         return redirect("tenancy:org-detail", pk=org.pk)
 
     ModuleSubscription.objects.create(
@@ -404,10 +397,7 @@ def module_membership_manage(
         module=module,
     )
     memberships = (
-        ModuleMembership.objects.filter(
-            tenant_id=org.tenant_id,
-            module=module,
-        )
+        get_module_memberships(org.tenant_id, module)
         .select_related("user", "granted_by")
         .order_by("role", "user__username")
     )
@@ -575,7 +565,7 @@ def site_create(request: HttpRequest) -> HttpResponse:
     if not tenant_id:
         return render(request, "403.html", status=403)
 
-    org = Organization.objects.filter(tenant_id=tenant_id).first()
+    org = get_organization_by_tenant(tenant_id)
 
     if request.method == "POST":
         form = SiteForm(request.POST)

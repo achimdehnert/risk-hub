@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from common.tenant import require_tenant as _require_tenant
 from documents.models import Document, DocumentVersion
-from documents.services import download_url, upload_document
+from documents.services import download_url, get_document_qs, get_documents, upload_document
 
 
 @login_required
@@ -23,11 +23,7 @@ def document_list(request: HttpRequest) -> HttpResponse:
     if err:
         return err
 
-    documents = (
-        Document.objects.filter(tenant_id=request.tenant_id)
-        .prefetch_related("versions")
-        .order_by("-created_at")[:100]
-    )
+    documents = get_documents(request.tenant_id)
     return render(
         request,
         "documents/document_list.html",
@@ -46,9 +42,8 @@ def document_detail(
         return err
 
     document = get_object_or_404(
-        Document.objects.prefetch_related("versions"),
+        get_document_qs(request.tenant_id),
         id=document_id,
-        tenant_id=request.tenant_id,
     )
     versions = document.versions.order_by("-version")
     return render(

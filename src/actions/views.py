@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from .forms import ActionItemForm
 from .models import ActionItem
+from .services import get_action_items, get_action_items_ordered
 
 
 def _tenant(request):
@@ -23,7 +24,7 @@ def dashboard(request):
     if not tenant_id:
         return render(request, "403.html", status=403)
 
-    qs = ActionItem.objects.filter(tenant_id=tenant_id)
+    qs = get_action_items(tenant_id)
     open_count = qs.filter(status=ActionItem.Status.OPEN).count()
     in_progress_count = qs.filter(status=ActionItem.Status.IN_PROGRESS).count()
     completed_count = qs.filter(status=ActionItem.Status.COMPLETED).count()
@@ -69,7 +70,7 @@ def action_list(request):
     status_filter = request.GET.get("status", "")
     priority_filter = request.GET.get("priority", "")
 
-    actions = ActionItem.objects.filter(tenant_id=tenant_id).order_by("-created_at")
+    actions = get_action_items_ordered(tenant_id)
 
     if status_filter:
         actions = actions.filter(status=status_filter)

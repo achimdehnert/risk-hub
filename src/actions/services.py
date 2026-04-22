@@ -112,3 +112,22 @@ def create_action(cmd: CreateActionCmd) -> ActionItem:
         assessment_id=cmd.assessment_id,
         hazard_id=cmd.hazard_id,
     )
+
+
+# ---------------------------------------------------------------------------
+# Query helpers (ADR-041)
+# ---------------------------------------------------------------------------
+
+
+def get_action_items(tenant_id):
+    """Return all ActionItems for a tenant."""
+    from actions.models import ActionItem
+
+    return ActionItem.objects.filter(tenant_id=tenant_id)
+
+
+def get_action_items_ordered(tenant_id):
+    """Return ActionItems for a tenant, newest first."""
+    from actions.models import ActionItem
+
+    return ActionItem.objects.filter(tenant_id=tenant_id).order_by("-created_at")

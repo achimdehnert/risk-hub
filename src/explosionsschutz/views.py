@@ -61,6 +61,11 @@ from .services import (
     ValidateExplosionConceptCmd,
     archive_explosion_concept,
     create_explosion_concept,
+    get_active_equipment,
+    get_areas_with_zones,
+    get_equipment,
+    get_explosion_concepts,
+    get_zone_definitions,
     validate_explosion_concept,
 )
 
@@ -356,8 +361,8 @@ class DashboardView(APIView):
         today = timezone.now().date()
 
         # Statistiken
-        concepts = ExplosionConcept.objects.filter(tenant_id=tenant_id)
-        equipment = Equipment.objects.filter(tenant_id=tenant_id)
+        concepts = get_explosion_concepts(tenant_id)
+        equipment = get_equipment(tenant_id)
 
         return Response(
             {
@@ -378,7 +383,7 @@ class DashboardView(APIView):
                 },
                 "zones": {
                     "by_type": list(
-                        ZoneDefinition.objects.filter(tenant_id=tenant_id)
+                        get_zone_definitions(tenant_id)
                         .values("zone_type")
                         .annotate(count=Count("id"))
                         .order_by("zone_type")
@@ -409,9 +414,7 @@ class InspectionsDueReportView(APIView):
         days = int(request.query_params.get("days", 30))
         today = timezone.now().date()
 
-        equipment = Equipment.objects.filter(tenant_id=tenant_id, status="active").select_related(
-            "equipment_type", "area", "zone"
-        )
+        equipment = get_active_equipment(tenant_id)
 
         overdue = equipment.filter(next_inspection_date__lt=today)
         due_soon = equipment.filter(
@@ -438,7 +441,7 @@ class ZoneSummaryReportView(APIView):
         if not tenant_id:
             return Response({"error": "Tenant erforderlich"}, status=400)
 
-        areas = Area.objects.filter(tenant_id=tenant_id).prefetch_related("concepts__zones")
+        areas = get_areas_with_zones(tenant_id)
 
         result = []
         for area in areas:

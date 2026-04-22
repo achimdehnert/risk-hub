@@ -9,6 +9,7 @@ from django.shortcuts import render
 from django.views import View
 
 from audit.models import AuditEvent
+from audit.services import get_audit_events, get_audit_resource_types
 
 
 class AuditLogView(LoginRequiredMixin, View):
@@ -18,7 +19,7 @@ class AuditLogView(LoginRequiredMixin, View):
 
     def get(self, request: HttpRequest) -> HttpResponse:
         tenant_id = getattr(request, "tenant_id", None)
-        qs = AuditEvent.objects.filter(tenant_id=tenant_id)
+        qs = get_audit_events(tenant_id)
 
         # Filters
         event_type = request.GET.get("event_type")
@@ -42,11 +43,7 @@ class AuditLogView(LoginRequiredMixin, View):
 
         # Distinct values for filter dropdowns
         event_types = AuditEvent.EventType.choices
-        resource_types = (
-            AuditEvent.objects.filter(tenant_id=tenant_id)
-            .values_list("resource_type", flat=True)
-            .distinct()[:50]
-        )
+        resource_types = get_audit_resource_types(tenant_id)
 
         return render(
             request,
@@ -71,7 +68,7 @@ class AuditLogCsvExportView(LoginRequiredMixin, View):
 
     def get(self, request: HttpRequest) -> HttpResponse:
         tenant_id = getattr(request, "tenant_id", None)
-        qs = AuditEvent.objects.filter(tenant_id=tenant_id)
+        qs = get_audit_events(tenant_id)
 
         event_type = request.GET.get("event_type")
         resource_type = request.GET.get("resource_type")

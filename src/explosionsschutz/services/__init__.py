@@ -977,3 +977,40 @@ def create_equipment_with_atex_check(
         user_id=user_id,
     )
     return equipment
+
+
+# =============================================================================
+# QUERY HELPERS (ADR-041)
+# =============================================================================
+
+
+def get_explosion_concepts(tenant_id):
+    """Return ExplosionConcepts for a tenant."""
+    return ExplosionConcept.objects.filter(tenant_id=tenant_id)
+
+
+def get_equipment(tenant_id):
+    """Return Equipment for a tenant."""
+    return Equipment.objects.filter(tenant_id=tenant_id)
+
+
+def get_active_equipment(tenant_id):
+    """Return active Equipment for a tenant with relations."""
+    return Equipment.objects.filter(tenant_id=tenant_id, status="active").select_related(
+        "equipment_type", "area", "zone"
+    )
+
+
+def get_zone_definitions(tenant_id):
+    """Return ZoneDefinitions for a tenant."""
+    return ZoneDefinition.objects.filter(tenant_id=tenant_id)
+
+
+def get_open_measures(tenant_id):
+    """Return count of open ProtectionMeasures for a tenant."""
+    return ProtectionMeasure.objects.filter(tenant_id=tenant_id, status="open").count()
+
+
+def get_areas_with_zones(tenant_id):
+    """Return Areas for a tenant prefetched with concepts and zones."""
+    return Area.objects.filter(tenant_id=tenant_id).prefetch_related("concepts__zones")

@@ -138,3 +138,26 @@ def _upload_to_s3(
         ContentLength=len(content),
         ContentType=content_type or "application/octet-stream",
     )
+
+
+# ---------------------------------------------------------------------------
+# Query helpers (ADR-041)
+# ---------------------------------------------------------------------------
+
+
+def get_documents(tenant_id):
+    """Return recent Documents for a tenant with versions prefetched."""
+    from documents.models import Document
+
+    return (
+        Document.objects.filter(tenant_id=tenant_id)
+        .prefetch_related("versions")
+        .order_by("-created_at")[:100]
+    )
+
+
+def get_document_qs(tenant_id):
+    """Return Document queryset for get_object_or_404 usage."""
+    from documents.models import Document
+
+    return Document.objects.prefetch_related("versions").filter(tenant_id=tenant_id)
