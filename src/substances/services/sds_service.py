@@ -1,7 +1,4 @@
-# This file is superseded by the substances/services/ package.
-# Functions have been moved to substances/services/sds_service.py.
-# Python uses the package (directory) over this module, so this file
-# is effectively unreachable. Kept only for git history reference.
+"""SDS upload, approval, and S3 operations (ADR-041)."""
 
 import hashlib
 import logging
@@ -11,6 +8,44 @@ from django.db import transaction
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Query helpers
+# ---------------------------------------------------------------------------
+
+
+def get_substance(pk, tenant_id):
+    """Return Substance by PK + tenant, or None."""
+    from substances.models import Substance
+
+    return Substance.objects.filter(id=pk, tenant_id=tenant_id).first()
+
+
+def get_substances(tenant_id):
+    """Return Substance queryset for a tenant."""
+    from substances.models import Substance
+
+    return Substance.objects.filter(tenant_id=tenant_id)
+
+
+def get_sds_revision(pk, tenant_id):
+    """Return SdsRevision by PK + tenant, or None."""
+    from substances.models import SdsRevision
+
+    return SdsRevision.objects.filter(id=pk, tenant_id=tenant_id).first()
+
+
+def get_sds_revisions(tenant_id):
+    """Return SdsRevision queryset for a tenant."""
+    from substances.models import SdsRevision
+
+    return SdsRevision.objects.filter(tenant_id=tenant_id)
+
+
+# ---------------------------------------------------------------------------
+# Write operations
+# ---------------------------------------------------------------------------
 
 
 @transaction.atomic
@@ -30,8 +65,7 @@ def upload_sds_revision(
     """
     from common.s3 import s3_client
     from documents.models import Document, DocumentVersion
-
-    from .models import SdsRevision
+    from substances.models import SdsRevision
 
     sha256 = hashlib.sha256(pdf_content).hexdigest()
     s3_key = f"sds/{tenant_id}/{substance.pk}/{sha256[:16]}_{filename}"
@@ -64,9 +98,7 @@ def upload_sds_revision(
         s3_key=s3_key,
     )
 
-    existing_count = SdsRevision.objects.filter(
-        substance=substance,
-    ).count()
+    existing_count = SdsRevision.objects.filter(substance=substance).count()
     sds = SdsRevision.objects.create(
         tenant_id=tenant_id,
         substance=substance,
@@ -90,7 +122,7 @@ def approve_sds_revision(sds, user_id=None):
 
     Returns the updated SdsRevision.
     """
-    from .models import SdsRevision
+    from substances.models import SdsRevision
 
     sds.substance.sds_revisions.filter(
         status=SdsRevision.Status.APPROVED,

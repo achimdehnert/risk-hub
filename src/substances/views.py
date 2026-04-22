@@ -105,15 +105,11 @@ class SdsUploadView(APIView):
     """Upload einer neuen SDS-Revision — speichert PDF in S3 + DocumentVersion."""
 
     def post(self, request, pk):
-        from .services import upload_sds_revision
+        from .services import get_substance, upload_sds_revision
 
         tenant_id = getattr(request, "tenant_id", None)
-        try:
-            substance = Substance.objects.get(
-                id=pk,
-                tenant_id=tenant_id,
-            )
-        except Substance.DoesNotExist:
+        substance = get_substance(pk, tenant_id)
+        if substance is None:
             return Response(
                 {"error": "Stoff nicht gefunden"},
                 status=status.HTTP_404_NOT_FOUND,
@@ -160,17 +156,13 @@ class SdsApproveView(APIView):
 
     def post(self, request, pk):
         """Gibt SDS frei."""
-        from .services import approve_sds_revision
+        from .services import approve_sds_revision, get_sds_revision
 
         tenant_id = getattr(request, "tenant_id", None)
         user_id = request.user.id if request.user else None
 
-        try:
-            sds = SdsRevision.objects.get(
-                id=pk,
-                tenant_id=tenant_id,
-            )
-        except SdsRevision.DoesNotExist:
+        sds = get_sds_revision(pk, tenant_id)
+        if sds is None:
             return Response(
                 {"error": "SDS nicht gefunden"},
                 status=status.HTTP_404_NOT_FOUND,
