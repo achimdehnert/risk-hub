@@ -6,7 +6,25 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django_tenancy.module_access import require_module
 
-from dsb.services import delete_object, get_dsb_kpis, save_form
+from dsb.services import (
+    delete_object,
+    get_active_mandates,
+    get_breaches,
+    get_critical_audit_findings,
+    get_data_processing_agreements,
+    get_deletion_logs,
+    get_dpa_documents,
+    get_dsb_kpis,
+    get_mandates,
+    get_open_breaches,
+    get_open_deletion_requests,
+    get_organizational_measures,
+    get_privacy_audits,
+    get_processing_activities,
+    get_technical_measures,
+    get_tenant_memberships,
+    save_form,
+)
 
 
 def _tenant_id(request: HttpRequest):
@@ -17,14 +35,8 @@ def _tenant_id(request: HttpRequest):
     user = getattr(request, "user", None)
     if user and getattr(user, "is_authenticated", False):
         try:
-            from tenancy.models import Membership
 
-            m = (
-                Membership.objects.filter(user=user)
-                .select_related("organization")
-                .order_by("created_at")
-                .first()
-            )
+            m = get_tenant_memberships(user).first()
             if m and m.organization.is_active:
                 return m.organization.tenant_id
         except Exception:
@@ -44,8 +56,6 @@ def _user_id(request: HttpRequest):
 @require_module("dsb")
 def dashboard(request: HttpRequest) -> HttpResponse:
     """DSB Dashboard — DSGVO compliance overview."""
-    from dsb.models import Breach
-    from dsb.models.deletion_request import DeletionRequest
 
     tid = _tenant_id(request)
     kpis = get_dsb_kpis(tid) if tid else None
@@ -53,18 +63,8 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     open_breaches = []
     open_deletions = []
     if tid:
-        open_breaches = (
-            Breach.objects.filter(tenant_id=tid)
-            .exclude(workflow_status__in=["closed", "authority_closed"])
-            .select_related("mandate")
-            .order_by("discovered_at")[:10]
-        )
-        open_deletions = (
-            DeletionRequest.objects.filter(tenant_id=tid)
-            .exclude(status__in=["completed", "rejected"])
-            .select_related("mandate")
-            .order_by("created_at")[:10]
-        )
+        open_breaches = get_open_breaches(tid)[:10]
+        open_deletions = get_open_deletion_requests(tid)[:10]
 
     return render(
         request,
@@ -81,13 +81,10 @@ def dashboard(request: HttpRequest) -> HttpResponse:
 @require_module("dsb")
 def vvt_list(request: HttpRequest) -> HttpResponse:
     """VVT list — Art. 30 processing activities."""
-    from dsb.models import ProcessingActivity
 
     tid = _tenant_id(request)
     qs = (
-        ProcessingActivity.objects.filter(
-            tenant_id=tid,
-        )
+        get_processing_activities(tid)
         .select_related("mandate")
         .order_by("mandate", "number")
     )
@@ -108,21 +105,16 @@ def vvt_list(request: HttpRequest) -> HttpResponse:
 @require_module("dsb")
 def tom_list(request: HttpRequest) -> HttpResponse:
     """TOM list — Art. 32 technical & organizational measures."""
-    from dsb.models import OrganizationalMeasure, TechnicalMeasure
     from dsb.models.choices import MeasureStatus
 
     tid = _tenant_id(request)
     tech = (
-        TechnicalMeasure.objects.filter(
-            tenant_id=tid,
-        )
+        get_technical_measures(tid)
         .select_related("category")
         .order_by("title")
     )
     org = (
-        OrganizationalMeasure.objects.filter(
-            tenant_id=tid,
-        )
+        get_organizational_measures(tid)
         .select_related("category")
         .order_by("title")
     )
@@ -145,13 +137,10 @@ def tom_list(request: HttpRequest) -> HttpResponse:
 @require_module("dsb")
 def dpa_list(request: HttpRequest) -> HttpResponse:
     """AVV list — Art. 28 data processing agreements."""
-    from dsb.models import DataProcessingAgreement
 
     tid = _tenant_id(request)
     qs = (
-        DataProcessingAgreement.objects.filter(
-            tenant_id=tid,
-        )
+        get_data_processing_agreements(tid)
         .select_related("mandate")
         .order_by("-effective_date")
     )
@@ -170,23 +159,14 @@ def dpa_list(request: HttpRequest) -> HttpResponse:
 @require_module("dsb")
 def audit_list(request: HttpRequest) -> HttpResponse:
     """Audit list — privacy audits."""
-    from dsb.models import PrivacyAudit
-    from dsb.models.audit import AuditFinding
-    from dsb.models.choices import SeverityLevel
 
     tid = _tenant_id(request)
     qs = (
-        PrivacyAudit.objects.filter(
-            tenant_id=tid,
-        )
+        get_privacy_audits(tid)
         .select_related("mandate")
         .prefetch_related("findings")
     )
-    critical = AuditFinding.objects.filter(
-        tenant_id=tid,
-        severity=SeverityLevel.CRITICAL,
-        status="open",
-    ).count()
+    critical = get_critical_audit_findings(tid)
     return render(
         request,
         "dsb/audit_list.html",
@@ -201,12 +181,9 @@ def audit_list(request: HttpRequest) -> HttpResponse:
 @require_module("dsb")
 def deletion_list(request: HttpRequest) -> HttpResponse:
     """Deletion log list — Art. 17."""
-    from dsb.models import DeletionLog
 
     tid = _tenant_id(request)
-    qs = DeletionLog.objects.filter(
-        tenant_id=tid,
-    ).select_related("mandate", "data_category")
+    qs = get_deletion_logs(tid).select_related("mandate", "data_category")
     pending = qs.filter(executed_at__isnull=True).count()
     return render(
         request,
@@ -222,13 +199,10 @@ def deletion_list(request: HttpRequest) -> HttpResponse:
 @require_module("dsb")
 def breach_list(request: HttpRequest) -> HttpResponse:
     """Breach list — Art. 33 data breaches."""
-    from dsb.models import Breach
 
     tid = _tenant_id(request)
     qs = (
-        Breach.objects.filter(
-            tenant_id=tid,
-        )
+        get_breaches(tid)
         .select_related("mandate")
         .order_by("-discovered_at")
     )
@@ -251,10 +225,9 @@ def breach_list(request: HttpRequest) -> HttpResponse:
 @login_required
 def mandate_list(request: HttpRequest) -> HttpResponse:
     """Mandate list — betreute Unternehmen."""
-    from dsb.models import Mandate
 
     tid = _tenant_id(request)
-    qs = Mandate.objects.filter(tenant_id=tid).order_by("name")
+    qs = get_mandates(tid)
     active = qs.filter(status="active").count()
     return render(
         request,
@@ -492,18 +465,15 @@ def tom_edit(request: HttpRequest, pk) -> HttpResponse:
 @login_required
 def dpa_detail(request: HttpRequest, pk) -> HttpResponse:
     """Detail view for an AVV entry including linked documents."""
-    from dsb.models import DataProcessingAgreement
-    from dsb.models.document import DsbDocument
 
     tid = _tenant_id(request)
     obj = get_object_or_404(
-        DataProcessingAgreement.objects.select_related("mandate").prefetch_related(
+        get_data_processing_agreements(tid).select_related("mandate").prefetch_related(
             "data_categories", "data_subjects", "processing_activities"
         ),
         pk=pk,
-        tenant_id=tid,
     )
-    docs = DsbDocument.objects.filter(tenant_id=tid, ref_type="dpa", ref_id=obj.pk)
+    docs = get_dpa_documents(tid, obj.pk)
     return render(
         request,
         "dsb/dpa_detail.html",
@@ -600,9 +570,7 @@ def avv_import(request: HttpRequest) -> HttpResponse:
         return resp
 
     result = None
-    mandates = (
-        Mandate.objects.filter(tenant_id=tid, status="active") if tid else Mandate.objects.none()
-    )
+    mandates = get_active_mandates(tid)
 
     if request.method == "POST":
         mandate_id = request.POST.get("mandate")
@@ -647,18 +615,11 @@ def csv_import(request: HttpRequest) -> HttpResponse:
         import_tom,
         import_vvt,
     )
-    from dsb.models import Mandate
 
     tid = _tenant_id(request)
     uid = _user_id(request)
     result = None
-    mandate_count = (
-        Mandate.objects.filter(
-            tenant_id=tid,
-        ).count()
-        if tid
-        else 0
-    )
+    mandate_count = get_mandates(tid).count() if tid else 0
 
     if request.method == "POST":
         form = CsvImportForm(

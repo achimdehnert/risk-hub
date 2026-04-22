@@ -7,11 +7,14 @@ from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from identity.models import User
-from tenancy.models import Membership
-
 from .forms import TrainingSessionForm, TrainingTopicForm
 from .models import TrainingAttendance, TrainingSession, TrainingTopic
+from .services import (
+    get_all_training_topics,
+    get_member_users,
+    get_training_sessions,
+    get_training_topics,
+)
 
 
 def _tenant(request):
@@ -27,8 +30,8 @@ def dashboard(request):
     if not tenant_id:
         return render(request, "403.html", status=403)
 
-    topics = TrainingTopic.objects.filter(tenant_id=tenant_id, is_active=True)
-    sessions = TrainingSession.objects.filter(tenant_id=tenant_id)
+    topics = get_training_topics(tenant_id)
+    sessions = get_training_sessions(tenant_id)
     upcoming = sessions.filter(
         status=TrainingSession.Status.PLANNED,
         session_date__gte=timezone.now().date(),
@@ -64,7 +67,7 @@ def topic_list(request):
         return render(request, "403.html", status=403)
 
     topics = (
-        TrainingTopic.objects.filter(tenant_id=tenant_id)
+        get_all_training_topics(tenant_id)
         .select_related("site", "department")
         .annotate(session_count=Count("sessions"))
         .order_by("title")
@@ -150,7 +153,7 @@ def session_list(request):
 
     status_filter = request.GET.get("status", "")
     sessions = (
-        TrainingSession.objects.filter(tenant_id=tenant_id)
+        get_training_sessions(tenant_id)
         .select_related("topic")
         .annotate(attendee_count=Count("attendances"))
         .order_by("-session_date")
@@ -206,13 +209,14 @@ def session_create(request):
 def session_detail(request, pk):
     tenant_id = _tenant(request)
     session = get_object_or_404(
-        TrainingSession.objects.select_related("topic"),
+        get_training_sessions(tenant_id).select_related("topic"),
         pk=pk,
-        tenant_id=tenant_id,
     )
     attendances = session.attendances.order_by("status", "created_at")
 
     # Resolve user names
+    from identity.models import User
+
     user_ids = [a.user_id for a in attendances]
     users = {u.pk: u for u in User.objects.filter(pk__in=user_ids)}
     for att in attendances:
@@ -274,12 +278,7 @@ def attendance_manage(request, pk):
     session = get_object_or_404(TrainingSession, pk=pk, tenant_id=tenant_id)
 
     # Available users in tenant
-    member_user_ids = Membership.objects.filter(organization__tenant_id=tenant_id).values_list(
-        "user_id", flat=True
-    )
-    available_users = User.objects.filter(pk__in=member_user_ids).order_by(
-        "last_name", "first_name"
-    )
+    available_users = get_member_users(tenant_id).order_by("last_name", "first_name")
 
     if request.method == "POST":
         # Process attendance form

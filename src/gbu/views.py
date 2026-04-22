@@ -39,6 +39,12 @@ from gbu.forms import (
     WizardStep5Form,
 )
 from gbu.models.activity import ActivityStatus, HazardAssessmentActivity
+from gbu.services import (
+    get_hazard_assessment_activities,
+    get_measure_templates,
+    get_sds_revisions,
+    get_sites,
+)
 from gbu.services.gbu_engine import (
     FinalizeWizardCmd,
     derive_hazard_categories,
@@ -71,7 +77,7 @@ def activity_list(request: HttpRequest) -> HttpResponse:
     risk_filter = request.GET.get("risk", "")
 
     qs = (
-        HazardAssessmentActivity.objects.filter(tenant_id=tenant_id)
+        get_hazard_assessment_activities(tenant_id)
         .select_related("site", "sds_revision", "sds_revision__substance")
         .order_by("-created_at")
     )
@@ -105,7 +111,7 @@ def partial_activity_list(request: HttpRequest) -> HttpResponse:
     risk_filter = request.GET.get("risk", "")
 
     qs = (
-        HazardAssessmentActivity.objects.filter(tenant_id=tenant_id)
+        get_hazard_assessment_activities(tenant_id)
         .select_related("site", "sds_revision", "sds_revision__substance")
         .order_by("-created_at")
     )
@@ -159,16 +165,13 @@ def compliance_dashboard(request: HttpRequest) -> HttpResponse:
 @login_required
 @require_GET
 def wizard_step1(request: HttpRequest) -> HttpResponse:
-    from substances.models import SdsRevision
-    from tenancy.models import Site
-
     tenant_id = _tenant_id(request)
     revisions = (
-        SdsRevision.objects.filter(tenant_id=tenant_id)
+        get_sds_revisions(tenant_id)
         .select_related("substance")
         .order_by("substance__name")
     )
-    sites = Site.objects.filter(tenant_id=tenant_id).order_by("name")
+    sites = get_sites(tenant_id)
     return render(
         request,
         "gbu/wizard_step1.html",
@@ -288,12 +291,8 @@ def wizard_step4(request: HttpRequest) -> HttpResponse:
 
     categories = derive_hazard_categories(UUID(sds_revision_id))
 
-    from gbu.models.reference import MeasureTemplate
-
     category_ids = [c.id for c in categories]
-    templates = MeasureTemplate.objects.filter(category_id__in=category_ids).order_by(
-        "tops_type", "sort_order"
-    )
+    templates = get_measure_templates(category_ids)
 
     if request.method == "POST":
         form = WizardStep4Form(request.POST)
@@ -327,12 +326,8 @@ def partial_measure_list(request: HttpRequest) -> HttpResponse:
         return HttpResponse("")
     try:
         categories = derive_hazard_categories(UUID(sds_revision_id))
-        from gbu.models.reference import MeasureTemplate
-
         category_ids = [c.id for c in categories]
-        templates = MeasureTemplate.objects.filter(category_id__in=category_ids).order_by(
-            "tops_type", "sort_order"
-        )
+        templates = get_measure_templates(category_ids)
     except Exception:
         templates = []
     return render(
@@ -401,11 +396,10 @@ def wizard_step5(request: HttpRequest) -> HttpResponse:
 def activity_detail(request: HttpRequest, pk: UUID) -> HttpResponse:
     tenant_id = _tenant_id(request)
     activity = get_object_or_404(
-        HazardAssessmentActivity.objects.select_related("site", "sds_revision").prefetch_related(
-            "measures", "derived_hazard_categories"
-        ),
+        get_hazard_assessment_activities(tenant_id)
+        .select_related("site", "sds_revision")
+        .prefetch_related("measures", "derived_hazard_categories"),
         id=pk,
-        tenant_id=tenant_id,
     )
     badge_css, badge_label = _RISK_BADGE.get(
         activity.risk_score,

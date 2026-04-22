@@ -16,6 +16,13 @@ from risk.forms import (
     SubstitutionCheckForm,
 )
 from risk.models import Assessment, Hazard, ProtectiveMeasure, SubstitutionCheck
+from risk.services import (
+    get_active_products,
+    get_assessments,
+    get_hazards,
+    get_protective_measures,
+    get_substitution_checks,
+)
 
 ITEMS_PER_PAGE = 25
 
@@ -41,9 +48,9 @@ def risk_dashboard(request: HttpRequest) -> HttpResponse:
         return err
 
     today = timezone.now().date()
-    assessments = Assessment.objects.filter(tenant_id=tenant_id)
-    hazards = Hazard.objects.filter(tenant_id=tenant_id)
-    measures = ProtectiveMeasure.objects.filter(tenant_id=tenant_id)
+    assessments = get_assessments(tenant_id)
+    hazards = get_hazards(tenant_id)
+    measures = get_protective_measures(tenant_id)
 
     ctx = {
         "total_assessments": assessments.count(),
@@ -81,7 +88,7 @@ def assessment_list(request: HttpRequest) -> HttpResponse:
         return err
 
     qs = (
-        Assessment.objects.filter(tenant_id=tenant_id)
+        get_assessments(tenant_id)
         .annotate(
             hazard_count=Count("hazards"),
             open_count=Count("hazards", filter=Q(hazards__mitigation_status="open")),
@@ -150,15 +157,12 @@ def assessment_detail(request: HttpRequest, assessment_id: int) -> HttpResponse:
 
     assessment = get_object_or_404(Assessment, id=assessment_id, tenant_id=tenant_id)
     hazards = assessment.hazards.order_by("-severity", "-probability")
-    measures = ProtectiveMeasure.objects.filter(
-        tenant_id=tenant_id,
+    measures = get_protective_measures(tenant_id).filter(
         assessment=assessment,
     ).order_by("measure_type", "-created_at")
     substitution_checks = (
-        SubstitutionCheck.objects.filter(
-            tenant_id=tenant_id,
-            assessment=assessment,
-        )
+        get_substitution_checks(tenant_id)
+        .filter(assessment=assessment)
         .select_related("current_product", "alternative_product")
         .order_by("-checked_at")
     )
@@ -482,10 +486,7 @@ def substitution_create(request: HttpRequest, assessment_id: int) -> HttpRespons
     else:
         form = SubstitutionCheckForm()
 
-    from substances.models import Product
-
-    products = Product.objects.filter(tenant_id=tenant_id, status="active").order_by("trade_name")
-
+    products = get_active_products(tenant_id)
     return render(
         request,
         "risk/substitution_form.html",
@@ -519,10 +520,7 @@ def substitution_edit(request: HttpRequest, assessment_id: int, check_id: int) -
     else:
         form = SubstitutionCheckForm(instance=check)
 
-    from substances.models import Product
-
-    products = Product.objects.filter(tenant_id=tenant_id, status="active").order_by("trade_name")
-
+    products = get_active_products(tenant_id)
     return render(
         request,
         "risk/substitution_form.html",

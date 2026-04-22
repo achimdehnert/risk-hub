@@ -661,3 +661,47 @@ def export_document_pdf(doc: Any) -> bytes | None:
     except (ImportError, OSError) as exc:
         logger.warning("WeasyPrint not available: %s", exc)
         return None
+
+
+# ---------------------------------------------------------------------------
+# Query helpers (ADR-041)
+# ---------------------------------------------------------------------------
+
+
+def get_projects(tenant_id):
+    """Return Project queryset for a tenant."""
+    from projects.models import Project
+
+    return Project.objects.filter(tenant_id=tenant_id)
+
+
+def get_tenant_sites(tenant_id):
+    """Return Sites for a tenant."""
+    from tenancy.models import Site
+
+    return Site.objects.filter(tenant_id=tenant_id)
+
+
+def get_document_templates(tenant_id):
+    """Return DocumentTemplates for a tenant ordered by kind/name."""
+    from projects.models import DocumentTemplate
+
+    return DocumentTemplate.objects.filter(tenant_id=tenant_id)
+
+
+def get_active_document_templates(tenant_id):
+    """Return non-archived DocumentTemplates for a tenant."""
+    from projects.models import DocumentTemplate
+
+    return (
+        DocumentTemplate.objects.filter(tenant_id=tenant_id)
+        .exclude(status=DocumentTemplate.Status.ARCHIVED)
+        .order_by("kind", "name")
+    )
+
+
+def get_output_documents(tenant_id):
+    """Return OutputDocuments for a tenant."""
+    from projects.models import OutputDocument
+
+    return OutputDocument.objects.filter(tenant_id=tenant_id)

@@ -16,7 +16,6 @@ from projects.constants import DOCUMENT_KIND_META
 from projects.models import (
     DocumentSection,
     DocumentTemplate,
-    OutputDocument,
     Project,
     ProjectDocument,
 )
@@ -29,9 +28,14 @@ from projects.services import (
     delete_template,
     export_document_pdf,
     generate_section_content,
+    get_active_document_templates,
+    get_document_templates,
     get_or_create_site,
+    get_output_documents,
     get_project_module_details,
+    get_projects,
     get_subscribed_modules,
+    get_tenant_sites,
     recommend_modules_from_description,
     save_section_values,
     update_template,
@@ -49,7 +53,7 @@ def project_list(request: HttpRequest) -> HttpResponse:
         return tenant_response
 
     projects = (
-        Project.objects.filter(tenant_id=request.tenant_id)
+        get_projects(request.tenant_id)
         .prefetch_related("modules")
         .order_by("-created_at")[:100]
     )
@@ -67,9 +71,7 @@ def project_create(request: HttpRequest) -> HttpResponse:
     if tenant_response is not None:
         return tenant_response
 
-    from tenancy.models import Site
-
-    sites = Site.objects.filter(tenant_id=request.tenant_id)
+    sites = get_tenant_sites(request.tenant_id)
     subscribed = get_subscribed_modules(request.tenant_id)
 
     if request.method == "POST":
@@ -183,9 +185,8 @@ def project_detail(request: HttpRequest, pk: int) -> HttpResponse:
         return tenant_response
 
     project = get_object_or_404(
-        Project.objects.prefetch_related("modules"),
+        get_projects(request.tenant_id).prefetch_related("modules"),
         pk=pk,
-        tenant_id=request.tenant_id,
     )
 
     module_details = get_project_module_details(project)
@@ -284,15 +285,7 @@ def output_document_create(
         pk=pk,
         tenant_id=request.tenant_id,
     )
-    templates = (
-        DocumentTemplate.objects.filter(
-            tenant_id=request.tenant_id,
-        )
-        .exclude(
-            status=DocumentTemplate.Status.ARCHIVED,
-        )
-        .order_by("kind", "name")
-    )
+    templates = get_active_document_templates(request.tenant_id)
 
     if request.method == "POST":
         template_id = request.POST.get("template_id", "")
@@ -386,7 +379,7 @@ def output_document_edit(
         tenant_id=request.tenant_id,
     )
     doc = get_object_or_404(
-        OutputDocument.objects.prefetch_related("sections"),
+        get_output_documents(request.tenant_id).prefetch_related("sections"),
         pk=doc_pk,
         project=project,
     )
@@ -496,10 +489,9 @@ def output_document_pdf(
         return tenant_response
 
     doc = get_object_or_404(
-        OutputDocument.objects.prefetch_related("sections"),
+        get_output_documents(request.tenant_id).prefetch_related("sections"),
         pk=doc_pk,
         project__pk=pk,
-        tenant_id=request.tenant_id,
     )
 
     pdf_bytes = export_document_pdf(doc)
@@ -533,9 +525,7 @@ def template_list(request: HttpRequest) -> HttpResponse:
     if tenant_response is not None:
         return tenant_response
 
-    templates = DocumentTemplate.objects.filter(
-        tenant_id=request.tenant_id,
-    ).order_by("-updated_at")
+    templates = get_document_templates(request.tenant_id).order_by("-updated_at")
 
     return render(
         request,

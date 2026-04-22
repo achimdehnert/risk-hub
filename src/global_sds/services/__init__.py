@@ -20,3 +20,46 @@ __all__ = [
     "SdsUploadPipeline",
     "SdsUsageService",
 ]
+
+
+# ---------------------------------------------------------------------------
+# Query helpers (ADR-041)
+# ---------------------------------------------------------------------------
+
+
+def get_sds_usages(tenant_id):
+    """Return SdsUsage queryset for a tenant."""
+    from global_sds.sds_usage import SdsUsage
+
+    return SdsUsage.objects.filter(tenant_id=tenant_id)
+
+
+def get_visible_revisions(tenant_id):
+    """Return GlobalSdsRevisions visible for a tenant (custom manager)."""
+    from global_sds.models import GlobalSdsRevision
+
+    return GlobalSdsRevision.objects.visible_for_tenant(tenant_id)
+
+
+def get_tenant_revisions(tenant_id):
+    """Return GlobalSdsRevisions uploaded by a tenant (for delete gate)."""
+    from global_sds.models import GlobalSdsRevision
+
+    return GlobalSdsRevision.objects.filter(uploaded_by_tenant_id=str(tenant_id))
+
+
+def get_sds_usage_for_revision(tenant_id, revision):
+    """Return SdsUsage for a specific revision, or None."""
+    from global_sds.sds_usage import SdsUsage
+
+    return SdsUsage.objects.filter(tenant_id=tenant_id, sds_revision=revision).first()
+
+
+def get_diff_record(old_revision, new_revision):
+    """Return SdsRevisionDiffRecord for old/new revision pair, or None."""
+    from global_sds.models import SdsRevisionDiffRecord
+
+    return SdsRevisionDiffRecord.objects.filter(
+        old_revision=old_revision,
+        new_revision=new_revision,
+    ).first()

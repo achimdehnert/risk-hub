@@ -25,6 +25,11 @@ from .services import (
     build_filled_template_form,
     create_filled_template,
     export_filled_template_pdf,
+    get_concept_documents,
+    get_concept_templates,
+    get_escape_routes,
+    get_fire_extinguishers,
+    get_fire_protection_concepts,
     prefill_filled_template_field,
     promote_to_template,
     retrigger_doc_analysis,
@@ -43,7 +48,7 @@ class ConceptListView(LoginRequiredMixin, View):
         if err:
             return err
         concepts = (
-            FireProtectionConcept.objects.filter(tenant_id=request.tenant_id)
+            get_fire_protection_concepts(request.tenant_id)
             .select_related("site")
             .order_by("-created_at")
         )
@@ -58,19 +63,14 @@ class ConceptDetailView(LoginRequiredMixin, View):
         if err:
             return err
         concept = get_object_or_404(
-            FireProtectionConcept.objects.select_related("site"),
+            get_fire_protection_concepts(request.tenant_id).select_related("site"),
             pk=pk,
-            tenant_id=request.tenant_id,
         )
         sections = concept.sections.prefetch_related(
             "escape_routes", "fire_extinguishers", "measures"
         )
         measures = concept.measures.filter(section__isnull=True)
-        documents = Document.objects.filter(
-            tenant_id=request.tenant_id,
-            concept_ref_id=concept.pk,
-            scope="brandschutz",
-        ).order_by("-created_at")
+        documents = get_concept_documents(request.tenant_id, concept.pk).order_by("-created_at")
         concept_docs = concept.concept_documents.filter(
             deleted_at__isnull=True,
         ).order_by("-created_at")
@@ -163,7 +163,7 @@ class ExtinguisherListView(LoginRequiredMixin, View):
         if err:
             return err
         extinguishers = (
-            FireExtinguisher.objects.filter(tenant_id=request.tenant_id)
+            get_fire_extinguishers(request.tenant_id)
             .select_related("section__concept")
             .order_by("next_inspection_date", "section")
         )
@@ -191,7 +191,7 @@ class EscapeRouteListView(LoginRequiredMixin, View):
         if err:
             return err
         routes = (
-            EscapeRoute.objects.filter(tenant_id=request.tenant_id)
+            get_escape_routes(request.tenant_id)
             .select_related("section__concept")
             .order_by("status", "section")
         )
@@ -385,10 +385,7 @@ class TemplateSelectView(LoginRequiredMixin, View):
             tenant_id=request.tenant_id,
         )
         # Available templates: tenant-specific + analyzed from docs
-        templates = ConceptTemplateStore.objects.filter(
-            tenant_id=request.tenant_id,
-            scope="brandschutz",
-        )
+        templates = get_concept_templates(request.tenant_id)
         # Analyzed docs that could become templates
         analyzed_docs = concept.concept_documents.filter(
             status="analyzed",

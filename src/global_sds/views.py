@@ -21,10 +21,17 @@ from global_sds.forms import (
     GlobalSdsUploadForm,
     RevisionEditForm,
 )
-from global_sds.models import GlobalSdsRevision, SdsRevisionDiffRecord
+from global_sds.models import GlobalSdsRevision
 from global_sds.sds_usage import SdsUsage, SdsUsageStatus
-from global_sds.services.upload_pipeline import SdsUploadPipeline
-from global_sds.services.usage_service import SdsUsageService
+from global_sds.services import (
+    SdsUploadPipeline,
+    SdsUsageService,
+    get_diff_record,
+    get_sds_usage_for_revision,
+    get_sds_usages,
+    get_tenant_revisions,
+    get_visible_revisions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -51,11 +58,11 @@ def compliance_dashboard(request: HttpRequest) -> HttpResponse:
     today = date.today()
     soon_cutoff = today + timedelta(days=14)
 
-    usages = SdsUsage.objects.filter(tenant_id=tenant_id)
+    usages = get_sds_usages(tenant_id)
 
     # Alle Revisionen die dieser Tenant sehen darf
     all_revisions = (
-        GlobalSdsRevision.objects.visible_for_tenant(tenant_id)
+        get_visible_revisions(tenant_id)
         .select_related("substance")
         .order_by("-created_at")
     )
@@ -227,10 +234,7 @@ def revision_detail(request: HttpRequest, pk: int) -> HttpResponse:
         "component",
     ).all()
 
-    usage = SdsUsage.objects.filter(
-        tenant_id=tenant_id,
-        sds_revision=revision,
-    ).first()
+    usage = get_sds_usage_for_revision(tenant_id, revision)
 
     context = {
         "revision": revision,
@@ -263,7 +267,7 @@ def revision_edit(
     """SDS-Revision bearbeiten (Metadaten + regulatorisch)."""
     tenant_id = _tenant_id(request)
     revision = get_object_or_404(
-        GlobalSdsRevision.objects.visible_for_tenant(tenant_id),
+        get_visible_revisions(tenant_id),
         pk=pk,
     )
 
@@ -305,9 +309,7 @@ def revision_delete(
     """SDS-Revision löschen (nur eigene PENDING)."""
     tenant_id = _tenant_id(request)
     revision = get_object_or_404(
-        GlobalSdsRevision.objects.filter(
-            uploaded_by_tenant_id=str(tenant_id),
-        ),
+        get_tenant_revisions(tenant_id),
         pk=pk,
     )
 
@@ -340,10 +342,7 @@ def diff_panel(request: HttpRequest, pk: int) -> HttpResponse:
 
     diff_record = None
     if usage.pending_update_revision and usage.sds_revision:
-        diff_record = SdsRevisionDiffRecord.objects.filter(
-            old_revision=usage.sds_revision,
-            new_revision=usage.pending_update_revision,
-        ).first()
+        diff_record = get_diff_record(usage.sds_revision, usage.pending_update_revision)
 
     context = {
         "usage": usage,

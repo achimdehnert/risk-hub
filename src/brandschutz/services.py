@@ -335,3 +335,47 @@ def export_filled_template_pdf(filled) -> bytes:
         values=values,
         title=filled.name,
     )
+
+
+# ---------------------------------------------------------------------------
+# Query helpers (ADR-041)
+# ---------------------------------------------------------------------------
+
+
+def get_fire_protection_concepts(tenant_id):
+    """Return FireProtectionConcept queryset for a tenant."""
+    from brandschutz.models import FireProtectionConcept
+
+    return FireProtectionConcept.objects.filter(tenant_id=tenant_id)
+
+
+def get_fire_extinguishers(tenant_id):
+    """Return FireExtinguisher queryset for a tenant."""
+    from brandschutz.models import FireExtinguisher
+
+    return FireExtinguisher.objects.filter(tenant_id=tenant_id)
+
+
+def get_escape_routes(tenant_id):
+    """Return EscapeRoute queryset for a tenant."""
+    from brandschutz.models import EscapeRoute
+
+    return EscapeRoute.objects.filter(tenant_id=tenant_id)
+
+
+def get_concept_documents(tenant_id, concept_pk):
+    """Return Documents for a tenant-concept combination (brandschutz scope)."""
+    from documents.models import Document
+
+    return Document.objects.filter(
+        tenant_id=tenant_id,
+        concept_ref_id=concept_pk,
+        scope="brandschutz",
+    )
+
+
+def get_concept_templates(tenant_id):
+    """Return ConceptTemplateStore entries for a tenant (brandschutz scope)."""
+    from brandschutz.models import ConceptTemplateStore
+
+    return ConceptTemplateStore.objects.filter(tenant_id=tenant_id, scope="brandschutz")

@@ -205,3 +205,43 @@ async def analyze_hazard_with_ai(hazard_description: str) -> str:
         )
     except RuntimeError as exc:
         return f"Analyse fehlgeschlagen: {exc}"
+
+
+# ---------------------------------------------------------------------------
+# Query helpers (ADR-041)
+# ---------------------------------------------------------------------------
+
+
+def get_assessments(tenant_id):
+    """Return Assessment queryset for a tenant."""
+    from risk.models import Assessment
+
+    return Assessment.objects.filter(tenant_id=tenant_id)
+
+
+def get_hazards(tenant_id):
+    """Return Hazard queryset for a tenant."""
+    from risk.models import Hazard
+
+    return Hazard.objects.filter(tenant_id=tenant_id)
+
+
+def get_protective_measures(tenant_id):
+    """Return ProtectiveMeasure queryset for a tenant."""
+    from risk.models import ProtectiveMeasure
+
+    return ProtectiveMeasure.objects.filter(tenant_id=tenant_id)
+
+
+def get_substitution_checks(tenant_id):
+    """Return SubstitutionCheck queryset for a tenant."""
+    from risk.models import SubstitutionCheck
+
+    return SubstitutionCheck.objects.filter(tenant_id=tenant_id)
+
+
+def get_active_products(tenant_id):
+    """Return active Products for a tenant ordered by trade_name."""
+    from substances.models import Product
+
+    return Product.objects.filter(tenant_id=tenant_id, status="active").order_by("trade_name")

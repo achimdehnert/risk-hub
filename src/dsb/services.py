@@ -242,3 +242,127 @@ def get_dsb_kpis(tenant_id: UUID) -> DsbKPI:
         breaches_open=breaches_open,
         breaches_overdue=breaches_overdue,
     )
+
+
+# ---------------------------------------------------------------------------
+# Query helpers (ADR-041)
+# ---------------------------------------------------------------------------
+
+
+def get_open_breaches(tenant_id):
+    """Return open Breaches (not closed) for a tenant, ordered by discovered_at."""
+    from dsb.models import Breach
+
+    return (
+        Breach.objects.filter(tenant_id=tenant_id)
+        .exclude(workflow_status__in=["closed", "authority_closed"])
+        .select_related("mandate")
+        .order_by("discovered_at")
+    )
+
+
+def get_open_deletion_requests(tenant_id):
+    """Return pending DeletionRequests for a tenant."""
+    from dsb.models.deletion_request import DeletionRequest
+
+    return (
+        DeletionRequest.objects.filter(tenant_id=tenant_id)
+        .exclude(status__in=["completed", "rejected"])
+        .select_related("mandate")
+        .order_by("created_at")
+    )
+
+
+def get_processing_activities(tenant_id):
+    """Return ProcessingActivities for a tenant."""
+    from dsb.models import ProcessingActivity
+
+    return ProcessingActivity.objects.filter(tenant_id=tenant_id)
+
+
+def get_technical_measures(tenant_id):
+    """Return TechnicalMeasures for a tenant."""
+    from dsb.models import TechnicalMeasure
+
+    return TechnicalMeasure.objects.filter(tenant_id=tenant_id)
+
+
+def get_organizational_measures(tenant_id):
+    """Return OrganizationalMeasures for a tenant."""
+    from dsb.models import OrganizationalMeasure
+
+    return OrganizationalMeasure.objects.filter(tenant_id=tenant_id)
+
+
+def get_data_processing_agreements(tenant_id):
+    """Return DataProcessingAgreements for a tenant."""
+    from dsb.models import DataProcessingAgreement
+
+    return DataProcessingAgreement.objects.filter(tenant_id=tenant_id)
+
+
+def get_privacy_audits(tenant_id):
+    """Return PrivacyAudits for a tenant."""
+    from dsb.models import PrivacyAudit
+
+    return PrivacyAudit.objects.filter(tenant_id=tenant_id)
+
+
+def get_critical_audit_findings(tenant_id):
+    """Return count of open critical AuditFindings for a tenant."""
+    from dsb.models.audit import AuditFinding
+    from dsb.models.choices import SeverityLevel
+
+    return AuditFinding.objects.filter(
+        tenant_id=tenant_id,
+        severity=SeverityLevel.CRITICAL,
+        status="open",
+    ).count()
+
+
+def get_deletion_logs(tenant_id):
+    """Return DeletionLog entries for a tenant."""
+    from dsb.models.deletion_log import DeletionLog
+
+    return DeletionLog.objects.filter(tenant_id=tenant_id)
+
+
+def get_active_mandates(tenant_id):
+    """Return active Mandates for a tenant, or none() if no tenant."""
+    from dsb.models import Mandate
+
+    if tenant_id:
+        return Mandate.objects.filter(tenant_id=tenant_id, status="active")
+    return Mandate.objects.none()
+
+
+def get_mandates(tenant_id):
+    """Return all Mandates for a tenant ordered by name."""
+    from dsb.models import Mandate
+
+    return Mandate.objects.filter(tenant_id=tenant_id).order_by("name")
+
+
+def get_dpa_documents(tenant_id, ref_id):
+    """Return DsbDocuments for a DPA (ref_type='dpa')."""
+    from dsb.models.document import DsbDocument
+
+    return DsbDocument.objects.filter(tenant_id=tenant_id, ref_type="dpa", ref_id=ref_id)
+
+
+def get_tenant_memberships(user):
+    """Return Memberships for a user with organization prefetched."""
+    from tenancy.models import Membership
+
+    return (
+        Membership.objects.filter(user=user)
+        .select_related("organization")
+        .order_by("created_at")
+    )
+
+
+def get_breaches(tenant_id):
+    """Return all Breaches for a tenant."""
+    from dsb.models import Breach
+
+    return Breach.objects.filter(tenant_id=tenant_id)
