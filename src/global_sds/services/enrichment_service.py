@@ -1,11 +1,12 @@
 # src/global_sds/services/enrichment_service.py
 """
-SdsEnrichmentService — Web-Anreicherung via REFLEX PubChem/GESTIS.
+SdsEnrichmentService — Web-Anreicherung via iil-enrichment (ADR-169).
 
 Ergänzt parse_result-Daten um fehlende CAS-Nummern, H/P-Sätze
-und Signalwörter aus öffentlichen Gefahrstoffdatenbanken.
+und Signalwörter aus GESTIS + PubChem via EnrichmentRegistry.
 
-Requires: iil-reflex[web]>=0.2.1
+Requires: iil-enrichment[gestis,pubchem]>=0.1.0
+Replaces: reflex.web PubChem/GESTIS adapters (legacy)
 """
 
 import logging
@@ -15,8 +16,8 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class EnrichmentResult:
-    """Ergebnis der Web-Anreicherung."""
+class SdsEnrichmentResult:
+    """Ergebnis der Web-Anreicherung (Pipeline-kompatibel)."""
 
     enriched: bool = False
     cas_number: str = ""
@@ -33,90 +34,88 @@ class SdsEnrichmentService:
     """
     Reichert SDS-Parse-Ergebnisse mit Webdaten an.
 
+    Uses iil-enrichment registry (ADR-169) with GESTIS + PubChem
+    providers registered in GlobalSdsConfig.ready().
+
     Strategie:
-    1. Wenn CAS vorhanden → PubChem lookup_by_cas
-    2. Wenn nur Produktname → PubChem lookup_by_name
-    3. Fehlende Felder aus Web-Ergebnis ergänzen
+    1. Natural key = CAS oder Produktname
+    2. Registry.enrich_merged("sds", key) → merged EnrichmentResult
+    3. Extrahiere relevante Felder in Pipeline-kompatibles SdsEnrichmentResult
     """
 
-    def __init__(self):
-        self._pubchem = None
-        self._gestis = None
-
-    def _get_pubchem(self):
-        """Lazy init PubChem adapter."""
-        if self._pubchem is None:
-            try:
-                from reflex.web import PubChemAdapter
-
-                self._pubchem = PubChemAdapter()
-            except ImportError:
-                logger.warning("iil-reflex[web] not installed — PubChem enrichment unavailable")
-        return self._pubchem
-
-    def _get_gestis(self):
-        """Lazy init GESTIS adapter."""
-        if self._gestis is None:
-            try:
-                from reflex.web import GESTISAdapter
-
-                self._gestis = GESTISAdapter()
-            except ImportError:
-                logger.warning("iil-reflex[web] not installed — GESTIS enrichment unavailable")
-        return self._gestis
-
-    def enrich(self, parse_result: dict) -> EnrichmentResult:
+    def enrich(self, parse_result: dict) -> SdsEnrichmentResult:
         """
-        Fehlende Daten via PubChem/GESTIS ergänzen.
+        Fehlende Daten via GESTIS/PubChem ergänzen.
 
         Args:
             parse_result: Dict aus SdsParserService.parse_pdf()
 
         Returns:
-            EnrichmentResult mit angereicherten Feldern.
+            SdsEnrichmentResult mit angereicherten Feldern.
         """
-        result = EnrichmentResult()
+        result = SdsEnrichmentResult()
         cas = parse_result.get("cas_number", "")
         product_name = parse_result.get("product_name", "")
 
-        if not cas and not product_name:
+        natural_key = cas or product_name
+        if not natural_key:
             return result
 
-        # ── PubChem Lookup ──
-        pubchem = self._get_pubchem()
-        if pubchem:
-            sds = None
-            try:
-                if cas:
-                    sds = pubchem.lookup_by_cas(cas)
-                elif product_name:
-                    sds = pubchem.lookup_by_name(product_name)
-            except Exception as e:
-                logger.warning("PubChem lookup failed: %s", e)
-                result.errors.append(f"PubChem: {e}")
+        try:
+            from enrichment import default_registry
+        except ImportError:
+            logger.warning("iil-enrichment not installed — enrichment skipped")
+            result.errors.append("iil-enrichment not installed")
+            return result
 
-            if sds:
-                result.source = "pubchem"
-                if sds.cas_number:
-                    result.cas_number = sds.cas_number
-                if sds.h_statements:
-                    result.h_statements = sds.h_statements
-                if sds.p_statements:
-                    result.p_statements = sds.p_statements
-                if sds.signal_word:
-                    result.signal_word = sds.signal_word
-                if sds.ghs_pictograms:
-                    result.ghs_pictograms = sds.ghs_pictograms
-                if sds.substance_name:
-                    result.iupac_name = sds.substance_name
-                result.enriched = True
+        try:
+            enriched = default_registry.enrich_merged("sds", natural_key)
+        except Exception as e:
+            logger.warning("Enrichment failed for key=%s: %s", natural_key, e)
+            result.errors.append(str(e))
+            return result
 
+        if enriched.is_empty:
+            return result
+
+        result.enriched = True
+        result.source = enriched.source
+
+        # Extract known properties into pipeline-compatible fields
+        _get = enriched.get
+
+        h_val = _get("h_statements")
+        if h_val and isinstance(h_val.value, list):
+            result.h_statements = h_val.value
+
+        p_val = _get("p_statements")
+        if p_val and isinstance(p_val.value, list):
+            result.p_statements = p_val.value
+
+        pic_val = _get("pictograms")
+        if pic_val and isinstance(pic_val.value, list):
+            result.ghs_pictograms = pic_val.value
+
+        sw_val = _get("signal_word")
+        if sw_val and isinstance(sw_val.value, str):
+            result.signal_word = sw_val.value
+
+        iupac = _get("iupac_name")
+        if iupac and isinstance(iupac.value, str):
+            result.iupac_name = iupac.value
+
+        logger.info(
+            "Enriched via iil-enrichment (source=%s, props=%d, key=%s)",
+            enriched.source,
+            len(enriched.properties),
+            natural_key,
+        )
         return result
 
     def merge_into_parse_result(
         self,
         parse_result: dict,
-        enrichment: EnrichmentResult,
+        enrichment: SdsEnrichmentResult,
     ) -> dict:
         """
         Ergänzt parse_result mit Enrichment-Daten (nur leere Felder).

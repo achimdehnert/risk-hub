@@ -1,16 +1,39 @@
 # src/global_sds/tests/test_enrichment_service.py
-"""Tests for SdsEnrichmentService (REFLEX web enrichment)."""
+"""Tests for SdsEnrichmentService (iil-enrichment ADR-169)."""
 
 from unittest.mock import MagicMock, patch
 
 from global_sds.services.enrichment_service import (
-    EnrichmentResult,
+    SdsEnrichmentResult,
     SdsEnrichmentService,
 )
 
 
+def _make_enrichment_result(properties=None, source="GESTIS", confidence=0.8):
+    """Build a mock enrichment.types.EnrichmentResult."""
+    mock = MagicMock()
+    mock.is_empty = not properties
+    mock.source = source
+    mock.properties = properties or {}
+    mock.confidence = confidence
+
+    def _get(key):
+        return properties.get(key) if properties else None
+
+    mock.get = _get
+    return mock
+
+
+def _make_property_value(value, value_type="text"):
+    """Build a mock enrichment.types.PropertyValue."""
+    mock = MagicMock()
+    mock.value = value
+    mock.value_type = value_type
+    return mock
+
+
 class TestEnrichmentService:
-    """Unit tests — no network calls."""
+    """Unit tests — no network calls, mocks iil-enrichment registry."""
 
     def test_should_return_empty_when_no_data(self):
         service = SdsEnrichmentService()
@@ -23,90 +46,88 @@ class TestEnrichmentService:
         result = service.enrich({"cas_number": "", "product_name": ""})
         assert result.enriched is False
 
-    @patch("global_sds.services.enrichment_service.SdsEnrichmentService._get_pubchem")
-    def test_should_enrich_by_name(self, mock_get_pubchem):
-        mock_sds = MagicMock()
-        mock_sds.cas_number = "67-64-1"
-        mock_sds.h_statements = ["H225", "H319"]
-        mock_sds.p_statements = ["P210"]
-        mock_sds.signal_word = "Danger"
-        mock_sds.ghs_pictograms = ["GHS02"]
-        mock_sds.substance_name = "propan-2-one"
+    @patch("global_sds.services.enrichment_service.default_registry", create=True)
+    def test_should_enrich_via_registry(self, mock_registry_import):
+        props = {
+            "h_statements": _make_property_value(["H225", "H319"], "list"),
+            "p_statements": _make_property_value(["P210"], "list"),
+            "signal_word": _make_property_value("danger", "text"),
+            "pictograms": _make_property_value(["GHS02"], "list"),
+            "iupac_name": _make_property_value("propan-2-one", "text"),
+        }
+        enriched = _make_enrichment_result(props, source="GESTIS,PubChem")
 
-        adapter = MagicMock()
-        adapter.lookup_by_name.return_value = mock_sds
-        mock_get_pubchem.return_value = adapter
+        with patch(
+            "global_sds.services.enrichment_service.default_registry",
+            create=True,
+        ) as mock_reg:
+            mock_reg.enrich_merged.return_value = enriched
 
-        service = SdsEnrichmentService()
-        result = service.enrich(
-            {
-                "product_name": "Acetone",
-                "cas_number": "",
-            }
-        )
+            service = SdsEnrichmentService()
+            result = service.enrich({"product_name": "Acetone", "cas_number": ""})
 
         assert result.enriched is True
-        assert result.cas_number == "67-64-1"
         assert "H225" in result.h_statements
-        assert result.signal_word == "Danger"
-        assert result.source == "pubchem"
-        adapter.lookup_by_name.assert_called_once_with("Acetone")
+        assert result.signal_word == "danger"
+        assert result.iupac_name == "propan-2-one"
+        assert result.source == "GESTIS,PubChem"
 
-    @patch("global_sds.services.enrichment_service.SdsEnrichmentService._get_pubchem")
-    def test_should_enrich_by_cas(self, mock_get_pubchem):
-        mock_sds = MagicMock()
-        mock_sds.cas_number = "64-17-5"
-        mock_sds.h_statements = ["H225"]
-        mock_sds.p_statements = []
-        mock_sds.signal_word = "Danger"
-        mock_sds.ghs_pictograms = []
-        mock_sds.substance_name = "ethanol"
-
-        adapter = MagicMock()
-        adapter.lookup_by_cas.return_value = mock_sds
-        mock_get_pubchem.return_value = adapter
-
-        service = SdsEnrichmentService()
-        result = service.enrich(
-            {
-                "product_name": "Ethanol",
-                "cas_number": "64-17-5",
-            }
+    @patch("global_sds.services.enrichment_service.default_registry", create=True)
+    def test_should_enrich_by_cas_as_natural_key(self, mock_registry_import):
+        enriched = _make_enrichment_result(
+            {"h_statements": _make_property_value(["H225"], "list")},
+            source="GESTIS",
         )
 
+        with patch(
+            "global_sds.services.enrichment_service.default_registry",
+            create=True,
+        ) as mock_reg:
+            mock_reg.enrich_merged.return_value = enriched
+
+            service = SdsEnrichmentService()
+            result = service.enrich(
+                {"product_name": "Ethanol", "cas_number": "64-17-5"}
+            )
+
         assert result.enriched is True
-        adapter.lookup_by_cas.assert_called_once_with("64-17-5")
+        mock_reg.enrich_merged.assert_called_once_with("sds", "64-17-5")
 
-    @patch("global_sds.services.enrichment_service.SdsEnrichmentService._get_pubchem")
-    def test_should_handle_pubchem_failure(self, mock_get_pubchem):
-        adapter = MagicMock()
-        adapter.lookup_by_name.side_effect = Exception("timeout")
-        mock_get_pubchem.return_value = adapter
+    @patch("global_sds.services.enrichment_service.default_registry", create=True)
+    def test_should_handle_registry_failure(self, mock_registry_import):
+        with patch(
+            "global_sds.services.enrichment_service.default_registry",
+            create=True,
+        ) as mock_reg:
+            mock_reg.enrich_merged.side_effect = Exception("timeout")
 
-        service = SdsEnrichmentService()
-        result = service.enrich({"product_name": "Acetone"})
-
-        assert result.enriched is False
-        assert "PubChem: timeout" in result.errors
-
-    @patch("global_sds.services.enrichment_service.SdsEnrichmentService._get_pubchem")
-    def test_should_handle_no_result(self, mock_get_pubchem):
-        adapter = MagicMock()
-        adapter.lookup_by_name.return_value = None
-        mock_get_pubchem.return_value = adapter
-
-        service = SdsEnrichmentService()
-        result = service.enrich({"product_name": "Unknown"})
+            service = SdsEnrichmentService()
+            result = service.enrich({"product_name": "Acetone"})
 
         assert result.enriched is False
+        assert "timeout" in result.errors[0]
 
-    def test_should_handle_reflex_not_installed(self):
+    @patch("global_sds.services.enrichment_service.default_registry", create=True)
+    def test_should_handle_empty_result(self, mock_registry_import):
+        enriched = _make_enrichment_result(properties=None)
+
+        with patch(
+            "global_sds.services.enrichment_service.default_registry",
+            create=True,
+        ) as mock_reg:
+            mock_reg.enrich_merged.return_value = enriched
+
+            service = SdsEnrichmentService()
+            result = service.enrich({"product_name": "Unknown"})
+
+        assert result.enriched is False
+
+    def test_should_handle_enrichment_not_installed(self):
         service = SdsEnrichmentService()
-        service._pubchem = None
-        # Force ImportError by patching
-        with patch.dict("sys.modules", {"reflex.web": None}):
-            pubchem = service._get_pubchem()
-            assert pubchem is None
+        with patch.dict("sys.modules", {"enrichment": None}):
+            result = service.enrich({"product_name": "Acetone"})
+        assert result.enriched is False
+        assert "iil-enrichment not installed" in result.errors
 
 
 class TestMergeIntoParseResult:
@@ -116,10 +137,10 @@ class TestMergeIntoParseResult:
         service = SdsEnrichmentService()
         result = service.merge_into_parse_result(
             {"cas_number": "", "h_statements": []},
-            EnrichmentResult(
+            SdsEnrichmentResult(
                 enriched=True,
                 cas_number="67-64-1",
-                source="pubchem",
+                source="GESTIS",
             ),
         )
         assert result["cas_number"] == "67-64-1"
@@ -128,10 +149,10 @@ class TestMergeIntoParseResult:
         service = SdsEnrichmentService()
         result = service.merge_into_parse_result(
             {"cas_number": "64-17-5"},
-            EnrichmentResult(
+            SdsEnrichmentResult(
                 enriched=True,
                 cas_number="999-99-9",
-                source="pubchem",
+                source="GESTIS",
             ),
         )
         assert result["cas_number"] == "64-17-5"
@@ -140,10 +161,10 @@ class TestMergeIntoParseResult:
         service = SdsEnrichmentService()
         result = service.merge_into_parse_result(
             {"h_statements": ["H225"]},
-            EnrichmentResult(
+            SdsEnrichmentResult(
                 enriched=True,
                 h_statements=["H225", "H319", "H336"],
-                source="pubchem",
+                source="GESTIS",
             ),
         )
         assert result["h_statements"] == ["H225", "H319", "H336"]
@@ -152,10 +173,10 @@ class TestMergeIntoParseResult:
         service = SdsEnrichmentService()
         result = service.merge_into_parse_result(
             {"signal_word": "none"},
-            EnrichmentResult(
+            SdsEnrichmentResult(
                 enriched=True,
                 signal_word="Danger",
-                source="pubchem",
+                source="GESTIS",
             ),
         )
         assert result["signal_word"] == "danger"
@@ -164,10 +185,10 @@ class TestMergeIntoParseResult:
         service = SdsEnrichmentService()
         result = service.merge_into_parse_result(
             {"signal_word": "warning"},
-            EnrichmentResult(
+            SdsEnrichmentResult(
                 enriched=True,
                 signal_word="Danger",
-                source="pubchem",
+                source="GESTIS",
             ),
         )
         assert result["signal_word"] == "warning"
@@ -177,6 +198,6 @@ class TestMergeIntoParseResult:
         original = {"cas_number": "", "h_statements": []}
         result = service.merge_into_parse_result(
             original,
-            EnrichmentResult(enriched=False),
+            SdsEnrichmentResult(enriched=False),
         )
         assert result == original
