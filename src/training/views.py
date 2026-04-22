@@ -14,6 +14,7 @@ from .services import (
     get_member_users,
     get_training_sessions,
     get_training_topics,
+    get_users_by_ids,
 )
 
 
@@ -215,10 +216,8 @@ def session_detail(request, pk):
     attendances = session.attendances.order_by("status", "created_at")
 
     # Resolve user names
-    from identity.models import User
-
     user_ids = [a.user_id for a in attendances]
-    users = {u.pk: u for u in User.objects.filter(pk__in=user_ids)}
+    users = {u.pk: u for u in get_users_by_ids(user_ids)}
     for att in attendances:
         att.user_obj = users.get(att.user_id)
 

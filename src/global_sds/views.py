@@ -21,7 +21,6 @@ from global_sds.forms import (
     GlobalSdsUploadForm,
     RevisionEditForm,
 )
-from global_sds.models import GlobalSdsRevision
 from global_sds.sds_usage import SdsUsage, SdsUsageStatus
 from global_sds.services import (
     SdsUploadPipeline,
@@ -126,10 +125,9 @@ def compliance_dashboard(request: HttpRequest) -> HttpResponse:
     # GBU geflaggt (falls Modul vorhanden)
     gbu_flagged = 0
     try:
-        from gbu.models import HazardAssessment
+        from gbu.services import get_hazard_assessment_activities
 
-        gbu_flagged = HazardAssessment.objects.filter(
-            tenant_id=tenant_id,
+        gbu_flagged = get_hazard_assessment_activities(tenant_id).filter(
             review_required=True,
         ).count()
     except (ImportError, Exception):
@@ -225,7 +223,7 @@ def revision_detail(request: HttpRequest, pk: int) -> HttpResponse:
     """Detail-Ansicht einer globalen SDS-Revision."""
     tenant_id = _tenant_id(request)
     revision = get_object_or_404(
-        GlobalSdsRevision.objects.visible_for_tenant(tenant_id),
+        get_visible_revisions(tenant_id),
         pk=pk,
     )
 

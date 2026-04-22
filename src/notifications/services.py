@@ -187,3 +187,13 @@ def scan_inspection_deadlines(
 
     logger.info("Inspection deadline scan complete: %s", stats)
     return stats
+
+
+# ---------------------------------------------------------------------------
+# Query helpers (ADR-041)
+# ---------------------------------------------------------------------------
+
+
+def get_notifications(tenant_id):
+    """Return all Notifications for a tenant."""
+    return Notification.objects.filter(tenant_id=tenant_id)

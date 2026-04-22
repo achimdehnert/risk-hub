@@ -7,6 +7,7 @@ from django.views import View
 
 from notifications.models import Notification
 from notifications.services import (
+    get_notifications,
     get_unread,
     get_unread_count,
     mark_all_read,
@@ -22,9 +23,7 @@ class NotificationListView(LoginRequiredMixin, View):
         tenant_id = getattr(request, "tenant_id", None)
         user_id = getattr(request.user, "id", None)
 
-        notifications = Notification.objects.filter(
-            tenant_id=tenant_id,
-        ).order_by("-created_at")[:100]
+        notifications = get_notifications(tenant_id).order_by("-created_at")[:100]
 
         unread_count = get_unread_count(tenant_id, user_id)
 

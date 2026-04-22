@@ -46,3 +46,10 @@ def get_member_users(tenant_id):
         .values_list("user_id", flat=True)
     )
     return User.objects.filter(pk__in=member_user_ids).order_by("username")
+
+
+def get_users_by_ids(user_ids):
+    """Return User queryset for a list of PKs."""
+    from identity.models import User
+
+    return User.objects.filter(pk__in=user_ids)
