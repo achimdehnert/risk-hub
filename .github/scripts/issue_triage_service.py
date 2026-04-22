@@ -9,8 +9,8 @@ from urllib import request as _req, error as _err
 import json as _json
 
 logger = logging.getLogger(__name__)
-GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")
-GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "achimdehnert/risk-hub")
+GITHUB_TOKEN = os.environ.get("GITHUB_TOKEN", "")  # hardcoded-ok: standalone CI script
+GITHUB_REPO = os.environ.get("GITHUB_REPOSITORY", "achimdehnert/risk-hub")  # hardcoded-ok: standalone CI script
 
 TYPE_LABELS: dict[str, str] = {
     "feature":"type:feature","bugfix":"type:bug","refactor":"type:refactor",
@@ -91,7 +91,7 @@ class IssueTriageService:
         return results
 
     def _http_decompose(self, use_case: str, context: str) -> dict:
-        mcp_url = os.environ.get("ORCHESTRATOR_MCP_URL", "http://127.0.0.1:8101")
+        mcp_url = os.environ.get("ORCHESTRATOR_MCP_URL", "http://127.0.0.1:8101")  # hardcoded-ok: standalone CI script
         try:
             payload = _json.dumps({"tool":"decompose_use_case","arguments":{"use_case":use_case,"context":context,"tier":self.tier,"output_format":"json"}}).encode()
             req = _req.Request(f"{mcp_url}/mcp/call", data=payload, headers={"Content-Type":"application/json"}, method="POST")

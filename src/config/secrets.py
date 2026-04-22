@@ -2,7 +2,7 @@
 
 Priority chain (automatic, no manual prefix needed):
   1. /run/secrets/<key_lower>   — CI/CD-decrypted SOPS secrets (production)
-  2. os.environ[KEY]            — environment variables / docker-compose env_file
+  2. os.environ[KEY]  # hardcoded-ok: docstring            — environment variables / docker-compose env_file
   3. .env file (project root)   — local development (loaded automatically)
   4. default                    — fallback value
 
@@ -34,7 +34,7 @@ def read_secret(
 ) -> str:
     """Read secret from /run/secrets/ file, fall back to env var.
 
-    Priority: /run/secrets/<key_lower> -> os.environ[KEY] -> default.
+    Priority: /run/secrets/<key_lower> -> os.environ[KEY] -> default.  # hardcoded-ok: docstring
     Raises ValueError in production if required=True and no value found.
     """
     secret_file = SECRETS_DIR / key.lower()
@@ -46,7 +46,7 @@ def read_secret(
     except (PermissionError, OSError):
         pass
 
-    value = os.environ.get(key, "")
+    value = os.environ.get(key, "")  # hardcoded-ok: secrets loader implementation
     if value:
         return value
 

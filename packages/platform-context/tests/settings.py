@@ -1,6 +1,6 @@
 """Minimal Django settings for platform-context tests."""
 
-SECRET_KEY = "test-secret-key-not-for-production"
+SECRET_KEY = "test-secret-key-not-for-production"  # hardcoded-ok: test settings
 
 INSTALLED_APPS = [
     "django.contrib.contenttypes",

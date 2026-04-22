@@ -1,6 +1,6 @@
 """Minimal Django settings for testing django-tenancy."""
 
-SECRET_KEY = "test-secret-key-not-for-production"
+SECRET_KEY = "test-secret-key-not-for-production"  # hardcoded-ok: test settings
 
 ALLOWED_HOSTS = ["*"]
 

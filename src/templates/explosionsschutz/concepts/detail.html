@@ -8,9 +8,9 @@
     <div class="flex justify-between items-center">
         <div>
             <nav class="text-sm text-gray-500 mb-2">
-                <a href="/ex/" class="hover:text-gray-700">Explosionsschutz</a>
+                <a href="{% url 'explosionsschutz:home' %}" class="hover:text-gray-700">Explosionsschutz</a>
                 <span class="mx-2">/</span>
-                <a href="/ex/concepts/" class="hover:text-gray-700">Konzepte</a>
+                <a href="{% url 'explosionsschutz:concept-list-html' %}" class="hover:text-gray-700">Konzepte</a>
                 <span class="mx-2">/</span>
                 <span>{{ concept.title|truncatechars:30 }}</span>
             </nav>
@@ -78,6 +78,29 @@
     <!-- Info Cards -->
     {% include "explosionsschutz/partials/_concept_stats.html" %}
 
+    {% if perms.explosionsschutz.use_ai %}
+    <!-- KI-Zusammenfassung (ADR-018) -->
+    <div class="rounded-xl border border-blue-200 bg-blue-50 p-4">
+        <div class="flex items-center justify-between">
+            <p class="text-sm font-semibold text-blue-700">🤖 KI — Dokument-Zusammenfassung</p>
+            <form hx-post="{% url 'explosionsschutz:concept-ai-generate' pk=concept.pk chapter='summary' %}"
+                  hx-target="#ai-result-summary"
+                  hx-indicator="#ai-spinner-summary">
+                {% csrf_token %}
+                <button type="submit"
+                        class="inline-flex items-center gap-1.5 rounded-lg border border-blue-400 bg-white px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100">
+                    <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+                    Zusammenfassung generieren
+                </button>
+            </form>
+        </div>
+        <div id="ai-spinner-summary" class="htmx-indicator mt-2">
+            {% include "explosionsschutz/ai/partials/_ai_loading.html" %}
+        </div>
+        <div id="ai-result-summary" class="mt-2"></div>
+    </div>
+    {% endif %}
+
     <!-- Tabs -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200">
         <div class="border-b border-gray-200">
@@ -111,12 +134,91 @@
             <h3 class="font-semibold text-gray-900 mb-4">Zonendefinitionen</h3>
             {% include "explosionsschutz/partials/_zone_list.html" %}
             <div id="ignition-panel" class="mt-4"></div>
+
+            {% if perms.explosionsschutz.use_ai %}
+            <!-- KI-Unterstützung: Zonen + Zündquellen (ADR-018) -->
+            <div class="mt-6 border-t border-blue-100 pt-4">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-500">🤖 KI-Unterstützung</p>
+                <div class="flex flex-wrap gap-3">
+
+                    <!-- Zonen-Vorschlag -->
+                    <div>
+                        <form hx-post="{% url 'explosionsschutz:concept-ai-generate' pk=concept.pk chapter='zones' %}"
+                              hx-target="#ai-result-zones"
+                              hx-indicator="#ai-spinner-zones">
+                            {% csrf_token %}
+                            <input type="hidden" name="user_notes" class="js-ai-notes" data-target="ai-notes-zones">
+                            <button type="submit"
+                                    class="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100">
+                                <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+                                Zonen-Vorschlag
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Zündquellen-Vorschlag -->
+                    <div>
+                        <form hx-post="{% url 'explosionsschutz:concept-ai-generate' pk=concept.pk chapter='ignition' %}"
+                              hx-target="#ai-result-zones"
+                              hx-indicator="#ai-spinner-zones">
+                            {% csrf_token %}
+                            <button type="submit"
+                                    class="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100">
+                                <i data-lucide="zap" class="h-3.5 w-3.5"></i>
+                                Zündquellen-Vorschlag
+                            </button>
+                        </form>
+                    </div>
+
+                    <!-- Hinweis-Textarea -->
+                    <div class="w-full mt-1">
+                        <textarea id="ai-notes-zones" rows="1"
+                                  placeholder="Optionaler Hinweis für die KI (z.B. spez. Freisetzungsgrad …)"
+                                  class="w-full rounded border border-gray-200 px-2 py-1 text-xs text-gray-600 focus:border-blue-300 focus:outline-none"
+                                  oninput="document.querySelectorAll('#tab-zones [name=user_notes]').forEach(i => i.value = this.value)"
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div id="ai-spinner-zones" class="htmx-indicator mt-2">
+                    {% include "explosionsschutz/ai/partials/_ai_loading.html" %}
+                </div>
+                <div id="ai-result-zones" class="mt-3"></div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Measures Tab -->
         <div id="tab-measures" class="p-6 hidden">
             <h3 class="font-semibold text-gray-900 mb-4">Schutzmaßnahmen</h3>
             {% include "explosionsschutz/partials/_measure_list.html" %}
+
+            {% if perms.explosionsschutz.use_ai %}
+            <!-- KI-Unterstützung: Maßnahmen (ADR-018) -->
+            <div class="mt-6 border-t border-blue-100 pt-4">
+                <p class="mb-2 text-xs font-semibold uppercase tracking-wide text-blue-500">🤖 KI-Unterstützung</p>
+                <form hx-post="{% url 'explosionsschutz:concept-ai-generate' pk=concept.pk chapter='measures' %}"
+                      hx-target="#ai-result-measures"
+                      hx-indicator="#ai-spinner-measures">
+                    {% csrf_token %}
+                    <div class="flex items-start gap-2">
+                        <textarea name="user_notes" rows="1"
+                                  placeholder="Optionaler Hinweis für die KI…"
+                                  class="flex-1 rounded border border-gray-200 px-2 py-1 text-xs text-gray-600 focus:border-blue-300 focus:outline-none"
+                        ></textarea>
+                        <button type="submit"
+                                class="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 hover:bg-blue-100 whitespace-nowrap">
+                            <i data-lucide="sparkles" class="h-3.5 w-3.5"></i>
+                            Maßnahmen-Vorschlag
+                        </button>
+                    </div>
+                </form>
+                <div id="ai-spinner-measures" class="htmx-indicator mt-2">
+                    {% include "explosionsschutz/ai/partials/_ai_loading.html" %}
+                </div>
+                <div id="ai-result-measures" class="mt-3"></div>
+            </div>
+            {% endif %}
         </div>
 
         <!-- Documents Tab -->

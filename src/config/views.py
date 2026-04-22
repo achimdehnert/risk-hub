@@ -35,7 +35,7 @@ def home(request: HttpRequest) -> HttpResponse:
 
     if tenant_id is not None:
         if not request.user.is_authenticated:
-            return redirect("/accounts/login/")
+            return redirect("login")
         return redirect("dashboard:home")
 
     host = request.get_host().split(":")[0]
@@ -220,7 +220,7 @@ def register(request: HttpRequest) -> HttpResponse:
                 )
                 _provision_trial_tenant(user, plan, modules)
                 login(request, user)
-                return redirect("/dashboard/")
+                return redirect("dashboard:home")
             except ValidationError as e:
                 error = " ".join(e.messages)
             except Exception as e:
@@ -275,7 +275,7 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
     # If tenant already set (subdomain or header) → go to dashboard
     tenant_id = getattr(request, "tenant_id", None)
     if tenant_id is not None:
-        return redirect("/dashboard/")
+        return redirect("dashboard:home")
 
     # No tenant context yet → look up via membership and set on request
     memberships = (
@@ -287,8 +287,8 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
 
     if not active:
         if request.user.is_staff:
-            return redirect("/tenants/")
-        return redirect("/dashboard/")
+            return redirect("tenancy:org-list")
+        return redirect("dashboard:home")
 
     if len(active) == 1:
         # Set tenant on request so middleware picks it up for this request
@@ -300,7 +300,7 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
 
         set_tenant(org.tenant_id, org.slug)
         set_db_tenant(org.tenant_id)
-        return redirect("/dashboard/")
+        return redirect("dashboard:home")
 
     # Multiple orgs → let user pick
     return render(
@@ -325,7 +325,7 @@ def tenant_pick(request: HttpRequest, slug: str) -> HttpResponse:
         set_db_tenant(org.tenant_id)
     except Organization.DoesNotExist:
         pass
-    return redirect("/dashboard/")
+    return redirect("dashboard:home")
 
 
 @login_required

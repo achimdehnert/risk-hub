@@ -23,70 +23,70 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between h-14">
             <div class="flex items-center space-x-1">
-                <a href="/" class="flex items-center px-3 py-2 rounded-md">
+                <a href="{% url 'dashboard:home' %}" class="flex items-center px-3 py-2 rounded-md">
                     <span class="font-bold text-orange-600 text-lg">Schutztat</span>
                 </a>
                 <div class="hidden md:flex ml-10 space-x-4">
-                    <a href="/projects/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/projects/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'projects:project-list' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/projects/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Projekte
                     </a>
-                    <a href="/doc-templates/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/doc-templates' in request.path %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="/doc-templates/" class="px-3 py-2 rounded-md text-sm font-medium {% if '/doc-templates' in request.path %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">  {# hardcoded-ok: optional package, may not be installed #}
                         Vorlagen
                     </a>
                     {% if "ex" in active_modules %}
-                    <a href="/ex/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':4' == '/ex/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'explosionsschutz:home' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':4' == '/ex/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Explosionsschutz
                     </a>
                     {% endif %}
                     {% if "ex" in active_modules or "substances" in active_modules %}
-                    <a href="/substances/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':12' == '/substances/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'substances:home' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':12' == '/substances/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Gefahrstoffe
                     </a>
-                    <a href="/kataster/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/kataster/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'kataster:dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/kataster/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Kataster
                     </a>
                     {% endif %}
                     {% if "ex" in active_modules or "substances" in active_modules %}
-                    <a href="/sds/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/sds/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'global_sds:dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/sds/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         SDS-Bibliothek
                     </a>
                     {% endif %}
                     {% if "risk" in active_modules %}
-                    <a href="/risk/assessments/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':6' == '/risk/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'risk:assessment_list' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':6' == '/risk/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Risikobewertung
                     </a>
                     {% endif %}
                     {% if "documents" in active_modules %}
-                    <a href="/documents/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':11' == '/documents/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'documents:document_list' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':11' == '/documents/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Dokumente
                     </a>
                     {% endif %}
                     {% if "dsb" in active_modules %}
-                    <a href="/dsb/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/dsb/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'dsb:dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/dsb/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Datenschutz
                     </a>
                     {% endif %}
                     {% if "gbu" in active_modules %}
-                    <a href="/gbu/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/gbu/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'gbu:activity-list' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':5' == '/gbu/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         GBU
                     </a>
                     {% endif %}
                     {% if "brandschutz" in active_modules %}
-                    <a href="/brandschutz/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':13' == '/brandschutz/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'brandschutz:concept-list' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':13' == '/brandschutz/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Brandschutz
                     </a>
                     {% endif %}
-                    <a href="/training/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/training/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'training:dashboard' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':10' == '/training/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Unterweisungen
                     </a>
-                    <a href="/actions/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':9' == '/actions/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'actions:action-list' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':9' == '/actions/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Maßnahmen
                     </a>
-                    <a href="/compliance/reviews/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':12' == '/compliance/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'compliance:review_list' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':12' == '/compliance/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Compliance
                     </a>
                     {% if user.is_staff %}
-                    <a href="/tenants/" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':9' == '/tenants/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
+                    <a href="{% url 'tenancy:org-list' %}" class="px-3 py-2 rounded-md text-sm font-medium {% if request.path|slice:':9' == '/tenants/' %}bg-orange-100 text-orange-700{% else %}text-gray-700 hover:bg-gray-100{% endif %}">
                         Mandanten
                     </a>
                     {% endif %}

@@ -1553,3 +1553,127 @@ class InspectionCreateView(LoginRequiredMixin, View):
             self.template_name,
             {"equipment": equipment, "form": form, "title": f"Prüfung: {equipment}"},
         )
+
+
+class ConceptAiGenerateView(LoginRequiredMixin, View):
+    """HTMX POST: KI-Vorschlag für einen Konzept-Abschnitt generieren (ADR-018).
+
+    POST /ex/concepts/<pk>/ai/<chapter>/
+    Antwort: HTMX-Partial _ai_diff.html oder _ai_error.html
+    """
+
+    ALLOWED_CHAPTERS = {"zones", "ignition", "measures", "summary"}
+
+    def post(self, request, pk, chapter):
+        from uuid import UUID
+
+        from .ai.dtos import GenerateProposalCmd
+        from .ai.feature_flags import ai_enabled_for_tenant
+        from .services.ex_concept_ai import generate_chapter
+
+        tenant_id = getattr(request, "tenant_id", None)
+
+        if chapter not in self.ALLOWED_CHAPTERS:
+            return HttpResponseForbidden(f"Unknown chapter: {chapter}")
+
+        if not ai_enabled_for_tenant(tenant_id):
+            return render(
+                request,
+                "explosionsschutz/ai/partials/_ai_error.html",
+                {"error": "KI-Features sind für diesen Mandanten nicht aktiviert."},
+            )
+
+        if not request.user.has_perm("explosionsschutz.use_ai"):
+            return render(
+                request,
+                "explosionsschutz/ai/partials/_ai_error.html",
+                {"error": "Keine Berechtigung für KI-Generierung."},
+            )
+
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        concept = get_object_or_404(
+            ExplosionConcept.objects.filter(base_filter).select_related("area"), pk=pk
+        )
+
+        cmd = GenerateProposalCmd(
+            concept_id=concept.pk,
+            tenant_id=UUID(str(tenant_id)),
+            chapter=chapter,
+            additional_user_notes=request.POST.get("user_notes", ""),
+        )
+
+        result = generate_chapter(cmd)
+
+        if not result.success:
+            raw_error = result.error or ""
+            if any(k in raw_error for k in ("api_key", "AuthenticationError", "Authentication")):
+                display_error = "KI-Dienst nicht konfiguriert (API-Key fehlt). Bitte Administrator kontaktieren."
+            elif "RateLimit" in raw_error or "rate_limit" in raw_error:
+                display_error = "KI-Dienst momentan überlastet. Bitte in wenigen Minuten erneut versuchen."
+            elif "Timeout" in raw_error or "timeout" in raw_error:
+                display_error = "KI-Dienst hat nicht rechtzeitig geantwortet. Bitte erneut versuchen."
+            else:
+                display_error = "KI-Generierung fehlgeschlagen. Bitte erneut versuchen."
+            return render(
+                request,
+                "explosionsschutz/ai/partials/_ai_error.html",
+                {"error": display_error, "log_id": result.log_id},
+            )
+
+        return render(
+            request,
+            "explosionsschutz/ai/partials/_ai_diff.html",
+            {
+                "concept": concept,
+                "chapter": chapter,
+                "result": result,
+                "log_id": result.log_id,
+            },
+        )
+
+
+class ConceptAiAcceptView(LoginRequiredMixin, View):
+    """HTMX POST: KI-Vorschlag durch Experten übernehmen (ADR-018).
+
+    POST /ex/concepts/<pk>/ai/accept/<log_id>/
+    """
+
+    def post(self, request, pk, log_id):
+        from .ai.dtos import AcceptProposalCmd
+        from .services.ex_concept_ai import accept_proposal
+
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
+
+        cmd = AcceptProposalCmd(
+            generation_log_id=log_id,
+            accepted_by_user_id=request.user.pk,
+            changes_made=request.POST.get("changes_made", ""),
+        )
+        accept_proposal(cmd)
+        messages.success(request, "KI-Vorschlag übernommen.")
+        return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
+
+
+class ConceptAiRejectView(LoginRequiredMixin, View):
+    """HTMX POST: KI-Vorschlag ablehnen (ADR-018).
+
+    POST /ex/concepts/<pk>/ai/reject/<log_id>/
+    """
+
+    def post(self, request, pk, log_id):
+        from .ai.dtos import RejectProposalCmd
+        from .services.ex_concept_ai import reject_proposal
+
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
+
+        cmd = RejectProposalCmd(
+            generation_log_id=log_id,
+            rejected_by_user_id=request.user.pk,
+        )
+        reject_proposal(cmd)
+        messages.info(request, "KI-Vorschlag abgelehnt.")
+        return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)

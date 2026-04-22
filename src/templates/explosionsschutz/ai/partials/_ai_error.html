@@ -1,0 +1,9 @@
+{# explosionsschutz/ai/partials/_ai_error.html #}
+{# HTMX-Partial: Fehlermeldung bei KI-Generierung (ADR-018) #}
+<div class="ai-error rounded border border-red-300 bg-red-50 p-4 text-sm text-red-800" role="alert">
+  <p class="font-semibold">KI-Generierung fehlgeschlagen</p>
+  <p class="mt-1">{{ error }}</p>
+  {% if log_id %}
+    <p class="mt-2 text-xs text-red-600">Log-ID: {{ log_id }}</p>
+  {% endif %}
+</div>

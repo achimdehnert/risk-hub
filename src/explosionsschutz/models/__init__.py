@@ -20,6 +20,11 @@ Split in Sub-Module für bessere Wartbarkeit:
 """
 
 from .base import TenantScopedMasterData, TenantScopedMasterDataManager
+from .generation_log import (
+    ExplosionConceptGenerationLog,
+    GenerationChapter,
+    GenerationStatus,
+)
 from .concept import Area, ExplosionConcept
 from .concept_doc import ExConceptDocument, ExConceptTemplateStore, ExFilledTemplate
 from .doc_template import ExDocInstance, ExDocTemplate
@@ -66,4 +71,8 @@ __all__ = [
     # Dokument-Templates (standalone)
     "ExDocTemplate",
     "ExDocInstance",
+    # KI-Augmentierung (ADR-018)
+    "ExplosionConceptGenerationLog",
+    "GenerationChapter",
+    "GenerationStatus",
 ]

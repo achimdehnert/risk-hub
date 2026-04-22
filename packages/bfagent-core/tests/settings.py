@@ -1,6 +1,6 @@
 """Django settings for testing bfagent-core."""
 
-SECRET_KEY = "test-secret-key-not-for-production"
+SECRET_KEY = "test-secret-key-not-for-production"  # hardcoded-ok: test settings
 DEBUG = True
 
 INSTALLED_APPS = [

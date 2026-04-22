@@ -121,6 +121,9 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 20 * 1024 * 1024
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# KI-Augmentierung (ADR-018) — globaler Kill-Switch, default: aus
+AI_FEATURES_GLOBAL_ENABLED = read_secret("AI_FEATURES_GLOBAL_ENABLED", default="0") == "1"
+
 LANGUAGE_CODE = "de-de"
 TIME_ZONE = "Europe/Berlin"
 USE_I18N = True

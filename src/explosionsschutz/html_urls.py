@@ -30,6 +30,9 @@ from .template_views import (
     AreaEditView,
     AreaIFCUploadView,
     AreaListView,
+    ConceptAiAcceptView,
+    ConceptAiGenerateView,
+    ConceptAiRejectView,
     ConceptCreateView,
     ConceptDetailView,
     ConceptDxfImportView,
@@ -91,6 +94,10 @@ urlpatterns = [
     path("concepts/<int:pk>/", ConceptDetailView.as_view(), name="concept-detail-html"),
     path("concepts/<int:pk>/edit/", ConceptEditView.as_view(), name="concept-edit"),
     path("concepts/<int:pk>/validate/", ConceptValidateView.as_view(), name="concept-validate"),
+    # KI-Augmentierung (ADR-018)
+    path("concepts/<int:pk>/ai/<str:chapter>/", ConceptAiGenerateView.as_view(), name="concept-ai-generate"),
+    path("concepts/<int:pk>/ai/accept/<int:log_id>/", ConceptAiAcceptView.as_view(), name="concept-ai-accept"),
+    path("concepts/<int:pk>/ai/reject/<int:log_id>/", ConceptAiRejectView.as_view(), name="concept-ai-reject"),
     # Equipment
     path("equipment/", EquipmentListView.as_view(), name="equipment-list-html"),
     path("equipment/create/", EquipmentCreateView.as_view(), name="equipment-create"),

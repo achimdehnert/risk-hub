@@ -2,7 +2,7 @@
 
 import os
 
-SECRET_KEY = "test-secret-key"
+SECRET_KEY = "test-secret-key"  # hardcoded-ok: test settings
 DEBUG = True
 
 DATABASES = {

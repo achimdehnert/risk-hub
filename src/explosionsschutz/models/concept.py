@@ -131,6 +131,9 @@ class ExplosionConcept(models.Model):
                 name="idx_concept_tenant_status",
             ),
         ]
+        permissions = [
+            ("use_ai", "KI-Augmentierung nutzen (ADR-018)"),
+        ]
 
     def __str__(self) -> str:
         return f"{self.title} (v{self.version})"

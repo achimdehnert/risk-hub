@@ -13,8 +13,8 @@ def main() -> int:
     parser.add_argument("--tier", type=str, default="budget")
     args = parser.parse_args()
     service = IssueTriageService(
-        github_token=os.environ.get("GITHUB_TOKEN",""),
-        github_repo=os.environ.get("GITHUB_REPOSITORY","achimdehnert/risk-hub"),
+        github_token=os.environ.get("GITHUB_TOKEN",""),  # hardcoded-ok: standalone CI script
+        github_repo=os.environ.get("GITHUB_REPOSITORY","achimdehnert/risk-hub"),  # hardcoded-ok: standalone CI script
         tier=args.tier, dry_run=args.dry_run,
     )
     print(f"Triage Issue #{args.issue_number}: {args.title[:60]}")

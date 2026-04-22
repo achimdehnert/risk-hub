@@ -4,7 +4,7 @@
 import os
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-os.environ["DJANGO_DEBUG"] = "1"
+os.environ["DJANGO_DEBUG"] = "1"  # hardcoded-ok: test bootstrap
 
 import django
 

@@ -382,7 +382,7 @@
                         {% endfor %}
                         {% endif %}
 
-                        <form method="post" action="/accounts/login/" class="d-flex flex-column gap-3">
+                        <form method="post" action="{% url 'login' %}" class="d-flex flex-column gap-3">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="/dashboard/">
                             <div>
@@ -403,7 +403,7 @@
                         <hr style="border-color:rgba(255,255,255,0.1);">
                         <p class="text-center mb-2" style="color:rgba(255,255,255,0.5); font-size:0.9rem;">
                             Noch kein Konto?
-                            <a href="/accounts/register/" class="text-decoration-none fw-semibold" style="color:#ff8c42;">
+                            <a href="{% url 'register' %}" class="text-decoration-none fw-semibold" style="color:#ff8c42;">
                                 <i class="bi bi-rocket-takeoff me-1"></i>Kostenlos registrieren
                             </a>
                         </p>
@@ -800,7 +800,7 @@
                     <a href="#pricing" class="text-white-50 text-decoration-none me-3 small">
                         <i class="bi bi-tag me-1"></i>Preise
                     </a>
-                    <a href="/api/v1/docs" class="text-white-50 text-decoration-none me-3 small">
+                    <a href="/api/v1/docs"  {# hardcoded-ok: auto-generated API docs path #} class="text-white-50 text-decoration-none me-3 small">
                         <i class="bi bi-code-slash me-1"></i>API Docs
                     </a>
                     <a href="mailto:info@schutztat.de" class="text-white-50 text-decoration-none small">

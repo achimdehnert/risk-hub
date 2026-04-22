@@ -193,7 +193,7 @@
                         {% endfor %}
                         {% endif %}
 
-                        <form method="post" action="/accounts/login/" class="d-flex flex-column gap-3">
+                        <form method="post" action="{% url 'login' %}" class="d-flex flex-column gap-3">
                             {% csrf_token %}
                             <input type="hidden" name="next" value="/dashboard/">
                             <div>
@@ -403,7 +403,7 @@
                     <span class="ms-3 small text-white-50">Risikomanagement &amp; Datenschutz</span>
                 </div>
                 <div class="col-md-6 text-md-end mt-3 mt-md-0">
-                    <a href="/api/v1/docs" class="text-white-50 text-decoration-none me-3 small">
+                    <a href="/api/v1/docs"  {# hardcoded-ok: auto-generated API docs path #} class="text-white-50 text-decoration-none me-3 small">
                         <i class="bi bi-code-slash me-1"></i>API Docs
                     </a>
                     <a href="mailto:info@schutztat.de" class="text-white-50 text-decoration-none small">

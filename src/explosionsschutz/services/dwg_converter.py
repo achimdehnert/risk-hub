@@ -17,7 +17,7 @@ import tempfile
 
 logger = logging.getLogger(__name__)
 
-ODA_BINARY = os.environ.get(
+ODA_BINARY = os.environ.get(  # hardcoded-ok: system binary path, not a Django config
     "ODA_FILE_CONVERTER",
     "/usr/bin/ODAFileConverter",
 )

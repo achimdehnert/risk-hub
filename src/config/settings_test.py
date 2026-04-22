@@ -27,7 +27,7 @@ INSTALLED_APPS = [  # noqa: F405
 DEBUG = False
 
 _db = urlparse(
-    os.environ.get(
+    os.environ.get(  # hardcoded-ok: test settings, decouple not available at test setup
         "DATABASE_URL",
         "postgresql://test:test@localhost:5432/risk_hub_ci",
     )
@@ -68,7 +68,7 @@ CELERY_TASK_ALWAYS_EAGER = True
 CELERY_TASK_EAGER_PROPAGATES = True
 
 # Stripe — dummy values for test/CI (no real API calls)
-STRIPE_SECRET_KEY = "sk_test_dummy_ci_key"
+STRIPE_SECRET_KEY = "sk_test_dummy_ci_key"  # hardcoded-ok: test-only dummy key
 STRIPE_PUBLISHABLE_KEY = "pk_test_dummy_ci_key"
 STRIPE_WEBHOOK_SECRET = "whsec_dummy_ci_secret"
 STRIPE_PRICE_STARTER_MONTHLY = "price_test_starter_monthly"

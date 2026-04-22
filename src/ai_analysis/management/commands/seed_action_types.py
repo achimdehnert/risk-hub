@@ -112,6 +112,35 @@ class Command(BaseCommand):
                 500,
                 0.3,
             ),
+            # ADR-018: Ex-Schutzdokument KI-Augmentierung
+            (
+                "ex_concept_zones",
+                "Ex-Konzept Zoneneinteilung",
+                "Zonenvorschlag nach TRGS 721 / EN 60079-10 (Markdown-Tabelle).",
+                1500,
+                0.2,
+            ),
+            (
+                "ex_concept_ignition",
+                "Ex-Konzept Zündquellenbewertung",
+                "Zündquellen-Bewertung 13er-Matrix nach EN 1127-1.",
+                2000,
+                0.2,
+            ),
+            (
+                "ex_concept_measures",
+                "Ex-Konzept Schutzmaßnahmen",
+                "Schutzmaßnahmen primär/sekundär/tertiär/organisatorisch nach TRGS 722.",
+                2000,
+                0.3,
+            ),
+            (
+                "ex_concept_summary",
+                "Ex-Konzept Zusammenfassung",
+                "Zusammenfassung des Explosionsschutzdokuments (Step 5).",
+                1000,
+                0.3,
+            ),
         ]
         for code, name, description, max_tokens, temperature in actions_data:
             a, created = AIActionType.objects.update_or_create(
