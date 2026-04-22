@@ -40,7 +40,9 @@ RUN --mount=type=secret,id=PROJECT_PAT \
     && (pip install --no-cache-dir /tmp/nl2cad/packages/nl2cad-gaeb 2>&1 && echo "OK: nl2cad-gaeb") || echo "SKIP: nl2cad-gaeb" \
     && git clone --depth=1 https://github.com/achimdehnert/iil-fieldprefill.git /tmp/iil-fieldprefill 2>/dev/null || true \
     && (pip install --no-cache-dir /tmp/iil-fieldprefill 2>&1 && echo "OK: iil-fieldprefill") || echo "SKIP: iil-fieldprefill" \
-    && rm -rf /tmp/platform /tmp/nl2cad /tmp/iil-fieldprefill \
+    && git clone --depth=1 https://github.com/achimdehnert/iil-enrichment.git /tmp/iil-enrichment 2>/dev/null || true \
+    && (pip install --no-cache-dir "/tmp/iil-enrichment[gestis,pubchem]" 2>&1 && echo "OK: iil-enrichment") || echo "SKIP: iil-enrichment" \
+    && rm -rf /tmp/platform /tmp/nl2cad /tmp/iil-fieldprefill /tmp/iil-enrichment \
     && git config --global --remove-section url."https://x-access-token:${PROJECT_PAT}@github.com/" 2>/dev/null || true
 
 # Install risk-hub's own django-tenancy in builder
