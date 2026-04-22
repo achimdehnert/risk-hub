@@ -36,6 +36,7 @@ class ExplosionsschutzConfig(AppConfig):
 
         try:
             from fieldprefill.prompts import register_system_prompt
+
             from explosionsschutz.services.ex_doc_prefill import PREFILL_SCOPE
 
             register_system_prompt(

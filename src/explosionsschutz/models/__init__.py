@@ -20,16 +20,16 @@ Split in Sub-Module für bessere Wartbarkeit:
 """
 
 from .base import TenantScopedMasterData, TenantScopedMasterDataManager
-from .generation_log import (
-    ExplosionConceptGenerationLog,
-    GenerationChapter,
-    GenerationStatus,
-)
 from .concept import Area, ExplosionConcept
 from .concept_doc import ExConceptDocument, ExConceptTemplateStore, ExFilledTemplate
 from .doc_template import ExDocInstance, ExDocTemplate
 from .document import VerificationDocument
 from .equipment import Equipment, EquipmentATEXCheck, Inspection
+from .generation_log import (
+    ExplosionConceptGenerationLog,
+    GenerationChapter,
+    GenerationStatus,
+)
 from .master_data import EquipmentType, MeasureCatalog, ReferenceStandard, SafetyFunction
 from .measure import ProtectionMeasure
 from .zone import (
