@@ -65,6 +65,8 @@ from .services import (
     get_areas_with_zones,
     get_equipment,
     get_explosion_concepts,
+    get_open_measures,
+    get_overdue_measures_count,
     get_zone_definitions,
     validate_explosion_concept,
 )
@@ -390,12 +392,8 @@ class DashboardView(APIView):
                     ),
                 },
                 "measures": {
-                    "open": ProtectionMeasure.objects.filter(
-                        tenant_id=tenant_id, status="open"
-                    ).count(),
-                    "overdue": ProtectionMeasure.objects.filter(
-                        tenant_id=tenant_id, status__in=["open", "in_progress"], due_date__lt=today
-                    ).count(),
+                    "open": get_open_measures(tenant_id),
+                    "overdue": get_overdue_measures_count(tenant_id, today),
                 },
             }
         )

@@ -53,3 +53,18 @@ def get_users_by_ids(user_ids):
     from identity.models import User
 
     return User.objects.filter(pk__in=user_ids)
+
+
+def create_training_attendance(tenant_id, session, user_id: int, status: str = "present"):
+    """Create a TrainingAttendance record.
+
+    Returns the new TrainingAttendance.
+    """
+    from training.models import TrainingAttendance
+
+    return TrainingAttendance.objects.create(
+        tenant_id=tenant_id,
+        session=session,
+        user_id=user_id,
+        status=status,
+    )

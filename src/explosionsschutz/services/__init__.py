@@ -1014,3 +1014,12 @@ def get_open_measures(tenant_id):
 def get_areas_with_zones(tenant_id):
     """Return Areas for a tenant prefetched with concepts and zones."""
     return Area.objects.filter(tenant_id=tenant_id).prefetch_related("concepts__zones")
+
+
+def get_overdue_measures_count(tenant_id, today) -> int:
+    """Return count of open/in-progress ProtectionMeasures past due_date."""
+    return ProtectionMeasure.objects.filter(
+        tenant_id=tenant_id,
+        status__in=["open", "in_progress"],
+        due_date__lt=today,
+    ).count()

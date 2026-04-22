@@ -8,8 +8,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .forms import TrainingSessionForm, TrainingTopicForm
-from .models import TrainingAttendance, TrainingSession, TrainingTopic
+from .models import TrainingSession, TrainingTopic
 from .services import (
+    create_training_attendance,
     get_all_training_topics,
     get_member_users,
     get_training_sessions,
@@ -288,13 +289,7 @@ def attendance_manage(request, pk):
         session.attendances.all().delete()
         for uid in selected_ids:
             status = request.POST.get(f"status_{uid}", "present")
-            TrainingAttendance.objects.create(
-                tenant_id=tenant_id,
-                session=session,
-                user_id=uid,
-                status=status,
-                signed_at=timezone.now() if status == "present" else None,
-            )
+            create_training_attendance(tenant_id, session, uid, status)
         messages.success(request, f"{len(selected_ids)} Teilnahme(n) erfasst.")
         return redirect("training:session-detail", pk=session.pk)
 

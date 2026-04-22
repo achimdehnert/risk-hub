@@ -366,3 +366,10 @@ def get_breaches(tenant_id):
     from dsb.models import Breach
 
     return Breach.objects.filter(tenant_id=tenant_id)
+
+
+def get_mandate_by_id(pk, tenant_id):
+    """Return Mandate by PK + tenant, or None."""
+    from dsb.models import Mandate
+
+    return Mandate.objects.filter(pk=pk, tenant_id=tenant_id).first()

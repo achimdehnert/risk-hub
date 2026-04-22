@@ -15,6 +15,7 @@ from dsb.services import (
     get_deletion_logs,
     get_dpa_documents,
     get_dsb_kpis,
+    get_mandate_by_id,
     get_mandates,
     get_open_breaches,
     get_open_deletion_requests,
@@ -559,7 +560,6 @@ def avv_import(request: HttpRequest) -> HttpResponse:
     from django.http import HttpResponse as DjangoResponse
 
     from dsb.import_csv import AVV_CSV_TEMPLATE, import_avv
-    from dsb.models import Mandate
 
     tid = _tenant_id(request)
     uid = _user_id(request)
@@ -576,19 +576,20 @@ def avv_import(request: HttpRequest) -> HttpResponse:
         mandate_id = request.POST.get("mandate")
         csv_file = request.FILES.get("csv_file")
         if mandate_id and csv_file:
-            try:
-                mandate = Mandate.objects.get(pk=mandate_id, tenant_id=tid)
-                content = csv_file.read().decode("utf-8-sig")
-                result = import_avv(content, mandate, tid, uid)
-                if result.avv_created:
-                    messages.success(
-                        request,
-                        f"{result.avv_created} AVV importiert, {result.skipped} übersprungen.",
-                    )
-            except Mandate.DoesNotExist:
+            mandate = get_mandate_by_id(mandate_id, tid)
+            if mandate is None:
                 messages.error(request, "Mandat nicht gefunden.")
-            except Exception as exc:
-                messages.error(request, f"Import-Fehler: {exc}")
+            else:
+                try:
+                    content = csv_file.read().decode("utf-8-sig")
+                    result = import_avv(content, mandate, tid, uid)
+                    if result.avv_created:
+                        messages.success(
+                            request,
+                            f"{result.avv_created} AVV importiert, {result.skipped} übersprungen.",
+                        )
+                except Exception as exc:
+                    messages.error(request, f"Import-Fehler: {exc}")
 
     selected_mandate = None
     if tid and mandates.count() == 1:
