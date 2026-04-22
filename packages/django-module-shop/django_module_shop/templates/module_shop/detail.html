@@ -53,13 +53,18 @@
                 <div class="card-body">
                     {% if module.is_active %}
                         <h5 class="text-success mb-3">Modul aktiv</h5>
-                        <form method="post" action="{% url 'module_shop:cancel' module.code %}">
+                        <form method="post" action="{% url 'module_shop:cancel' module.code %}"
+                              id="cancel-module-form">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-outline-danger w-100"
-                                    onclick="return confirm('Modul wirklich kündigen?')">
+                            <button type="submit" class="btn btn-outline-danger w-100">
                                 Modul kündigen
                             </button>
                         </form>
+                        <script>
+                          document.getElementById('cancel-module-form').addEventListener('submit', function(e) {
+                            if (!confirm('Modul wirklich kündigen?')) e.preventDefault();
+                          });
+                        </script>
                     {% elif module.is_bookable %}
                         <h5 class="text-primary mb-3">Jetzt aktivieren</h5>
                         <form method="post" action="{% url 'module_shop:activate' module.code %}">
