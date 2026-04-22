@@ -125,3 +125,130 @@ def get_organization_by_tenant(tenant_id):
     from tenancy.models import Organization
 
     return Organization.objects.filter(tenant_id=tenant_id).first()
+
+
+# ---------------------------------------------------------------------------
+# Write helpers (ADR-041 Phase 3 — mutations)
+# ---------------------------------------------------------------------------
+
+
+def invite_user_to_org(org, form_data: dict, invited_by):
+    """Create a new User and add them to an Organization as a Member.
+
+    Returns (user, membership).
+    """
+    from django.utils import timezone
+
+    from identity.models import User
+    from tenancy.models import Membership
+
+    user = User.objects.create_user(
+        username=form_data["username"],
+        email=form_data["email"],
+        password=form_data["password"],
+        first_name=form_data.get("first_name", ""),
+        last_name=form_data.get("last_name", ""),
+        tenant_id=org.tenant_id,
+    )
+    membership = Membership.objects.create(
+        tenant_id=org.tenant_id,
+        organization=org,
+        user=user,
+        role=form_data["role"],
+        invited_by=invited_by,
+        invited_at=timezone.now(),
+        accepted_at=timezone.now(),
+    )
+    return user, membership
+
+
+def add_module_subscription(org, module: str):
+    """Create a TRIAL ModuleSubscription for an org + module.
+
+    Returns the new ModuleSubscription.
+    """
+    from django_tenancy.module_models import ModuleSubscription
+
+    return ModuleSubscription.objects.create(
+        organization=org,
+        tenant_id=org.tenant_id,
+        module=module,
+        status=ModuleSubscription.Status.TRIAL,
+        plan_code="free",
+    )
+
+
+def grant_module_membership(org, user, module: str, role, granted_by, expires_at=None):
+    """Create a ModuleMembership for user + module.
+
+    Returns the new ModuleMembership.
+    """
+    from django_tenancy.module_models import ModuleMembership
+
+    return ModuleMembership.objects.create(
+        tenant_id=org.tenant_id,
+        user=user,
+        module=module,
+        role=role,
+        granted_by=granted_by,
+        expires_at=expires_at,
+    )
+
+
+def ensure_role_assignment(user, org, membership_role: str) -> None:
+    """Map a membership role to a system Role and create an Assignment.
+
+    Replaces the private _ensure_role_assignment helper in views.py.
+    """
+    from permissions.models import Assignment, Role, Scope
+
+    role_map = {
+        "owner": "admin",
+        "admin": "admin",
+        "member": "member",
+        "viewer": "viewer",
+        "external": "viewer",
+    }
+    system_role_name = role_map.get(str(membership_role).lower(), "viewer")
+    role = Role.objects.filter(name=system_role_name, is_system=True).first()
+    if not role:
+        return
+
+    Assignment.objects.filter(
+        tenant_id=org.tenant_id,
+        user_id=user.pk,
+    ).delete()
+
+    scope, _ = Scope.objects.get_or_create(
+        tenant_id=org.tenant_id,
+        scope_type=Scope.SCOPE_TENANT,
+    )
+    Assignment.objects.create(
+        tenant_id=org.tenant_id,
+        user_id=user.pk,
+        role=role,
+        scope=scope,
+        created_by_user_id=user.pk,
+    )
+
+
+def remove_member_from_org(org, membership) -> None:
+    """Delete a member's assignments and membership."""
+    from permissions.models import Assignment
+
+    Assignment.objects.filter(
+        tenant_id=org.tenant_id,
+        user_id=membership.user_id,
+    ).delete()
+    membership.delete()
+
+
+def get_user_memberships(user):
+    """Return Memberships for a user with organization prefetched."""
+    from tenancy.models import Membership
+
+    return (
+        Membership.objects.filter(user=user)
+        .select_related("organization")
+        .order_by("organization__name")
+    )

@@ -6,8 +6,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 
-from identity.models import User
-from permissions.models import Assignment, Role, Scope
 from tenancy.forms import (
     InviteUserForm,
     MembershipRoleForm,
@@ -18,6 +16,8 @@ from tenancy.forms import (
 )
 from tenancy.models import Membership, Organization
 from tenancy.services import (
+    add_module_subscription,
+    ensure_role_assignment,
     get_all_organizations,
     get_module_memberships,
     get_module_subscription_stats,
@@ -27,6 +27,9 @@ from tenancy.services import (
     get_org_roles,
     get_org_subscriptions,
     get_organization_by_tenant,
+    grant_module_membership,
+    invite_user_to_org,
+    remove_member_from_org,
     subscription_exists,
 )
 
@@ -181,28 +184,8 @@ def member_invite(request: HttpRequest, org_pk) -> HttpResponse:
     if request.method == "POST":
         form = InviteUserForm(request.POST)
         if form.is_valid():
-            user = User.objects.create_user(
-                username=form.cleaned_data["username"],
-                email=form.cleaned_data["email"],
-                password=form.cleaned_data["password"],
-                first_name=form.cleaned_data.get("first_name", ""),
-                last_name=form.cleaned_data.get("last_name", ""),
-                tenant_id=org.tenant_id,
-            )
-            Membership.objects.create(
-                tenant_id=org.tenant_id,
-                organization=org,
-                user=user,
-                role=form.cleaned_data["role"],
-                invited_by=request.user,
-                invited_at=timezone.now(),
-                accepted_at=timezone.now(),
-            )
-            _ensure_role_assignment(
-                user,
-                org,
-                form.cleaned_data["role"],
-            )
+            user, _membership = invite_user_to_org(org, form.cleaned_data, invited_by=request.user)
+            ensure_role_assignment(user, org, form.cleaned_data["role"])
             return redirect("tenancy:org-detail", pk=org.pk)
     else:
         form = InviteUserForm()
@@ -234,11 +217,7 @@ def member_role(request: HttpRequest, org_pk, membership_pk) -> HttpResponse:
         if form.is_valid():
             membership.role = form.cleaned_data["role"]
             membership.save()
-            _ensure_role_assignment(
-                membership.user,
-                org,
-                membership.role,
-            )
+            ensure_role_assignment(membership.user, org, membership.role)
             return redirect("tenancy:org-detail", pk=org.pk)
     else:
         form = MembershipRoleForm(initial={"role": membership.role})
@@ -267,11 +246,7 @@ def member_remove(request: HttpRequest, org_pk, membership_pk) -> HttpResponse:
         tenant_id=org.tenant_id,
     )
     if request.method == "POST":
-        Assignment.objects.filter(
-            tenant_id=org.tenant_id,
-            user_id=membership.user_id,
-        ).delete()
-        membership.delete()
+        remove_member_from_org(org, membership)
         return redirect("tenancy:org-detail", pk=org.pk)
     return render(
         request,
@@ -330,13 +305,7 @@ def module_subscription_add(
     if subscription_exists(org.tenant_id, module):
         return redirect("tenancy:org-detail", pk=org.pk)
 
-    ModuleSubscription.objects.create(
-        organization=org,
-        tenant_id=org.tenant_id,
-        module=module,
-        status=ModuleSubscription.Status.TRIAL,
-        plan_code="free",
-    )
+    add_module_subscription(org, module)
     return redirect("tenancy:org-detail", pk=org.pk)
 
 
@@ -408,8 +377,8 @@ def module_membership_manage(
             module=module,
         )
         if form.is_valid():
-            ModuleMembership.objects.create(
-                tenant_id=org.tenant_id,
+            grant_module_membership(
+                org,
                 user=form.cleaned_data["user"],
                 module=module,
                 role=form.cleaned_data["role"],
@@ -510,45 +479,6 @@ def module_membership_revoke(
 # -----------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------
-
-
-def _ensure_role_assignment(
-    user: User,
-    org: Organization,
-    membership_role: str,
-) -> None:
-    """Map membership role to permissions.Role assignment."""
-    role_map = {
-        Membership.Role.OWNER: "admin",
-        Membership.Role.ADMIN: "admin",
-        Membership.Role.MEMBER: "member",
-        Membership.Role.VIEWER: "viewer",
-        Membership.Role.EXTERNAL: "viewer",
-    }
-    system_role_name = role_map.get(membership_role, "viewer")
-    role = Role.objects.filter(
-        name=system_role_name,
-        is_system=True,
-    ).first()
-    if not role:
-        return
-
-    Assignment.objects.filter(
-        tenant_id=org.tenant_id,
-        user_id=user.pk,
-    ).delete()
-
-    scope, _ = Scope.objects.get_or_create(
-        tenant_id=org.tenant_id,
-        scope_type=Scope.SCOPE_TENANT,
-    )
-    Assignment.objects.create(
-        tenant_id=org.tenant_id,
-        user_id=user.pk,
-        role=role,
-        scope=scope,
-        created_by_user_id=user.pk,
-    )
 
 
 # -----------------------------------------------------------------------

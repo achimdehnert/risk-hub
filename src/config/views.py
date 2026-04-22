@@ -11,6 +11,15 @@ from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_POST
 
+from config.services import (
+    create_user,
+    get_organization_by_slug,
+    provision_trial_tenant,
+    user_exists_by_email,
+    user_exists_by_username,
+)
+from tenancy.services import get_user_memberships
+
 
 def custom_403(request: HttpRequest, exception=None) -> HttpResponse:
     """Custom 403 Forbidden handler."""
@@ -117,66 +126,6 @@ def trial_request(request: HttpRequest) -> JsonResponse:
     return JsonResponse({"ok": True})
 
 
-def _provision_trial_tenant(user, plan: str, modules_csv: str) -> None:
-    """Create Organization + Membership + ModuleSubscriptions for a new trial user."""
-    from django.utils import timezone
-    from django_tenancy.module_models import ModuleMembership, ModuleSubscription
-
-    from tenancy.models import Membership, Organization
-
-    slug = user.username.lower().replace(" ", "-")[:50]
-    base_slug = slug
-    counter = 1
-    while Organization.objects.filter(slug=slug).exists():
-        slug = f"{base_slug}-{counter}"
-        counter += 1
-
-    org = Organization.objects.create(
-        name=user.username,
-        slug=slug,
-        status=Organization.Status.ACTIVE,
-    )
-    tenant_id = org.tenant_id
-
-    user.tenant_id = tenant_id
-    user.save(update_fields=["tenant_id"])
-
-    Membership.objects.create(
-        tenant_id=tenant_id,
-        organization=org,
-        user=user,
-        role=Membership.Role.ADMIN,
-        invited_by=user,
-        invited_at=timezone.now(),
-        accepted_at=timezone.now(),
-    )
-
-    from billing.constants import PLAN_MODULES
-
-    plan_key = plan.lower() if plan else "professional"
-    plan_modules = PLAN_MODULES.get(plan_key, PLAN_MODULES.get("professional", []))
-    requested = [m.strip() for m in modules_csv.split(",") if m.strip()]
-    active_modules = [m for m in plan_modules if not requested or m in requested]
-    if not active_modules:
-        active_modules = plan_modules
-
-    for module in active_modules:
-        ModuleSubscription.objects.update_or_create(
-            tenant_id=tenant_id,
-            module=module,
-            defaults={
-                "organization": org,
-                "status": ModuleSubscription.Status.ACTIVE,
-                "plan_code": plan_key,
-                "activated_at": timezone.now(),
-            },
-        )
-        ModuleMembership.objects.update_or_create(
-            tenant_id=tenant_id,
-            user=user,
-            module=module,
-            defaults={"role": ModuleMembership.Role.ADMIN},
-        )
 
 
 def register(request: HttpRequest) -> HttpResponse:
@@ -192,9 +141,6 @@ def register(request: HttpRequest) -> HttpResponse:
     error = None
 
     if request.method == "POST":
-        from django.contrib.auth import get_user_model
-
-        User = get_user_model()
         username = request.POST.get("username", "").strip()
         email = request.POST.get("email", "").strip()
         password1 = request.POST.get("password1", "")
@@ -204,21 +150,17 @@ def register(request: HttpRequest) -> HttpResponse:
 
         if not username:
             error = "Benutzername ist erforderlich."
-        elif User.objects.filter(username=username).exists():
+        elif user_exists_by_username(username):
             error = "Dieser Benutzername ist bereits vergeben."
-        elif email and User.objects.filter(email=email).exists():
+        elif email and user_exists_by_email(email):
             error = "Diese E-Mail-Adresse ist bereits registriert."
         elif password1 != password2:
             error = "Die Passwörter stimmen nicht überein."
         else:
             try:
                 validate_password(password1)
-                user = User.objects.create_user(
-                    username=username,
-                    email=email,
-                    password=password1,
-                )
-                _provision_trial_tenant(user, plan, modules)
+                user = create_user(username=username, email=email, password=password1)
+                provision_trial_tenant(user, plan, modules)
                 login(request, user)
                 return redirect("dashboard:home")
             except ValidationError as e:
@@ -270,7 +212,6 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
     Tenant context is resolved via user.tenant_id in middleware — no subdomain
     redirect needed. Modules are freely selectable per user, not per subdomain.
     """
-    from tenancy.models import Membership
 
     # If tenant already set (subdomain or header) → go to dashboard
     tenant_id = getattr(request, "tenant_id", None)
@@ -278,11 +219,7 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
         return redirect("dashboard:home")
 
     # No tenant context yet → look up via membership and set on request
-    memberships = (
-        Membership.objects.filter(user=request.user)
-        .select_related("organization")
-        .order_by("organization__name")
-    )
+    memberships = get_user_memberships(request.user)
     active = [m for m in memberships if m.organization.is_active]
 
     if not active:
@@ -314,17 +251,14 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
 def tenant_pick(request: HttpRequest, slug: str) -> HttpResponse:
     """Set tenant context to chosen org and redirect to dashboard."""
     from common.context import set_db_tenant, set_tenant
-    from tenancy.models import Organization
 
-    try:
-        org = Organization.objects.get(slug=slug)
+    org = get_organization_by_slug(slug)
+    if org is not None:
         request.tenant = org
         request.tenant_id = org.tenant_id
         request.tenant_slug = org.slug
         set_tenant(org.tenant_id, org.slug)
         set_db_tenant(org.tenant_id)
-    except Organization.DoesNotExist:
-        pass
     return redirect("dashboard:home")
 
 
