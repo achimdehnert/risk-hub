@@ -13,6 +13,7 @@ from dataclasses import dataclass
 from enum import StrEnum
 
 from django.conf import settings
+from django.core.files.base import ContentFile
 from django.db import transaction
 
 from global_sds.models import GlobalSdsRevision, GlobalSubstance
@@ -158,6 +159,7 @@ class SdsUploadPipeline:
                 source_hash=source_hash,
                 parse_result=parse_result,
                 tenant_id=tenant_id,
+                pdf_bytes=pdf_bytes,
                 initial=True,
             )
             return UploadResult(
@@ -203,6 +205,7 @@ class SdsUploadPipeline:
             source_hash=source_hash,
             parse_result=parse_result,
             tenant_id=tenant_id,
+            pdf_bytes=pdf_bytes,
             initial=is_first,
         )
 
@@ -238,6 +241,7 @@ class SdsUploadPipeline:
         source_hash: str,
         parse_result: dict,
         tenant_id: str,
+        pdf_bytes: bytes | None = None,
         initial: bool = False,
     ) -> GlobalSdsRevision:
         """Revision erstellen."""
@@ -265,6 +269,7 @@ class SdsUploadPipeline:
             source_hash=source_hash,
             status=status,
             uploaded_by_tenant_id=tenant_id,
+            pdf_file=ContentFile(pdf_bytes, name=f"{source_hash[:16]}.pdf") if pdf_bytes else None,
             manufacturer_name=parse_result.get(
                 "manufacturer_name",
                 "",

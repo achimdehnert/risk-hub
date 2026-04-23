@@ -160,6 +160,12 @@ class GlobalSdsRevision(models.Model):
         blank=True,
         related_name="supersedes",
     )
+    pdf_file = models.FileField(
+        upload_to="sds/pdfs/",
+        null=True,
+        blank=True,
+        help_text="Original-PDF (BetrSichV Archivierungspflicht)",
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

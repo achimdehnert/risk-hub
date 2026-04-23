@@ -24,6 +24,14 @@
         {% else %}bg-red-100 text-red-800{% endif %}">
         {{ revision.get_status_display }}
       </span>
+      {% if revision.pdf_file %}
+      <a href="{{ revision.pdf_file.url }}"
+         target="_blank"
+         class="inline-flex items-center gap-1 px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium border border-gray-300">
+        <i data-lucide="file-down" class="w-3.5 h-3.5"></i>
+        PDF
+      </a>
+      {% endif %}
       <a href="{% url 'global_sds:revision-edit' pk=revision.pk %}"
          class="inline-flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium">
         Bearbeiten
