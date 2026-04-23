@@ -2,41 +2,47 @@
 trigger: always_on
 ---
 
-# Project Facts: risk-hub (Schutztat)
+# Project Facts: risk-hub
 
-## Apps (src/ directory, NOT apps/)
+## Meta
 
-config, common, tenancy, substances, risk, explosionsschutz,
-documents, approvals, notifications, permissions, audit
+- **Type**: `django`
+- **GitHub**: `https://github.com/achimdehnert/risk-hub`
+- **Branch**: `main` — push: `git push` (SSH-Key konfiguriert)
+- **PyPI**: `risk-hub`
+- **Venv**: `.venv/` — test: `.venv/bin/python -m pytest`
 
-## Auth
+## Environments
 
-- Django built-in auth
-- Custom User model in `tenancy`
-- Login: `/accounts/login/`
+| Env | Compose File | Host Port | Health URL | Public URL |
+|-----|-------------|-----------|------------|------------|
+| local   | `docker-compose.local.yml`   | `8090` | `http://localhost:8090/livez/` | http://localhost:8090 |
+| staging | `docker-compose.staging.yml` | `8090` | `http://localhost:8090/livez/` | https://demo.schutztat.de |
+| prod    | `docker-compose.prod.yml`    | `8090` | `http://localhost:8090/livez/` | https://schutztat.de |
 
-## HTMX
+## Docker Containers
 
-- HTMX 1.9 via CDN (no django_htmx package)
-- Check: `request.headers.get("HX-Request")`
-- DO NOT use `request.htmx`
+| Container | Name | Purpose |
+|-----------|------|---------|
+| web    | `risk_hub_local_web`    | gunicorn:8000 |
+| db     | `risk_hub_local_db`     | postgres:16   |
+| redis  | `risk_hub_local_redis`  | redis:7       |
+| worker | `risk_hub_local_worker` | celery (if present) |
 
-## API
+## Database
 
-- Django Ninja at `/api/v1/` (NOT DRF)
-- Auth: Bearer token via `ApiKeyAuth`
+- **DB name**: `risk_hub`
+- **DB container**: `risk_hub_local_db`
+- **Migrations**: `docker exec risk_hub_local_web python manage.py migrate`
+- **Shell**: `docker exec -it risk_hub_local_web python manage.py shell`
 
-## Multi-Tenancy
+## System (Hetzner Server)
 
-- Subdomain-based tenant resolution
-- All queries MUST filter by `tenant_id`
-- `Organization.id` != `Organization.tenant_id`
+- devuser hat **KEIN sudo-Passwort** → System-Pakete immer via SSH als root:
+  ```bash
+  ssh root@localhost "apt-get install -y <package>"
+  ```
 
-## Docker
+## Secrets / Config
 
-- Dockerfile: `docker/app/Dockerfile`
-- Container: risk_hub_web (gunicorn:8000)
-- DB: risk_hub_db (postgres:16) | Redis: risk_hub_redis (redis:7)
-- Worker: risk_hub_worker (celery)
-- Port: 8090 (mapped to host)
-- Production: https://schutztat.de (demo.schutztat.de)
+- **Secrets**: `.env` (nicht in Git) — Template: `.env.example`
