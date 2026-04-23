@@ -10,8 +10,12 @@ Extrahiert relevante Informationen aus Sicherheitsdatenblättern:
 """
 
 import contextlib
+import json
+import logging
 import re
 from dataclasses import dataclass, field
+
+logger = logging.getLogger(__name__)
 
 # PDF-Bibliotheken (optional)
 try:
@@ -103,12 +107,12 @@ class SdsParserService:
         re.IGNORECASE,
     )
     LEL_PATTERN = re.compile(
-        r"(?:UEG|LEL|[Uu]ntere\s+[Ee]xplosions(?:grenze)?|[Ll]ower\s+[Ee]xplosion)" +
+        r"(?:UEG|LEL|[Uu]ntere\s*[Ee]xplosions(?:grenze)?|[Ll]ower\s+[Ee]xplosion)" +
         r"[.:\s]{0,60}:?\s*(\d+(?:[.,]\d+)?)\s*(?:Vol[.-]?%|%[- ]?V)",
         re.IGNORECASE,
     )
     UEL_PATTERN = re.compile(
-        r"(?:OEG|UEL|[Oo]bere\s+[Ee]xplosions(?:grenze)?|[Uu]pper\s+[Ee]xplosion)" +
+        r"(?:OEG|UEL|[Oo]bere\s*[Ee]xplosions(?:grenze)?|[Uu]pper\s+[Ee]xplosion)" +
         r"[.:\s]{0,60}:?\s*(\d+(?:[.,]\d+)?)\s*(?:Vol[.-]?%|%[- ]?V)",
         re.IGNORECASE,
     )
@@ -174,13 +178,17 @@ class SdsParserService:
         re.IGNORECASE,
     )
     MANUFACTURER_PATTERN = re.compile(
-        r"(?:Hersteller|Lieferant|Firma|Company|Manufacturer|Supplier)"
-        r"[:\s]+([^\n]{3,80})",
+        r"(?:Hersteller|Firma|Company|Manufacturer|Supplier"
+        r"|(?<!Quelle )Lieferant)\b"
+        r"[ \t]*:?[ \t]*([^\n]{3,80})",
         re.IGNORECASE,
+    )
+    ADRESSE_COMPANY_PATTERN = re.compile(
+        r"(?:^|\n)Adresse\s*\n([^\n]{3,120})",
     )
     REVISION_DATE_PATTERN = re.compile(
         r"(?:Überarbeitet\s+am|Revisionsdatum|Revision\s*date|Datum\s*der\s*Überarbeitung"
-        r"|Ausgabedatum|Issue\s*date|Druckdatum)"
+        r"|Ausgabedatum|Issue\s*date|Druckdatum|erstelltam)"
         r"[:\s]*(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})",
         re.IGNORECASE,
     )
@@ -199,6 +207,8 @@ class SdsParserService:
         re.IGNORECASE,
     )
 
+    LLM_CONFIDENCE_THRESHOLD = 0.6
+
     def parse_pdf(self, pdf_file) -> dict:
         """
         Parst ein SDS-PDF und extrahiert relevante Informationen.
@@ -212,7 +222,7 @@ class SdsParserService:
         text = self._extract_text(pdf_file)
         result = self._parse_text(text)
 
-        return {
+        out = {
             "product_name": result.product_name,
             "manufacturer_name": result.manufacturer_name,
             "revision_date": result.revision_date,
@@ -241,6 +251,12 @@ class SdsParserService:
             "_raw_text": result.raw_text,
             "_sections": result.sections,
         }
+
+        # LLM-Fallback: bei niedriger Konfidenz fehlende Felder nachfüllen
+        if result.parse_confidence < self.LLM_CONFIDENCE_THRESHOLD:
+            out = self._llm_enrich(out)
+
+        return out
 
     def _extract_text(self, pdf_file) -> str:
         """Extrahiert Text aus PDF."""
@@ -349,13 +365,44 @@ class SdsParserService:
         if ws_match:
             result.water_solubility = ws_match.group(1).strip()[:120]
 
-        # Aussehen / Appearance
+        # Aussehen / Appearance (handles both ': flüssig' and '\nflüssig')
         appearance_pat = re.compile(
-            r"\bAggregatzustand[^\n:]*:[.\s]*([A-Za-zäöüß]+)",
+            r"\bAggregatzustand[^\n:]*(?::[.\s]*|\s*\n\s*)([A-Za-zäöüßÄÖÜ]+)",
         )
         ap_m = appearance_pat.search(text)
         if ap_m:
             result.appearance = ap_m.group(1).strip()
+
+        # Fallback: EU-Tabellenformat ('Eigenschaft\nWert X unit') aus Abschnitt 9
+        sec9 = result.sections.get("09_Physik+Chemie", "")
+        if sec9:
+            if result.flash_point_c is None:
+                result.flash_point_c = self._extract_number_wert(
+                    r"[Ff]lammpunkt|[Ff]lash\s*[Pp]oint", sec9)
+            if result.boiling_point_c is None:
+                result.boiling_point_c = self._extract_number_wert(
+                    r"[Ss]iedepunkt|[Ss]iede(?:beginn|bereich)|[Bb]oiling\s*[Pp]oint", sec9)
+            if result.density_g_cm3 is None:
+                result.density_g_cm3 = self._extract_number_wert(
+                    r"[Dd]ichte|[Dd]ensity", sec9)
+            if result.ignition_temperature_c is None:
+                result.ignition_temperature_c = self._extract_number_wert(
+                    r"[Zz]ünd(?:temperatur|punkt)|[Ss]elf[- ]?[Ii]gnition", sec9)
+            if result.lower_explosion_limit is None:
+                result.lower_explosion_limit = self._extract_number_wert(
+                    r"[Uu]ntere\s*[Ee]xplosions|\bLEL\b|\bUEG\b", sec9)
+            if result.upper_explosion_limit is None:
+                result.upper_explosion_limit = self._extract_number_wert(
+                    r"[Oo]bere\s*[Ee]xplosions|\bUEL\b|\bOEG\b", sec9)
+            if result.vapor_pressure_hpa is None:
+                result.vapor_pressure_hpa = self._extract_number_wert(
+                    r"[Dd]ampfdruck|[Vv]apou?r?\s*[Pp]ressure", sec9)
+            if result.ph_value is None:
+                result.ph_value = self._extract_number_wert(
+                    r"pH(?:[- ]?[Ww]ert)?", sec9)
+            if result.density_g_cm3 is None:
+                result.density_g_cm3 = self._extract_number_wert(
+                    r"[Rr]elative\s*[Dd]ichte|[Ss]pezifisches\s*[Gg]ewicht", sec9)
 
         # Metadaten extrahieren (Abschnitt 1 + Header)
         result.product_name = self._extract_string(
@@ -366,6 +413,12 @@ class SdsParserService:
             self.MANUFACTURER_PATTERN,
             text,
         )
+        # Fallback: Firmenname aus 'Adresse\n<Name>' in Abschnitt 1
+        if not result.manufacturer_name:
+            sec1 = result.sections.get("01_Bezeichnung", "")
+            cm = self.ADRESSE_COMPANY_PATTERN.search(sec1)
+            if cm:
+                result.manufacturer_name = cm.group(1).strip()[:120]
         result.version_number = self._extract_string(
             self.VERSION_PATTERN,
             text,
@@ -434,14 +487,116 @@ class SdsParserService:
         match = pattern.search(text)
         if match:
             try:
-                # Ersetze Komma durch Punkt, entferne Leerzeichen
                 value_str = match.group(1).replace(",", ".").replace(" ", "")
-                # Entferne führendes Minus/Pfeil bei Bereichen
-                value_str = value_str.lstrip("-").lstrip(">").lstrip("<")
+                # Entferne Pfeil/Vergleichs-Präfixe, aber NICHT das Minus-Vorzeichen
+                value_str = re.sub(r'^(?:->|>=|<=|[><])', '', value_str)
                 return float(value_str)
             except (ValueError, IndexError):
                 pass
         return None
+
+    def _extract_number_wert(self, label_regex: str, text: str) -> float | None:
+        """Extrahiert numerischen Wert aus EU-Tabellenformat 'Eigenschaft\nWert X unit'."""
+        pat = re.compile(
+            r"(?:^|\n)(?:" + label_regex + r")[^\n]{0,30}\n"
+            r"(?:[^\n]{0,80}\n){0,3}?"
+            r"Wert\s+([^\n]+)",
+            re.IGNORECASE,
+        )
+        m = pat.search(text)
+        if not m:
+            return None
+        val_str = m.group(1).strip()
+        num_m = re.search(r"(-?\d+(?:[.,]\d+)?)", val_str)
+        if num_m:
+            with contextlib.suppress(ValueError):
+                return float(num_m.group(1).replace(",", "."))
+        return None
+
+    def _llm_enrich(self, parse_result: dict) -> dict:
+        """
+        LLM-Fallback: füllt fehlende Felder via OpenAI gpt-4o-mini.
+
+        Wird nur aufgerufen wenn parse_confidence < LLM_CONFIDENCE_THRESHOLD.
+        Benötigt OPENAI_API_KEY in Django-Settings (decouple.config).
+        """
+        try:
+            import openai
+            from decouple import config as decouple_config
+
+            api_key = decouple_config("OPENAI_API_KEY", default="")
+            if not api_key:
+                return parse_result
+
+            sections = parse_result.get("_sections", {})
+            sec1 = sections.get("01_Bezeichnung", "")[:1500]
+            sec9 = next(
+                (v for k, v in sections.items() if "09" in k or "Physik" in k),
+                "",
+            )[:2000]
+            sec2 = next(
+                (v for k, v in sections.items() if "02" in k or "Gefah" in k),
+                "",
+            )[:1000]
+
+            context = f"ABSCHNITT 1:\n{sec1}\n\nABSCHNITT 2:\n{sec2}\n\nABSCHNITT 9:\n{sec9}"
+
+            schema = {
+                "product_name": "string|null",
+                "manufacturer_name": "string|null",
+                "cas_number": "string|null — CAS-Format XX-XX-X",
+                "signal_word": "string|null — 'danger' oder 'warning'",
+                "h_statements": "array of strings — e.g. ['H225','H319']",
+                "flash_point_c": "number|null — Grad Celsius",
+                "boiling_point_c": "number|null — Grad Celsius",
+                "density_g_cm3": "number|null",
+                "lower_explosion_limit": "number|null — Vol-%",
+                "upper_explosion_limit": "number|null — Vol-%",
+                "appearance": "string|null — z.B. 'flüssig', 'fest'",
+            }
+
+            prompt = (
+                "Extrahiere aus folgendem SDS-Text (Sicherheitsdatenblatt) strukturierte Daten "
+                "als JSON. Nur vorhandene Werte ausgeben, fehlende als null. "
+                f"Schema: {json.dumps(schema, ensure_ascii=False)}\n\n"
+                f"SDS-TEXT:\n{context}\n\n"
+                "Antworte NUR mit gültigem JSON, keine Erklärungen."
+            )
+
+            client = openai.OpenAI(api_key=api_key, timeout=15.0)
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                response_format={"type": "json_object"},
+                max_tokens=512,
+                temperature=0,
+            )
+
+            llm_data = json.loads(response.choices[0].message.content)
+            logger.info("LLM enrichment OK: %s fields", len(llm_data))
+
+            # Nur fehlende Felder aus LLM übernehmen
+            numeric_fields = {
+                "flash_point_c", "boiling_point_c", "density_g_cm3",
+                "lower_explosion_limit", "upper_explosion_limit",
+            }
+            str_fields = {
+                "product_name", "manufacturer_name", "cas_number",
+                "signal_word", "appearance",
+            }
+            for fld in numeric_fields | str_fields:
+                if parse_result.get(fld) is None and llm_data.get(fld) is not None:
+                    parse_result[fld] = llm_data[fld]
+
+            if not parse_result.get("h_statements") and llm_data.get("h_statements"):
+                parse_result["h_statements"] = llm_data["h_statements"]
+
+            parse_result["_llm_enriched"] = True
+
+        except Exception as exc:
+            logger.warning("LLM enrichment failed: %s", exc)
+
+        return parse_result
 
     def _extract_sections(self, text: str) -> dict[str, str]:
         """Extrahiert alle 16 SDS-Abschnitte als Rohtext-Dict."""
