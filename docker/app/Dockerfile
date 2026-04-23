@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential git libffi-dev \
     libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libfribidi0 \
     libgdk-pixbuf-2.0-0 libcairo2 \
+    tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Build-time secret for private GitHub packages — injected via BuildKit --secret, never stored in layers
@@ -63,10 +65,12 @@ ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-# Runtime-only system deps (weasyprint needs pango/gdk-pixbuf/cairo at runtime)
+# Runtime-only system deps (weasyprint + OCR/PDF need these at runtime)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpango-1.0-0 libpangoft2-1.0-0 libharfbuzz0b libfribidi0 \
     libgdk-pixbuf-2.0-0 libcairo2 \
+    tesseract-ocr tesseract-ocr-deu tesseract-ocr-eng \
+    poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy installed Python packages from builder
