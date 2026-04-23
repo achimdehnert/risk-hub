@@ -1,7 +1,7 @@
 # risk-hub — Developer Makefile
 # src/ layout: tests/ lives under src/
 
-.PHONY: install test test-v lint clean help
+.PHONY: install test test-v lint clean help dev
 
 PYTHON := python3
 PIP    := pip
@@ -13,6 +13,7 @@ help:
 	@echo "  test-v    — pytest (verbose)"
 	@echo "  lint      — ruff check src/"
 	@echo "  clean     — remove __pycache__ + .pytest_cache"
+	@echo "  dev       — lokaler Dev-Server starten (platform/scripts/dev.sh)"
 
 install:
 	$(PIP) install -r requirements.txt -r requirements-test.txt
@@ -31,3 +32,7 @@ clean:
 	find . -type d -name .pytest_cache -exec rm -rf {} + 2>/dev/null || true
 	find . -name '*.pyc' -delete 2>/dev/null || true
 	@echo "Cleaned."
+
+dev:
+	bash $(HOME)/github/platform/scripts/dev.sh $(notdir $(CURDIR))
+
