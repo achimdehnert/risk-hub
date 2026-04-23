@@ -43,7 +43,13 @@ class ConceptSubstanceReference(models.Model):
     sds_revision = models.ForeignKey(
         "global_sds.GlobalSdsRevision",
         on_delete=models.PROTECT,
-        help_text="Exakte SDS-Revision zum Erstellungszeitpunkt (Snapshot-Binding, ADR-012)",
+        null=True,
+        blank=True,
+        help_text=(
+            "Exakte SDS-Revision zum Erstellungszeitpunkt (Snapshot-Binding, ADR-012). "
+            "Darf NULL sein während der Datenmigration (substance_id → ConceptSubstanceReference). "
+            "Nach Phase 4 Deprecation: null=False erzwingen."
+        ),
     )
     role = models.CharField(
         max_length=15,
