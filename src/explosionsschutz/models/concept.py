@@ -111,10 +111,8 @@ class ExplosionConcept(models.Model):
     project = models.ForeignKey(
         "projects.Project",
         on_delete=models.PROTECT,
-        null=True,
-        blank=True,
         related_name="explosion_concepts",
-        help_text="ADR-041 Container. Nach Phase 3 der Datenmigration: null=False.",
+        help_text="ADR-041 Container (ADR-044 Phase 3). Pflichtfeld nach Datenmigration 0011.",
     )
 
     # Metadaten
