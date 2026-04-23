@@ -1,5 +1,19 @@
 # Changelog — Risk-Hub (Schutztat)
 
+## [0.1.0] — 2026-04-23
+
+- chore: sync .windsurf rules (typechange symlink→file)
+- feat: make dev — startet lokalen Dev-Server via platform/scripts/dev.sh
+- feat(ocr): add tesseract-ocr + poppler-utils to Dockerfile; iil-ingest[pdf,ocr] in requirements
+- fix(sds-ui): sort SDS sections by key in revision_detail view (01→16)
+- feat(sds): PDFExtractor(ocr_fallback=True) — Tesseract fallback for scanned SDS PDFs
+- feat(ADR-170): migrate all PDF extraction to iil-ingest PDFExtractor — sds_parser, ai_extraction, substance_import, pdf_utils, explosionsschutz
+- fix(sds-parser): fix 5 regex bugs + add EU Wert-format extraction + LLM fallback
+- fix(dashboard): guard module_shop:catalogue URL with conditional to prevent NoReverseMatch
+- feat(global-sds): pass sds_sections + raw_text_length to revision_detail context
+- feat(global-sds): enhanced parser + GHS data loader + detail template improvements
+
+
 ## [Unreleased] — 2026-02-19
 
 ### Added
