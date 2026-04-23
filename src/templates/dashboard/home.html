@@ -195,9 +195,12 @@
                     <span class="text-xs bg-red-100 text-red-700 px-1.5 py-0.5 rounded-full">{{ kpis.notifications_unread }}</span>
                     {% endif %}
                 </a>
-                <a href="{% url 'module_shop:catalogue' %}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
+                {% url 'module_shop:catalogue' as shop_url %}
+                {% if shop_url %}
+                <a href="{{ shop_url }}" class="flex items-center gap-2 text-sm text-gray-700 hover:text-orange-600 py-1">
                     <i data-lucide="credit-card" class="w-4 h-4"></i> Abonnement verwalten
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>
