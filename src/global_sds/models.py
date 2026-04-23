@@ -166,6 +166,11 @@ class GlobalSdsRevision(models.Model):
         blank=True,
         help_text="Original-PDF (BetrSichV Archivierungspflicht)",
     )
+    raw_data = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Vollständige extrahierte + angereicherte Daten (parse_result + enrichment)",
+    )
     status = models.CharField(
         max_length=20,
         choices=Status.choices,

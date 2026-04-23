@@ -49,6 +49,10 @@ class SdsParseResult:
     boiling_point_c: float | None = None
     vapor_pressure_hpa: float | None = None
     density_g_cm3: float | None = None
+    ph_value: float | None = None
+    storage_class: str = ""
+    un_number: str = ""
+    water_solubility: str = ""
     parse_confidence: float = 0.0
     raw_text: str = ""
 
@@ -65,7 +69,38 @@ class SdsParserService:
 
     # Regex für physikalische Eigenschaften
     FLASH_POINT_PATTERN = re.compile(
-        r"[Ff]lammpunkt[:\s]*([->]?\s*\d+(?:[.,]\d+)?)\s*°?C", re.IGNORECASE
+        r"(?:[Ff]lammpunkt|[Ff]lash\s*[Pp]oint)"
+        r"[:\s]*(?:[><=~ca\.\s]*)?([->]?\s*\d+(?:[.,]\d+)?)\s*°?\s*C",
+        re.IGNORECASE,
+    )
+    BOILING_POINT_PATTERN = re.compile(
+        r"(?:[Ss]iedepunkt|[Bb]oiling\s*[Pp]oint)"
+        r"[:\s]*(?:[><=~ca\.\s]*)?([->]?\s*\d+(?:[.,]\d+)?)\s*°?\s*C",
+        re.IGNORECASE,
+    )
+    DENSITY_PATTERN = re.compile(
+        r"(?:[Dd]ichte|[Dd]ensity)[:\s]*([0-9]+[.,][0-9]+)\s*g/(?:cm[³3]|ml)",
+        re.IGNORECASE,
+    )
+    VAPOR_PRESSURE_PATTERN = re.compile(
+        r"(?:[Dd]ampfdruck|[Vv]apour?\s*[Pp]ressure)[:\s]*([0-9]+[.,]?[0-9]*)\s*(?:hPa|mbar|Pa|kPa)",
+        re.IGNORECASE,
+    )
+    PH_PATTERN = re.compile(
+        r"\bpH(?:[- ]?[Ww]ert)?[:\s]*([0-9]+(?:[.,][0-9]+)?(?:\s*[-–]\s*[0-9]+(?:[.,][0-9]+)?)?)",
+        re.IGNORECASE,
+    )
+    WATER_SOLUBILITY_PATTERN = re.compile(
+        r"(?:[Ll]öslichkeit\s+in\s+Wasser|[Ww]ater\s+[Ss]olubility)[:\s]*([^\n]{3,60})",
+        re.IGNORECASE,
+    )
+    STORAGE_CLASS_PATTERN = re.compile(
+        r"(?:[Ll]agerklasse|[Ss]torage\s+[Cc]lass)[:\s]*(\d+[A-Z]?(?:\.\d+[A-Z]?)?)",
+        re.IGNORECASE,
+    )
+    UN_NUMBER_PATTERN = re.compile(
+        r"\bUN[- ]?(\d{4})\b",
+        re.IGNORECASE,
     )
     IGNITION_TEMP_PATTERN = re.compile(
         r"[Zz]ünd(?:temperatur|punkt)[:\s]*([->]?\s*\d+(?:[.,]\d+)?)\s*°?C", re.IGNORECASE
@@ -103,8 +138,15 @@ class SdsParserService:
         re.IGNORECASE,
     )
     REVISION_DATE_PATTERN = re.compile(
-        r"(?:Überarbeitet\s+am|Revisionsdatum|Revision\s*date|Datum\s*der\s*Überarbeitung)"
-        r"[:\s]*(\d{1,2})[./](\d{1,2})[./](\d{2,4})",
+        r"(?:Überarbeitet\s+am|Revisionsdatum|Revision\s*date|Datum\s*der\s*Überarbeitung"
+        r"|Ausgabedatum|Issue\s*date|Druckdatum)"
+        r"[:\s]*(\d{1,2})[.\/](\d{1,2})[.\/](\d{2,4})",
+        re.IGNORECASE,
+    )
+    REVISION_DATE_ISO_PATTERN = re.compile(
+        r"(?:Überarbeitet\s+am|Revisionsdatum|Revision\s*date|Datum\s*der\s*Überarbeitung"
+        r"|Ausgabedatum|Issue\s*date)"
+        r"[:\s]*(\d{4})-(\d{2})-(\d{2})",
         re.IGNORECASE,
     )
     VERSION_PATTERN = re.compile(
@@ -143,6 +185,13 @@ class SdsParserService:
             "ignition_temperature_c": result.ignition_temperature_c,
             "lower_explosion_limit": result.lower_explosion_limit,
             "upper_explosion_limit": result.upper_explosion_limit,
+            "boiling_point_c": result.boiling_point_c,
+            "vapor_pressure_hpa": result.vapor_pressure_hpa,
+            "density_g_cm3": result.density_g_cm3,
+            "ph_value": result.ph_value,
+            "storage_class": result.storage_class,
+            "un_number": result.un_number,
+            "water_solubility": result.water_solubility,
             "parse_confidence": result.parse_confidence,
         }
 
@@ -228,9 +277,22 @@ class SdsParserService:
 
         # Physikalische Eigenschaften extrahieren
         result.flash_point_c = self._extract_number(self.FLASH_POINT_PATTERN, text)
+        result.boiling_point_c = self._extract_number(self.BOILING_POINT_PATTERN, text)
+        result.density_g_cm3 = self._extract_number(self.DENSITY_PATTERN, text)
+        result.vapor_pressure_hpa = self._extract_number(self.VAPOR_PRESSURE_PATTERN, text)
+        result.ph_value = self._extract_number(self.PH_PATTERN, text)
         result.ignition_temperature_c = self._extract_number(self.IGNITION_TEMP_PATTERN, text)
         result.lower_explosion_limit = self._extract_number(self.LEL_PATTERN, text)
         result.upper_explosion_limit = self._extract_number(self.UEL_PATTERN, text)
+
+        # Transport + Lagerung
+        un_match = self.UN_NUMBER_PATTERN.search(text)
+        if un_match:
+            result.un_number = f"UN {un_match.group(1)}"
+        result.storage_class = self._extract_string(self.STORAGE_CLASS_PATTERN, text)
+        ws_match = self.WATER_SOLUBILITY_PATTERN.search(text)
+        if ws_match:
+            result.water_solubility = ws_match.group(1).strip()[:80]
 
         # Metadaten extrahieren (Abschnitt 1 + Header)
         result.product_name = self._extract_string(
@@ -251,14 +313,20 @@ class SdsParserService:
         if cas_match:
             result.cas_number = cas_match.group(1)
 
-        # Revisionsdatum
-        date_match = self.REVISION_DATE_PATTERN.search(text)
-        if date_match:
-            day, month, year = date_match.groups()
-            if len(year) == 2:
-                year = f"20{year}" if int(year) < 50 else f"19{year}"
+        # Revisionsdatum — zuerst ISO, dann DD.MM.YYYY
+        iso_match = self.REVISION_DATE_ISO_PATTERN.search(text)
+        if iso_match:
+            year, month, day = iso_match.groups()
             with contextlib.suppress(ValueError):
                 result.revision_date = f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
+        else:
+            date_match = self.REVISION_DATE_PATTERN.search(text)
+            if date_match:
+                day, month, year = date_match.groups()
+                if len(year) == 2:
+                    year = f"20{year}" if int(year) < 50 else f"19{year}"
+                with contextlib.suppress(ValueError):
+                    result.revision_date = f"{int(year):04d}-{int(month):02d}-{int(day):02d}"
 
         # Konfidenz berechnen
         result.parse_confidence = self._compute_confidence(result)

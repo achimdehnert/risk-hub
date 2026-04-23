@@ -114,18 +114,21 @@ class SdsUploadPipeline:
                 message="PDF bereits importiert (SHA-256 Match)",
             )
 
-        # ── Stufe 1b: Web-Enrichment (CAS/GHS aus PubChem) ──
-        enrichment = self.enrichment_service.enrich(parse_result)
-        if enrichment.enriched:
-            parse_result = self.enrichment_service.merge_into_parse_result(
-                parse_result,
-                enrichment,
-            )
-            logger.info(
-                "Enriched parse_result (source=%s, CAS=%s)",
-                enrichment.source,
-                enrichment.cas_number or "—",
-            )
+        # ── Stufe 1b: PubChem-Anreicherung ──
+        try:
+            from global_sds.services.pubchem_service import PubChemEnrichmentService
+
+            pubchem_svc = PubChemEnrichmentService()
+            pubchem_result = pubchem_svc.enrich(parse_result)
+            if pubchem_result.enriched:
+                parse_result = pubchem_svc.merge_into_parse_result(parse_result, pubchem_result)
+                logger.info(
+                    "PubChem enriched CID=%s formula=%s",
+                    pubchem_result.cid,
+                    pubchem_result.molecular_formula,
+                )
+        except Exception as exc:
+            logger.warning("PubChem enrichment skipped: %s", exc)
 
         # ── Stufe 2: Identitätsauflösung ──
         cas_number = parse_result.get("cas_number", "")
@@ -270,6 +273,7 @@ class SdsUploadPipeline:
             status=status,
             uploaded_by_tenant_id=tenant_id,
             pdf_file=ContentFile(pdf_bytes, name=f"{source_hash[:16]}.pdf") if pdf_bytes else None,
+            raw_data=parse_result,
             manufacturer_name=parse_result.get(
                 "manufacturer_name",
                 "",
