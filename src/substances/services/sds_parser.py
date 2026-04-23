@@ -19,7 +19,7 @@ from ingest.extractors.pdf import PDFExtractor
 
 logger = logging.getLogger(__name__)
 
-_pdf_extractor = PDFExtractor()
+_pdf_extractor = PDFExtractor(ocr_fallback=True)
 
 
 @dataclass
