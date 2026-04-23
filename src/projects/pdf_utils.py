@@ -16,42 +16,16 @@ logger = logging.getLogger(__name__)
 
 
 def extract_pdf_text(pdf_file) -> str:
-    """Extract text from PDF file."""
-    try:
-        import pdfplumber
+    """Extract text from PDF file via iil-ingest."""
+    from ingest.extractors.pdf import PDFExtractor
 
-        if hasattr(pdf_file, "seek"):
-            pdf_file.seek(0)
-        parts = []
-        with pdfplumber.open(pdf_file) as pdf:
-            for page in pdf.pages:
-                t = page.extract_text()
-                if t:
-                    parts.append(t)
-        return "\n".join(parts)
-    except ImportError:
-        pass
-    except Exception as exc:
-        logger.warning("pdfplumber failed: %s", exc)
-
-    try:
-        import PyPDF2
-
-        if hasattr(pdf_file, "seek"):
-            pdf_file.seek(0)
-        reader = PyPDF2.PdfReader(pdf_file)
-        parts = []
-        for page in reader.pages:
-            t = page.extract_text()
-            if t:
-                parts.append(t)
-        return "\n".join(parts)
-    except ImportError:
-        pass
-    except Exception as exc:
-        logger.warning("PyPDF2 failed: %s", exc)
-
-    return ""
+    if hasattr(pdf_file, "seek"):
+        pdf_file.seek(0)
+    data = pdf_file.read()
+    content = PDFExtractor().extract(data)
+    for err in content.extraction_errors:
+        logger.warning("PDF extraction: %s", err)
+    return content.text
 
 
 def _clean_toc(title: str) -> str:

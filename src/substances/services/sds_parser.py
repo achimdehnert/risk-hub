@@ -15,22 +15,11 @@ import logging
 import re
 from dataclasses import dataclass, field
 
+from ingest.extractors.pdf import PDFExtractor
+
 logger = logging.getLogger(__name__)
 
-# PDF-Bibliotheken (optional)
-try:
-    import PyPDF2  # noqa: F401
-
-    PYPDF2_AVAILABLE = True
-except ImportError:
-    PYPDF2_AVAILABLE = False
-
-try:
-    import pdfplumber  # noqa: F401
-
-    PDFPLUMBER_AVAILABLE = True
-except ImportError:
-    PDFPLUMBER_AVAILABLE = False
+_pdf_extractor = PDFExtractor()
 
 
 @dataclass
@@ -259,58 +248,14 @@ class SdsParserService:
         return out
 
     def _extract_text(self, pdf_file) -> str:
-        """Extrahiert Text aus PDF."""
-        # Versuche pdfplumber (bessere Qualität)
-        if PDFPLUMBER_AVAILABLE:
-            try:
-                return self._extract_with_pdfplumber(pdf_file)
-            except Exception:
-                pass
-
-        # Fallback zu PyPDF2
-        if PYPDF2_AVAILABLE:
-            try:
-                return self._extract_with_pypdf2(pdf_file)
-            except Exception:
-                pass
-
-        # Kein PDF-Parser verfügbar
-        return ""
-
-    def _extract_with_pdfplumber(self, pdf_file) -> str:
-        """Text-Extraktion mit pdfplumber."""
-        import pdfplumber
-
-        # Reset file pointer
+        """Extrahiert Text aus PDF via iil-ingest PDFExtractor."""
         if hasattr(pdf_file, "seek"):
             pdf_file.seek(0)
-
-        text_parts = []
-        with pdfplumber.open(pdf_file) as pdf:
-            for page in pdf.pages:
-                page_text = page.extract_text()
-                if page_text:
-                    text_parts.append(page_text)
-
-        return "\n".join(text_parts)
-
-    def _extract_with_pypdf2(self, pdf_file) -> str:
-        """Text-Extraktion mit PyPDF2."""
-        import PyPDF2
-
-        # Reset file pointer
-        if hasattr(pdf_file, "seek"):
-            pdf_file.seek(0)
-
-        reader = PyPDF2.PdfReader(pdf_file)
-        text_parts = []
-
-        for page in reader.pages:
-            text = page.extract_text()
-            if text:
-                text_parts.append(text)
-
-        return "\n".join(text_parts)
+        data = pdf_file.read()
+        content = _pdf_extractor.extract(data)
+        for err in content.extraction_errors:
+            logger.warning("PDF extraction: %s", err)
+        return content.text
 
     def _parse_text(self, text: str) -> SdsParseResult:
         """Parst extrahierten Text."""

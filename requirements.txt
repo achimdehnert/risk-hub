@@ -43,5 +43,5 @@ iil-enrichment[gestis,pubchem]>=0.1.0
 # nl2cad-core[gaeb]>=0.2.0  # TODO: uncomment when published to PyPI
 mozilla-django-oidc>=4.0
 openpyxl>=3.1
-pdfplumber>=0.11
+iil-ingest[pdf] @ git+https://github.com/achimdehnert/iil-ingest.git
 requests>=2.31

@@ -479,24 +479,19 @@ class SubstanceImportService:
     ) -> ImportStats:
         """Import substances from a PDF file.
 
-        Extracts tables using pdfplumber. First row = headers.
+        Extracts tables using iil-ingest PDFExtractor. First row = headers.
         Falls back to text extraction if no tables found.
         """
-        import pdfplumber
+        from ingest.extractors.pdf import PDFExtractor
 
         content = file_obj.read()
         if isinstance(content, str):
             raise ValueError("PDF muss als Binärdatei übergeben werden")
 
-        import io
-
-        pdf = pdfplumber.open(io.BytesIO(content))
-        all_rows = []
-        for page in pdf.pages:
-            tables = page.extract_tables()
-            for table in tables:
-                all_rows.extend(table)
-        pdf.close()
+        result = PDFExtractor().extract(content)
+        all_rows: list = []
+        for table in result.tables:
+            all_rows.extend(table)
 
         if not all_rows:
             raise ValueError("Keine Tabellen in PDF gefunden. Bitte Excel oder CSV verwenden.")

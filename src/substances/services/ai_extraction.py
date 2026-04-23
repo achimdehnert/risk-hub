@@ -86,25 +86,17 @@ def extract_text_from_file(file_obj, filename: str) -> str:
 
 
 def _extract_pdf_text(file_obj) -> str:
-    """Extract text from PDF using pdfplumber."""
-    import io
+    """Extract text from PDF via iil-ingest (text + tables)."""
+    from ingest.extractors.pdf import PDFExtractor
 
-    import pdfplumber
-
-    content = file_obj.read()
-    pdf = pdfplumber.open(io.BytesIO(content))
-    pages_text = []
-    for page in pdf.pages:
-        text = page.extract_text() or ""
-        # Also try to get table data
-        tables = page.extract_tables()
-        for table in tables:
-            for row in table:
-                if row:
-                    text += "\n" + " | ".join(str(c or "") for c in row)
-        pages_text.append(text)
-    pdf.close()
-    return "\n\n".join(pages_text)
+    data = file_obj.read()
+    result = PDFExtractor().extract(data)
+    parts = [result.text] if result.text else []
+    for table in result.tables:
+        for row in table:
+            if row:
+                parts.append(" | ".join(str(c or "") for c in row))
+    return "\n\n".join(p for p in parts if p)
 
 
 def _extract_docx_text(file_obj) -> str:
