@@ -304,10 +304,61 @@ class SdsUploadPipeline:
             ),
         )
 
+        self._populate_ghs_relations(revision, parse_result)
+
         logger.info(
-            "Created revision %s for %s (status=%s)",
+            "Created revision %s for %s (status=%s, h=%d, p=%d)",
             revision.pk,
             substance.name,
             status,
+            revision.hazard_statements.count(),
+            revision.precautionary_statements.count(),
         )
         return revision
+
+    @staticmethod
+    def _populate_ghs_relations(revision: GlobalSdsRevision, parse_result: dict) -> None:
+        """Populate H/P-Statement and GHS pictogram M2M relations from parse_result.
+
+        Uses get_or_create so the pipeline works even without pre-loaded CLP fixtures.
+        The text_de placeholder will be overwritten once real fixtures are loaded.
+        """
+        from substances.models import (
+            HazardStatementRef,
+            PictogramRef,
+            PrecautionaryStatementRef,
+        )
+
+        h_codes = parse_result.get("h_statements") or []
+        p_codes = parse_result.get("p_statements") or []
+        ghs_codes = parse_result.get("pictograms") or []
+
+        h_refs = []
+        for code in h_codes:
+            ref, _ = HazardStatementRef.objects.get_or_create(
+                code=code,
+                defaults={"text_de": code, "text_en": ""},
+            )
+            h_refs.append(ref)
+        if h_refs:
+            revision.hazard_statements.set(h_refs)
+
+        p_refs = []
+        for code in p_codes:
+            ref, _ = PrecautionaryStatementRef.objects.get_or_create(
+                code=code,
+                defaults={"text_de": code, "text_en": ""},
+            )
+            p_refs.append(ref)
+        if p_refs:
+            revision.precautionary_statements.set(p_refs)
+
+        ghs_refs = []
+        for code in ghs_codes:
+            ref, _ = PictogramRef.objects.get_or_create(
+                code=code,
+                defaults={"name_de": code, "name_en": ""},
+            )
+            ghs_refs.append(ref)
+        if ghs_refs:
+            revision.pictograms.set(ghs_refs)
