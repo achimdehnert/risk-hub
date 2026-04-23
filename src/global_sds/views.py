@@ -244,7 +244,7 @@ def revision_detail(request: HttpRequest, pk: int) -> HttpResponse:
         "h_statements": revision.hazard_statements.all(),
         "p_statements": revision.precautionary_statements.all(),
         "pictograms": revision.pictograms.all(),
-        "sds_sections": raw.get("_sections", {}),
+        "sds_sections": dict(sorted(raw.get("_sections", {}).items())),
         "raw_text_length": len(raw.get("_raw_text", "")),
     }
 
