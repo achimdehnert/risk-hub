@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     "brandschutz",
     "projects",
     "training",
+    "exschutzdokument",
 ]
 
 

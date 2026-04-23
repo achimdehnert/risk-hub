@@ -71,17 +71,27 @@ class Area(models.Model):
     @property
     def has_explosion_hazard(self) -> bool:
         """Prüft ob Ex-relevante Konzepte im Bereich existieren"""
-        return self.explosion_concepts.filter(status__in=["approved", "in_review"]).exists()
+        return self.explosion_concepts.filter(
+            status__in=["APPROVED", "APPROVED_WITH_ACTIONS", "REVIEW"]
+        ).exists()
 
 
 class ExplosionConcept(models.Model):
     """Explosionsschutzkonzept nach TRGS 720ff"""
 
     class Status(models.TextChoices):
-        DRAFT = "draft", "Entwurf"
-        IN_REVIEW = "in_review", "In Prüfung"
-        APPROVED = "approved", "Freigegeben"
-        ARCHIVED = "archived", "Archiviert"
+        DRAFT = "DRAFT", "Entwurf"
+        IN_PROGRESS = "IN_PROGRESS", "In Bearbeitung"
+        REVIEW = "REVIEW", "In Prüfung"
+        APPROVED = "APPROVED", "Freigegeben"
+        APPROVED_WITH_ACTIONS = "APPROVED_WITH_ACTIONS", "Freigegeben mit offenen Maßnahmen"
+        REVIEW_REQUIRED = "REVIEW_REQUIRED", "Überprüfung erforderlich"
+        ARCHIVED = "ARCHIVED", "Archiviert"
+
+    class StorageMode(models.TextChoices):
+        ACTIVE = "ACTIVE", "Aktive Lagerung"
+        PASSIVE = "PASSIVE", "Passive Lagerung"
+        PROCESS = "PROCESS", "Verfahrensanlage"
 
     tenant_id = models.UUIDField(db_index=True)
 
@@ -97,10 +107,31 @@ class ExplosionConcept(models.Model):
         max_length=255, blank=True, default="", help_text="Cached Stoffname für Anzeige"
     )
 
+    # ADR-041 — Project-Einbettung (null=True für 3 Monate nach Release)
+    project = models.ForeignKey(
+        "projects.Project",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="explosion_concepts",
+        help_text="ADR-041 Container. Nach Phase 3 der Datenmigration: null=False.",
+    )
+
     # Metadaten
     title = models.CharField(max_length=255)
     version = models.PositiveIntegerField(default=1)
-    status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
+    revision_number = models.PositiveIntegerField(
+        default=1,
+        help_text="Fachliche Revisionsnummer (getrennt von der internen Versions-ID)",
+    )
+    status = models.CharField(max_length=30, choices=Status.choices, default=Status.DRAFT)
+    storage_mode = models.CharField(
+        max_length=10,
+        choices=StorageMode.choices,
+        blank=True,
+        default="",
+        help_text="Lagerungs- / Prozess-Charakter der Anlage",
+    )
 
     # Validierung
     is_validated = models.BooleanField(default=False)
@@ -152,11 +183,11 @@ class ExplosionConcept(models.Model):
         total = 4
         completed = 0
 
-        if self.zones.exists():
+        if self.area.zone_definitions.filter(explosion_concept=self).exists():
             completed += 1
-        if self.measures.filter(category="primary").exists():
+        if self.protection_measures.filter(category="primary").exists():
             completed += 1
-        if self.measures.filter(category="secondary").exists():
+        if self.protection_measures.filter(category="secondary").exists():
             completed += 1
         if self.is_validated:
             completed += 1

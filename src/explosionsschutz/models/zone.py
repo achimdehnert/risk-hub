@@ -74,6 +74,50 @@ class ZoneDefinition(models.Model):
         max_length=50, blank=True, default="", help_text="Abschnitt im Regelwerk (z.B. '4.2.1')"
     )
 
+    # ADR-044 Phase 1C — Staubzonen-Dualität
+    atmosphere_form = models.CharField(
+        max_length=10,
+        choices=[
+            ("WOLKE", "Staubwolke (aufgewirbelt)"),
+            ("SCHICHT", "Staubschicht (abgelagert)"),
+            ("HYBRID", "Beides relevant (Wolke und Schicht)"),
+        ],
+        blank=True,
+        default="",
+        help_text="Nur bei Staubzonen 20/21/22 relevant",
+    )
+
+    # ADR-044 Phase 1C — Konditionale Zonen
+    zone_condition_type = models.CharField(
+        max_length=20,
+        choices=[
+            ("PERMANENT", "Dauerhaft vorhanden"),
+            ("MEAS", "Abhängig von Messung (Gaswarnanlage etc.)"),
+            ("ACTIVITY", "Tätigkeitsgebunden (Abfüllen, Reinigung etc.)"),
+        ],
+        default="PERMANENT",
+    )
+
+    # ADR-044 Phase 1C — Strukturierte Geometrie
+    geometry = models.JSONField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Strukturierte Geometrie statt Freitext, z.B. "
+            "{'type': 'sphere', 'radius_m': 1.0, 'reference_object': 'Behälterwandung'}"
+        ),
+    )
+
+    # ADR-044 Phase 1C — Normative Begründung aus DGUV-Beispielsammlung
+    derived_from_clause = models.ForeignKey(
+        "explosionsschutz.ReferenceStandardClause",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="derived_zones",
+        help_text="Normative Beispiel-Begründung aus DGUV 113-001 o.ä.",
+    )
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -120,6 +164,24 @@ class IgnitionSource(models.TextChoices):
     S13_EXOTHERMIC = "S13", "Exotherme Reaktionen"
 
 
+class IgnitionAssessmentStatus(models.TextChoices):
+    """
+    Vier-wertige Zündquellen-Bewertung nach ADR-044.
+
+    Ersetzt is_present + is_effective nach Datenmigration (ADR-044 Phase 2).
+    Migration-Mapping:
+    - is_present=False → NOT_PRESENT
+    - is_present=True, is_effective=False → PRESENT_MITIGATED
+    - is_present=True, is_effective=True → PRESENT_ACCEPTED
+    - TECHNICALLY_EXCLUDED: nur für neue Einträge verfügbar
+    """
+
+    NOT_PRESENT = "NOT_PRESENT", "Nicht vorhanden"
+    TECHNICALLY_EXCLUDED = "EXCLUDED", "Vorhanden, aber technisch ausgeschlossen"
+    PRESENT_MITIGATED = "MITIGATED", "Vorhanden und wirksam begegnet"
+    PRESENT_ACCEPTED = "ACCEPTED", "Vorhanden, akzeptiert mit konstruktivem Schutz"
+
+
 class ZoneIgnitionSourceAssessment(models.Model):
     """
     Bewertung der 13 Zündquellen pro Zone nach EN 1127-1.
@@ -132,11 +194,24 @@ class ZoneIgnitionSourceAssessment(models.Model):
     )
     ignition_source = models.CharField(max_length=10, choices=IgnitionSource.choices)
 
+    # ADR-044 Phase 2A — neues Vier-Werte-Feld (additiv, Alt-Felder noch aktiv)
+    assessment_status = models.CharField(
+        max_length=20,
+        choices=IgnitionAssessmentStatus.choices,
+        blank=True,
+        default="",
+        help_text=(
+            "Vier-wertige Bewertung nach ADR-044. "
+            "Ersetzt is_present + is_effective nach Datenmigration."
+        ),
+    )
+
+    # DEPRECATED (ADR-044 Phase 2 → entfernt nach 6 Monaten)
     is_present = models.BooleanField(
-        default=False, help_text="Ist diese Zündquelle im Bereich vorhanden?"
+        default=False, help_text="[DEPRECATED ADR-044] Ist diese Zündquelle im Bereich vorhanden?"
     )
     is_effective = models.BooleanField(
-        default=False, help_text="Kann diese Zündquelle wirksam werden (Energie ausreichend)?"
+        default=False, help_text="[DEPRECATED ADR-044] Kann diese Zündquelle wirksam werden (Energie ausreichend)?"
     )
     mitigation = models.TextField(
         blank=True, default="", help_text="Beschreibung der Schutzmaßnahmen gegen diese Zündquelle"

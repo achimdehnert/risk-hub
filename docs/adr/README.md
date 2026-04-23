@@ -12,6 +12,10 @@ Dieses Verzeichnis enthält die Architecture Decision Records für Risk-Hub.
 | [ADR-004](ADR-004-api-versionierung.md) | API-Versionierung & Contracts | ✅ APPROVED | 2026-02-01 |
 | [ADR-005](ADR-005-event-driven-architecture.md) | Event-Driven Architecture | ✅ APPROVED | 2026-02-01 |
 | [ADR-006](ADR-006-audit-compliance.md) | Audit & Compliance | ✅ APPROVED | 2026-02-01 |
+| [ADR-041](ADR-041-project-based-workflow.md) | Project-based Workflow (ADR-041) | ✅ APPROVED | 2026-04-01 |
+| [ADR-042](ADR-042-iil-fieldprefill-package.md) | iil-fieldprefill Package | ✅ APPROVED | 2026-04-01 |
+| [ADR-043](ADR-043-two-use-cases-ex-dokument.md) | Two Use Cases Ex-Dokument (planned) | 📋 PLANNED | 2026-04-22 |
+| [ADR-044](ADR-044-master-workflow-ex-schutzkonzept.md) | Master-Workflow Ex-Schutzkonzept | 🔄 PROPOSED | 2026-04-22 |
 
 ## Kategorien
 
