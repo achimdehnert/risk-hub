@@ -234,6 +234,7 @@ def revision_detail(request: HttpRequest, pk: int) -> HttpResponse:
 
     usage = get_sds_usage_for_revision(tenant_id, revision)
 
+    raw = revision.raw_data or {}
     context = {
         "revision": revision,
         "substance": revision.substance,
@@ -243,6 +244,8 @@ def revision_detail(request: HttpRequest, pk: int) -> HttpResponse:
         "h_statements": revision.hazard_statements.all(),
         "p_statements": revision.precautionary_statements.all(),
         "pictograms": revision.pictograms.all(),
+        "sds_sections": raw.get("_sections", {}),
+        "raw_text_length": len(raw.get("_raw_text", "")),
     }
 
     return render(
