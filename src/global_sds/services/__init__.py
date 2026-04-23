@@ -63,3 +63,17 @@ def get_diff_record(old_revision, new_revision):
         old_revision=old_revision,
         new_revision=new_revision,
     ).first()
+
+
+def get_substance_revisions(substance):
+    """Return all GlobalSdsRevisions for a substance, newest first.
+
+    Used for revision history panels (GefStoffV §14 Archivierungspflicht).
+    """
+    from global_sds.models import GlobalSdsRevision
+
+    return (
+        GlobalSdsRevision.objects.filter(substance=substance)
+        .order_by("-created_at")
+        .select_related("substance")
+    )
