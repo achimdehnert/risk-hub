@@ -50,11 +50,16 @@ class SdsParseResult:
     vapor_pressure_hpa: float | None = None
     density_g_cm3: float | None = None
     ph_value: float | None = None
+    viscosity_mm2_s: float | None = None
+    wgk: str = ""
     storage_class: str = ""
     un_number: str = ""
+    adr_class: str = ""
     water_solubility: str = ""
+    appearance: str = ""
     parse_confidence: float = 0.0
     raw_text: str = ""
+    sections: dict = field(default_factory=dict)
 
 
 class SdsParserService:
@@ -67,56 +72,92 @@ class SdsParserService:
     # Regex für Piktogramme
     GHS_PATTERN = re.compile(r"\b(GHS0[1-9])\b", re.IGNORECASE)
 
-    # Regex für physikalische Eigenschaften
+    # ── Regex-Hilfsmuster: Dotted-Table-Format  ──
+    # Wacker-Format: "Flammpunkt ........................ : 34 °C"
+    # SEP = beliebig viele Punkte/Leerzeichen + optionaler Doppelpunkt
+    _SEP = r"[.\s]{0,60}:?[.\s]{0,10}"
+
+    # Physikalische Eigenschaften (mit Dotted-Table-Toleranz)
     FLASH_POINT_PATTERN = re.compile(
-        r"(?:[Ff]lammpunkt|[Ff]lash\s*[Pp]oint)"
-        r"[:\s]*(?:[><=~ca\.\s]*)?([->]?\s*\d+(?:[.,]\d+)?)\s*°?\s*C",
+        r"(?:[Ff]lammpunkt|[Ff]lash\s*[Pp]oint)" + r"[.:\s]{0,60}" +
+        r":?\s*([-><=]?\s*\d+(?:[.,]\d+)?)\s*°?\s*C",
         re.IGNORECASE,
     )
     BOILING_POINT_PATTERN = re.compile(
-        r"(?:[Ss]iedepunkt|[Bb]oiling\s*[Pp]oint)"
-        r"[:\s]*(?:[><=~ca\.\s]*)?([->]?\s*\d+(?:[.,]\d+)?)\s*°?\s*C",
+        r"(?:[Ss]iedepunkt|[Ss]iede(?:beginn|bereich)|[Bb]oiling\s*[Pp]oint)" + r"[.:\s]{0,60}" +
+        r":?\s*([-><=]?\s*\d+(?:[.,]\d+)?)\s*°?\s*C",
         re.IGNORECASE,
     )
     DENSITY_PATTERN = re.compile(
-        r"(?:[Dd]ichte|[Dd]ensity)[:\s]*([0-9]+[.,][0-9]+)\s*g/(?:cm[³3]|ml)",
+        r"(?:[Dd]ichte|[Dd]ensity)[^:\n]*:?\s*([0-9]+[.,][0-9]+)\s*g/(?:cm[³3]|ml|L)",
         re.IGNORECASE,
     )
     VAPOR_PRESSURE_PATTERN = re.compile(
-        r"(?:[Dd]ampfdruck|[Vv]apour?\s*[Pp]ressure)[:\s]*([0-9]+[.,]?[0-9]*)\s*(?:hPa|mbar|Pa|kPa)",
-        re.IGNORECASE,
-    )
-    PH_PATTERN = re.compile(
-        r"\bpH(?:[- ]?[Ww]ert)?[:\s]*([0-9]+(?:[.,][0-9]+)?(?:\s*[-–]\s*[0-9]+(?:[.,][0-9]+)?)?)",
-        re.IGNORECASE,
-    )
-    WATER_SOLUBILITY_PATTERN = re.compile(
-        r"(?:[Ll]öslichkeit\s+in\s+Wasser|[Ww]ater\s+[Ss]olubility)[:\s]*([^\n]{3,60})",
-        re.IGNORECASE,
-    )
-    STORAGE_CLASS_PATTERN = re.compile(
-        r"(?:[Ll]agerklasse|[Ss]torage\s+[Cc]lass)[:\s]*(\d+[A-Z]?(?:\.\d+[A-Z]?)?)",
-        re.IGNORECASE,
-    )
-    UN_NUMBER_PATTERN = re.compile(
-        r"\bUN[- ]?(\d{4})\b",
+        r"(?:[Dd]ampfdruck|[Vv]apou?r?\s*[Pp]ressure)" + r"[.:\s]{0,60}" +
+        r":?\s*([0-9]+[.,]?[0-9]*)\s*(?:hPa|mbar|Pa(?!s)|kPa)",
         re.IGNORECASE,
     )
     IGNITION_TEMP_PATTERN = re.compile(
-        r"[Zz]ünd(?:temperatur|punkt)[:\s]*([->]?\s*\d+(?:[.,]\d+)?)\s*°?C", re.IGNORECASE
+        r"(?:[Zz]ünd(?:temperatur|punkt)|[Ss]elf[- ]?[Ii]gnition)" + r"[.:\s]{0,60}" +
+        r":?\s*([->]?\s*\d+(?:[.,]\d+)?)\s*°?\s*C",
+        re.IGNORECASE,
     )
     LEL_PATTERN = re.compile(
-        r"(?:UEG|LEL|[Uu]ntere\s+[Ee]xplosions(?:grenze)?)"
-        r"(?:\s*\([^)]*\))?"  # optional (UEG) etc.
-        r"[:\s]*(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)",
+        r"(?:UEG|LEL|[Uu]ntere\s+[Ee]xplosions(?:grenze)?|[Ll]ower\s+[Ee]xplosion)" +
+        r"[.:\s]{0,60}:?\s*(\d+(?:[.,]\d+)?)\s*(?:Vol[.-]?%|%[- ]?V)",
         re.IGNORECASE,
     )
     UEL_PATTERN = re.compile(
-        r"(?:OEG|UEL|[Oo]bere\s+[Ee]xplosions(?:grenze)?)"
-        r"(?:\s*\([^)]*\))?"  # optional (OEG) etc.
-        r"[:\s]*(\d+(?:[.,]\d+)?)\s*(?:Vol[.\s]*%|%)",
+        r"(?:OEG|UEL|[Oo]bere\s+[Ee]xplosions(?:grenze)?|[Uu]pper\s+[Ee]xplosion)" +
+        r"[.:\s]{0,60}:?\s*(\d+(?:[.,]\d+)?)\s*(?:Vol[.-]?%|%[- ]?V)",
         re.IGNORECASE,
     )
+    VISCOSITY_PATTERN = re.compile(
+        r"(?:[Vv]iskosität|[Vv]iscosity)" + r"[.:\s(A-Za-z)]{0,80}" +
+        r":?\s*([0-9]+[.,]?[0-9]*)\s*(?:mm²/s|mPa[\s·\*]?s|cSt|cP)",
+        re.IGNORECASE,
+    )
+    PH_PATTERN = re.compile(
+        r"\bpH(?:[- ]?[Ww]ert)?" + r"[.:\s]{0,40}" +
+        r":?\s*([0-9]+(?:[.,][0-9]+)?(?:\s*[-–]\s*[0-9]+(?:[.,][0-9]+)?)?)",
+        re.IGNORECASE,
+    )
+    WATER_SOLUBILITY_PATTERN = re.compile(
+        r"(?:[Ll]öslichkeit\s+in\s+Wasser|[Ww]ater\s+[Ss]olubility|[Ww]assermischbarkeit)"
+        + r"[.:\s]{0,60}:?\s*([^\n]{3,80})",
+        re.IGNORECASE,
+    )
+    STORAGE_CLASS_PATTERN = re.compile(
+        r"(?:[Ll]agerklasse|[Ss]torage\s+[Cc]lass)[^:\n]{0,60}:\s*(\d+[A-Z]?(?:\.\d+[A-Z]?)?)",
+        re.IGNORECASE,
+    )
+    WGK_PATTERN = re.compile(
+        r"(?:WGK|[Ww]assergefährdungsklasse)" + r"[.:\s]{0,40}" +
+        r":?\s*(\d)",
+        re.IGNORECASE,
+    )
+    UN_NUMBER_PATTERN = re.compile(
+        r"(?:UN[-.\s]*(?:Nr\.?[.:\s]{0,20})?|14\.1[^:]*:[.\s]*)" +
+        r"(\d{4})\b",
+        re.IGNORECASE,
+    )
+    ADR_CLASS_PATTERN = re.compile(
+        r"(?:ADR[/\s]*Klasse|Gefahrgutklasse|[Tt]ransportgefahrenklasse)[.:\s]{0,40}:?\s*([0-9][A-Z]?(?:\.[0-9])?)",
+        re.IGNORECASE,
+    )
+
+    # Abschnitts-Erkennung
+    SECTION_PATTERN = re.compile(
+        r"(?:^|\n)(?:ABSCHNITT|Abschnitt|SECTION|Section)\s*(\d{1,2})[:\s]",
+        re.IGNORECASE,
+    )
+    SECTION_TITLES = {
+        1: "Bezeichnung", 2: "Gefahren", 3: "Zusammensetzung",
+        4: "Erste-Hilfe", 5: "Brandschutzmassnahmen", 6: "Freisetzung",
+        7: "Handhabung+Lagerung", 8: "Exposition+PSA", 9: "Physik+Chemie",
+        10: "Stabilitaet", 11: "Toxikologie", 12: "Umwelt",
+        13: "Entsorgung", 14: "Transport", 15: "Rechtsvorschriften", 16: "Sonstiges",
+    }
 
     # Signalwörter
     SIGNAL_WORDS = {
@@ -188,11 +229,17 @@ class SdsParserService:
             "boiling_point_c": result.boiling_point_c,
             "vapor_pressure_hpa": result.vapor_pressure_hpa,
             "density_g_cm3": result.density_g_cm3,
+            "viscosity_mm2_s": result.viscosity_mm2_s,
             "ph_value": result.ph_value,
             "storage_class": result.storage_class,
+            "wgk": result.wgk,
             "un_number": result.un_number,
+            "adr_class": result.adr_class,
             "water_solubility": result.water_solubility,
+            "appearance": result.appearance,
             "parse_confidence": result.parse_confidence,
+            "_raw_text": result.raw_text,
+            "_sections": result.sections,
         }
 
     def _extract_text(self, pdf_file) -> str:
@@ -256,6 +303,9 @@ class SdsParserService:
         if not text:
             return result
 
+        # Abschnitte extrahieren (100% Rohtext pro Sektion)
+        result.sections = self._extract_sections(text)
+
         # H-Sätze finden
         h_matches = self.H_PATTERN.findall(text)
         result.h_statements = sorted(set(h_matches))
@@ -285,14 +335,27 @@ class SdsParserService:
         result.lower_explosion_limit = self._extract_number(self.LEL_PATTERN, text)
         result.upper_explosion_limit = self._extract_number(self.UEL_PATTERN, text)
 
+        # Viskosität + weitere physikalische
+        result.viscosity_mm2_s = self._extract_number(self.VISCOSITY_PATTERN, text)
+
         # Transport + Lagerung
         un_match = self.UN_NUMBER_PATTERN.search(text)
         if un_match:
             result.un_number = f"UN {un_match.group(1)}"
+        result.adr_class = self._extract_string(self.ADR_CLASS_PATTERN, text)
         result.storage_class = self._extract_string(self.STORAGE_CLASS_PATTERN, text)
+        result.wgk = self._extract_string(self.WGK_PATTERN, text)
         ws_match = self.WATER_SOLUBILITY_PATTERN.search(text)
         if ws_match:
-            result.water_solubility = ws_match.group(1).strip()[:80]
+            result.water_solubility = ws_match.group(1).strip()[:120]
+
+        # Aussehen / Appearance
+        appearance_pat = re.compile(
+            r"\bAggregatzustand[^\n:]*:[.\s]*([A-Za-zäöüß]+)",
+        )
+        ap_m = appearance_pat.search(text)
+        if ap_m:
+            result.appearance = ap_m.group(1).strip()
 
         # Metadaten extrahieren (Abschnitt 1 + Header)
         result.product_name = self._extract_string(
@@ -379,6 +442,18 @@ class SdsParserService:
             except (ValueError, IndexError):
                 pass
         return None
+
+    def _extract_sections(self, text: str) -> dict[str, str]:
+        """Extrahiert alle 16 SDS-Abschnitte als Rohtext-Dict."""
+        sections: dict[str, str] = {}
+        splits = list(self.SECTION_PATTERN.finditer(text))
+        for i, match in enumerate(splits):
+            num = int(match.group(1))
+            start = match.start()
+            end = splits[i + 1].start() if i + 1 < len(splits) else len(text)
+            key = f"{num:02d}_{self.SECTION_TITLES.get(num, 'Abschnitt')}"
+            sections[key] = text[start:end].strip()
+        return sections
 
 
 def parse_sds_text(text: str) -> dict:
