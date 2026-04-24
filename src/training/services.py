@@ -60,6 +60,8 @@ def create_training_attendance(tenant_id, session, user_id: int, status: str = "
 
     Returns the new TrainingAttendance.
     """
+    from django.utils import timezone
+
     from training.models import TrainingAttendance
 
     return TrainingAttendance.objects.create(
@@ -67,4 +69,5 @@ def create_training_attendance(tenant_id, session, user_id: int, status: str = "
         session=session,
         user_id=user_id,
         status=status,
+        signed_at=timezone.now() if status == "present" else None,
     )
