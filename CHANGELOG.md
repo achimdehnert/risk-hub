@@ -1,20 +1,32 @@
 # Changelog — Risk-Hub (Schutztat)
 
+## [Unreleased]
+
+### Fixed
+- training: `signed_at` bei present-Status setzen
+- global-sds: H/P-Statements + Pictogramme in Pipeline persistieren
+
+### Added
+- global-sds: Vollextraktion + PubChem-Anreicherung + JSON-View
+
 ## [0.1.0] — 2026-04-23
 
-- chore: sync .windsurf rules (typechange symlink→file)
-- feat: make dev — startet lokalen Dev-Server via platform/scripts/dev.sh
-- feat(ocr): add tesseract-ocr + poppler-utils to Dockerfile; iil-ingest[pdf,ocr] in requirements
-- fix(sds-ui): sort SDS sections by key in revision_detail view (01→16)
-- feat(sds): PDFExtractor(ocr_fallback=True) — Tesseract fallback for scanned SDS PDFs
-- feat(ADR-170): migrate all PDF extraction to iil-ingest PDFExtractor — sds_parser, ai_extraction, substance_import, pdf_utils, explosionsschutz
-- fix(sds-parser): fix 5 regex bugs + add EU Wert-format extraction + LLM fallback
-- fix(dashboard): guard module_shop:catalogue URL with conditional to prevent NoReverseMatch
-- feat(global-sds): pass sds_sections + raw_text_length to revision_detail context
-- feat(global-sds): enhanced parser + GHS data loader + detail template improvements
+### Added
+- SDS OCR-Fallback: `PDFExtractor(ocr_fallback=True)` mit Tesseract für gescannte PDFs
+- `tesseract-ocr` + `poppler-utils` im Dockerfile, `iil-ingest[pdf,ocr]` als Dependency
+- Lokaler Dev-Server via `make dev` (→ `platform/scripts/dev.sh`)
+- global-sds: erweiterte Parser + GHS-Datenlader + Detail-Template
 
+### Changed
+- ADR-170: gesamte PDF-Extraktion auf `iil-ingest PDFExtractor` migriert (sds_parser, ai_extraction, substance_import, pdf_utils, explosionsschutz)
+- global-sds: `sds_sections` + `raw_text_length` im revision_detail Context
 
-## [Unreleased] — 2026-02-19
+### Fixed
+- sds-parser: 5 Regex-Bugs + EU Wert-Format-Extraktion + LLM-Fallback
+- sds-ui: SDS-Sektionen nach Key sortiert (01→16)
+- dashboard: `module_shop:catalogue` URL mit Conditional gegen NoReverseMatch
+
+## [0.0.9] — 2026-02-19
 
 ### Added
 

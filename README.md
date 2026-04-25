@@ -1,6 +1,6 @@
 # Schutztat (risk-hub) — Enterprise SaaS for Safety Management
 
-> **Production:** https://schutztat.de | **Demo:** https://demo.schutztat.de
+> **Version:** 0.1.0 | **Production:** https://schutztat.de | **Demo:** https://demo.schutztat.de
 > **Stand:** April 2026
 
 Multi-Tenant SaaS platform for occupational safety, explosion protection, hazardous substances, fire safety, data privacy, and compliance management.
@@ -97,7 +97,9 @@ risk-hub/
 │   ├── substances/        # Gefahrstoffe, SDS-Upload
 │   ├── global_sds/        # Globale SDS-Bibliothek
 │   ├── risk/              # Gefährdungsbeurteilung
+│   ├── riskfw/            # Risk-Framework Models + Services
 │   ├── gbu/               # GBU-Erweiterung
+│   ├── exschutzdokument/  # Explosionsschutzdokument
 │   ├── dsb/               # Datenschutzbeauftragter
 │   ├── brandschutz/       # Brandschutz
 │   ├── documents/         # Dokumente, Versionen, S3
@@ -109,6 +111,7 @@ risk-hub/
 │   ├── dashboard/         # Compliance-Dashboard
 │   ├── approvals/         # Freigabe-Workflows
 │   ├── ai_analysis/       # KI-gestützte Analyse (aifw)
+│   ├── tests/             # Test Suite (188 files)
 │   └── templates/         # Shared Templates (project root)
 ├── docker/app/Dockerfile
 ├── docker-compose.prod.yml
