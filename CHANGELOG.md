@@ -2,12 +2,24 @@
 
 ## [Unreleased]
 
+### Added
+- global-sds: Vollextraktion + PubChem-Anreicherung + JSON-View
+- explosionsschutz: Schritt 6 Zusammenführen — `ConceptFinalizeView` + `finalize.html`
+- explosionsschutz: Vorlagen-Tab zeigt `doc_templates.DocumentTemplate` (externe Vorlagen)
+- explosionsschutz: KI-Accept für `chapter=measures` erstellt `ProtectionMeasure`-Objekte (Parser + Apply)
+- doc_templates: Löschen-Button neben Speichern im Edit-Formular (Template-Override)
+- test: `tests/utils/html_assertions.py` — `assert_valid_html()` für nested-form, hx-target Checks
+- test: `tests/completeness/test_html_structure.py` — 232 HTML-Struktur-Tests für alle Templates
+
 ### Fixed
 - training: `signed_at` bei present-Status setzen
 - global-sds: H/P-Statements + Pictogramme in Pipeline persistieren
-
-### Added
-- global-sds: Vollextraktion + PubChem-Anreicherung + JSON-View
+- explosionsschutz: `IntegrityError` bei Konzept-Erstellung — `project` nullable gemacht
+- explosionsschutz: `HtmxAddMeasureView` zeigt Formfehler statt stiller Ignorierung
+- risk: `hazard_form.html`, `measure_form.html`, `substitution_form.html` — nested `<form>` entfernt
+- doc_templates: nested `<form>` in `edit.html` — Aktionen außerhalb Haupt-Form, HTML5 `form=`-Attribut
+- projects: `sync_completion` erfordert `action_code` als erstes Argument
+- projects: Vorlagen-Picker + template_list zeigen `doc_templates.DocumentTemplate`
 
 ## [0.1.0] — 2026-04-23
 
