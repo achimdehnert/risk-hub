@@ -527,7 +527,7 @@ def template_list(request: HttpRequest) -> HttpResponse:
     if tenant_response is not None:
         return tenant_response
 
-    templates = get_document_templates(request.tenant_id).order_by("-updated_at")
+    templates = get_active_document_templates(request.tenant_id).order_by("-updated_at")
 
     return render(
         request,

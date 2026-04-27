@@ -48,7 +48,7 @@
                 {% for tmpl in templates %}
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4">
-                        <a href="{% url 'projects:template-edit' tmpl_pk=tmpl.pk %}" class="text-sm font-medium text-gray-900 hover:text-orange-600">
+                        <a href="{% url 'doc_templates:template-edit' pk=tmpl.pk %}" class="text-sm font-medium text-gray-900 hover:text-orange-600">
                             {{ tmpl.name }}
                         </a>
                         {% if tmpl.description %}
@@ -56,8 +56,8 @@
                         {% endif %}
                     </td>
                     <td class="px-6 py-4">
-                        {% if tmpl.kind %}
-                        <span class="px-2 py-0.5 text-xs rounded bg-orange-100 text-orange-700">{{ tmpl.kind }}</span>
+                        {% if tmpl.scope %}
+                        <span class="px-2 py-0.5 text-xs rounded bg-orange-100 text-orange-700">{{ tmpl.scope }}</span>
                         {% else %}
                         <span class="text-xs text-gray-400">—</span>
                         {% endif %}
@@ -74,10 +74,10 @@
                     </td>
                     <td class="px-6 py-4 text-sm text-gray-500">{{ tmpl.updated_at|date:"d.m.Y H:i" }}</td>
                     <td class="px-6 py-4 text-right">
-                        <a href="{% url 'projects:template-edit' tmpl_pk=tmpl.pk %}" class="text-gray-400 hover:text-orange-500 p-1" title="Bearbeiten">
+                        <a href="{% url 'doc_templates:template-edit' pk=tmpl.pk %}" class="text-gray-400 hover:text-orange-500 p-1" title="Bearbeiten">
                             <i data-lucide="pencil" class="w-4 h-4 inline"></i>
                         </a>
-                        <form method="post" action="{% url 'projects:template-delete' tmpl_pk=tmpl.pk %}" class="inline"
+                        <form method="post" action="{% url 'doc_templates:template-delete' pk=tmpl.pk %}" class="inline"
                               data-confirm-submit="Vorlage wirklich löschen?">
                             {% csrf_token %}
                             <button type="submit" class="text-gray-400 hover:text-red-500 p-1 ml-1" title="Löschen">
