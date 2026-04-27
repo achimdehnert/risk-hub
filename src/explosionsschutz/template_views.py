@@ -704,16 +704,20 @@ class AreaDxfUploadView(LoginRequiredMixin, View):
     template_name = "explosionsschutz/areas/dxf_upload.html"
 
     def get(self, request, pk):
+        from .services.dxf_service import is_dwg_conversion_available
+
         tenant_id = getattr(request, "tenant_id", None)
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
         area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
-        return render(request, self.template_name, {"area": area})
+        return render(
+            request, self.template_name,
+            {"area": area, "dwg_available": is_dwg_conversion_available()},
+        )
 
     def post(self, request, pk):
         import logging
 
-        from nl2cad.areas.din277 import DIN277Calculator
-        from nl2cad.core.parsers.dxf_parser import DXFParser
+        from .services.dxf_service import DXFService, is_dwg_conversion_available
 
         logger = logging.getLogger(__name__)
         tenant_id = getattr(request, "tenant_id", None)
@@ -723,93 +727,39 @@ class AreaDxfUploadView(LoginRequiredMixin, View):
         dxf_file = request.FILES.get("dxf_file")
         if not dxf_file:
             return render(
-                request,
-                self.template_name,
-                {
-                    "area": area,
-                    "error": "Keine DXF-Datei hochgeladen.",
-                },
+                request, self.template_name,
+                {"area": area, "error": "Keine DXF-Datei hochgeladen."},
             )
 
         fname_lower = dxf_file.name.lower()
         if not fname_lower.endswith((".dxf", ".dwg")):
             return render(
-                request,
-                self.template_name,
-                {
-                    "area": area,
-                    "error": "Nur .dxf oder .dwg Dateien sind erlaubt.",
-                },
+                request, self.template_name,
+                {"area": area, "error": "Nur .dxf oder .dwg Dateien sind erlaubt."},
             )
 
         raw_bytes = dxf_file.read()
+        service = DXFService()
+        result = service.process_upload(raw_bytes, dxf_file.name)
 
-        # DWG → DXF Konvertierung
-        if fname_lower.endswith(".dwg"):
-            try:
-                from .services.dwg_converter import dwg_to_dxf
-
-                raw_bytes = dwg_to_dxf(raw_bytes, dxf_file.name)
-                logger.info("[AreaDxfUpload] DWG→DXF: %s", dxf_file.name)
-            except RuntimeError as exc:
-                return render(
-                    request,
-                    self.template_name,
-                    {"area": area, "error": str(exc)},
-                )
-
-        try:
-            parser = DXFParser()
-            dxf_model = parser.parse_bytes(raw_bytes, dxf_file.name)
-        except Exception as exc:
-            logger.warning("[AreaDxfUpload] Parse-Fehler %s: %s", area.code, exc)
+        if not result.success:
             return render(
-                request,
-                self.template_name,
+                request, self.template_name,
                 {
                     "area": area,
-                    "error": f"DXF konnte nicht gelesen werden: {exc}",
+                    "error": result.error,
+                    "parse_hints": result.parse_hints,
+                    "dwg_available": is_dwg_conversion_available(),
                 },
             )
 
-        calc = DIN277Calculator()
-        rooms_input = [
-            {"name": r.name, "area_m2": r.area_m2, "din277_code": r.din277_code}
-            for r in dxf_model.rooms
-        ]
-        din_result = calc.calculate(rooms_input)
-
-        analysis = {
-            "dxf_version": dxf_model.dxf_version,
-            "layers_count": len(dxf_model.layers),
-            "rooms_count": len(dxf_model.rooms),
-            "total_area_m2": round(dxf_model.total_area_m2, 2),
-            "rooms": [
-                {
-                    "name": r.name,
-                    "layer": r.layer,
-                    "area_m2": round(r.area_m2, 2),
-                    "perimeter_m": round(r.perimeter_m, 2),
-                    "din277_code": r.din277_code,
-                }
-                for r in dxf_model.rooms
-            ],
-            "din277": {
-                "ngf_m2": round(din_result.netto_grundflaeche_m2, 2),
-                "nf_m2": round(din_result.nutzungsflaeche_m2, 2),
-                "vf_m2": round(din_result.verkehrsflaeche_m2, 2),
-                "tf_m2": round(din_result.technische_flaeche_m2, 2),
-            },
-        }
-
         area.dxf_file = dxf_file
-        area.dxf_analysis_json = analysis
-        area.brandschutz_analysis_json = None  # Neu analysieren nach Upload
+        area.dxf_analysis_json = result.analysis_json
+        area.brandschutz_analysis_json = None
 
         # SVG-Preview generieren
         try:
             from .services.svg_export import generate_svg_for_area
-
             generate_svg_for_area(area)
         except Exception as exc:
             logger.warning("[AreaDxfUpload] SVG-Generierung: %s", exc)
@@ -817,10 +767,8 @@ class AreaDxfUploadView(LoginRequiredMixin, View):
         area.save()
 
         logger.info(
-            "[AreaDxfUpload] %s: %d Räume, %.1f m² gespeichert",
-            area.code,
-            len(dxf_model.rooms),
-            dxf_model.total_area_m2,
+            "[AreaDxfUpload] %s: %d Räume, %.1f m² gespeichert (Plantyp: %s)",
+            area.code, result.rooms_count, result.total_area_m2, result.plan_type,
         )
         return redirect("explosionsschutz:area-brandschutz", pk=area.pk)
 
@@ -1182,6 +1130,7 @@ class AreaBrandschutzView(LoginRequiredMixin, View):
 
         analyse = area.brandschutz_analysis_json
         dxf_data = area.dxf_analysis_json
+        dxf_empty = bool(dxf_data) and dxf_data.get("rooms_count", -1) == 0 and dxf_data.get("layers_count", 0) > 0
         return render(
             request,
             self.template_name,
@@ -1190,6 +1139,7 @@ class AreaBrandschutzView(LoginRequiredMixin, View):
                 "analyse": analyse,
                 "dxf_data": dxf_data,
                 "has_dxf": bool(area.dxf_file),
+                "dxf_empty": dxf_empty,
             },
         )
 
@@ -1248,6 +1198,105 @@ class AreaBrandschutzView(LoginRequiredMixin, View):
             len(result.maengel),
         )
         return redirect("explosionsschutz:area-brandschutz", pk=area.pk)
+
+
+class AreaExZonenAnalyseView(LoginRequiredMixin, View):
+    """
+    ATEX Ex-Zonen-Analyse — on-demand aus gecachtem dxf_analysis_json.
+
+    Erkennt Zone 0/1/2 (Gas) und 20/21/22 (Staub) aus Layer-/Raumnamen.
+    Kein erneuter DXF-Upload nötig.
+    """
+
+    template_name = "explosionsschutz/areas/ex_zonen_analyse.html"
+
+    def get(self, request, pk):
+        import logging
+        from nl2cad.core.analyzers.ex_zonen_analyzer import ExZonenAnalyzer
+        from .services.dxf_service import reconstruct_dxf_model
+
+        logger = logging.getLogger(__name__)
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
+
+        dxf_data = area.dxf_analysis_json
+        if not dxf_data:
+            return render(request, self.template_name, {
+                "area": area, "has_dxf": False, "result": None,
+            })
+
+        try:
+            room_height_m = float(request.GET.get("room_height_m", 3.0))
+            model = reconstruct_dxf_model(dxf_data)
+            result = ExZonenAnalyzer(room_height_m=room_height_m).analyze(model)
+        except Exception as exc:
+            logger.warning("[ExZonenAnalyse] Fehler %s: %s", pk, exc)
+            return render(request, self.template_name, {
+                "area": area, "has_dxf": True, "result": None,
+                "error": f"Analyse fehlgeschlagen: {exc}",
+            })
+
+        return render(request, self.template_name, {
+            "area": area,
+            "has_dxf": True,
+            "result": result,
+            "dxf_data": dxf_data,
+            "room_height_m": room_height_m,
+        })
+
+
+class AreaMengenView(LoginRequiredMixin, View):
+    """
+    Mengenermittlung + GAEB-Positions-Grundlage — on-demand aus dxf_analysis_json.
+
+    Liefert Wand-/Bodenflächen, Türen, Fenster, DIN 276 Kostengruppen
+    und GAEB-Positionen mit indikativer Kostenschätzung.
+    """
+
+    template_name = "explosionsschutz/areas/mengen.html"
+
+    def get(self, request, pk):
+        import logging
+        from nl2cad.core.analyzers.bauteil_mengen_extractor import BauteilmengenExtractor
+        from .services.dxf_service import reconstruct_dxf_model
+
+        logger = logging.getLogger(__name__)
+        tenant_id = getattr(request, "tenant_id", None)
+        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
+
+        dxf_data = area.dxf_analysis_json
+        if not dxf_data:
+            return render(request, self.template_name, {
+                "area": area, "has_dxf": False, "mengen": None,
+            })
+
+        try:
+            room_height_m = float(request.GET.get("room_height_m", 3.0))
+            bgf_zuschlag = float(request.GET.get("bgf_zuschlag", 1.15))
+            model = reconstruct_dxf_model(dxf_data)
+            entity_stats = dxf_data.get("entity_stats", {})
+            extractor = BauteilmengenExtractor(
+                room_height_m=room_height_m,
+                bgf_zuschlag=bgf_zuschlag,
+            )
+            mengen = extractor.extract(model, entity_stats=entity_stats)
+        except Exception as exc:
+            logger.warning("[Mengenermittlung] Fehler %s: %s", pk, exc)
+            return render(request, self.template_name, {
+                "area": area, "has_dxf": True, "mengen": None,
+                "error": f"Mengenermittlung fehlgeschlagen: {exc}",
+            })
+
+        return render(request, self.template_name, {
+            "area": area,
+            "has_dxf": True,
+            "mengen": mengen,
+            "dxf_data": dxf_data,
+            "room_height_m": room_height_m,
+            "bgf_zuschlag": bgf_zuschlag,
+        })
 
 
 # =============================================================================

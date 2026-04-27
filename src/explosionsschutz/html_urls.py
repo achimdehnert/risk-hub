@@ -28,8 +28,10 @@ from .template_views import (
     AreaDetailView,
     AreaDxfUploadView,
     AreaEditView,
+    AreaExZonenAnalyseView,
     AreaIFCUploadView,
     AreaListView,
+    AreaMengenView,
     ConceptAiAcceptView,
     ConceptAiGenerateView,
     ConceptAiRejectView,
@@ -86,6 +88,16 @@ urlpatterns = [
         "areas/<int:pk>/brandschutz/",
         AreaBrandschutzView.as_view(),
         name="area-brandschutz",
+    ),
+    path(
+        "areas/<int:pk>/ex-zonen/",
+        AreaExZonenAnalyseView.as_view(),
+        name="area-ex-zonen",
+    ),
+    path(
+        "areas/<int:pk>/mengen/",
+        AreaMengenView.as_view(),
+        name="area-mengen",
     ),
     # Concepts
     path("concepts/", ConceptListView.as_view(), name="concept-list-html"),

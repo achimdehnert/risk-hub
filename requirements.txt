@@ -37,7 +37,7 @@ iil-doc-templates>=0.3.0
 # REFLEX — UC quality checks + domain research (ADR-162)
 iil-reflex[web]>=0.2.1
 # Enrichment Agent Pattern — ADR-169 (GESTIS + PubChem providers)
-iil-enrichment[gestis,pubchem]>=0.1.0
+# iil-enrichment[gestis,pubchem]>=0.1.0  # not yet on PyPI — optional, skipped at runtime
 # Safety Framework — riskfw inlined in src/riskfw/ (ADR-146 Phase 1)
 # CAD / BIM — nl2cad-core mono-distribution (ADR-146 Phase 2)
 # nl2cad-core[gaeb]>=0.2.0  # TODO: uncomment when published to PyPI

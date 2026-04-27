@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block title %}ATEX Ex-Zonen — {{ area.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <nav class="text-sm text-gray-500 mb-2">
+                <a href="{% url 'explosionsschutz:area-list-html' %}" class="hover:text-gray-700">Bereiche</a>
+                <span class="mx-2">/</span>
+                <a href="{% url 'explosionsschutz:area-detail-html' area.id %}" class="hover:text-gray-700">{{ area.name }}</a>
+                <span class="mx-2">/</span>
+                <span>ATEX Ex-Zonen</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900">ATEX Ex-Zonen-Analyse</h1>
+            <p class="text-sm text-gray-500 mt-1">IEC 60079-10-1 · ATEX-RL 2014/34/EU · BetrSichV</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'explosionsschutz:area-dxf-upload' area.id %}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+               data-testid="btn-dxf-upload">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                DXF neu hochladen
+            </a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center gap-2 text-red-800">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+            <p class="text-sm font-medium">{{ error }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not has_dxf %}
+    {% include "components/_empty_state.html" with icon="file-plus" title="Kein DXF hochgeladen" message="Lade zuerst einen Grundriss hoch um die Ex-Zonen-Analyse zu starten." %}
+
+    {% elif not result or not result.zones %}
+    <!-- Parameter-Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <i data-lucide="settings" class="w-4 h-4 text-gray-400"></i>
+            Analyse-Parameter
+        </h2>
+        <form method="get" class="flex items-end gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Raumhöhe (m)</label>
+                <input type="number" name="room_height_m" value="{{ room_height_m|default:'3.0' }}"
+                       step="0.1" min="2.0" max="10.0"
+                       class="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-orange-500"
+                       data-testid="input-room-height">
+            </div>
+            <button type="submit"
+                    class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm"
+                    data-testid="btn-analyse">
+                Analyse starten
+            </button>
+        </form>
+    </div>
+
+    {% if result %}
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <div class="flex items-start gap-3 text-amber-800">
+            <i data-lucide="search" class="w-5 h-5 shrink-0 mt-0.5"></i>
+            <div>
+                <p class="text-sm font-semibold">Keine Ex-Zonen erkannt</p>
+                {% for hint in result.layer_hints %}
+                <p class="text-sm mt-1">{{ hint }}</p>
+                {% endfor %}
+                {% if not result.layer_hints %}
+                <p class="text-sm mt-1">
+                    Die Layer- und Raumnamen enthalten keine erkannten Ex-Zonen-Bezeichnungen.
+                    Ex-Zonen müssen als <code class="bg-amber-100 px-1 rounded">ZONE_0</code>,
+                    <code class="bg-amber-100 px-1 rounded">EX_ZONE_1</code>,
+                    <code class="bg-amber-100 px-1 rounded">ATEX_2</code> etc. benannt sein.
+                </p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- KPI Karten -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {% include "components/_stat_card.html" with icon="zap" value=result.zones|length label="Erkannte Zonen" color="orange" %}
+        {% include "components/_stat_card.html" with icon="square" value=result.total_ex_area_m2|floatformat:0 label="Gesamt-Ex-Fläche m²" color="red" %}
+        {% include "components/_stat_card.html" with icon="box" value=result.total_ex_volume_m3|floatformat:0 label="Gesamt-Volumen m³" color="purple" %}
+        {% include "components/_stat_card.html" with icon="alert-triangle" value=result.compliance_notes|length label="Compliance-Hinweise" color=result.has_zone_0|yesno:"red,blue" %}
+    </div>
+
+    <!-- Compliance-Hinweise -->
+    {% if result.compliance_notes %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-red-800 mb-2 flex items-center gap-2">
+            <i data-lucide="alert-octagon" class="w-4 h-4"></i>
+            Compliance-Hinweise (IEC 60079-10-1)
+        </h3>
+        <ul class="space-y-1">
+            {% for note in result.compliance_notes %}
+            <li class="text-sm text-red-700 flex items-start gap-2">
+                <i data-lucide="chevron-right" class="w-3.5 h-3.5 shrink-0 mt-0.5"></i>
+                {{ note }}
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Layer-Hinweise -->
+    {% if result.layer_hints %}
+    <div class="bg-amber-50 border border-amber-200 rounded-lg p-4">
+        <h3 class="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-2">
+            <i data-lucide="info" class="w-4 h-4"></i>
+            Hinweise zu Layer-Namen
+        </h3>
+        <ul class="space-y-1">
+            {% for hint in result.layer_hints %}
+            <li class="text-sm text-amber-700">{{ hint }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <!-- Zonen-Tabelle -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <i data-lucide="layers" class="w-5 h-5 text-orange-500"></i>
+                <h2 class="text-lg font-semibold text-gray-900">Erkannte Ex-Zonen</h2>
+            </div>
+            <!-- Parameter ändern -->
+            <form method="get" class="flex items-center gap-2 text-sm">
+                <label class="text-gray-500">Raumhöhe:</label>
+                <input type="number" name="room_height_m" value="{{ room_height_m }}"
+                       step="0.1" min="2.0" max="10.0"
+                       class="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                       data-testid="input-room-height-top">
+                <button type="submit" class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
+                        data-testid="btn-recalc">
+                    m — Neu berechnen
+                </button>
+            </form>
+        </div>
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 text-left text-xs text-gray-500 uppercase tracking-wider">
+                    <th class="py-3 px-6">Zone</th>
+                    <th class="py-3 px-4">Typ</th>
+                    <th class="py-3 px-4">ATEX-Kat.</th>
+                    <th class="py-3 px-4 text-right">Fläche m²</th>
+                    <th class="py-3 px-4 text-right">Volumen m³</th>
+                    <th class="py-3 px-4">Layer / Quelle</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for zone in result.zones %}
+                <tr class="hover:bg-gray-50">
+                    <td class="py-3 px-6">
+                        <div class="font-medium text-gray-900">{{ zone.name }}</div>
+                        <div class="text-xs text-gray-400 mt-0.5">{{ zone.description }}</div>
+                    </td>
+                    <td class="py-3 px-4">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold
+                            {% if zone.zone_type == '0' or zone.zone_type == '20' %}bg-red-100 text-red-800
+                            {% elif zone.zone_type == '1' or zone.zone_type == '21' %}bg-orange-100 text-orange-800
+                            {% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                            Zone {{ zone.zone_type }}
+                        </span>
+                    </td>
+                    <td class="py-3 px-4">
+                        <code class="text-xs bg-gray-100 px-2 py-0.5 rounded font-mono">{{ zone.atex_category }}</code>
+                    </td>
+                    <td class="py-3 px-4 text-right font-medium">{{ zone.area_m2|floatformat:1 }}</td>
+                    <td class="py-3 px-4 text-right text-gray-600">{{ zone.volume_m3|floatformat:1 }}</td>
+                    <td class="py-3 px-4 text-xs text-gray-500">
+                        <code class="bg-gray-100 px-1 py-0.5 rounded">{{ zone.layer }}</code>
+                        <span class="ml-1 text-gray-300">({{ zone.source }})</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Zonen-Zusammenfassung -->
+    {% if result.zone_summary %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <i data-lucide="bar-chart-2" class="w-4 h-4 text-orange-500"></i>
+            Zusammenfassung nach Zonentyp
+        </h2>
+        <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            {% for zone_type, area in result.zone_summary.items %}
+            <div class="p-4 rounded-lg border
+                {% if zone_type == '0' or zone_type == '20' %}border-red-200 bg-red-50
+                {% elif zone_type == '1' or zone_type == '21' %}border-orange-200 bg-orange-50
+                {% else %}border-yellow-200 bg-yellow-50{% endif %}">
+                <p class="text-xs font-medium
+                    {% if zone_type == '0' or zone_type == '20' %}text-red-700
+                    {% elif zone_type == '1' or zone_type == '21' %}text-orange-700
+                    {% else %}text-yellow-700{% endif %}">
+                    Zone {{ zone_type }}
+                </p>
+                <p class="text-xl font-bold mt-1
+                    {% if zone_type == '0' or zone_type == '20' %}text-red-900
+                    {% elif zone_type == '1' or zone_type == '21' %}text-orange-900
+                    {% else %}text-yellow-900{% endif %}">
+                    {{ area|floatformat:1 }} m²
+                </p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    {% endif %}{# end zones #}
+</div>
+{% endblock %}

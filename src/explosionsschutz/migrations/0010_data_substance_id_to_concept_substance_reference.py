@@ -23,14 +23,27 @@ def migrate_substance_id_forward(apps, schema_editor):
         "explosionsschutz", "ConceptSubstanceReference"
     )
 
+    import uuid as _uuid
+
     concepts = ExplosionConcept.objects.filter(
         substance_id__isnull=False
-    ).exclude(substance_id="").select_related()
+    )
 
     migrated = 0
     skipped = 0
 
     for concept in concepts.iterator(chunk_size=200):
+        # Skip concepts with invalid or empty tenant_id (data integrity guard)
+        raw_tenant = concept.tenant_id
+        try:
+            if not raw_tenant:
+                skipped += 1
+                continue
+            tenant_uuid = _uuid.UUID(str(raw_tenant))
+        except (ValueError, AttributeError):
+            skipped += 1
+            continue
+
         already_exists = ConceptSubstanceReference.objects.filter(
             concept=concept,
             role="PRIMARY",
@@ -49,7 +62,7 @@ def migrate_substance_id_forward(apps, schema_editor):
                 f"(substance_name='{concept.substance_name}'). "
                 "SDS-Revision bitte manuell verknüpfen."
             ),
-            tenant_id=concept.tenant_id,
+            tenant_id=tenant_uuid,
         )
         migrated += 1
 

@@ -49,6 +49,31 @@
     </div>
     {% endif %}
 
+    {% if dxf_empty %}
+    <div class="bg-amber-50 border border-amber-300 rounded-lg p-4">
+        <div class="flex items-start gap-3 text-amber-800">
+            <i data-lucide="alert-triangle" class="w-5 h-5 shrink-0 mt-0.5"></i>
+            <div>
+                <p class="text-sm font-semibold">DXF enthält keine Geometrie</p>
+                <p class="text-sm mt-1">
+                    Die hochgeladene DXF-Datei hat <strong>{{ dxf_data.layers_count }} Layer</strong>,
+                    aber <strong>keine Zeichnungselemente</strong> im Modellraum (0 Räume, 0 m²).
+                    Die Mängel-Meldungen beziehen sich auf eine leere Zeichnung und sind nicht aussagekräftig.
+                </p>
+                <p class="text-sm mt-2">
+                    Bitte eine DXF-Datei hochladen, die <strong>geschlossene Raumpolygone</strong>
+                    (LWPOLYLINE/POLYLINE) enthält — keine reine Layer-Vorlage.
+                </p>
+                <a href="{% url 'explosionsschutz:area-dxf-upload' area.id %}"
+                   class="inline-flex items-center mt-3 text-sm font-medium text-amber-700 hover:text-amber-900">
+                    <i data-lucide="upload" class="w-4 h-4 mr-1"></i>
+                    Neue DXF hochladen
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     {% if not has_dxf %}
     {% include "components/_empty_state.html" with icon="file-plus" title="Kein DXF hochgeladen" message="Lade zuerst einen Grundriss hoch um die Brandschutz-Analyse zu starten." action_url=area.id|stringformat:"s" action_label="DXF hochladen" %}
     {% elif not analyse %}

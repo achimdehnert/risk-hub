@@ -26,7 +26,13 @@ def assign_auto_projects(apps, schema_editor):
     ).select_related("area")
 
     assigned = 0
+    Site = apps.get_model("tenancy", "Site")
+
     for concept in concepts_without_project.iterator(chunk_size=100):
+        site = Site.objects.filter(tenant_id=concept.tenant_id).first()
+        if site is None:
+            continue
+
         project_name = (
             f"Auto-ExSchutz-{concept.area.name}-{concept.created_at.date()}"
         )
@@ -34,6 +40,7 @@ def assign_auto_projects(apps, schema_editor):
             name=project_name,
             tenant_id=concept.tenant_id,
             defaults={
+                "site": site,
                 "description": "Automatisch erstellt via Datenmigration 0011 (ADR-044 Phase 3)",
             },
         )
@@ -45,6 +52,8 @@ def assign_auto_projects(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+
+    atomic = False  # AlterField nach RunPython erfordert separaten Transaktionskontext
 
     dependencies = [
         ("explosionsschutz", "0010_data_substance_id_to_concept_substance_reference"),

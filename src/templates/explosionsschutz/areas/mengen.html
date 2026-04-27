@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}Mengenermittlung — {{ area.name }}{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header -->
+    <div class="flex justify-between items-start">
+        <div>
+            <nav class="text-sm text-gray-500 mb-2">
+                <a href="{% url 'explosionsschutz:area-list-html' %}" class="hover:text-gray-700">Bereiche</a>
+                <span class="mx-2">/</span>
+                <a href="{% url 'explosionsschutz:area-detail-html' area.id %}" class="hover:text-gray-700">{{ area.name }}</a>
+                <span class="mx-2">/</span>
+                <span>Mengenermittlung</span>
+            </nav>
+            <h1 class="text-2xl font-bold text-gray-900">Mengenermittlung</h1>
+            <p class="text-sm text-gray-500 mt-1">DIN 276 · DIN 277 · GAEB DA XML</p>
+        </div>
+        <div class="flex gap-2">
+            <a href="{% url 'explosionsschutz:area-dxf-upload' area.id %}"
+               class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 text-sm"
+               data-testid="btn-dxf-upload">
+                <i data-lucide="upload" class="w-4 h-4 mr-2"></i>
+                DXF neu hochladen
+            </a>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex items-center gap-2 text-red-800">
+            <i data-lucide="alert-circle" class="w-4 h-4 shrink-0"></i>
+            <p class="text-sm font-medium">{{ error }}</p>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if not has_dxf %}
+    {% include "components/_empty_state.html" with icon="file-plus" title="Kein DXF hochgeladen" message="Lade zuerst einen Grundriss hoch um die Mengenermittlung zu starten." %}
+
+    {% elif not mengen %}
+    <!-- Parameter-Form -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <h2 class="text-base font-semibold text-gray-900 mb-4">Analyse-Parameter</h2>
+        <form method="get" class="flex flex-wrap items-end gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Raumhöhe (m)</label>
+                <input type="number" name="room_height_m" value="{{ room_height_m|default:'3.0' }}"
+                       step="0.1" min="2.0" max="10.0"
+                       class="w-28 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                       data-testid="input-room-height">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">BGF-Zuschlag</label>
+                <input type="number" name="bgf_zuschlag" value="{{ bgf_zuschlag|default:'1.15' }}"
+                       step="0.01" min="1.0" max="1.5"
+                       class="w-24 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                       data-testid="input-bgf-zuschlag">
+            </div>
+            <button type="submit"
+                    class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
+                    data-testid="btn-berechnen">
+                Berechnen
+            </button>
+        </form>
+    </div>
+
+    {% else %}
+    <!-- KPI Karten -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {% include "components/_stat_card.html" with icon="square" value=mengen.nutzflaeche_total_m2|floatformat:0 label="Nutzfläche NF m²" color="blue" %}
+        {% include "components/_stat_card.html" with icon="maximize-2" value=mengen.bruttogrundflaeche_m2|floatformat:0 label="BGF m²" color="indigo" %}
+        {% include "components/_stat_card.html" with icon="minus-square" value=mengen.wand_flaeche_gesamt_m2|floatformat:0 label="Wandfläche m²" color="gray" %}
+        {% include "components/_stat_card.html" with icon="dollar-sign" value=mengen.gesamtkosten_indikativ|floatformat:0 label="Kosten indikativ €" color="green" %}
+    </div>
+
+    <!-- Parameter-Leiste (Neu berechnen) -->
+    <div class="bg-white rounded-lg border border-gray-200 px-6 py-3 flex flex-wrap items-center gap-4">
+        <form method="get" class="flex flex-wrap items-center gap-3 text-sm">
+            <span class="text-gray-500 font-medium">Parameter:</span>
+            <label class="text-gray-500">Raumhöhe</label>
+            <input type="number" name="room_height_m" value="{{ room_height_m }}"
+                   step="0.1" min="2.0" max="10.0"
+                   class="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                   data-testid="input-room-height-top">
+            <span class="text-gray-400">m</span>
+            <label class="text-gray-500 ml-2">BGF-Zuschlag</label>
+            <input type="number" name="bgf_zuschlag" value="{{ bgf_zuschlag }}"
+                   step="0.01" min="1.0" max="1.5"
+                   class="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                   data-testid="input-bgf-zuschlag-top">
+            <button type="submit"
+                    class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-gray-700"
+                    data-testid="btn-recalc">
+                Neu berechnen
+            </button>
+        </form>
+        <div class="ml-auto text-sm text-gray-400">
+            {{ mengen.rooms_count }} Räume · {{ mengen.room_height_m }} m Höhe
+        </div>
+    </div>
+
+    <!-- Mengen-Übersicht -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Flächenmengen -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+                <i data-lucide="layers" class="w-5 h-5 text-blue-500"></i>
+                <h2 class="text-base font-semibold text-gray-900">Flächenmengen</h2>
+            </div>
+            <div class="divide-y divide-gray-50">
+                <div class="flex justify-between px-6 py-3 text-sm">
+                    <span class="text-gray-600">Nutzfläche NF</span>
+                    <span class="font-medium">{{ mengen.nutzflaeche_total_m2|floatformat:2 }} m²</span>
+                </div>
+                <div class="flex justify-between px-6 py-3 text-sm">
+                    <span class="text-gray-600">Bruttogrundfl. BGF (+{{ bgf_zuschlag }})</span>
+                    <span class="font-medium">{{ mengen.bruttogrundflaeche_m2|floatformat:2 }} m²</span>
+                </div>
+                <div class="flex justify-between px-6 py-3 text-sm">
+                    <span class="text-gray-600">Bodenbelag / Estrich</span>
+                    <span class="font-medium">{{ mengen.bodenflaeche_total_m2|floatformat:2 }} m²</span>
+                </div>
+                <div class="flex justify-between px-6 py-3 text-sm">
+                    <span class="text-gray-600">Deckenputz</span>
+                    <span class="font-medium">{{ mengen.deckenflaeche_total_m2|floatformat:2 }} m²</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Wandmengen + Öffnungen -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+                <i data-lucide="minus-square" class="w-5 h-5 text-gray-500"></i>
+                <h2 class="text-base font-semibold text-gray-900">Wände &amp; Öffnungen</h2>
+            </div>
+            <div class="divide-y divide-gray-50">
+                <div class="flex justify-between px-6 py-3 text-sm">
+                    <span class="text-gray-600">Wandlänge gesamt</span>
+                    <span class="font-medium">{{ mengen.wand_laenge_gesamt_m|floatformat:1 }} m</span>
+                </div>
+                <div class="flex justify-between px-6 py-3 text-sm">
+                    <span class="text-gray-600">Innenwandfläche</span>
+                    <span class="font-medium">{{ mengen.wand_flaeche_innen_m2|floatformat:1 }} m²</span>
+                </div>
+                <div class="flex justify-between px-6 py-3 text-sm">
+                    <span class="text-gray-600">Wandfläche gesamt</span>
+                    <span class="font-medium">{{ mengen.wand_flaeche_gesamt_m2|floatformat:1 }} m²</span>
+                </div>
+                <div class="flex justify-between px-6 py-3 text-sm">
+                    <span class="text-gray-600">Türen</span>
+                    <span class="font-medium">{{ mengen.tueren_gesamt }} Stk</span>
+                </div>
+                <div class="flex justify-between px-6 py-3 text-sm">
+                    <span class="text-gray-600">Fenster</span>
+                    <span class="font-medium">{{ mengen.fenster_gesamt }} Stk</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DIN 277 -->
+    {% if mengen.flaechen_din277 %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+            <i data-lucide="grid" class="w-5 h-5 text-indigo-500"></i>
+            <h2 class="text-base font-semibold text-gray-900">DIN 277 Flächenaufschlüsselung</h2>
+        </div>
+        <div class="divide-y divide-gray-50">
+            {% for code, area_m2 in mengen.flaechen_din277.items %}
+            <div class="flex items-center justify-between px-6 py-3 text-sm">
+                <span class="text-indigo-700 font-mono text-xs bg-indigo-50 px-2 py-0.5 rounded">{{ code }}</span>
+                <div class="flex-1 mx-6">
+                    <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div class="h-2 bg-indigo-400 rounded-full"
+                             style="width: {% widthratio area_m2 mengen.nutzflaeche_total_m2 100 %}%"></div>
+                    </div>
+                </div>
+                <span class="font-medium tabular-nums w-20 text-right">{{ area_m2|floatformat:1 }} m²</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- DIN 276 Kostengruppen -->
+    {% if mengen.din276_summary %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+            <i data-lucide="tag" class="w-5 h-5 text-green-500"></i>
+            <h2 class="text-base font-semibold text-gray-900">DIN 276 Kostengruppen</h2>
+        </div>
+        <div class="divide-y divide-gray-50">
+            {% for kg, area_m2 in mengen.din276_summary.items %}
+            <div class="flex justify-between px-6 py-3 text-sm">
+                <span class="font-medium text-gray-900">{{ kg }}</span>
+                <span class="text-gray-600">{{ area_m2|floatformat:1 }} m²</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Kostenschätzung -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div class="px-6 py-4 border-b border-gray-200 flex items-center gap-2">
+            <i data-lucide="dollar-sign" class="w-5 h-5 text-green-500"></i>
+            <h2 class="text-base font-semibold text-gray-900">Indikative Kostenschätzung</h2>
+            <span class="text-xs text-gray-400 ml-1">(Einheitspreise parametrisch, ohne Gewähr)</span>
+        </div>
+        <div class="px-6 py-4 grid grid-cols-1 md:grid-cols-3 gap-4 border-b border-gray-100">
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Gesamtkosten</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ mengen.gesamtkosten_indikativ|floatformat:0 }} €</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Kosten / m² NF</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ mengen.kosten_pro_m2_indikativ|floatformat:0 }} €/m²</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wider">Positionen</p>
+                <p class="text-2xl font-bold text-gray-900 mt-1">{{ mengen.gaeb_positions|length }}</p>
+            </div>
+        </div>
+
+        <!-- GAEB Positionen -->
+        {% if mengen.gaeb_positions %}
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="border-b border-gray-200 text-left text-xs text-gray-500 uppercase tracking-wider">
+                    <th class="py-3 px-6">Pos.</th>
+                    <th class="py-3 px-4">Leistung</th>
+                    <th class="py-3 px-4 text-right">Menge</th>
+                    <th class="py-3 px-4">Einheit</th>
+                    <th class="py-3 px-4 text-right">EP €</th>
+                    <th class="py-3 px-4 text-right">GP €</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-50">
+                {% for pos in mengen.gaeb_positions %}
+                <tr class="hover:bg-gray-50">
+                    <td class="py-2.5 px-6">
+                        <code class="text-xs bg-gray-100 px-1.5 py-0.5 rounded font-mono">{{ pos.lv_position }}</code>
+                    </td>
+                    <td class="py-2.5 px-4 text-gray-900">{{ pos.leistung }}</td>
+                    <td class="py-2.5 px-4 text-right tabular-nums">{{ pos.menge|floatformat:2 }}</td>
+                    <td class="py-2.5 px-4 text-gray-500">{{ pos.einheit }}</td>
+                    <td class="py-2.5 px-4 text-right text-gray-600 tabular-nums">{{ pos.einheitspreis|floatformat:2 }}</td>
+                    <td class="py-2.5 px-4 text-right font-medium tabular-nums">{{ pos.gesamtpreis|floatformat:2 }}</td>
+                </tr>
+                {% endfor %}
+                <!-- Summe -->
+                <tr class="border-t-2 border-gray-300 bg-gray-50 font-semibold">
+                    <td colspan="5" class="py-3 px-6 text-right text-gray-700">Gesamtsumme</td>
+                    <td class="py-3 px-4 text-right tabular-nums text-gray-900">{{ mengen.gesamtkosten_indikativ|floatformat:2 }} €</td>
+                </tr>
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
+
+    {% endif %}{# end mengen #}
+</div>
+{% endblock %}

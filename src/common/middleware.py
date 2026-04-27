@@ -6,6 +6,23 @@ from django.conf import settings
 from django.http import HttpRequest, HttpResponse, JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 
+try:
+    from platform_context.middleware import HealthBypassMiddleware  # noqa: F401
+except ImportError:
+
+    class HealthBypassMiddleware:
+        """Shim: platform_context<0.7.0 doesn't include HealthBypassMiddleware."""
+
+        _HEALTH_PATHS = frozenset(["/livez/", "/healthz/"])
+
+        def __init__(self, get_response):
+            self.get_response = get_response
+
+        def __call__(self, request: HttpRequest) -> HttpResponse:
+            if request.path in self._HEALTH_PATHS and request.method in ("GET", "HEAD"):
+                return HttpResponse("ok\n", content_type="text/plain")
+            return self.get_response(request)
+
 from common.context import (
     set_db_tenant,
     set_request_id,

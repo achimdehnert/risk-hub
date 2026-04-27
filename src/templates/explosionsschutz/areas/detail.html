@@ -32,10 +32,25 @@
             </a>
             {% if area.dxf_file %}
             <a href="{% url 'explosionsschutz:area-brandschutz' area.id %}"
-               class="inline-flex items-center px-4 py-2 border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50">
+               class="inline-flex items-center px-4 py-2 border border-purple-300 text-purple-700 rounded-lg hover:bg-purple-50"
+               data-testid="btn-brandschutz">
                 <i data-lucide="shield" class="w-4 h-4 mr-2"></i>
                 Brandschutz
             </a>
+            {% if area.dxf_analysis_json %}
+            <a href="{% url 'explosionsschutz:area-ex-zonen' area.id %}"
+               class="inline-flex items-center px-4 py-2 border border-orange-300 text-orange-700 rounded-lg hover:bg-orange-50"
+               data-testid="btn-ex-zonen">
+                <i data-lucide="zap" class="w-4 h-4 mr-2"></i>
+                ATEX Ex-Zonen
+            </a>
+            <a href="{% url 'explosionsschutz:area-mengen' area.id %}"
+               class="inline-flex items-center px-4 py-2 border border-green-300 text-green-700 rounded-lg hover:bg-green-50"
+               data-testid="btn-mengen">
+                <i data-lucide="list" class="w-4 h-4 mr-2"></i>
+                Mengen &amp; GAEB
+            </a>
+            {% endif %}
             {% endif %}
             <a href="{% url 'explosionsschutz:area-edit' area.id %}"
                class="inline-flex items-center px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">

@@ -241,8 +241,9 @@ class SdsParserService:
             "_sections": result.sections,
         }
 
-        # LLM-Fallback: bei niedriger Konfidenz fehlende Felder nachfüllen
-        if result.parse_confidence < self.LLM_CONFIDENCE_THRESHOLD:
+        # LLM-Anreicherung: bei niedriger Konfidenz ODER fehlenden Schlüsselfeldern
+        _missing_critical = not out.get("product_name") or out.get("flash_point_c") is None
+        if result.parse_confidence < self.LLM_CONFIDENCE_THRESHOLD or _missing_critical:
             out = self._llm_enrich(out)
 
         return out
@@ -255,7 +256,18 @@ class SdsParserService:
         content = _pdf_extractor.extract(data)
         for err in content.extraction_errors:
             logger.warning("PDF extraction: %s", err)
-        return content.text
+        text = content.text
+        # CID-kodierter Text (font nicht eingebettet): OCR erzwingen
+        if text and text.count("(cid:") / max(len(text), 1) > 0.01:
+            logger.info("CID-encoded PDF detected — forcing OCR fallback")
+            try:
+                from ingest.extractors.ocr import ocr_pdf_bytes
+                ocr_text = ocr_pdf_bytes(data)
+                if ocr_text.strip():
+                    return ocr_text
+            except Exception as ocr_exc:
+                logger.warning("OCR fallback failed: %s", ocr_exc)
+        return text
 
     def _parse_text(self, text: str) -> SdsParseResult:
         """Parst extrahierten Text."""
@@ -348,6 +360,23 @@ class SdsParserService:
             if result.density_g_cm3 is None:
                 result.density_g_cm3 = self._extract_number_wert(
                     r"[Rr]elative\s*[Dd]ichte|[Ss]pezifisches\s*[Gg]ewicht", sec9)
+
+            # Zweispalten-OCR-Fallback: Labels und Werte getrennt extrahieren
+            col_data = self._parse_sec9_columns(sec9)
+            if col_data.get("flash_point_c") is not None and result.flash_point_c is None:
+                result.flash_point_c = col_data["flash_point_c"]
+            if col_data.get("boiling_point_c") is not None and result.boiling_point_c is None:
+                result.boiling_point_c = col_data["boiling_point_c"]
+            if col_data.get("ignition_temperature_c") is not None and result.ignition_temperature_c is None:
+                result.ignition_temperature_c = col_data["ignition_temperature_c"]
+            if col_data.get("lower_explosion_limit") is not None and result.lower_explosion_limit is None:
+                result.lower_explosion_limit = col_data["lower_explosion_limit"]
+            if col_data.get("upper_explosion_limit") is not None and result.upper_explosion_limit is None:
+                result.upper_explosion_limit = col_data["upper_explosion_limit"]
+            if col_data.get("vapor_pressure_hpa") is not None and result.vapor_pressure_hpa is None:
+                result.vapor_pressure_hpa = col_data["vapor_pressure_hpa"]
+            if col_data.get("density_g_cm3") is not None and result.density_g_cm3 is None:
+                result.density_g_cm3 = col_data["density_g_cm3"]
 
         # Metadaten extrahieren (Abschnitt 1 + Header)
         result.product_name = self._extract_string(
@@ -458,85 +487,234 @@ class SdsParserService:
                 return float(num_m.group(1).replace(",", "."))
         return None
 
+    def _parse_sec9_columns(self, sec9: str) -> dict:
+        """
+        Zweispalten-OCR-Format: Labels ('g) Flammpunkt:') und Werte ('4°C') erscheinen
+        in getrennten Blöcken. Ordnet Werte den Labels über Reihenfolge zu.
+        """
+        # Labels in Reihenfolge erkennen (GHS-SDS Abschnitt 9 Buchstabenformat)
+        label_order = [
+            ("appearance",           r"[Aa]ggregatzustand|[Aa]ppearance|[Aa]ussehen"),
+            ("odor",                 r"[Gg]eruch\b|[Oo]dou?r\b"),
+            ("odor_threshold",       r"[Gg]eruchsschwelle|[Oo]dou?r\s*[Tt]hreshold"),
+            ("ph_value",             r"\bpH(?:[- ]?[Ww]ert)?\b"),
+            ("melting_point_c",      r"[Ss]chmelz|[Mm]elting"),
+            ("boiling_point_c",      r"[Ss]iede(?:beginn|bereich|punkt)|[Bb]oiling"),
+            ("flash_point_c",        r"[Ff]lammpunkt|[Ff]lash\s*[Pp]oint"),
+            ("evaporation_rate",     r"[Vv]erdampfung|[Ee]vaporation"),
+            ("flammability",         r"[Ee]ntz[üu]ndbar|[Ff]lammab"),
+            ("lower_explosion_limit",r"[Uu]ntere\s*[Ee]xplosion|[Ll]ower\s*[Ee]xplosion|\bLEL\b|\bUEG\b"),
+            ("upper_explosion_limit",r"[Oo]bere\s*[Ee]xplosion|[Uu]pper\s*[Ee]xplosion|\bUEL\b|\bOEG\b"),
+            ("vapor_pressure_hpa",   r"[Dd]ampfdruck|[Vv]apou?r?\s*[Pp]ressure"),
+            ("vapor_density",        r"[Dd]ampfdichte|[Vv]apou?r?\s*[Dd]ensity"),
+            ("density_g_cm3",        r"[Rr]elative\s*[Dd]ichte|[Dd]ichte\b|[Dd]ensity\b"),
+            ("water_solubility",     r"[Ww]asser(?:löslichkeit|mischbar)|[Ww]ater\s*[Ss]olubil"),
+            ("partition_coeff",      r"[Vv]erteilungskoeff|[Pp]artition"),
+            ("ignition_temperature_c",r"[Ss]elbstentzündung|[Ss]elf.?[Ii]gnition|[Zz]ündtemperatur"),
+            ("decomp_temp",          r"[Zz]ersetzung|[Dd]ecomposit"),
+            ("viscosity_mm2_s",      r"[Vv]iskosit|[Vv]iscosit"),
+        ]
+
+        # Positionen der Labels im Text
+        label_positions = []
+        for key, pattern in label_order:
+            m = re.search(pattern, sec9)
+            if m:
+                label_positions.append((m.start(), key))
+        label_positions.sort()
+        ordered_keys = [k for _, k in label_positions]
+
+        # Werte-Block: numerische Werte mit Einheiten aus dem hinteren Teil des Texts
+        # Suche nach dem Punkt wo die Werte beginnen (nach dem letzten Label)
+        last_label_end = 0
+        for pos, _ in label_positions:
+            if pos > last_label_end:
+                last_label_end = pos
+
+        value_block = sec9[last_label_end:]
+
+        # Alle Wert-Tokens extrahieren — Klammerwerte wie (20 °C) / (1013 hPa) ausschließen
+        value_pat = re.compile(
+            r"(-?\d+(?:[.,]\d+)?)\s*"
+            r"(°\s*C|hPa|mbar|kPa|g/cm[³3]?|g/ml|%\s*\(v/v\)|Vol[.-]?%|%|mPa[\s·*]?s|mm²/s|mg/l|g/L)",
+            re.IGNORECASE,
+        )
+        value_tokens = []
+        for m in value_pat.finditer(value_block):
+            # Klammerwerte überspringen: "(" direkt vor der Zahl (Messbedingung, kein Hauptwert)
+            preceding = value_block[max(0, m.start() - 3):m.start()].strip()
+            if preceding.endswith("("):
+                continue
+            value_tokens.append((m.start(), m.group(1), m.group(2).strip()))
+
+        result: dict = {}
+
+        def _num(val_str: str) -> float | None:
+            with contextlib.suppress(ValueError):
+                return float(val_str.replace(",", "."))
+            return None
+
+        # Für jeden Key mit Label: nächsten passenden Wert suchen
+        unit_map = {
+            "boiling_point_c":        ["°c"],
+            "flash_point_c":          ["°c"],
+            "melting_point_c":        ["°c"],
+            "ignition_temperature_c": ["°c"],
+            "lower_explosion_limit":  ["%", "vol"],
+            "upper_explosion_limit":  ["%", "vol"],
+            "vapor_pressure_hpa":     ["hpa", "mbar", "kpa"],
+            "density_g_cm3":          ["g/cm", "g/ml"],
+            "viscosity_mm2_s":        ["mm²/s", "mpa"],
+        }
+
+        used_indices: set[int] = set()
+
+        for idx, key in enumerate(ordered_keys):
+            if key not in unit_map:
+                continue
+            expected_units = unit_map[key]
+            # Suche den ersten ungenutzten Token mit passender Einheit
+            for ti, (tpos, tval, tunit) in enumerate(value_tokens):
+                if ti in used_indices:
+                    continue
+                tunit_low = tunit.lower()
+                if any(u in tunit_low for u in expected_units):
+                    v = _num(tval)
+                    if v is not None:
+                        result[key] = v
+                        used_indices.add(ti)
+                        break
+
+        return result
+
+    # JSON-Schema für LLM Structured Output (alle relevanten SDS-Felder)
+    _LLM_SCHEMA = {
+        "product_name": "string|null — Produktname aus Abschnitt 1",
+        "manufacturer_name": "string|null — Hersteller/Lieferant aus Abschnitt 1",
+        "cas_number": "string|null — CAS-Format XX-XX-X, aus Abschnitt 1 oder 3",
+        "revision_date": "string|null — ISO-Format YYYY-MM-DD, aus Abschnitt 1",
+        "version_number": "string|null — Versionsnummer des SDB",
+        "signal_word": "'danger'|'warning'|null — Signalwort aus Abschnitt 2",
+        "h_statements": "array[string] — H-Sätze z.B. ['H225','H319'], aus Abschnitt 2/3",
+        "p_statements": "array[string] — P-Sätze z.B. ['P210','P260'], aus Abschnitt 2",
+        "pictograms": "array[string] — GHS-Piktogramme z.B. ['GHS02','GHS07'], aus Abschnitt 2",
+        "flash_point_c": "number|null — Flammpunkt in °C, aus Abschnitt 9",
+        "ignition_temperature_c": "number|null — Zündtemperatur in °C, aus Abschnitt 9",
+        "boiling_point_c": "number|null — Siedepunkt in °C, aus Abschnitt 9",
+        "lower_explosion_limit": "number|null — UEG/LEL in Vol-%, aus Abschnitt 9",
+        "upper_explosion_limit": "number|null — OEG/UEL in Vol-%, aus Abschnitt 9",
+        "vapor_pressure_hpa": "number|null — Dampfdruck in hPa, aus Abschnitt 9",
+        "density_g_cm3": "number|null — Dichte in g/cm³, aus Abschnitt 9",
+        "ph_value": "number|null — pH-Wert, aus Abschnitt 9",
+        "viscosity_mm2_s": "number|null — Viskosität in mm²/s, aus Abschnitt 9",
+        "water_solubility": "string|null — Löslichkeit in Wasser z.B. 'vollständig', aus Abschnitt 9",
+        "appearance": "string|null — Aggregatzustand z.B. 'flüssig', 'fest', aus Abschnitt 9",
+        "wgk": "string|null — Wassergefährdungsklasse 1/2/3, aus Abschnitt 15",
+        "storage_class": "string|null — Lagerklasse nach TRGS 510 z.B. '3', '6.1A', aus Abschnitt 15",
+        "un_number": "string|null — UN-Nummer z.B. 'UN 1294', aus Abschnitt 14",
+        "adr_class": "string|null — ADR-Gefahrgutklasse z.B. '3', '6.1', aus Abschnitt 14",
+    }
+
     def _llm_enrich(self, parse_result: dict) -> dict:
         """
-        LLM-Fallback: füllt fehlende Felder via OpenAI gpt-4o-mini.
+        LLM-Anreicherung via aifw.sync_completion (action_code=substance_import).
 
-        Wird nur aufgerufen wenn parse_confidence < LLM_CONFIDENCE_THRESHOLD.
-        Benötigt OPENAI_API_KEY in Django-Settings (decouple.config).
+        Extrahiert fehlende Felder aus allen 16 SDS-Abschnitten.
+        Wird aufgerufen wenn parse_confidence < LLM_CONFIDENCE_THRESHOLD.
+        Regex-extrahierte Werte haben immer Vorrang (LLM füllt nur leere Felder).
         """
         try:
-            import openai
-            from decouple import config as decouple_config
-
-            api_key = decouple_config("OPENAI_API_KEY", default="")
-            if not api_key:
-                return parse_result
+            from aifw import sync_completion
 
             sections = parse_result.get("_sections", {})
-            sec1 = sections.get("01_Bezeichnung", "")[:1500]
-            sec9 = next(
-                (v for k, v in sections.items() if "09" in k or "Physik" in k),
-                "",
-            )[:2000]
-            sec2 = next(
-                (v for k, v in sections.items() if "02" in k or "Gefah" in k),
-                "",
-            )[:1000]
 
-            context = f"ABSCHNITT 1:\n{sec1}\n\nABSCHNITT 2:\n{sec2}\n\nABSCHNITT 9:\n{sec9}"
+            # Alle relevanten Abschnitte für maximale Extraktion
+            def _sec(keys: list[str], max_chars: int = 2000) -> str:
+                for k in keys:
+                    for sk, sv in sections.items():
+                        if k in sk:
+                            return sv[:max_chars]
+                return ""
 
-            schema = {
-                "product_name": "string|null",
-                "manufacturer_name": "string|null",
-                "cas_number": "string|null — CAS-Format XX-XX-X",
-                "signal_word": "string|null — 'danger' oder 'warning'",
-                "h_statements": "array of strings — e.g. ['H225','H319']",
-                "flash_point_c": "number|null — Grad Celsius",
-                "boiling_point_c": "number|null — Grad Celsius",
-                "density_g_cm3": "number|null",
-                "lower_explosion_limit": "number|null — Vol-%",
-                "upper_explosion_limit": "number|null — Vol-%",
-                "appearance": "string|null — z.B. 'flüssig', 'fest'",
-            }
+            sec1 = _sec(["01_", "01 ", "01:"], 2000)   # Bezeichnung
+            sec2 = _sec(["02_", "02 ", "02:"], 1500)   # Gefahren
+            sec3 = _sec(["03_", "03 ", "03:"], 1000)   # Zusammensetzung
+            sec9 = _sec(["09_", "09 ", "09:"], 2500)   # Physik+Chemie
+            sec14 = _sec(["14_", "14 ", "14:"], 1000)  # Transport
+            sec15 = _sec(["15_", "15 ", "15:"], 1000)  # Rechtsvorschriften
+
+            # Fallback: vollständiger Text wenn keine Abschnitte erkannt
+            if not any([sec1, sec2, sec9]):
+                raw = parse_result.get("_raw_text", "")
+                context = raw[:8000]
+            else:
+                context = (
+                    f"ABSCHNITT 1 (Bezeichnung):\n{sec1}\n\n"
+                    f"ABSCHNITT 2 (Gefahren):\n{sec2}\n\n"
+                    f"ABSCHNITT 3 (Zusammensetzung/CAS):\n{sec3}\n\n"
+                    f"ABSCHNITT 9 (Physikalisch-chemische Eigenschaften):\n{sec9}\n\n"
+                    f"ABSCHNITT 14 (Transport):\n{sec14}\n\n"
+                    f"ABSCHNITT 15 (Rechtsvorschriften/WGK/Lagerklasse):\n{sec15}"
+                )
 
             prompt = (
-                "Extrahiere aus folgendem SDS-Text (Sicherheitsdatenblatt) strukturierte Daten "
-                "als JSON. Nur vorhandene Werte ausgeben, fehlende als null. "
-                f"Schema: {json.dumps(schema, ensure_ascii=False)}\n\n"
-                f"SDS-TEXT:\n{context}\n\n"
-                "Antworte NUR mit gültigem JSON, keine Erklärungen."
+                "Du bist ein Experte für Sicherheitsdatenblätter (SDS/MSDS) nach GHS/REACH.\n"
+                "Extrahiere aus dem folgenden SDS-Text alle verfügbaren Daten als JSON.\n"
+                "Regeln:\n"
+                "- Fehlende Werte als null ausgeben\n"
+                "- Zahlen immer als number (nicht string)\n"
+                "- H-/P-Sätze als Array ['H225', 'H319', ...]\n"
+                "- Datum immer als ISO YYYY-MM-DD\n"
+                "- signal_word: nur 'danger' oder 'warning' (deutsch: Gefahr→danger, Achtung→warning)\n"
+                "- Antworte NUR mit gültigem JSON, keine Erklärungen\n\n"
+                f"JSON-Schema:\n{json.dumps(self._LLM_SCHEMA, ensure_ascii=False, indent=2)}\n\n"
+                f"SDS-TEXT:\n{context}"
             )
 
-            client = openai.OpenAI(api_key=api_key, timeout=15.0)
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",
+            llm_result = sync_completion(
+                action_code="substance_import",
                 messages=[{"role": "user", "content": prompt}],
-                response_format={"type": "json_object"},
-                max_tokens=512,
-                temperature=0,
             )
 
-            llm_data = json.loads(response.choices[0].message.content)
-            logger.info("LLM enrichment OK: %s fields", len(llm_data))
+            if not llm_result.success:
+                logger.warning("LLM enrichment failed: %s", llm_result.error)
+                return parse_result
 
-            # Nur fehlende Felder aus LLM übernehmen
-            numeric_fields = {
-                "flash_point_c", "boiling_point_c", "density_g_cm3",
+            llm_data = llm_result.as_json()
+            if not llm_data:
+                logger.warning("LLM returned no valid JSON")
+                return parse_result
+
+            logger.info(
+                "LLM enrichment OK: %s fields extracted (model=%s, tokens=%s)",
+                len([v for v in llm_data.values() if v is not None]),
+                llm_result.model,
+                llm_result.total_tokens,
+            )
+
+            # Nur leere Felder aus LLM übernehmen — Regex-Werte haben Vorrang
+            _numeric = {
+                "flash_point_c", "ignition_temperature_c", "boiling_point_c",
                 "lower_explosion_limit", "upper_explosion_limit",
+                "vapor_pressure_hpa", "density_g_cm3", "ph_value", "viscosity_mm2_s",
             }
-            str_fields = {
-                "product_name", "manufacturer_name", "cas_number",
-                "signal_word", "appearance",
+            _strings = {
+                "product_name", "manufacturer_name", "cas_number", "revision_date",
+                "version_number", "signal_word", "appearance", "water_solubility",
+                "wgk", "storage_class", "un_number", "adr_class",
             }
-            for fld in numeric_fields | str_fields:
-                if parse_result.get(fld) is None and llm_data.get(fld) is not None:
+            _lists = {"h_statements", "p_statements", "pictograms"}
+
+            for fld in _numeric | _strings:
+                if not parse_result.get(fld) and llm_data.get(fld) is not None:
                     parse_result[fld] = llm_data[fld]
 
-            if not parse_result.get("h_statements") and llm_data.get("h_statements"):
-                parse_result["h_statements"] = llm_data["h_statements"]
+            for fld in _lists:
+                if not parse_result.get(fld) and llm_data.get(fld):
+                    parse_result[fld] = llm_data[fld]
 
             parse_result["_llm_enriched"] = True
+            parse_result["_llm_model"] = llm_result.model
 
         except Exception as exc:
             logger.warning("LLM enrichment failed: %s", exc)
