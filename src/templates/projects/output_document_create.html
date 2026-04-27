@@ -40,8 +40,8 @@
                         <div class="min-w-0">
                             <span class="text-sm font-medium text-gray-900">{{ tmpl.name }}</span>
                             <div class="flex items-center gap-2 text-xs text-gray-500">
-                                {% if tmpl.kind %}
-                                <span class="px-1.5 py-0.5 rounded bg-gray-100">{{ tmpl.kind }}</span>
+                                {% if tmpl.scope or tmpl.kind %}
+                                <span class="px-1.5 py-0.5 rounded bg-gray-100">{{ tmpl.scope|default:tmpl.kind }}</span>
                                 {% endif %}
                                 <span>{{ tmpl.section_count }} Abschnitte · {{ tmpl.field_count }} Felder</span>
                             </div>

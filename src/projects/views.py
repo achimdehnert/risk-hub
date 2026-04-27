@@ -304,8 +304,10 @@ def output_document_create(
                 },
             )
 
+        from django.apps import apps as _apps
+        _DocTemplate = _apps.get_model("doc_templates", "DocumentTemplate")
         tmpl = get_object_or_404(
-            DocumentTemplate,
+            _DocTemplate,
             pk=template_id,
             tenant_id=request.tenant_id,
         )

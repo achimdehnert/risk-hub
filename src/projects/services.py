@@ -101,11 +101,12 @@ def create_output_document(
     """Create an OutputDocument with sections from a template."""
     from projects.models import DocumentSection, OutputDocument
 
+    kind = getattr(template, "kind", None) or getattr(template, "scope", None) or "custom"
     doc = OutputDocument.objects.create(
         tenant_id=tenant_id,
         project=project,
-        template=template,
-        kind=template.kind or "custom",
+        template=None,
+        kind=kind,
         title=title,
         created_by=created_by,
     )
@@ -690,13 +691,14 @@ def get_document_templates(tenant_id):
 
 
 def get_active_document_templates(tenant_id):
-    """Return non-archived DocumentTemplates for a tenant."""
-    from projects.models import DocumentTemplate
+    """Return non-archived DocumentTemplates for a tenant (from doc_templates app)."""
+    from django.apps import apps
 
+    DocTemplate = apps.get_model("doc_templates", "DocumentTemplate")
     return (
-        DocumentTemplate.objects.filter(tenant_id=tenant_id)
-        .exclude(status=DocumentTemplate.Status.ARCHIVED)
-        .order_by("kind", "name")
+        DocTemplate.objects.filter(tenant_id=tenant_id)
+        .exclude(status="archived")
+        .order_by("scope", "name")
     )
 
 
