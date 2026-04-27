@@ -537,6 +537,31 @@ def save_section_values(
 # -----------------------------------------------------------------------
 
 
+def _build_concept_context(project) -> str:
+    """Serialisiert Zonen und Maßnahmen des verknüpften ExplosionConzepts als Prompt-Kontext."""
+    try:
+        concept = project.explosion_concepts.select_related().prefetch_related(
+            "zones", "measures"
+        ).first()
+        if not concept:
+            return ""
+        parts = [f"Verknüpftes Explosionsschutzkonzept: {concept.title}"]
+        zones = concept.zones.all()
+        if zones:
+            parts.append("Zonen:")
+            for z in zones:
+                desc = z.justification or z.description or ""
+                parts.append(f"  - {z.name} (Typ {z.zone_type}): {desc[:200]}")
+        measures = concept.measures.all()
+        if measures:
+            parts.append("Schutzmaßnahmen:")
+            for m in measures[:10]:
+                parts.append(f"  - {m.title}: {str(m.description or '')[:150]}")
+        return "\n".join(parts)
+    except Exception:
+        return ""
+
+
 def generate_section_content(
     *,
     section: Any,
@@ -546,19 +571,27 @@ def generate_section_content(
     """Generate AI content for a document section field.
 
     Uses aifw.service.sync_completion for LLM generation.
+    If project has a linked ExplosionConcept, its zones/measures are passed as context.
     Returns generated text content.
     """
     doc = section.document
     project = doc.project
-    prompt = (
-        f"Du bist ein Experte für {doc.kind or 'Arbeitsschutz'}-Dokumentation. "
-        f"Projekt: {project.name}. "
-        f"Dokument: {doc.title}. "
-        f"Abschnitt: {section.title}. "
+    concept_context = _build_concept_context(project)
+
+    prompt_parts = [
+        f"Du bist ein Experte für {doc.kind or 'Arbeitsschutz'}-Dokumentation.",
+        f"Projekt: {project.name}.",
+        f"Dokument: {doc.title}.",
+        f"Abschnitt: {section.title}.",
+    ]
+    if concept_context:
+        prompt_parts.append(concept_context)
+    prompt_parts.append(
         f"Aufgabe: {llm_hint or section.title}. "
-        f"Schreibe einen fachlich korrekten, professionellen Text "
-        f"für diesen Abschnitt auf Deutsch."
+        f"Schreibe einen fachlich korrekten, professionellen Text für diesen Abschnitt auf Deutsch. "
+        f"Nutze die obigen Konzeptdaten wenn sie zum Abschnitt passen."
     )
+    prompt = "\n".join(prompt_parts)
 
     try:
         from aifw.service import sync_completion

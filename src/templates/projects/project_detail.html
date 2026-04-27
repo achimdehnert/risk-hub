@@ -195,6 +195,45 @@
         {% endif %}
     </div>
 
+    {% if explosion_concepts %}
+    <!-- Verknüpfte Explosionsschutz-Konzepte -->
+    <div>
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-semibold text-gray-900 flex items-center gap-2">
+                <i data-lucide="zap" class="w-5 h-5 text-orange-500"></i>
+                Explosionsschutz-Konzepte
+            </h2>
+            <a href="{% url 'explosionsschutz:concept-list-html' %}"
+               class="text-sm text-orange-600 hover:underline">
+                Alle Konzepte →
+            </a>
+        </div>
+        <div class="grid gap-3 grid-cols-1 md:grid-cols-2">
+            {% for concept in explosion_concepts %}
+            <a href="{% url 'explosionsschutz:concept-detail-html' pk=concept.pk %}"
+               class="bg-white rounded-xl shadow-sm border border-orange-100 p-4 hover:shadow-md hover:border-orange-300 transition block">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 bg-orange-100 rounded-lg flex items-center justify-center shrink-0">
+                        <i data-lucide="zap" class="w-4 h-4 text-orange-600"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="font-semibold text-gray-900 text-sm truncate">{{ concept.title }}</h3>
+                        <div class="text-xs text-gray-500 flex gap-2 mt-0.5">
+                            <span>{{ concept.zones.count }} Zone(n)</span>
+                            <span>·</span>
+                            <span>{{ concept.measures.count }} Maßnahme(n)</span>
+                        </div>
+                    </div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        <p class="text-xs text-gray-400 mt-2">
+            ℹ️ KI-Abschnitte in Dokumenten nutzen Zonen und Maßnahmen dieser Konzepte automatisch als Kontext.
+        </p>
+    </div>
+    {% endif %}
+
     {% if declined_modules %}
     <div>
         <h3 class="text-sm font-medium text-gray-500 mb-2 flex items-center gap-1">

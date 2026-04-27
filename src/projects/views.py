@@ -193,6 +193,7 @@ def project_detail(request: HttpRequest, pk: int) -> HttpResponse:
     declined = project.modules.filter(status="declined")
     documents = project.documents.all()[:20]
     output_docs = project.output_documents.all()[:20]
+    explosion_concepts = project.explosion_concepts.all()[:10]
 
     return render(
         request,
@@ -203,6 +204,7 @@ def project_detail(request: HttpRequest, pk: int) -> HttpResponse:
             "declined_modules": declined,
             "documents": documents,
             "output_docs": output_docs,
+            "explosion_concepts": explosion_concepts,
         },
     )
 
