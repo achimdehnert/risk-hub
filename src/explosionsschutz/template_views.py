@@ -335,6 +335,15 @@ class ConceptDetailView(LoginRequiredMixin, View):
             status__in=[ApprovalRequest.Status.PENDING, ApprovalRequest.Status.IN_REVIEW],
         ).first()
 
+        try:
+            from django.apps import apps
+            DocTemplate = apps.get_model("doc_templates", "DocumentTemplate")
+            external_doc_templates = DocTemplate.objects.filter(
+                tenant_id=tenant_id
+            ).exclude(status="archived").order_by("scope", "name")
+        except Exception:
+            external_doc_templates = []
+
         return render(
             request,
             self.template_name,
@@ -345,6 +354,7 @@ class ConceptDetailView(LoginRequiredMixin, View):
                 "documents": documents,
                 "doc_instances": doc_instances,
                 "doc_templates": doc_templates,
+                "external_doc_templates": external_doc_templates,
                 "active_approval": active_approval,
                 "zone_form": ZoneDefinitionForm(),
                 "measure_form": ProtectionMeasureForm(),
