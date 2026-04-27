@@ -39,8 +39,8 @@ iil-reflex[web]>=0.2.1
 # Enrichment Agent Pattern — ADR-169 (GESTIS + PubChem providers)
 # iil-enrichment[gestis,pubchem]>=0.1.0  # not yet on PyPI — optional, skipped at runtime
 # Safety Framework — riskfw inlined in src/riskfw/ (ADR-146 Phase 1)
-# CAD / BIM — nl2cad-core mono-distribution (ADR-146 Phase 2)
-# nl2cad-core[gaeb]>=0.2.0  # TODO: uncomment when published to PyPI
+# CAD / BIM — nl2cad-core (ADR-146 Phase 2) — from git until PyPI publish
+nl2cad-core @ git+https://github.com/achimdehnert/nl2cad.git#subdirectory=packages/nl2cad-core
 mozilla-django-oidc>=4.0
 openpyxl>=3.1
 iil-ingest[pdf,ocr] @ git+https://github.com/achimdehnert/iil-ingest.git
