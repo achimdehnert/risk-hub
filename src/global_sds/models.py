@@ -320,6 +320,70 @@ class GlobalSdsRevision(models.Model):
         ver = f" v{self.version_number}" if self.version_number else ""
         return f"{self.product_name}{ver} ({self.get_status_display()})"
 
+    RAW_DATA_FIELD_MAP: dict[str, str] = {
+        "product_name":           "product_name",
+        "manufacturer_name":      "manufacturer_name",
+        "revision_date":          "revision_date",
+        "version_number":         "version_number",
+        "signal_word":            "signal_word",
+        "flash_point_c":          "flash_point_c",
+        "ignition_temperature_c": "ignition_temperature_c",
+        "lower_explosion_limit":  "lower_explosion_limit",
+        "upper_explosion_limit":  "upper_explosion_limit",
+        "parse_confidence":       "parse_confidence",
+        "storage_class":          "storage_class_trgs510",
+        "wgk":                    "wgk",
+        "voc_percent":            "voc_percent",
+        "voc_g_per_l":            "voc_g_per_l",
+    }
+
+    def sync_fields_from_raw_data(self, data: dict | None = None) -> list[str]:
+        """
+        Schreibt raw_data-Felder in Modell-Spalten — typkonform via Feldinspektion.
+
+        Aufruf nach create() oder jederzeit als Backfill auf bestehenden Revisionen.
+        Gibt Liste der aktualisierten Felder zurück (für save(update_fields=...)).
+        """
+        import contextlib
+        from datetime import date
+        from decimal import Decimal, InvalidOperation
+
+        source = data if data is not None else (self.raw_data or {})
+        updated: list[str] = []
+
+        field_map = {f.name: f for f in self._meta.get_fields() if hasattr(f, "get_internal_type")}
+
+        for raw_key, model_key in self.RAW_DATA_FIELD_MAP.items():
+            val = source.get(raw_key)
+            if val is None or val == "":
+                continue
+            field = field_map.get(model_key)
+            if field is None:
+                continue
+
+            converted = None
+            ftype = field.get_internal_type()
+            with contextlib.suppress(Exception):
+                if ftype == "DateField":
+                    converted = date.fromisoformat(str(val))
+                elif ftype in ("DecimalField",):
+                    converted = Decimal(str(val).replace(",", "."))
+                elif ftype == "FloatField":
+                    converted = float(val)
+                elif ftype in ("PositiveSmallIntegerField", "IntegerField", "SmallIntegerField"):
+                    converted = int(val)
+                elif ftype == "CharField":
+                    max_len = getattr(field, "max_length", 512)
+                    converted = str(val)[:max_len]
+                else:
+                    converted = val
+
+            if converted is not None:
+                setattr(self, model_key, converted)
+                updated.append(model_key)
+
+        return updated
+
     @property
     def is_current(self) -> bool:
         """True wenn verifiziert und nicht abgelöst."""

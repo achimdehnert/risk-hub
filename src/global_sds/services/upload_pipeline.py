@@ -247,13 +247,8 @@ class SdsUploadPipeline:
         pdf_bytes: bytes | None = None,
         initial: bool = False,
     ) -> GlobalSdsRevision:
-        """Revision erstellen."""
-        from datetime import date
-
-        confidence = parse_result.get(
-            "parse_confidence",
-            0.0,
-        )
+        """Revision erstellen — Felder via sync_fields_from_raw_data() befüllen."""
+        confidence = parse_result.get("parse_confidence", 0.0)
 
         # Status basierend auf Konfidenz
         if initial and confidence >= GLOBAL_PROMOTION_THRESHOLD:
@@ -261,52 +256,21 @@ class SdsUploadPipeline:
         else:
             status = GlobalSdsRevision.Status.PENDING
 
-        revision_date = None
-        rd_str = parse_result.get("revision_date")
-        if rd_str:
-            with contextlib.suppress(ValueError, TypeError):
-                revision_date = date.fromisoformat(rd_str)
-
-        revision = GlobalSdsRevision.objects.create(
+        # Nur Pflichtfelder + Metadaten beim create() — restliche Felder via sync
+        revision = GlobalSdsRevision(
             substance=substance,
             source_hash=source_hash,
             status=status,
             uploaded_by_tenant_id=tenant_id,
             pdf_file=ContentFile(pdf_bytes, name=f"{source_hash[:16]}.pdf") if pdf_bytes else None,
             raw_data=parse_result,
-            manufacturer_name=parse_result.get(
-                "manufacturer_name",
-                "",
-            ),
-            product_name=parse_result.get(
-                "product_name",
-                "",
-            ),
-            revision_date=revision_date,
-            version_number=parse_result.get(
-                "version_number",
-                "",
-            ),
-            signal_word=parse_result.get(
-                "signal_word",
-                "",
-            ),
-            flash_point_c=parse_result.get("flash_point_c"),
-            ignition_temperature_c=parse_result.get(
-                "ignition_temperature_c",
-            ),
-            lower_explosion_limit=parse_result.get(
-                "lower_explosion_limit",
-            ),
-            upper_explosion_limit=parse_result.get(
-                "upper_explosion_limit",
-            ),
-            parse_confidence=confidence,
-            llm_corrections=parse_result.get(
-                "llm_corrections",
-                [],
-            ),
+            llm_corrections=parse_result.get("llm_corrections", []),
+            product_name=parse_result.get("product_name", "") or "",
         )
+
+        # Alle raw_data-Felder typkonform in Modell-Spalten schreiben
+        revision.sync_fields_from_raw_data(parse_result)
+        revision.save()
 
         self._populate_ghs_relations(revision, parse_result)
 
