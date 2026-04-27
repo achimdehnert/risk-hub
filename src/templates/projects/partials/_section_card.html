@@ -144,7 +144,7 @@
     </form>
 
     {# Aktionen — außerhalb Haupt-Form; Speichern via HTML5 form= #}
-    <div class="flex justify-end items-center gap-2 mt-3">
+    <div class="flex justify-end items-center gap-2 mt-3 pr-20 sm:pr-0">
         <form hx-post="{% url 'projects:section-delete' pk=project.pk doc_pk=doc.pk sec_pk=section.pk %}"
               hx-target="#section-{{ section.pk }}"
               hx-swap="outerHTML"
