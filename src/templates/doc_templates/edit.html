@@ -81,30 +81,32 @@
       </div>
     </details>
 
-    {# ─ Aktionen ──────────────────────────────────────────── #}
-    <div class="flex items-center justify-between">
-      <div class="flex gap-2">
-        <a href="{% url 'doc_templates:template-list' %}"
-           class="text-sm text-gray-500 hover:text-gray-700">Zurück zur Liste</a>
-        <span class="text-gray-300">|</span>
-        <a href="{% url 'doc_templates:instance-create' template_pk=tmpl.pk %}"
-           class="text-sm text-green-600 hover:text-green-800">Dokument aus dieser Vorlage erstellen</a>
-      </div>
-      <div class="flex items-center gap-3">
-        <form method="post" action="{% url 'doc_templates:template-delete' pk=tmpl.pk %}"
-              onsubmit="return confirm('Vorlage \'{{ tmpl.name }}\' wirklich löschen? Dieser Vorgang kann nicht rückgängig gemacht werden.')">
-          {% csrf_token %}
-          <button type="submit"
-                  class="px-4 py-2.5 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium">
-            Löschen
-          </button>
-        </form>
-        <button type="submit" form="template-form" class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
-          Speichern
-        </button>
-      </div>
-    </div>
   </form>
+
+  {# ─ Aktionen — außerhalb des Formulars; Speichern via HTML5 form="template-form" #}
+  <div class="flex items-center justify-between mt-2">
+    <div class="flex gap-2">
+      <a href="{% url 'doc_templates:template-list' %}"
+         class="text-sm text-gray-500 hover:text-gray-700">Zurück zur Liste</a>
+      <span class="text-gray-300">|</span>
+      <a href="{% url 'doc_templates:instance-create' template_pk=tmpl.pk %}"
+         class="text-sm text-green-600 hover:text-green-800">Dokument aus dieser Vorlage erstellen</a>
+    </div>
+    <div class="flex items-center gap-3">
+      <form id="delete-form" method="post" action="{% url 'doc_templates:template-delete' pk=tmpl.pk %}">
+        {% csrf_token %}
+        <button type="submit"
+                onclick="return confirm('Vorlage &quot;{{ tmpl.name }}&quot; wirklich löschen? Kann nicht rückgängig gemacht werden.')"
+                class="px-4 py-2.5 border border-red-300 text-red-600 rounded-lg hover:bg-red-50 text-sm font-medium">
+          Löschen
+        </button>
+      </form>
+      <button type="submit" form="template-form"
+              class="px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium">
+        Speichern
+      </button>
+    </div>
+  </div>
 
 </div>
 
