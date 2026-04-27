@@ -183,10 +183,12 @@ def sds_upload(request: HttpRequest) -> HttpResponse:
 
     # Parser aufrufen
     try:
+        import io
+
         from substances.services.sds_parser import SdsParserService
 
         parser = SdsParserService()
-        parse_result = parser.parse_pdf(pdf_file)
+        parse_result = parser.parse_pdf(io.BytesIO(pdf_bytes))
     except (ImportError, Exception) as exc:
         logger.warning("SDS parser error: %s", exc)
         parse_result = {
