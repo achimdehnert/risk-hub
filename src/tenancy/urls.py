@@ -52,12 +52,12 @@ urlpatterns = [
         name="module-membership-manage",
     ),
     path(
-        "<int:org_pk>/modules/<str:module>/members/<int:membership_pk>/role/",
+        "<int:org_pk>/modules/<str:module>/members/<uuid:membership_pk>/role/",
         views.module_membership_role,
         name="module-membership-role",
     ),
     path(
-        "<int:org_pk>/modules/<str:module>/members/<int:membership_pk>/revoke/",
+        "<int:org_pk>/modules/<str:module>/members/<uuid:membership_pk>/revoke/",
         views.module_membership_revoke,
         name="module-membership-revoke",
     ),
