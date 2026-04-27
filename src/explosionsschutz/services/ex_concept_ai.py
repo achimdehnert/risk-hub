@@ -137,30 +137,111 @@ def generate_chapter(cmd: GenerateProposalCmd) -> GenerationResult:
         )
 
 
-def accept_proposal(cmd: AcceptProposalCmd) -> ExplosionConceptGenerationLog:
+def _parse_zones_from_text(text: str) -> list[dict]:
+    """Parst ### Zone X Abschnitte aus KI-generiertem Markdown-Text.
+
+    Erkennt Zone 0/1/2/20/21/22. Gibt Liste von Dicts zurück:
+    [{"zone_type": "1", "name": "Zone 1", "description": "...", "justification": "..."}]
+    """
+    valid_types = {"0", "1", "2", "20", "21", "22"}
+    zones = []
+    # Split auf ### Zone N (auch mit trailing text wie "### Zone 1 — Lager")
+    section_re = re.compile(r"^###\s+Zone\s+(\d{1,2})\b", re.MULTILINE)
+    positions = [(m.start(), m.group(1)) for m in section_re.finditer(text)]
+
+    for i, (start, zone_num) in enumerate(positions):
+        if zone_num not in valid_types:
+            continue
+        end = positions[i + 1][0] if i + 1 < len(positions) else len(text)
+        section = text[start:end].strip()
+
+        # Begründung extrahieren (Zeilen nach "Begründung:")
+        justification = ""
+        begr_match = re.search(r"\*{0,2}Begründung:\*{0,2}(.+?)(?=\n-\s+\*{0,2}(?:Hinweis|Ausdehnung)|$)",
+                               section, re.DOTALL)
+        if begr_match:
+            justification = begr_match.group(1).strip()
+
+        # Ausdehnung extrahieren
+        extent_match = re.search(r"Ausdehnung[^:]*:\*{0,2}\s*(.+)", section)
+        extent_text = extent_match.group(1).strip() if extent_match else ""
+
+        zones.append({
+            "zone_type": zone_num,
+            "name": f"Zone {zone_num}",
+            "description": section,
+            "justification": justification or section,
+            "extent_text": extent_text,
+        })
+    return zones
+
+
+def _apply_zones_to_concept(concept, zones: list[dict], tenant_id) -> list:
+    """Erstellt oder aktualisiert ZoneDefinition-Objekte aus geparsten Zonen.
+
+    Strategie: get_or_create nach (concept, zone_type) — Update wenn vorhanden.
+    Gibt Liste der bearbeiteten ZoneDefinition-Objekte zurück.
+    """
+    from django.apps import apps
+    ZoneDefinition = apps.get_model("explosionsschutz", "ZoneDefinition")
+
+    result = []
+    for z in zones:
+        obj, created = ZoneDefinition.objects.get_or_create(
+            concept=concept,
+            zone_type=z["zone_type"],
+            defaults={"tenant_id": tenant_id, "name": z["name"]},
+        )
+        obj.name = z["name"]
+        obj.description = z["description"]
+        obj.justification = z["justification"]
+        obj.save(update_fields=["name", "description", "justification", "updated_at"])
+        result.append((obj, created))
+    return result
+
+
+def accept_proposal(cmd: AcceptProposalCmd) -> tuple:
     """Markiert einen Vorschlag als vom Experten übernommen.
 
-    Nur SUCCESS-Logs können übernommen werden.
+    Bei chapter='zones': parst editierten Text und erstellt/aktualisiert ZoneDefinition.
+    Gibt (log, zone_results) zurück — zone_results ist Liste von (obj, created) Tupeln.
     """
     from django.contrib.auth import get_user_model
 
     User = get_user_model()
-    log = ExplosionConceptGenerationLog.objects.get(pk=cmd.generation_log_id)
+    log = ExplosionConceptGenerationLog.objects.select_related("concept").get(
+        pk=cmd.generation_log_id
+    )
 
     if log.status != GenerationStatus.SUCCESS:
         raise ValueError(
             f"Nur SUCCESS-Logs können übernommen werden (status={log.status})"
         )
 
+    final_text = cmd.proposal_text.strip() if cmd.proposal_text.strip() else log.response_text
     now = datetime.now(UTC)
     log.status = GenerationStatus.ACCEPTED
     log.accepted_at = now
     log.accepted_by = User.objects.get(pk=cmd.accepted_by_user_id)
     log.changes_on_adoption = cmd.changes_made
+    log.response_text = final_text
     log.save(update_fields=[
-        "status", "accepted_at", "accepted_by", "changes_on_adoption", "updated_at"
+        "status", "accepted_at", "accepted_by", "changes_on_adoption",
+        "response_text", "updated_at",
     ])
-    return log
+
+    zone_results = []
+    if log.chapter == "zones":
+        zones = _parse_zones_from_text(final_text)
+        zone_results = _apply_zones_to_concept(
+            log.concept, zones, log.tenant_id
+        )
+        logger.info(
+            "accept_proposal: %d Zonen für Konzept %s erzeugt/aktualisiert",
+            len(zone_results), log.concept_id,
+        )
+
+    return log, zone_results
 
 
 def reject_proposal(cmd: RejectProposalCmd) -> ExplosionConceptGenerationLog:

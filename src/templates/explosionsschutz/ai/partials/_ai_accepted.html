@@ -1,17 +1,41 @@
 {# explosionsschutz/ai/partials/_ai_accepted.html #}
-{# HTMX-Partial: KI-Vorschlag übernommen — zeigt Text zur manuellen Umsetzung #}
+{# HTMX-Partial: KI-Vorschlag übernommen — zeigt erstellte Zonen + Text #}
 <div class="ai-proposal rounded border border-green-200 bg-green-50 p-4">
   <div class="mb-3 flex items-center gap-2">
     <span class="text-green-600">✅</span>
     <span class="text-sm font-semibold text-green-800">KI-Vorschlag übernommen (Log #{{ log_id }})</span>
     {% if changes_made %}
-      <span class="text-xs text-gray-500 ml-2">Änderung: {{ changes_made }}</span>
+      <span class="text-xs text-gray-500 ml-2">· {{ changes_made }}</span>
     {% endif %}
   </div>
-  <div class="prose prose-sm max-w-none rounded border border-green-100 bg-white p-3 text-sm">
-    <pre class="whitespace-pre-wrap font-sans text-gray-700">{{ response_text }}</pre>
+
+  {% if zone_results %}
+  <div class="mb-3 rounded border border-green-300 bg-white p-3">
+    <p class="text-xs font-semibold text-green-700 mb-2">
+      {{ zone_results|length }} Zone(n) angelegt / aktualisiert:
+    </p>
+    <ul class="space-y-1">
+      {% for zone, created in zone_results %}
+      <li class="flex items-center gap-2 text-sm">
+        <span class="{% if created %}text-green-600{% else %}text-blue-600{% endif %}">
+          {% if created %}➕{% else %}🔄{% endif %}
+        </span>
+        <span class="font-medium">{{ zone.name }}</span>
+        <span class="text-xs text-gray-400">
+          {% if created %}neu erstellt{% else %}aktualisiert{% endif %}
+        </span>
+      </li>
+      {% endfor %}
+    </ul>
   </div>
-  <p class="mt-2 text-xs text-gray-500">
-    Vorschlag akzeptiert — bitte Zonen/Maßnahmen manuell in den Formularen unten anlegen.
-  </p>
+  {% endif %}
+
+  <details class="mt-2">
+    <summary class="cursor-pointer text-xs text-gray-500 hover:text-gray-700">
+      Übernommener Text anzeigen
+    </summary>
+    <div class="mt-2 rounded border border-green-100 bg-white p-3">
+      <pre class="whitespace-pre-wrap font-mono text-xs text-gray-700">{{ response_text }}</pre>
+    </div>
+  </details>
 </div>

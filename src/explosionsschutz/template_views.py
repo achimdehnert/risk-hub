@@ -1696,12 +1696,14 @@ class ConceptAiAcceptView(LoginRequiredMixin, View):
         get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
 
         changes_made = request.POST.get("changes_made", "")
+        proposal_text = request.POST.get("proposal_text", "")
         cmd = AcceptProposalCmd(
             generation_log_id=log_id,
             accepted_by_user_id=request.user.pk,
             changes_made=changes_made,
+            proposal_text=proposal_text,
         )
-        log = accept_proposal(cmd)
+        log, zone_results = accept_proposal(cmd)
 
         if request.headers.get("HX-Request"):
             return render(
@@ -1711,6 +1713,8 @@ class ConceptAiAcceptView(LoginRequiredMixin, View):
                     "log_id": log_id,
                     "response_text": log.response_text,
                     "changes_made": changes_made,
+                    "zone_results": zone_results,
+                    "chapter": log.chapter,
                 },
             )
         messages.success(request, "KI-Vorschlag übernommen.")

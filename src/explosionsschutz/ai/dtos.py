@@ -25,6 +25,7 @@ class AcceptProposalCmd:
     generation_log_id: int
     accepted_by_user_id: int
     changes_made: str = ""
+    proposal_text: str = ""
 
 
 @dataclass(frozen=True)
