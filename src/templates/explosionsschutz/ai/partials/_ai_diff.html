@@ -49,39 +49,30 @@
 
   {# Accept / Reject Buttons #}
   <div class="mt-3 flex gap-2">
-    <form
-      method="post"
-      action="{% url 'explosionsschutz:concept-ai-accept' pk=concept.pk log_id=log_id %}"
-      id="accept_form_{{ log_id }}"
+    <button
+      type="button"
+      data-testid="ai-accept-btn-{{ log_id }}"
+      hx-post="{% url 'explosionsschutz:concept-ai-accept' pk=concept.pk log_id=log_id %}"
+      hx-target="closest .ai-proposal"
+      hx-swap="outerHTML"
+      hx-include="#changes_made_{{ log_id }}"
+      hx-vals='{"changes_made": ""}'
+      class="rounded bg-green-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+      onclick="this.setAttribute('hx-vals', JSON.stringify({changes_made: document.getElementById('changes_made_{{ log_id }}').value}))"
     >
-      {% csrf_token %}
-      <input type="hidden" name="changes_made" id="hidden_changes_{{ log_id }}">
-      <button
-        type="submit"
-        class="rounded bg-green-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-green-700"
-      >
-        ✅ Übernehmen
-      </button>
-    </form>
-    <script>
-      document.getElementById('accept_form_{{ log_id }}').addEventListener('submit', function() {
-        document.getElementById('hidden_changes_{{ log_id }}').value =
-          document.getElementById('changes_made_{{ log_id }}').value;
-      });
-    </script>
+      ✅ Übernehmen
+    </button>
 
-    <form
-      method="post"
-      action="{% url 'explosionsschutz:concept-ai-reject' pk=concept.pk log_id=log_id %}"
+    <button
+      type="button"
+      data-testid="ai-reject-btn-{{ log_id }}"
+      hx-post="{% url 'explosionsschutz:concept-ai-reject' pk=concept.pk log_id=log_id %}"
+      hx-target="closest .ai-proposal"
+      hx-swap="outerHTML"
+      class="rounded border border-red-300 bg-white px-4 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
     >
-      {% csrf_token %}
-      <button
-        type="submit"
-        class="rounded border border-red-300 bg-white px-4 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-      >
-        ❌ Ablehnen
-      </button>
-    </form>
+      ❌ Ablehnen
+    </button>
   </div>
 
 </div>

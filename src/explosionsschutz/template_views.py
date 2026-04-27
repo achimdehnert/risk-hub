@@ -1693,16 +1693,28 @@ class ConceptAiAcceptView(LoginRequiredMixin, View):
 
         tenant_id = getattr(request, "tenant_id", None)
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
+        get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
 
+        changes_made = request.POST.get("changes_made", "")
         cmd = AcceptProposalCmd(
             generation_log_id=log_id,
             accepted_by_user_id=request.user.pk,
-            changes_made=request.POST.get("changes_made", ""),
+            changes_made=changes_made,
         )
-        accept_proposal(cmd)
+        log = accept_proposal(cmd)
+
+        if request.headers.get("HX-Request"):
+            return render(
+                request,
+                "explosionsschutz/ai/partials/_ai_accepted.html",
+                {
+                    "log_id": log_id,
+                    "response_text": log.response_text,
+                    "changes_made": changes_made,
+                },
+            )
         messages.success(request, "KI-Vorschlag übernommen.")
-        return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
+        return redirect("explosionsschutz:concept-detail-html", pk=pk)
 
 
 class ConceptAiRejectView(LoginRequiredMixin, View):
@@ -1717,12 +1729,19 @@ class ConceptAiRejectView(LoginRequiredMixin, View):
 
         tenant_id = getattr(request, "tenant_id", None)
         base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-        concept = get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
+        get_object_or_404(ExplosionConcept.objects.filter(base_filter), pk=pk)
 
         cmd = RejectProposalCmd(
             generation_log_id=log_id,
             rejected_by_user_id=request.user.pk,
         )
         reject_proposal(cmd)
+
+        if request.headers.get("HX-Request"):
+            return render(
+                request,
+                "explosionsschutz/ai/partials/_ai_rejected.html",
+                {"log_id": log_id},
+            )
         messages.info(request, "KI-Vorschlag abgelehnt.")
-        return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
+        return redirect("explosionsschutz:concept-detail-html", pk=pk)

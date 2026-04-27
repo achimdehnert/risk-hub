@@ -1,0 +1,17 @@
+{# explosionsschutz/ai/partials/_ai_accepted.html #}
+{# HTMX-Partial: KI-Vorschlag übernommen — zeigt Text zur manuellen Umsetzung #}
+<div class="ai-proposal rounded border border-green-200 bg-green-50 p-4">
+  <div class="mb-3 flex items-center gap-2">
+    <span class="text-green-600">✅</span>
+    <span class="text-sm font-semibold text-green-800">KI-Vorschlag übernommen (Log #{{ log_id }})</span>
+    {% if changes_made %}
+      <span class="text-xs text-gray-500 ml-2">Änderung: {{ changes_made }}</span>
+    {% endif %}
+  </div>
+  <div class="prose prose-sm max-w-none rounded border border-green-100 bg-white p-3 text-sm">
+    <pre class="whitespace-pre-wrap font-sans text-gray-700">{{ response_text }}</pre>
+  </div>
+  <p class="mt-2 text-xs text-gray-500">
+    Vorschlag akzeptiert — bitte Zonen/Maßnahmen manuell in den Formularen unten anlegen.
+  </p>
+</div>
