@@ -600,6 +600,75 @@ class ConceptCreateView(LoginRequiredMixin, View):
         )
 
 
+class ConceptFinalizeView(LoginRequiredMixin, View):
+    """Schritt 6: Konzept zusammenführen → OutputDocument aus doc_templates.DocumentTemplate erstellen."""
+
+    template_name = "explosionsschutz/concepts/finalize.html"
+
+    def _get_doc_templates(self, tenant_id):
+        from django.apps import apps
+        DocTemplate = apps.get_model("doc_templates", "DocumentTemplate")
+        return DocTemplate.objects.filter(tenant_id=tenant_id).exclude(status="archived").order_by("scope", "name")
+
+    def _get_projects(self, tenant_id):
+        from projects.models import Project
+        return Project.objects.filter(tenant_id=tenant_id).order_by("name")
+
+    def get(self, request, pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        concept = get_object_or_404(ExplosionConcept, pk=pk, tenant_id=tenant_id)
+        return render(request, self.template_name, {
+            "concept": concept,
+            "doc_templates": self._get_doc_templates(tenant_id),
+            "projects": self._get_projects(tenant_id),
+        })
+
+    def post(self, request, pk):
+        tenant_id = getattr(request, "tenant_id", None)
+        concept = get_object_or_404(ExplosionConcept, pk=pk, tenant_id=tenant_id)
+
+        template_id = request.POST.get("doc_template_id")
+        project_id = request.POST.get("project_id") or (concept.project_id)
+        title = request.POST.get("title", "").strip() or concept.title
+
+        if not template_id or not project_id:
+            messages.error(request, "Bitte Vorlage und Projekt auswählen.")
+            return render(request, self.template_name, {
+                "concept": concept,
+                "doc_templates": self._get_doc_templates(tenant_id),
+                "projects": self._get_projects(tenant_id),
+                "error": "Vorlage und Projekt sind Pflichtfelder.",
+            })
+
+        from django.apps import apps
+        from projects.models import Project
+        from projects.services import create_output_document
+
+        DocTemplate = apps.get_model("doc_templates", "DocumentTemplate")
+        try:
+            tmpl = DocTemplate.objects.get(pk=template_id, tenant_id=tenant_id)
+            project = Project.objects.get(pk=project_id, tenant_id=tenant_id)
+        except Exception as e:
+            messages.error(request, f"Vorlage oder Projekt nicht gefunden: {e}")
+            return redirect("explosionsschutz:concept-finalize", pk=pk)
+
+        doc = create_output_document(
+            tenant_id=tenant_id,
+            project=project,
+            template=tmpl,
+            title=title,
+            created_by=request.user,
+        )
+
+        # Konzept mit Projekt verknüpfen falls noch nicht
+        if not concept.project_id:
+            concept.project = project
+            concept.save(update_fields=["project", "updated_at"])
+
+        messages.success(request, f"Dokument '{doc.title}' erstellt — jetzt editieren.")
+        return redirect("projects:output-document-edit", pk=project.pk, doc_pk=doc.pk)
+
+
 class ConceptEditView(LoginRequiredMixin, View):
     """Konzept bearbeiten"""
 

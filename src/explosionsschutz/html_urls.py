@@ -39,6 +39,7 @@ from .template_views import (
     ConceptDetailView,
     ConceptDxfImportView,
     ConceptEditView,
+    ConceptFinalizeView,
     ConceptListView,
     ConceptValidateView,
     EquipmentCreateView,
@@ -105,6 +106,7 @@ urlpatterns = [
     path("concepts/create/", ConceptCreateView.as_view(), name="concept-create"),
     path("concepts/<int:pk>/", ConceptDetailView.as_view(), name="concept-detail-html"),
     path("concepts/<int:pk>/edit/", ConceptEditView.as_view(), name="concept-edit"),
+    path("concepts/<int:pk>/finalize/", ConceptFinalizeView.as_view(), name="concept-finalize"),
     path("concepts/<int:pk>/validate/", ConceptValidateView.as_view(), name="concept-validate"),
     # KI-Augmentierung (ADR-018)
     path("concepts/<int:pk>/ai/<str:chapter>/", ConceptAiGenerateView.as_view(), name="concept-ai-generate"),
