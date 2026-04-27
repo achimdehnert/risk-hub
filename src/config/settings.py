@@ -12,6 +12,7 @@ from config.secrets import read_secret
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = read_secret("DJANGO_SECRET_KEY", default="dev-only-change-in-production")
+DEBUG = read_secret("DJANGO_DEBUG", default="0") == "1"
 
 # Security guard: fail fast if insecure default key is used outside of local dev
 _INSECURE_KEY_MARKERS = ("dev-only-", "insecure-dev-", "django-insecure-")
@@ -20,7 +21,6 @@ if not DEBUG and any(SECRET_KEY.startswith(m) for m in _INSECURE_KEY_MARKERS):
         "SECRET_KEY is set to an insecure development default. "
         "Set DJANGO_SECRET_KEY (or SECRET_KEY) in your environment."
     )
-DEBUG = read_secret("DJANGO_DEBUG", default="0") == "1"
 ALLOWED_HOSTS = read_secret(
     "DJANGO_ALLOWED_HOSTS",
     default=".localhost,localhost,127.0.0.1",
