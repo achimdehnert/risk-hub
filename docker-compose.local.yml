@@ -54,6 +54,7 @@ services:
       - "127.0.0.1:8090:8000"
     volumes:
       - /home/devuser/github/risk-hub/src:/app/src
+      - risk_hub_local_media:/app/media
     entrypoint: ["/entrypoint.sh"]
     command: ["web"]
     networks:
@@ -62,6 +63,7 @@ services:
 
 volumes:
   risk_hub_local_pgdata:
+  risk_hub_local_media:
 
 networks:
   risk_hub_local:

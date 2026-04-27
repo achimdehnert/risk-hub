@@ -12,6 +12,14 @@ from config.secrets import read_secret
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = read_secret("DJANGO_SECRET_KEY", default="dev-only-change-in-production")
+
+# Security guard: fail fast if insecure default key is used outside of local dev
+_INSECURE_KEY_MARKERS = ("dev-only-", "insecure-dev-", "django-insecure-")
+if not DEBUG and any(SECRET_KEY.startswith(m) for m in _INSECURE_KEY_MARKERS):
+    raise ValueError(
+        "SECRET_KEY is set to an insecure development default. "
+        "Set DJANGO_SECRET_KEY (or SECRET_KEY) in your environment."
+    )
 DEBUG = read_secret("DJANGO_DEBUG", default="0") == "1"
 ALLOWED_HOSTS = read_secret(
     "DJANGO_ALLOWED_HOSTS",
@@ -134,15 +142,15 @@ USE_TZ = True
 
 # Tenancy
 TENANT_BASE_DOMAINS = [
-    d.strip() for d in os.getenv("TENANT_BASE_DOMAINS", "").split(",") if d.strip()
+    d.strip() for d in read_secret("TENANT_BASE_DOMAINS", default="").split(",") if d.strip()
 ]
 TENANT_BASE_DOMAIN = (
-    TENANT_BASE_DOMAINS[0] if TENANT_BASE_DOMAINS else os.getenv("TENANT_BASE_DOMAIN", "localhost")
+    TENANT_BASE_DOMAINS[0] if TENANT_BASE_DOMAINS else read_secret("TENANT_BASE_DOMAIN", default="localhost")
 )
-TENANT_ALLOW_LOCALHOST = os.getenv("TENANT_ALLOW_LOCALHOST", "1") == "1"
+TENANT_ALLOW_LOCALHOST = read_secret("TENANT_ALLOW_LOCALHOST", default="1") == "1"
 TENANT_RESERVED_SUBDOMAINS = [
     s.strip().lower()
-    for s in os.getenv("TENANT_RESERVED_SUBDOMAINS", "www").split(",")
+    for s in read_secret("TENANT_RESERVED_SUBDOMAINS", default="www").split(",")
     if s.strip()
 ]
 TENANT_MODEL = "tenancy.Organization"
@@ -189,8 +197,8 @@ S3_USE_SSL = read_secret("S3_USE_SSL", default="0") == "1"
 S3_PUBLIC_BASE_URL = read_secret("S3_PUBLIC_BASE_URL", default="")
 
 # LLM Gateway
-LLM_GATEWAY_URL = os.getenv("LLM_GATEWAY_URL", "http://localhost:8100")
-LLM_GATEWAY_TIMEOUT = float(os.getenv("LLM_GATEWAY_TIMEOUT", "120"))
+LLM_GATEWAY_URL = read_secret("LLM_GATEWAY_URL", default="http://localhost:8100")
+LLM_GATEWAY_TIMEOUT = float(read_secret("LLM_GATEWAY_TIMEOUT", default="120"))
 
 # Django REST Framework
 REST_FRAMEWORK = {
@@ -210,23 +218,23 @@ REST_FRAMEWORK = {
 }
 
 # Celery
-CELERY_BROKER_URL = os.getenv("REDIS_URL", "redis://redis:6379/0")
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
+CELERY_BROKER_URL = read_secret("REDIS_URL", default="redis://redis:6379/0")
+CELERY_RESULT_BACKEND = read_secret("REDIS_RESULT_URL", default=CELERY_BROKER_URL.rstrip("/0123456789") + "/1")
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 
 # Email (default: console backend for dev)
-EMAIL_BACKEND = os.getenv(
+EMAIL_BACKEND = read_secret(
     "EMAIL_BACKEND",
-    "django.core.mail.backends.console.EmailBackend",
+    default="django.core.mail.backends.console.EmailBackend",
 )
-EMAIL_HOST = os.getenv("EMAIL_HOST", "")
-EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST = read_secret("EMAIL_HOST", default="")
+EMAIL_PORT = int(read_secret("EMAIL_PORT", default="587"))
+EMAIL_HOST_USER = read_secret("EMAIL_HOST_USER", default="")
 EMAIL_HOST_PASSWORD = read_secret("EMAIL_HOST_PASSWORD", default="")
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS", "1") == "1"
-DEFAULT_FROM_EMAIL = os.getenv("DEFAULT_FROM_EMAIL", "noreply@schutztat.de")
+EMAIL_USE_TLS = read_secret("EMAIL_USE_TLS", default="1") == "1"
+DEFAULT_FROM_EMAIL = read_secret("DEFAULT_FROM_EMAIL", default="noreply@schutztat.de")
 
 # billing-hub internal API (ADR-118)
 BILLING_INTERNAL_SECRET = read_secret("BILLING_INTERNAL_SECRET", default="")
@@ -234,13 +242,13 @@ BILLING_HMAC_SECRET = read_secret("BILLING_HMAC_SECRET", default="")
 BILLING_HMAC_SECRET_PREV = read_secret("BILLING_HMAC_SECRET_PREV", default="")
 
 # billing-hub URLs (ADR-137 Module-Shop)
-BILLING_HUB_CHECKOUT_URL = os.getenv(
+BILLING_HUB_CHECKOUT_URL = read_secret(
     "BILLING_HUB_CHECKOUT_URL",
-    "https://billing.iil.pet/checkout",
+    default="https://billing.iil.pet/checkout",
 )
-BILLING_HUB_CANCEL_URL = os.getenv(
+BILLING_HUB_CANCEL_URL = read_secret(
     "BILLING_HUB_CANCEL_URL",
-    "https://billing.iil.pet/cancel",
+    default="https://billing.iil.pet/cancel",
 )
 MODULE_SHOP_PRODUCT_NAME = "risk-hub"
 
