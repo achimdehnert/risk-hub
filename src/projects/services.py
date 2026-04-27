@@ -564,11 +564,10 @@ def generate_section_content(
         from aifw.service import sync_completion
 
         result = sync_completion(
+            "concept_prefill",
             messages=[{"role": "user", "content": prompt}],
-            model="groq/llama-3.3-70b-versatile",
-            max_tokens=2000,
         )
-        return result.get("content", "")
+        return result.content if result.success else f"[KI-Fehler: {result.error}]"
     except ImportError:
         logger.warning("aifw not available for LLM prefill")
         return f"[KI nicht verfügbar — bitte manuell ausfüllen: {section.title}]"
