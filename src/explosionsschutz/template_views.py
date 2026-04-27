@@ -1456,9 +1456,12 @@ class HtmxAddMeasureView(LoginRequiredMixin, View):
             measure.tenant_id = tenant_id
             measure.concept = concept
             measure.save()
+            measure_form = ProtectionMeasureForm()
+        else:
+            logger.warning("HtmxAddMeasureView invalid: %s", form.errors)
+            measure_form = form
 
         measures = concept.measures.all()
-        measure_form = ProtectionMeasureForm()
         return render(
             request,
             self.partial_template,
