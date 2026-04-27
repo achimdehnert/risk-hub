@@ -24,6 +24,7 @@ from projects.services import (
     create_output_document,
     create_project,
     create_template,
+    delete_document_section,
     delete_project_document,
     delete_template,
     export_document_pdf,
@@ -476,6 +477,33 @@ def section_llm_prefill(
         f"{generated}</textarea>",
         content_type="text/html",
     )
+
+
+@login_required
+def section_delete(
+    request: HttpRequest,
+    pk: int,
+    doc_pk: int,
+    sec_pk: int,
+) -> HttpResponse:
+    """HTMX: Delete a section and return empty string to remove it from DOM."""
+    tenant_response = _require_tenant(request)
+    if tenant_response is not None:
+        return tenant_response
+
+    section = get_object_or_404(
+        DocumentSection,
+        pk=sec_pk,
+        document__pk=doc_pk,
+        document__project__pk=pk,
+        document__tenant_id=request.tenant_id,
+    )
+
+    if request.method == "POST":
+        delete_document_section(section)
+        return HttpResponse("", status=200)
+
+    return redirect("projects:output-document-edit", pk=pk, doc_pk=doc_pk)
 
 
 # ─── PDF Export ──────────────────────────────────────────────

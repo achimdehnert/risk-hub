@@ -55,6 +55,11 @@ urlpatterns = [
         name="section-save",
     ),
     path(
+        "<int:pk>/documents/<int:doc_pk>/sections/<int:sec_pk>/delete/",
+        views.section_delete,
+        name="section-delete",
+    ),
+    path(
         "<int:pk>/documents/<int:doc_pk>/sections/<int:sec_pk>/llm-prefill/",
         views.section_llm_prefill,
         name="section-llm-prefill",

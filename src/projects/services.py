@@ -203,6 +203,11 @@ def delete_template(tmpl) -> None:
     tmpl.delete()
 
 
+def delete_document_section(section) -> None:
+    """Delete a single DocumentSection from an output document."""
+    section.delete()
+
+
 # Known modules with display metadata
 AVAILABLE_MODULES: dict[str, dict] = {
     "explosionsschutz": {

@@ -14,7 +14,8 @@
         </div>
     </div>
 
-    <form hx-post="{% url 'projects:section-save' pk=project.pk doc_pk=doc.pk sec_pk=section.pk %}"
+    <form id="section-form-{{ section.pk }}"
+          hx-post="{% url 'projects:section-save' pk=project.pk doc_pk=doc.pk sec_pk=section.pk %}"
           hx-target="#section-{{ section.pk }}"
           hx-swap="innerHTML"
           class="space-y-4">
@@ -140,14 +141,27 @@
         {% endif %}
         {% endwith %}
 
-        <div class="flex justify-end">
-            <button type="submit"
-                    class="inline-flex items-center px-3 py-1.5 text-xs bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
-                <i data-lucide="save" class="w-3.5 h-3.5 mr-1"></i>
-                Speichern
-            </button>
-        </div>
     </form>
+
+    {# Aktionen — außerhalb Haupt-Form; Speichern via HTML5 form= #}
+    <div class="flex justify-end items-center gap-2 mt-3">
+        <form hx-post="{% url 'projects:section-delete' pk=project.pk doc_pk=doc.pk sec_pk=section.pk %}"
+              hx-target="#section-{{ section.pk }}"
+              hx-swap="outerHTML"
+              hx-confirm="Abschnitt &quot;{{ section.title }}&quot; wirklich löschen?">
+            {% csrf_token %}
+            <button type="submit"
+                    class="inline-flex items-center px-3 py-1.5 text-xs border border-red-200 text-red-500 rounded-lg hover:bg-red-50 transition">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5 mr-1"></i>
+                Löschen
+            </button>
+        </form>
+        <button type="submit" form="section-form-{{ section.pk }}"
+                class="inline-flex items-center px-3 py-1.5 text-xs bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition">
+            <i data-lucide="save" class="w-3.5 h-3.5 mr-1"></i>
+            Speichern
+        </button>
+    </div>
 
     {% if section.updated_at != section.created_at %}
     <p class="text-xs text-gray-400 mt-2">Zuletzt: {{ section.updated_at|date:"d.m.Y H:i" }}</p>
