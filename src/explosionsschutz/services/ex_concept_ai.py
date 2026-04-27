@@ -200,10 +200,89 @@ def _apply_zones_to_concept(concept, zones: list[dict], tenant_id) -> list:
     return result
 
 
+def _parse_measures_from_text(text: str) -> list[dict]:
+    """Parst nummerierte Maßnahmen-Liste aus KI-generiertem Text.
+
+    Erkennt Zeilen wie:
+      N. **Primär (...)** / **Sekundär (...)** / **Tertiär (...)**
+         - **Bezeichnung:** Titel der Maßnahme
+         - **Norm-Verweis:** ...
+    Gibt Liste von Dicts zurück: [{"category": "primary", "title": "...", "description": "..."}]
+    """
+    _CAT_MAP = {
+        "primär": "primary",
+        "sekundär": "secondary",
+        "tertiär": "tertiary",
+        "organisatorisch": "organizational",
+    }
+
+    measures = []
+    # Trenne nach nummeriertem Eintrag (1. / 2. etc.)
+    item_re = re.compile(r"^\d+\.\s+\*\*(.+?)\*\*", re.MULTILINE)
+    positions = [(m.start(), m.group(1)) for m in item_re.finditer(text)]
+
+    for i, (start, header) in enumerate(positions):
+        end = positions[i + 1][0] if i + 1 < len(positions) else len(text)
+        block = text[start:end]
+
+        # Kategorie aus Header-Text
+        category = "secondary"
+        for key, val in _CAT_MAP.items():
+            if key in header.lower():
+                category = val
+                break
+
+        # Bezeichnung (Pflicht)
+        bez_match = re.search(r"\*{0,2}Bezeichnung:\*{0,2}\s*(.+)", block)
+        title = bez_match.group(1).strip() if bez_match else header.strip("()")
+
+        # Beschreibung aus restlichen Bullet-Zeilen
+        desc_lines = []
+        for line in block.splitlines():
+            stripped = line.strip().lstrip("-").strip()
+            if stripped.startswith("**Bezeichnung"):
+                continue
+            if stripped.startswith("**"):
+                desc_lines.append(re.sub(r"\*{1,2}", "", stripped))
+        description = " | ".join(desc_lines[:3])
+
+        if title:
+            measures.append({
+                "category": category,
+                "title": title[:255],
+                "description": description[:500],
+            })
+    return measures
+
+
+def _apply_measures_to_concept(concept, measures: list[dict], tenant_id) -> list:
+    """Erstellt ProtectionMeasure-Objekte aus geparsten Maßnahmen.
+
+    Strategie: get_or_create nach (concept, title) — Update wenn vorhanden.
+    Gibt Liste der bearbeiteten (obj, created) Tupeln zurück.
+    """
+    from django.apps import apps
+    ProtectionMeasure = apps.get_model("explosionsschutz", "ProtectionMeasure")
+
+    result = []
+    for m in measures:
+        obj, created = ProtectionMeasure.objects.get_or_create(
+            concept=concept,
+            title=m["title"],
+            defaults={"tenant_id": tenant_id, "category": m["category"]},
+        )
+        obj.category = m["category"]
+        obj.description = m["description"]
+        obj.save(update_fields=["category", "description", "updated_at"])
+        result.append((obj, created))
+    return result
+
+
 def accept_proposal(cmd: AcceptProposalCmd) -> tuple:
     """Markiert einen Vorschlag als vom Experten übernommen.
 
     Bei chapter='zones': parst editierten Text und erstellt/aktualisiert ZoneDefinition.
+    Bei chapter='measures': parst Text und erstellt/aktualisiert ProtectionMeasure.
     Gibt (log, zone_results) zurück — zone_results ist Liste von (obj, created) Tupeln.
     """
     from django.contrib.auth import get_user_model
@@ -238,6 +317,15 @@ def accept_proposal(cmd: AcceptProposalCmd) -> tuple:
         )
         logger.info(
             "accept_proposal: %d Zonen für Konzept %s erzeugt/aktualisiert",
+            len(zone_results), log.concept_id,
+        )
+    elif log.chapter in ("measures", "ignition"):
+        measures = _parse_measures_from_text(final_text)
+        zone_results = _apply_measures_to_concept(
+            log.concept, measures, log.tenant_id
+        )
+        logger.info(
+            "accept_proposal: %d Maßnahmen für Konzept %s erzeugt/aktualisiert",
             len(zone_results), log.concept_id,
         )
 
