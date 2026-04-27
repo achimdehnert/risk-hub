@@ -26,7 +26,7 @@
     </div>
 
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form method="post" class="space-y-4">
+        <form id="measure-form" method="post" class="space-y-4">
             {% csrf_token %}
 
             <!-- Hazard Selection -->
@@ -54,27 +54,29 @@
             </div>
             {% endfor %}
 
-            <div class="flex gap-3 pt-4">
-                <button type="submit"
-                        class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
-                    Speichern
-                </button>
-                <a href="{% url 'risk:assessment_detail' assessment.id %}"
-                   class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
-                    Abbrechen
-                </a>
-                {% if measure %}
-                <form method="post" action="{% url 'risk:measure_delete' assessment.id measure.id %}" class="ml-auto"
-                      data-confirm-submit="Schutzmaßnahme wirklich löschen?">
-                    {% csrf_token %}
-                    <button type="submit"
-                            class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm">
-                        Löschen
-                    </button>
-                </form>
-                {% endif %}
-            </div>
         </form>
+
+        {# Aktionen — außerhalb Haupt-Form; Speichern via HTML5 form= #}
+        <div class="flex gap-3 pt-4">
+            <button type="submit" form="measure-form"
+                    class="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
+                Speichern
+            </button>
+            <a href="{% url 'risk:assessment_detail' assessment.id %}"
+               class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-sm font-medium">
+                Abbrechen
+            </a>
+            {% if measure %}
+            <form method="post" action="{% url 'risk:measure_delete' assessment.id measure.id %}" class="ml-auto"
+                  data-confirm-submit="Schutzmaßnahme wirklich löschen?">
+                {% csrf_token %}
+                <button type="submit"
+                        class="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 text-sm">
+                    Löschen
+                </button>
+            </form>
+            {% endif %}
+        </div>
     </div>
 </div>
 <script>
