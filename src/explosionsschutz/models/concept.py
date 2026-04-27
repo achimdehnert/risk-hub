@@ -112,7 +112,9 @@ class ExplosionConcept(models.Model):
         "projects.Project",
         on_delete=models.PROTECT,
         related_name="explosion_concepts",
-        help_text="ADR-041 Container (ADR-044 Phase 3). Pflichtfeld nach Datenmigration 0011.",
+        null=True,
+        blank=True,
+        help_text="ADR-041 Container (ADR-044 Phase 3). Optional beim Erstellen, Zuweisung im Workflow.",
     )
 
     # Metadaten

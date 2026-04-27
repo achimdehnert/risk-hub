@@ -557,6 +557,14 @@ class ConceptCreateView(LoginRequiredMixin, View):
 
     template_name = "explosionsschutz/concepts/form.html"
 
+    def _get_doc_templates(self, tenant_id):
+        try:
+            from django.apps import apps
+            DocTemplate = apps.get_model("doc_templates", "DocumentTemplate")
+            return DocTemplate.objects.filter(tenant_id=tenant_id).exclude(status="archived").order_by("scope", "name")
+        except Exception:
+            return []
+
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
         form = ExplosionConceptForm(tenant_id=tenant_id)
@@ -566,6 +574,7 @@ class ConceptCreateView(LoginRequiredMixin, View):
             {
                 "form": form,
                 "title": "Neues Konzept",
+                "doc_templates": self._get_doc_templates(tenant_id),
             },
         )
 
@@ -586,6 +595,7 @@ class ConceptCreateView(LoginRequiredMixin, View):
             {
                 "form": form,
                 "title": "Neues Konzept",
+                "doc_templates": self._get_doc_templates(tenant_id),
             },
         )
 

@@ -54,15 +54,26 @@ class AreaForm(forms.ModelForm):
 class ExplosionConceptForm(forms.ModelForm):
     """Form für Explosionsschutzkonzepte"""
 
+    doc_template_id = forms.IntegerField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
     class Meta:
         model = ExplosionConcept
-        fields = ["area", "title", "substance_name"]
+        fields = ["project", "area", "title", "substance_name"]
         labels = {
+            "project": "Projekt (optional)",
             "area": "Bereich",
             "title": "Titel",
             "substance_name": "Gefahrstoff",
         }
         widgets = {
+            "project": forms.Select(
+                attrs={
+                    "class": "w-full px-4 py-2 border border-gray-300 rounded-lg",
+                }
+            ),
             "area": forms.Select(
                 attrs={
                     "class": "w-full px-4 py-2 border border-gray-300 rounded-lg",
@@ -84,8 +95,16 @@ class ExplosionConceptForm(forms.ModelForm):
 
     def __init__(self, *args, tenant_id=None, **kwargs):
         super().__init__(*args, **kwargs)
+        from projects.models import Project
+
+        self.fields["project"].required = False
         if tenant_id:
             self.fields["area"].queryset = Area.objects.filter(tenant_id=tenant_id)
+            self.fields["project"].queryset = Project.objects.filter(
+                tenant_id=tenant_id
+            ).order_by("name")
+        else:
+            self.fields["project"].queryset = Project.objects.none()
 
 
 class ZoneDefinitionForm(forms.ModelForm):
