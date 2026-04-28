@@ -487,6 +487,27 @@ def module_membership_revoke(
 
 
 @login_required
+def site_list(request: HttpRequest) -> HttpResponse:
+    """List all sites for the current tenant."""
+    tenant_id = getattr(request, "tenant_id", None)
+    if not tenant_id:
+        return render(request, "403.html", status=403)
+
+    from tenancy.models import Site
+
+    org = get_organization_by_tenant(tenant_id)
+    sites = Site.objects.filter(tenant_id=tenant_id).order_by("name")
+    return render(
+        request,
+        "tenancy/site_list.html",
+        {
+            "sites": sites,
+            "org": org,
+        },
+    )
+
+
+@login_required
 def site_create(request: HttpRequest) -> HttpResponse:
     """Create a new site for the current tenant."""
     from tenancy.forms import SiteForm
@@ -507,9 +528,7 @@ def site_create(request: HttpRequest) -> HttpResponse:
             next_url = request.GET.get("next", "")
             if next_url:
                 return redirect(next_url)
-            if _require_staff(request):
-                return redirect("tenancy:org-detail", pk=org.pk)
-            return redirect("kataster:dashboard")
+            return redirect("tenancy:site-list")
     else:
         form = SiteForm()
 
@@ -521,4 +540,58 @@ def site_create(request: HttpRequest) -> HttpResponse:
             "title": "Neuen Standort anlegen",
             "org": org,
         },
+    )
+
+
+@login_required
+def site_edit(request: HttpRequest, pk: int) -> HttpResponse:
+    """Edit an existing site."""
+    from tenancy.forms import SiteForm
+    from tenancy.models import Site
+
+    tenant_id = getattr(request, "tenant_id", None)
+    if not tenant_id:
+        return render(request, "403.html", status=403)
+
+    site = get_object_or_404(Site, pk=pk, tenant_id=tenant_id)
+
+    if request.method == "POST":
+        form = SiteForm(request.POST, instance=site)
+        if form.is_valid():
+            form.save()
+            return redirect("tenancy:site-list")
+    else:
+        form = SiteForm(instance=site)
+
+    return render(
+        request,
+        "tenancy/site_form.html",
+        {
+            "form": form,
+            "title": f"Standort bearbeiten: {site.name}",
+            "site": site,
+            "org": get_organization_by_tenant(tenant_id),
+        },
+    )
+
+
+@login_required
+def site_delete(request: HttpRequest, pk: int) -> HttpResponse:
+    """Delete a site (POST only)."""
+    from tenancy.models import Site
+
+    tenant_id = getattr(request, "tenant_id", None)
+    if not tenant_id:
+        return render(request, "403.html", status=403)
+
+    site = get_object_or_404(Site, pk=pk, tenant_id=tenant_id)
+
+    if request.method == "POST":
+        site.delete()
+        return redirect("tenancy:site-list")
+
+    return render(
+        request,
+        "tenancy/site_confirm_delete.html",
+        {"site": site},
     )

@@ -2,25 +2,17 @@
 
 {% block title %}{{ title }} - Schutztat{% endblock %}
 
-{% block extra_head %}
-<style>
-    .form-input, .form-select, .form-textarea {
-        @apply w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500;
-    }
-    .form-checkbox {
-        @apply rounded border-gray-300 text-orange-600 focus:ring-orange-500;
-    }
-</style>
-{% endblock %}
-
 {% block content %}
-<div class="max-w-3xl mx-auto">
-    <div class="flex items-center space-x-4 mb-6">
-        <a href="{% if substance %}{% url 'substances:detail' pk=substance.pk %}{% else %}{% url 'substances:list' %}{% endif %}" 
-           class="text-gray-400 hover:text-gray-600">
-            <i data-lucide="arrow-left" class="w-5 h-5"></i>
+<div class="max-w-3xl mx-auto space-y-1">
+    <div class="flex items-center gap-3 mb-6">
+        <a href="{% if substance %}{% url 'substances:detail' pk=substance.pk %}{% else %}{% url 'substances:list' %}{% endif %}"
+           class="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-500 hover:text-gray-700 transition-colors">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i>
         </a>
-        <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+            <p class="text-sm text-gray-500">Felder mit <span class="text-red-500">*</span> sind Pflichtfelder</p>
+        </div>
     </div>
 
     <form method="post" class="space-y-6">
@@ -28,7 +20,10 @@
 
         <!-- Grunddaten -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Grunddaten</h2>
+            <h2 class="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                <i data-lucide="flask-conical" class="w-5 h-5 text-orange-500"></i>
+                Grunddaten
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Stoffname *</label>
@@ -58,7 +53,10 @@
 
         <!-- Klassifizierung -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Klassifizierung</h2>
+            <h2 class="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                <i data-lucide="tag" class="w-5 h-5 text-blue-500"></i>
+                Klassifizierung
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Lagerklasse</label>
@@ -73,7 +71,10 @@
 
         <!-- Parteien -->
         <div class="bg-white rounded-lg shadow p-6">
-            <h2 class="text-lg font-medium text-gray-900 mb-4">Hersteller & Lieferant</h2>
+            <h2 class="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
+                <i data-lucide="building" class="w-5 h-5 text-purple-500"></i>
+                Hersteller &amp; Lieferant
+            </h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Hersteller</label>
@@ -130,7 +131,9 @@
                class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
                 Abbrechen
             </a>
-            <button type="submit" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">
+            <button type="submit"
+                    class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700"
+                    data-testid="substance-submit-btn">
                 {% if substance %}Speichern{% else %}Anlegen{% endif %}
             </button>
         </div>

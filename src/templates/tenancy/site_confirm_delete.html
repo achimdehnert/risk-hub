@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Standort löschen — Schutztat{% endblock %}
+
+{% block content %}
+<div class="max-w-lg mx-auto space-y-6">
+    <div>
+        <nav class="flex items-center text-sm text-gray-500 mb-3 gap-1">
+            <a href="{% url 'tenancy:site-list' %}" class="hover:text-orange-600">Standorte</a>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            <span class="text-gray-700">Löschen</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">Standort löschen</h1>
+    </div>
+
+    <div class="bg-white rounded-xl border border-red-200 p-6 space-y-4">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
+                {% if site.site_type == 'plant' %}🏭
+                {% elif site.site_type == 'warehouse' %}🏗️
+                {% elif site.site_type == 'office' %}🏢
+                {% elif site.site_type == 'lab' %}🔬
+                {% else %}📍{% endif %}
+            </div>
+            <div>
+                <p class="font-semibold text-gray-900">{{ site.name }}</p>
+                {% if site.code %}<p class="text-sm text-gray-500 font-mono">{{ site.code }}</p>{% endif %}
+                <p class="text-xs text-gray-400 mt-0.5">{{ site.get_site_type_display }}</p>
+            </div>
+        </div>
+        <p class="text-sm text-gray-600">
+            Soll dieser Standort unwiderruflich gelöscht werden? Alle zugeordneten Daten (Bereiche, Verwendungen) könnten betroffen sein.
+        </p>
+        <form method="post" class="flex gap-3">
+            {% csrf_token %}
+            <button type="submit"
+                    class="px-5 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700"
+                    data-testid="site-delete-confirm">
+                Ja, löschen
+            </button>
+            <a href="{% url 'tenancy:site-list' %}"
+               class="px-5 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-200">
+                Abbrechen
+            </a>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>lucide.createIcons();</script>
+{% endblock %}

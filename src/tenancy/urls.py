@@ -62,5 +62,8 @@ urlpatterns = [
         name="module-membership-revoke",
     ),
     # Site management
+    path("sites/", views.site_list, name="site-list"),
     path("sites/new/", views.site_create, name="site-create"),
+    path("sites/<int:pk>/edit/", views.site_edit, name="site-edit"),
+    path("sites/<int:pk>/delete/", views.site_delete, name="site-delete"),
 ]

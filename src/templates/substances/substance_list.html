@@ -22,22 +22,32 @@
         <form method="get" class="flex flex-wrap gap-4 items-end">
             <div class="flex-1 min-w-[200px]">
                 <label class="block text-sm font-medium text-gray-700 mb-1">Suche</label>
-                <input type="text" name="search" value="{{ filters.search }}"
-                       placeholder="Name, CAS-Nr., Handelsname..."
-                       class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
-                       hx-get="{% url 'substances:list' %}"
-                       hx-trigger="keyup changed delay:300ms"
-                       hx-target="#substance-table"
-                       hx-include="[name='status'],[name='storage_class'],[name='cmr']">
+                <div class="relative">
+                    <input type="text" name="search" value="{{ filters.search }}"
+                           placeholder="Name, CAS-Nr., Handelsname..."
+                           class="w-full rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500 pr-8"
+                           hx-get="{% url 'substances:list' %}"
+                           hx-trigger="keyup changed delay:300ms"
+                           hx-target="#substance-table"
+                           hx-indicator="#substance-spinner"
+                           hx-include="[name='status'],[name='storage_class'],[name='cmr']"
+                           data-testid="substance-search">
+                    <span id="substance-spinner"
+                          class="htmx-indicator absolute right-2.5 top-1/2 -translate-y-1/2">
+                        <i data-lucide="loader-2" class="w-4 h-4 text-gray-400 animate-spin"></i>
+                    </span>
+                </div>
             </div>
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
-                <select name="status" 
+                <select name="status"
                         class="rounded-lg border-gray-300 shadow-sm focus:border-orange-500 focus:ring-orange-500"
                         hx-get="{% url 'substances:list' %}"
                         hx-trigger="change"
                         hx-target="#substance-table"
-                        hx-include="[name='search'],[name='storage_class'],[name='cmr']">
+                        hx-indicator="#substance-spinner"
+                        hx-include="[name='search'],[name='storage_class'],[name='cmr']"
+                        data-testid="substance-filter-status">
                     <option value="">Alle</option>
                     <option value="active" {% if filters.status == 'active' %}selected{% endif %}>Aktiv</option>
                     <option value="inactive" {% if filters.status == 'inactive' %}selected{% endif %}>Inaktiv</option>
@@ -51,7 +61,9 @@
                         hx-get="{% url 'substances:list' %}"
                         hx-trigger="change"
                         hx-target="#substance-table"
-                        hx-include="[name='search'],[name='status'],[name='cmr']">
+                        hx-indicator="#substance-spinner"
+                        hx-include="[name='search'],[name='status'],[name='cmr']"
+                        data-testid="substance-filter-storage-class">
                     <option value="">Alle</option>
                     {% for value, label in storage_classes %}
                     <option value="{{ value }}" {% if filters.storage_class == value %}selected{% endif %}>
@@ -68,7 +80,9 @@
                            hx-get="{% url 'substances:list' %}"
                            hx-trigger="change"
                            hx-target="#substance-table"
-                           hx-include="[name='search'],[name='status'],[name='storage_class']">
+                           hx-indicator="#substance-spinner"
+                           hx-include="[name='search'],[name='status'],[name='storage_class']"
+                           data-testid="substance-filter-cmr">
                     <span class="text-sm text-gray-700">Nur CMR-Stoffe</span>
                 </label>
             </div>
