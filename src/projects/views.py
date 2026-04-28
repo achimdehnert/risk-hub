@@ -385,7 +385,27 @@ def output_document_edit(
         pk=doc_pk,
         project=project,
     )
-    documents = project.documents.all()
+    documents = list(project.documents.all())
+
+    sections = list(doc.sections.all())
+    all_docs_with_text = [d for d in documents if d.extracted_text]
+
+    for section in sections:
+        matched = []
+        hint = section.ai_context_hint or ""
+        if hint and all_docs_with_text:
+            keywords = [k.strip().lower() for k in hint.replace(",", " ").split() if len(k.strip()) > 2]
+            for d in all_docs_with_text:
+                text_lower = d.extracted_text.lower()
+                score = sum(text_lower.count(kw) for kw in keywords)
+                if score:
+                    matched.append({
+                        "title": d.title,
+                        "doc_type_label": d.get_doc_type_display(),
+                        "score": score,
+                    })
+            matched.sort(key=lambda x: -x["score"])
+        section.matched_docs = matched[:4]
 
     return render(
         request,
@@ -393,7 +413,7 @@ def output_document_edit(
         {
             "project": project,
             "doc": doc,
-            "sections": doc.sections.all(),
+            "sections": sections,
             "documents": documents,
         },
     )

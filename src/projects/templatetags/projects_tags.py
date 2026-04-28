@@ -19,6 +19,14 @@ def parse_json(value):
 
 
 @register.filter
+def split_commas(value):
+    """Split a comma-separated string into a list of stripped, non-empty items."""
+    if not value:
+        return []
+    return [item.strip() for item in str(value).split(",") if item.strip()]
+
+
+@register.filter
 def get_item(dictionary, key):
     """Get an item from a dict by key."""
     if not dictionary or not isinstance(dictionary, dict):
