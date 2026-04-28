@@ -549,8 +549,11 @@ def document_prefill_from_docs(
         project__pk=pk,
         project__tenant_id=request.tenant_id,
     )
-    filled = prefill_sections_from_documents(doc)
-    messages.success(request, f"{filled} Abschnitt(e) aus Unterlagen befüllt.")
+    # Reset hints so they are regenerated fresh for all sections
+    doc.sections.all().update(ai_context_hint="", ai_prompt="")
+    generate_section_hints(doc)
+    filled = prefill_sections_from_documents(doc, force=True)
+    messages.success(request, f"{filled} Abschnitt(e) aus Unterlagen befüllt (mit frischen KI-Hinweisen).")
     return redirect("projects:output-document-edit", pk=pk, doc_pk=doc_pk)
 
 

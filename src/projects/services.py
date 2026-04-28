@@ -298,13 +298,70 @@ def create_output_document(
     return doc
 
 
-def generate_section_hints(doc) -> None:
-    """One LLM call (Groq) per document creation:
-    1. Generates retrieval hints (keywords) for every section → stored in ai_context_hint
-    2. Pre-fills generic sections (legal basis, scope, methodology) with standard text → stored in content
+_HINTS_BATCH_SIZE = 10
 
-    Project-specific sections (zones, substances, measures) get only hints — filled later via
-    'KI ausfüllen' with project documents as context.
+
+def _generate_hints_batch(doc, sections: list, doc_kind: str, project_name: str) -> tuple[int, int]:
+    """Run one LLM call for a batch of sections. Returns (hints_applied, content_applied)."""
+    from ai_analysis.prompts import get_section_hints_messages
+    from aifw.service import sync_completion
+
+    messages = get_section_hints_messages({
+        "doc_kind": doc_kind,
+        "project_name": project_name,
+        "doc_title": doc.title,
+        "section_list": "\n".join(f"{i+1}. {s.title}" for i, s in enumerate(sections)),
+    })
+    result = sync_completion("concept_prefill", messages=messages)
+    if not result.success:
+        logger.warning("generate_section_hints batch failed: %s", result.error)
+        return 0, 0
+
+    hints_applied = content_applied = 0
+    for line in result.content.strip().splitlines():
+        line = line.strip()
+        if not line.startswith("{"):
+            continue
+        try:
+            entry = json.loads(line)
+            nr = int(entry.get("nr", 0)) - 1
+            if nr < 0 or nr >= len(sections):
+                continue
+            section = sections[nr]
+            update_fields = []
+
+            hints = (entry.get("hints") or "").strip()
+            if hints:
+                section.ai_context_hint = hints
+                # Auto-generate editable ai_prompt from section title + hints
+                section.ai_prompt = (
+                    f"Schreibe den Abschnitt '{section.title}' basierend auf "
+                    f"folgenden Quellen: {hints}. Schreibe fachlich korrekt und präzise auf Deutsch."
+                )
+                update_fields += ["ai_context_hint", "ai_prompt"]
+                hints_applied += 1
+
+            content = (entry.get("content") or "").strip()
+            if content and entry.get("generic") and not section.content:
+                section.content = content
+                section.is_ai_generated = True
+                update_fields += ["content", "is_ai_generated"]
+                content_applied += 1
+
+            if update_fields:
+                section.save(update_fields=update_fields)
+
+        except (json.JSONDecodeError, KeyError, ValueError):
+            continue
+
+    return hints_applied, content_applied
+
+
+def generate_section_hints(doc) -> None:
+    """LLM call(s) per document creation in batches of 10:
+    1. Generates retrieval hints (keywords) → ai_context_hint
+    2. Auto-generates editable ai_prompt per section
+    3. Pre-fills generic sections with standard text → content
     Runs outside the create transaction — failures are non-fatal.
     """
     sections = list(doc.sections.filter(ai_context_hint="").select_related("document"))
@@ -313,82 +370,36 @@ def generate_section_hints(doc) -> None:
 
     doc_kind = doc.kind or "Arbeitsschutz"
     project_name = getattr(getattr(doc, "project", None), "name", "unbekannt")
-    section_titles = [s.title for s in sections]
-
-    from ai_analysis.prompts import get_section_hints_messages
-
-    messages = get_section_hints_messages({
-        "doc_kind": doc_kind,
-        "project_name": project_name,
-        "doc_title": doc.title,
-        "section_list": "\n".join(f"{i+1}. {t}" for i, t in enumerate(section_titles)),
-    })
 
     try:
-        from aifw.service import sync_completion
+        from aifw.service import sync_completion  # noqa: F401 — ensure available
 
-        result = sync_completion(
-            "concept_prefill",
-            messages=messages,
-        )
-        if not result.success:
-            logger.warning("generate_section_hints failed: %s", result.error)
-            return
-
-        hints_applied = 0
-        content_applied = 0
-        for line in result.content.strip().splitlines():
-            line = line.strip()
-            if not line.startswith("{"):
-                continue
-            try:
-                entry = json.loads(line)
-                nr = int(entry.get("nr", 0)) - 1
-                if nr < 0 or nr >= len(sections):
-                    continue
-                section = sections[nr]
-                update_fields = []
-
-                hints = (entry.get("hints") or "").strip()
-                if hints:
-                    section.ai_context_hint = hints
-                    update_fields.append("ai_context_hint")
-                    hints_applied += 1
-
-                content = (entry.get("content") or "").strip()
-                if content and entry.get("generic") and not section.content:
-                    section.content = content
-                    section.is_ai_generated = True
-                    update_fields += ["content", "is_ai_generated"]
-                    content_applied += 1
-
-                if update_fields:
-                    section.save(update_fields=update_fields)
-
-            except (json.JSONDecodeError, KeyError, ValueError):
-                continue
+        total_hints = total_content = 0
+        for i in range(0, len(sections), _HINTS_BATCH_SIZE):
+            batch = sections[i: i + _HINTS_BATCH_SIZE]
+            h, c = _generate_hints_batch(doc, batch, doc_kind, project_name)
+            total_hints += h
+            total_content += c
 
         logger.info(
-            "Section init for doc %s: %d hints, %d generic sections pre-filled",
-            doc.pk, hints_applied, content_applied,
+            "Section init for doc %s: %d hints, %d generic pre-filled",
+            doc.pk, total_hints, total_content,
         )
-
     except Exception as exc:
         logger.warning("generate_section_hints non-fatal error: %s", exc)
 
 
-def prefill_sections_from_documents(doc) -> int:
-    """Directly fill sections with relevant text extracted from uploaded project documents.
+def prefill_sections_from_documents(doc, force: bool = False) -> int:
+    """Directly fill sections with relevant text from uploaded project documents (no LLM).
 
-    For each section with an ai_context_hint (or fallback keywords from section title):
-    - Scores all uploaded docs by keyword relevance
-    - Inserts the most relevant paragraphs directly into section.content (no LLM)
-    - Only fills sections that are currently empty
+    force=False (default, auto): only fills empty sections.
+    force=True (manual re-fill): overwrites all sections including non-empty ones.
     Returns the number of sections filled.
     """
     from projects.models import ProjectDocument
 
-    sections = list(doc.sections.filter(content=""))
+    qs = doc.sections.all() if force else doc.sections.filter(content="")
+    sections = list(qs)
     if not sections:
         return 0
 
@@ -429,8 +440,10 @@ def prefill_sections_from_documents(doc) -> int:
                     fields = json.loads(section.fields_json)
                     values = json.loads(section.values_json or "{}")
                     for f in fields:
-                        if f.get("type") in ("textarea", None) and not values.get(f.get("key", "")):
-                            values[f["key"]] = best_text
+                        fkey = f.get("key", "")
+                        if f.get("type") in ("textarea", None) and fkey:
+                            if force or not values.get(fkey):
+                                values[fkey] = best_text
                     section.values_json = json.dumps(values, ensure_ascii=False)
                     update_fields.append("values_json")
                 except (json.JSONDecodeError, KeyError):
@@ -725,6 +738,9 @@ def save_section_values(
     """
     section.content = post_data.get("content", "")
     section.is_ai_generated = False
+    ai_prompt_val = post_data.get("ai_prompt", "")
+    if ai_prompt_val:
+        section.ai_prompt = ai_prompt_val
 
     try:
         fields = json.loads(section.fields_json or "[]")
@@ -770,6 +786,7 @@ def save_section_values(
     section.save(
         update_fields=[
             "content",
+            "ai_prompt",
             "values_json",
             "is_ai_generated",
             "updated_at",

@@ -305,6 +305,11 @@ class DocumentSection(models.Model):
         default="",
         help_text="LLM-generierte Retrieval-Hinweise für diesen Abschnitt (beim Erstellen generiert)",
     )
+    ai_prompt = models.TextField(
+        blank=True,
+        default="",
+        help_text="Editierbarer KI-Prompt für diesen Abschnitt (wird beim KI ausfüllen/verbessern verwendet)",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
