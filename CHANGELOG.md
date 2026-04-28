@@ -3,6 +3,31 @@
 ## [Unreleased]
 
 ### Added
+- tenancy: **Facility-Modell** (Produktionsstätten) — neue Hierarchieebene `Organization → Site → Facility`
+  - `FacilityType` choices: Produktion, Lager, Labor, Büro, Werkstatt, Sonstiges
+  - CRUD-Services, Forms, Views, URLs (`/tenants/sites/<pk>/facilities/`)
+  - Templates: `facility_list.html`, `facility_form.html`
+  - Optionaler `facility`-FK in `SubstanceUsage`, `SiteInventoryItem`, `KatasterRevision`
+- dashboard: Standorte-KPI-Karte immer sichtbar (auch ohne Module)
+- tenancy: "Produktionsstätten"-Link pro Standort-Karte in `site_list.html`
+
+### Removed
+- projects: `DocumentTemplate`-Modell + DB-Tabelle `project_doc_template` entfernt (war toter Code, 0 Einträge)
+  - `OutputDocument.template`-FK (wurde intern nie gesetzt — immer NULL)
+  - 5 CRUD-Views (`template_list/create/upload/edit/delete`) + URL-Patterns
+  - Services: `create_template`, `update_template`, `delete_template`, `get_document_templates`
+  - `DocumentTemplateAdmin`, `DocumentTemplateFactory`
+
+### Fixed
+- ruff: 12 Lint-Fehler automatisch behoben (F401, I001, UP037 across 8 files)
+- tenancy/services.py: falsche Forward-Reference-Annotationen in Facility-Services entfernt
+
+### Known Lint Issues (pre-existing, nicht durch diese Session eingeführt)
+- `explosionsschutz/api.py:191` E741 — ambiguous variable name `l`
+- `explosionsschutz/template_views.py:1337` F821 — `logger` undefiniert
+- `substances/services/sds_parser.py` B007 — unused loop variables (2x)
+
+### Previous [Unreleased] additions (noch nicht released)
 - global-sds: Vollextraktion + PubChem-Anreicherung + JSON-View
 - explosionsschutz: Schritt 6 Zusammenführen — `ConceptFinalizeView` + `finalize.html`
 - explosionsschutz: Vorlagen-Tab zeigt `doc_templates.DocumentTemplate` (externe Vorlagen)
@@ -11,7 +36,7 @@
 - test: `tests/utils/html_assertions.py` — `assert_valid_html()` für nested-form, hx-target Checks
 - test: `tests/completeness/test_html_structure.py` — 232 HTML-Struktur-Tests für alle Templates
 
-### Fixed
+### Previous [Unreleased] fixes
 - training: `signed_at` bei present-Status setzen
 - global-sds: H/P-Statements + Pictogramme in Pipeline persistieren
 - explosionsschutz: `IntegrityError` bei Konzept-Erstellung — `project` nullable gemacht

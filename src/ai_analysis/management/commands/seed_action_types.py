@@ -30,6 +30,11 @@ class Command(BaseCommand):
                 "display_name": "OpenAI",
                 "api_key_env_var": "OPENAI_API_KEY",
             },
+            {
+                "name": "groq",
+                "display_name": "Groq (fast inference)",
+                "api_key_env_var": "GROQ_API_KEY",
+            },
         ]
         providers = {}
         for data in providers_data:
@@ -56,6 +61,15 @@ class Command(BaseCommand):
                 "output_cost_per_million": 1.25,
                 "is_default": False,
             },
+            {
+                "provider": "groq",
+                "name": "groq/llama-3.1-8b-instant",
+                "display_name": "Llama 3.1 8B Instant (Groq)",
+                "max_tokens": 8192,
+                "input_cost_per_million": 0.05,
+                "output_cost_per_million": 0.08,
+                "is_default": False,
+            },
         ]
         models = {}
         for data in models_data:
@@ -68,6 +82,7 @@ class Command(BaseCommand):
 
         default_model = models["gpt-4o-mini"]
         fallback_model = models["claude-3-5-haiku-20241022"]
+        groq_fast_model = models["groq/llama-3.1-8b-instant"]
 
         actions_data = [
             (
@@ -156,6 +171,30 @@ class Command(BaseCommand):
                 },
             )
             self.stdout.write(f"  {'Created' if created else 'Updated'}: {a.code}")
+
+        groq_actions_data = [
+            (
+                "facility_extraction",
+                "Facility Data Extraction",
+                "Extract structured site/facility data from uploaded PDFs (Groq fast inference).",
+                1500,
+                0.1,
+            ),
+        ]
+        for code, name, description, max_tokens, temperature in groq_actions_data:
+            a, created = AIActionType.objects.update_or_create(
+                code=code,
+                defaults={
+                    "name": name,
+                    "description": description,
+                    "max_tokens": max_tokens,
+                    "temperature": temperature,
+                    "default_model": groq_fast_model,
+                    "fallback_model": default_model,
+                    "is_active": True,
+                },
+            )
+            self.stdout.write(f"  {'Created' if created else 'Updated'}: {a.code} (Groq)")
 
         self.stdout.write(
             self.style.SUCCESS(

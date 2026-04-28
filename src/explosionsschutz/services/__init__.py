@@ -1023,3 +1023,318 @@ def get_overdue_measures_count(tenant_id, today) -> int:
         status__in=["open", "in_progress"],
         due_date__lt=today,
     ).count()
+
+
+# =============================================================================
+# EXTENDED QUERY HELPERS (ADR-041 — no ORM in views)
+# =============================================================================
+
+
+def get_area_for_tenant(tenant_id, pk: int) -> "Area | None":
+    """Return a single Area by pk for a tenant, or None if not found."""
+    from django.db.models import Q
+
+    base = Q(tenant_id=tenant_id) if tenant_id else Q()
+    return Area.objects.filter(base, pk=pk).first()
+
+
+def get_area_queryset(tenant_id, search: str = "", hazard_filter: str | None = None):
+    """Return Area queryset for a tenant with optional search and hazard filter."""
+    from django.db.models import Q
+
+    base = Q(tenant_id=tenant_id) if tenant_id else Q()
+    qs = Area.objects.filter(base).prefetch_related(
+        "explosion_concepts", "equipment"
+    )
+    if search:
+        qs = qs.filter(Q(code__icontains=search) | Q(name__icontains=search))
+    if hazard_filter == "1":
+        qs = qs.filter(
+            explosion_concepts__status__in=[
+                ExplosionConcept.Status.APPROVED,
+                ExplosionConcept.Status.REVIEW,
+            ]
+        ).distinct()
+    elif hazard_filter == "0":
+        qs = qs.exclude(
+            explosion_concepts__status__in=[
+                ExplosionConcept.Status.APPROVED,
+                ExplosionConcept.Status.REVIEW,
+            ]
+        )
+    return qs
+
+
+def get_concept_queryset(tenant_id, search: str = "", status_filter: str | None = None):
+    """Return ExplosionConcept queryset for a tenant with optional filters."""
+    from django.db.models import Q
+
+    base = Q(tenant_id=tenant_id) if tenant_id else Q()
+    qs = (
+        ExplosionConcept.objects.filter(base)
+        .select_related("area")
+        .prefetch_related("zones")
+    )
+    if search:
+        qs = qs.filter(title__icontains=search)
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    return qs.order_by("-created_at")
+
+
+def get_equipment_queryset(tenant_id, search: str = "", status_filter: str | None = None):
+    """Return Equipment queryset for a tenant with optional filters."""
+    from django.db.models import Q
+
+    base = Q(tenant_id=tenant_id) if tenant_id else Q()
+    qs = Equipment.objects.filter(base).select_related(
+        "equipment_type", "area", "zone"
+    )
+    if search:
+        qs = qs.filter(serial_number__icontains=search)
+    if status_filter:
+        qs = qs.filter(status=status_filter)
+    return qs.order_by("-created_at")
+
+
+def get_dashboard_stats(tenant_id) -> dict:
+    """Return dashboard statistics for the explosionsschutz module (ADR-041)."""
+    from django.db.models import Q as _Q
+
+    from substances.models import Substance
+
+    base = _Q(tenant_id=tenant_id) if tenant_id else _Q()
+    today = timezone.now().date()
+    concepts = ExplosionConcept.objects.filter(base)
+    equipment = Equipment.objects.filter(base)
+
+    return {
+        "areas": Area.objects.filter(base).count(),
+        "concepts": concepts.count(),
+        "concepts_draft": concepts.filter(status=ExplosionConcept.Status.DRAFT).count(),
+        "concepts_in_progress": concepts.filter(
+            status__in=[ExplosionConcept.Status.DRAFT, ExplosionConcept.Status.REVIEW]
+        ).count(),
+        "concepts_approved": concepts.filter(status=ExplosionConcept.Status.APPROVED).count(),
+        "concepts_in_review": concepts.filter(status=ExplosionConcept.Status.REVIEW).count(),
+        "zones": ZoneDefinition.objects.filter(base).count(),
+        "equipment": equipment.count(),
+        "inspections_due": equipment.filter(next_inspection_date__isnull=False).count(),
+        "inspections_overdue": equipment.filter(
+            next_inspection_date__lte=today,
+            next_inspection_date__isnull=False,
+        ).count(),
+        "standards": ReferenceStandard.objects.filter(
+            _Q(tenant_id__isnull=True) | _Q(tenant_id=tenant_id)
+        ).count(),
+        "measures": MeasureCatalog.objects.filter(
+            _Q(tenant_id__isnull=True) | _Q(tenant_id=tenant_id)
+        ).count(),
+        "substances_in_db": Substance.objects.filter(base, status="active")
+        .filter(
+            _Q(lower_explosion_limit__isnull=False) | _Q(flash_point_c__isnull=False)
+        )
+        .count(),
+    }
+
+
+def get_recent_activities(tenant_id, limit: int = 8) -> list:
+    """Return recent activities from concepts, calculations and inspections (ADR-041)."""
+    import datetime as _dt
+
+    from django.db.models import Q
+
+    base = Q(tenant_id=tenant_id) if tenant_id else Q()
+    activities = []
+
+    for c in ExplosionConcept.objects.filter(base).order_by("-updated_at")[:4]:
+        activities.append(
+            {
+                "type": "concept",
+                "icon": "shield",
+                "title": c.title,
+                "subtitle": c.get_status_display(),
+                "timestamp": c.updated_at,
+                "url_name": "explosionsschutz:concept-detail-html",
+                "url_pk": c.pk,
+            }
+        )
+
+    for calc in (
+        ZoneCalculationResult.objects.filter(base)
+        .select_related("zone")
+        .order_by("-calculated_at")[:3]
+    ):
+        activities.append(
+            {
+                "type": "calculation",
+                "icon": "calculator",
+                "title": f"Zone {calc.calculated_zone_type} — {calc.substance_name}",
+                "subtitle": f"r={calc.calculated_radius_m} m",
+                "timestamp": calc.calculated_at,
+                "url_name": None,
+                "url_pk": None,
+            }
+        )
+
+    for insp in (
+        Inspection.objects.filter(base)
+        .select_related("equipment")
+        .order_by("-inspection_date")[:3]
+    ):
+        activities.append(
+            {
+                "type": "inspection",
+                "icon": "clipboard-check",
+                "title": f"Prüfung: {insp.equipment}",
+                "subtitle": (
+                    insp.get_result_display() if hasattr(insp, "get_result_display") else ""
+                ),
+                "timestamp": insp.inspection_date,
+                "url_name": None,
+                "url_pk": None,
+            }
+        )
+
+    activities.sort(
+        key=lambda x: x["timestamp"] if x["timestamp"] else _dt.datetime.min,
+        reverse=True,
+    )
+    return activities[:limit]
+
+
+# =============================================================================
+# AREA MUTATIONS (ADR-041 — no ORM in views)
+# =============================================================================
+
+
+@transaction.atomic
+def create_area(tenant_id: UUID, area: "Area") -> "Area":
+    """Persist a new Area with tenant assignment.
+
+    Call after form.save(commit=False) to set tenant_id and save.
+    """
+    area.tenant_id = tenant_id
+    area.site_id = tenant_id
+    area.save()
+    return area
+
+
+@transaction.atomic
+def update_area(area: "Area") -> "Area":
+    """Persist changes to an existing Area.
+
+    Call after form.save(commit=False).
+    """
+    area.save()
+    return area
+
+
+def update_area_analysis(area: "Area", analysis_json: dict, dxf_file=None) -> "Area":
+    """Store DXF or IFC analysis results on an Area and persist (ADR-041)."""
+    area.dxf_analysis_json = analysis_json
+    area.brandschutz_analysis_json = None
+    if dxf_file is not None:
+        area.dxf_file = dxf_file
+    area.save()
+    return area
+
+
+# =============================================================================
+# CONCEPT MUTATIONS (ADR-041 — no ORM in views)
+# =============================================================================
+
+
+@transaction.atomic
+def create_concept_from_form(
+    tenant_id: UUID, concept: "ExplosionConcept"
+) -> "ExplosionConcept":
+    """Persist a new ExplosionConcept with tenant assignment.
+
+    Call after form.save(commit=False) to set tenant_id and save.
+    """
+    concept.tenant_id = tenant_id
+    concept.save()
+    return concept
+
+
+@transaction.atomic
+def update_concept_from_form(concept: "ExplosionConcept") -> "ExplosionConcept":
+    """Persist changes to an existing ExplosionConcept.
+
+    Call after form.save(commit=False).
+    """
+    concept.save()
+    return concept
+
+
+@transaction.atomic
+def submit_concept_for_review(
+    concept_id, tenant_id: UUID, user_id=None
+) -> "ExplosionConcept":
+    """Transition an ExplosionConcept from DRAFT to IN_REVIEW (ADR-041).
+
+    Idempotent: returns the concept unchanged if already beyond DRAFT.
+    """
+    concept = ExplosionConcept.objects.select_for_update().get(
+        id=concept_id, tenant_id=tenant_id
+    )
+    if concept.status != ExplosionConcept.Status.DRAFT:
+        return concept
+    concept.status = ExplosionConcept.Status.REVIEW
+    concept.is_validated = True
+    concept.validated_by_id = user_id
+    concept.validated_at = timezone.now()
+    concept.save(
+        update_fields=[
+            "status",
+            "is_validated",
+            "validated_by_id",
+            "validated_at",
+            "updated_at",
+        ]
+    )
+    return concept
+
+
+@transaction.atomic
+def submit_concept_approval_transition(
+    concept_id, tenant_id: UUID
+) -> "ExplosionConcept":
+    """Set concept status to in_review after the approval workflow was submitted."""
+    concept = ExplosionConcept.objects.select_for_update().get(
+        id=concept_id, tenant_id=tenant_id
+    )
+    concept.status = ExplosionConcept.Status.REVIEW
+    concept.save(update_fields=["status", "updated_at"])
+    return concept
+
+
+@transaction.atomic
+def link_concept_to_project(
+    concept_id, project_id, tenant_id: UUID
+) -> "ExplosionConcept":
+    """Associate a concept with a project if not already linked (ADR-041)."""
+    concept = ExplosionConcept.objects.select_for_update().get(
+        id=concept_id, tenant_id=tenant_id
+    )
+    if not concept.project_id:
+        concept.project_id = project_id
+        concept.save(update_fields=["project_id", "updated_at"])
+    return concept
+
+
+# =============================================================================
+# EQUIPMENT MUTATIONS (ADR-041 — no ORM in views)
+# =============================================================================
+
+
+@transaction.atomic
+def create_equipment_from_form(tenant_id: UUID, equipment: "Equipment") -> "Equipment":
+    """Persist a new Equipment with tenant assignment.
+
+    Call after form.save(commit=False) to set tenant_id and save.
+    """
+    equipment.tenant_id = tenant_id
+    equipment.save()
+    return equipment

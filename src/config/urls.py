@@ -18,6 +18,7 @@ from config.views import (
     register,
     tenant_login,
     tenant_pick,
+    tenant_portal,
     trial_request,
     user_profile,
 )
@@ -40,6 +41,7 @@ urlpatterns = [
     path("accounts/register/", register, name="register"),
     path("trial-request/", trial_request, name="trial-request"),
     path("accounts/login/pick/<slug:slug>/", tenant_pick, name="tenant-pick"),
+    path("portal/", tenant_portal, name="tenant-portal"),
     path(
         "accounts/logout/",
         auth_views.LogoutView.as_view(),
@@ -69,7 +71,7 @@ urlpatterns = [
     path("gbu/", include("gbu.urls")),
     path("tenants/", include("tenancy.urls")),
     *(
-        [path("billing/modules/", include("django_module_shop.urls"))]
+        [path("billing/modules/", include(("django_module_shop.urls", "module_shop")))]
         if importlib.util.find_spec("django_module_shop")
         else []
     ),

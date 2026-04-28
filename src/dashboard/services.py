@@ -28,6 +28,9 @@ class ComplianceKPI:
     inspections_due_30d: int = 0
     measures_open: int = 0
 
+    # Standorte
+    sites_total: int = 0
+
     # Gefahrstoffe
     substances_total: int = 0
     sds_current: int = 0
@@ -112,6 +115,10 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
         next_inspection_date__lte=today + timedelta(days=30),
     ).count()
 
+    # --- Standorte ---
+    from tenancy.models import Site
+    sites_total = Site.objects.filter(tf).count()
+
     # --- Gefahrstoffe ---
     substances = Substance.objects.filter(tf)
     sds_qs = SdsRevision.objects.filter(tf)
@@ -187,6 +194,7 @@ def get_compliance_kpis(tenant_id: UUID) -> ComplianceKPI:
     notifs = Notification.objects.filter(tf, is_read=False)
 
     return ComplianceKPI(
+        sites_total=sites_total,
         areas_total=areas.count(),
         areas_with_hazard=areas.filter(explosion_concepts__status__in=["approved", "in_review"])
         .distinct()

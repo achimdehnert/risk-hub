@@ -138,6 +138,23 @@ class SubdomainTenantMiddleware(MiddlewareMixin):
                     return None
                 except (ValueError, TypeError):
                     pass
+            # Check session for expert/multi-tenant context switch
+            session_tenant = request.session.get("active_tenant_id") if hasattr(request, "session") else None
+            if session_tenant:
+                try:
+                    tenant_uuid = uuid.UUID(session_tenant)
+                    from tenancy.models import Organization
+                    org = Organization.objects.filter(tenant_id=tenant_uuid).first()
+                    if org and org.is_active:
+                        set_tenant(org.tenant_id, org.slug)
+                        set_db_tenant(org.tenant_id)
+                        request.tenant = org
+                        request.tenant_id = org.tenant_id
+                        request.tenant_slug = org.slug
+                        _sync_platform_context(tenant_id=org.tenant_id, slug=org.slug)
+                        return None
+                except (ValueError, TypeError, Exception):
+                    pass
             # Try to resolve tenant from authenticated user before giving up
             user = getattr(request, "user", None)
             if user and user.is_authenticated:

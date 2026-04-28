@@ -233,23 +233,20 @@ def _redirect_to_tenant_dashboard(request: HttpRequest) -> HttpResponse:
         request.tenant = org
         request.tenant_id = org.tenant_id
         request.tenant_slug = org.slug
+        request.session["active_tenant_id"] = str(org.tenant_id)
         from common.context import set_db_tenant, set_tenant
 
         set_tenant(org.tenant_id, org.slug)
         set_db_tenant(org.tenant_id)
         return redirect("dashboard:home")
 
-    # Multiple orgs → let user pick
-    return render(
-        request,
-        "registration/tenant_picker.html",
-        {"memberships": active},
-    )
+    # Multiple orgs → Mandantenportal
+    return redirect("tenant-portal")
 
 
 @login_required
 def tenant_pick(request: HttpRequest, slug: str) -> HttpResponse:
-    """Set tenant context to chosen org and redirect to dashboard."""
+    """Set tenant context to chosen org, persist in session, redirect to dashboard."""
     from common.context import set_db_tenant, set_tenant
 
     org = get_organization_by_slug(slug)
@@ -257,9 +254,29 @@ def tenant_pick(request: HttpRequest, slug: str) -> HttpResponse:
         request.tenant = org
         request.tenant_id = org.tenant_id
         request.tenant_slug = org.slug
+        request.session["active_tenant_id"] = str(org.tenant_id)
         set_tenant(org.tenant_id, org.slug)
         set_db_tenant(org.tenant_id)
+    next_url = request.GET.get("next", "")
+    if next_url and next_url.startswith("/"):
+        return redirect(next_url)
     return redirect("dashboard:home")
+
+
+@login_required
+def tenant_portal(request: HttpRequest) -> HttpResponse:
+    """Mandantenportal — Übersicht aller Mandanten des Experten."""
+    from tenancy.models import Site
+
+    memberships = get_user_memberships(request.user)
+    active = [m for m in memberships if m.organization.is_active]
+
+    enriched = []
+    for m in active:
+        site_count = Site.objects.filter(tenant_id=m.organization.tenant_id).count()
+        enriched.append({"membership": m, "site_count": site_count})
+
+    return render(request, "registration/tenant_portal.html", {"entries": enriched})
 
 
 @login_required

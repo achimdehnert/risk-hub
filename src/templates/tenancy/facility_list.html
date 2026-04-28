@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Produktionsstätten — {{ site.name }}{% endblock %}
+{% block content %}
+<div class="mb-6 flex items-center justify-between">
+    <div>
+        <nav class="text-sm text-gray-400 mb-1">
+            <a href="{% url 'tenancy:site-list' %}" class="hover:text-orange-600">Standorte</a>
+            <span class="mx-1">/</span>
+            <span class="text-gray-700">{{ site.name }}</span>
+        </nav>
+        <h1 class="text-2xl font-bold text-gray-900">Produktionsstätten</h1>
+        <p class="text-sm text-gray-500 mt-1">{{ site.name }}{% if site.address %} · {{ site.address|truncatewords:6 }}{% endif %}</p>
+    </div>
+    <a href="{% url 'tenancy:facility-create' site_pk=site.pk %}"
+       data-testid="facility-create-btn"
+       class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700 transition-colors">
+        <i data-lucide="plus" class="w-4 h-4"></i>
+        Neue Produktionsstätte
+    </a>
+</div>
+
+{% if facilities %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for f in facilities %}
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 flex flex-col gap-3 hover:shadow-md transition-shadow"
+         data-testid="facility-card-{{ f.pk }}">
+        <div class="flex items-start justify-between">
+            <div class="w-10 h-10 rounded-lg bg-orange-50 flex items-center justify-center">
+                <i data-lucide="factory" class="w-5 h-5 text-orange-500"></i>
+            </div>
+            <span class="text-xs font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500">
+                {{ f.get_facility_type_display }}
+            </span>
+        </div>
+        <div>
+            <h3 class="font-semibold text-gray-900">{{ f.name }}{% if f.code %} <span class="text-gray-400 font-normal text-sm">({{ f.code }})</span>{% endif %}</h3>
+            {% if f.description %}
+            <p class="text-sm text-gray-500 mt-1">{{ f.description|truncatewords:15 }}</p>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-3 pt-2 border-t border-gray-100 mt-auto">
+            <a href="{% url 'tenancy:facility-edit' site_pk=site.pk pk=f.pk %}"
+               data-testid="facility-edit-{{ f.pk }}"
+               class="text-xs text-blue-600 hover:underline flex items-center gap-1">
+                <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Bearbeiten
+            </a>
+            <form method="post" action="{% url 'tenancy:facility-delete' site_pk=site.pk pk=f.pk %}" class="ml-auto">
+                {% csrf_token %}
+                <button type="submit"
+                        data-testid="facility-delete-{{ f.pk }}"
+                        onclick="return confirm('Produktionsstätte löschen?')"
+                        class="text-xs text-red-400 hover:text-red-600 flex items-center gap-1">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Löschen
+                </button>
+            </form>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div class="bg-white rounded-xl border border-dashed border-gray-300 p-12 text-center">
+    <i data-lucide="factory" class="w-12 h-12 mx-auto text-gray-300 mb-4"></i>
+    <p class="text-gray-500 mb-4">Keine Produktionsstätten für diesen Standort.</p>
+    <a href="{% url 'tenancy:facility-create' site_pk=site.pk %}"
+       class="inline-flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg text-sm font-medium hover:bg-orange-700">
+        <i data-lucide="plus" class="w-4 h-4"></i> Erste Produktionsstätte anlegen
+    </a>
+</div>
+{% endif %}
+{% endblock %}

@@ -346,7 +346,7 @@ class GlobalSdsRevision(models.Model):
         """
         import contextlib
         from datetime import date
-        from decimal import Decimal, InvalidOperation
+        from decimal import Decimal
 
         source = data if data is not None else (self.raw_data or {})
         updated: list[str] = []

@@ -3,11 +3,9 @@
 import pytest
 
 from projects import services
-from projects.models import DocumentSection, OutputDocument, Project
+from projects.models import DocumentSection, OutputDocument
 from projects.tests.factories import (
     DocumentSectionFactory,
-    DocumentTemplateFactory,
-    OutputDocumentFactory,
     ProjectFactory,
 )
 
@@ -105,3 +103,30 @@ def test_should_create_output_document_without_template(fixture_tenant):
     assert doc.pk is not None
     assert doc.title == "Testdokument"
     assert str(doc.tenant_id) == str(fixture_tenant.tenant_id)
+
+
+@pytest.mark.django_db
+def test_should_create_output_document_via_service(fixture_tenant, fixture_user):
+    """Regression: create_output_document must not pass template= to OutputDocument.objects.create.
+    Removed in migration 0002 — passing template=None caused TypeError."""
+
+    class _FakeTemplate:
+        kind = "custom"
+        scope = None
+
+        def get_sections(self):
+            return [{"key": "s1", "label": "Abschnitt 1", "fields": []}]
+
+    project = ProjectFactory(tenant_id=fixture_tenant.tenant_id)
+    doc = services.create_output_document(
+        tenant_id=fixture_tenant.tenant_id,
+        project=project,
+        template=_FakeTemplate(),
+        title="Regressionstest",
+        created_by=fixture_user,
+    )
+
+    assert doc.pk is not None
+    assert doc.title == "Regressionstest"
+    assert doc.kind == "custom"
+    assert DocumentSection.objects.filter(document=doc).count() == 1

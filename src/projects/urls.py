@@ -69,30 +69,9 @@ urlpatterns = [
         views.output_document_pdf,
         name="output-document-pdf",
     ),
-    # Document Templates
     path(
-        "templates/",
-        views.template_list,
-        name="template-list",
-    ),
-    path(
-        "templates/new/",
-        views.template_create,
-        name="template-create",
-    ),
-    path(
-        "templates/upload/",
-        views.template_upload,
-        name="template-upload",
-    ),
-    path(
-        "templates/<int:tmpl_pk>/edit/",
-        views.template_edit,
-        name="template-edit",
-    ),
-    path(
-        "templates/<int:tmpl_pk>/delete/",
-        views.template_delete,
-        name="template-delete",
+        "<int:pk>/documents/<int:doc_pk>/prefill-from-docs/",
+        views.document_prefill_from_docs,
+        name="document-prefill-from-docs",
     ),
 ]

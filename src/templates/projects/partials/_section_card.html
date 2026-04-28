@@ -105,22 +105,28 @@
                     <input type="text" name="{{ form_key }}"
                            {% if field.required %}required{% endif %}
                            class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500"
-                           value="{{ field_value|default:field.default|default:'' }}"
+                           value="{{ field_value|default:field|get_item:'default'|default:'' }}"
                            placeholder="{{ field.label }}">
 
                 {% else %}
+                    {% with display_val=field_value|default:section.content %}
                     <div id="prefill-target-{{ section.pk }}-{{ field.key }}">
                         <textarea name="{{ form_key }}" rows="6"
                                   {% if field.required %}required{% endif %}
                                   class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500 resize-y"
-                                  placeholder="{{ field.label }}...">{{ field_value|default:section.content|default:'' }}</textarea>
+                                  placeholder="{{ field.label }}...">{{ display_val }}</textarea>
                     </div>
                     <button type="button"
-                            data-action="llm-prefill" data-section-pk="{{ section.pk }}" data-field-key="{{ field.key }}" data-label="{{ field.label|escapejs }}"
-                            class="mt-1 text-xs text-violet-600 hover:text-violet-800 inline-flex items-center">
+                            data-action="llm-prefill"
+                            data-section-pk="{{ section.pk }}"
+                            data-field-key="{{ field.key }}"
+                            data-label="{{ field.label|escapejs }}"
+                            data-section-title="{{ section.title|escapejs }}"
+                            class="mt-1 text-xs {% if display_val %}text-amber-600 hover:text-amber-800{% else %}text-violet-600 hover:text-violet-800{% endif %} inline-flex items-center">
                         <i data-lucide="sparkles" class="w-3 h-3 mr-1"></i>
-                        KI ausfüllen
+                        {% if display_val %}KI verbessern{% else %}KI ausfüllen{% endif %}
                     </button>
+                    {% endwith %}
                 {% endif %}
 
                 {% endwith %}
@@ -133,15 +139,76 @@
                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500 resize-y">{{ section.content }}</textarea>
             </div>
             <button type="button"
-                    data-action="llm-prefill" data-section-pk="{{ section.pk }}" data-field-key="" data-label="{{ section.title|escapejs }}"
-                    class="mt-1 text-xs text-violet-600 hover:text-violet-800 inline-flex items-center">
+                    data-action="llm-prefill"
+                    data-section-pk="{{ section.pk }}"
+                    data-field-key=""
+                    data-section-title="{{ section.title|escapejs }}"
+                    data-label="{{ section.title|escapejs }}"
+                    class="mt-1 text-xs {% if section.content %}text-amber-600 hover:text-amber-800{% else %}text-violet-600 hover:text-violet-800{% endif %} inline-flex items-center">
                 <i data-lucide="sparkles" class="w-3 h-3 mr-1"></i>
-                KI ausfüllen
+                {% if section.content %}KI verbessern{% else %}KI ausfüllen{% endif %}
             </button>
         {% endif %}
         {% endwith %}
 
     </form>
+
+    {# Kontextquellen — Hinweis welche Docs + Keywords genutzt werden #}
+    {% if section.ai_context_hint or section.matched_docs %}
+    <details class="mt-3 group">
+        <summary class="cursor-pointer text-xs text-gray-400 hover:text-orange-600 inline-flex items-center gap-1 select-none list-none">
+            <i data-lucide="database" class="w-3 h-3"></i>
+            <span>Kontextquellen</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="mt-2 p-3 bg-gray-50 rounded-lg border border-gray-100 space-y-2">
+            {% if section.ai_context_hint %}
+            <div>
+                <p class="text-xs font-medium text-gray-500 mb-1">Suchbegriffe für diesen Abschnitt:</p>
+                <div class="flex flex-wrap gap-1">
+                    {% for kw in section.ai_context_hint|split_commas %}
+                    <span class="px-1.5 py-0.5 text-xs bg-orange-50 text-orange-700 rounded border border-orange-100">{{ kw }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+            {% if section.matched_docs %}
+            <div>
+                <p class="text-xs font-medium text-gray-500 mb-1">Relevante Unterlagen:</p>
+                <ul class="space-y-0.5">
+                    {% for mdoc in section.matched_docs %}
+                    <li class="flex items-center gap-1.5 text-xs text-gray-600">
+                        <i data-lucide="file-text" class="w-3 h-3 text-gray-400 flex-shrink-0"></i>
+                        <span>{{ mdoc.title }}</span>
+                        <span class="text-gray-400">({{ mdoc.doc_type_label }})</span>
+                        <span class="ml-auto text-gray-400">{{ mdoc.score }} Treffer</span>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% else %}
+            <p class="text-xs text-gray-400">Noch keine hochgeladenen Unterlagen mit passenden Inhalten.</p>
+            {% endif %}
+        </div>
+    </details>
+    {% endif %}
+
+    {# Editierbarer KI-Prompt je Abschnitt #}
+    <details class="mt-3 group" id="prompt-details-{{ section.pk }}">
+        <summary class="cursor-pointer text-xs text-purple-500 hover:text-purple-700 inline-flex items-center gap-1 select-none list-none">
+            <i data-lucide="bot" class="w-3 h-3"></i>
+            <span>KI-Prompt bearbeiten</span>
+            <i data-lucide="chevron-down" class="w-3 h-3 transition-transform group-open:rotate-180"></i>
+        </summary>
+        <div class="mt-2 space-y-1">
+            <p class="text-xs text-gray-400">Dieser Prompt wird beim Klick auf „KI ausfüllen / verbessern" verwendet. Er kann jederzeit angepasst und gespeichert werden.</p>
+            <textarea id="ai-prompt-{{ section.pk }}"
+                      name="ai_prompt"
+                      form="section-form-{{ section.pk }}"
+                      rows="3"
+                      class="w-full px-3 py-2 border border-purple-200 rounded-lg text-xs text-gray-700 focus:ring-purple-400 focus:border-purple-400 resize-y bg-purple-50">{{ section.ai_prompt|default:section.title }}</textarea>
+        </div>
+    </details>
 
     {# Aktionen — außerhalb Haupt-Form; Speichern via HTML5 form= #}
     <div class="flex justify-end items-center gap-2 mt-3 pr-20 sm:pr-0">

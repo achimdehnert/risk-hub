@@ -577,3 +577,303 @@ class TestArchiveExplosionConcept:
                 fixture_tenant_id,
                 None,
             )
+
+
+# =============================================================================
+# EXTENDED QUERY HELPERS (ADR-041)
+# =============================================================================
+
+
+@pytest.mark.django_db
+class TestGetAreaForTenant:
+    def test_should_return_area_by_pk(self, fixture_tenant_id, fixture_area):
+        from explosionsschutz.services import get_area_for_tenant
+
+        result = get_area_for_tenant(fixture_tenant_id, fixture_area.pk)
+        assert result is not None
+        assert result.pk == fixture_area.pk
+
+    def test_should_return_none_for_wrong_tenant(self, fixture_area):
+        from explosionsschutz.services import get_area_for_tenant
+
+        other_tenant = uuid.uuid4()
+        result = get_area_for_tenant(other_tenant, fixture_area.pk)
+        assert result is None
+
+    def test_should_return_none_for_unknown_pk(self, fixture_tenant_id):
+        from explosionsschutz.services import get_area_for_tenant
+
+        result = get_area_for_tenant(fixture_tenant_id, 999999)
+        assert result is None
+
+    def test_should_return_area_when_tenant_id_is_none(self, fixture_area):
+        from explosionsschutz.services import get_area_for_tenant
+
+        result = get_area_for_tenant(None, fixture_area.pk)
+        assert result is not None
+        assert result.pk == fixture_area.pk
+
+
+@pytest.mark.django_db
+class TestGetAreaQueryset:
+    def test_should_return_areas_for_tenant(self, fixture_tenant_id, fixture_area):
+        from explosionsschutz.services import get_area_queryset
+
+        qs = get_area_queryset(fixture_tenant_id)
+        assert qs.filter(pk=fixture_area.pk).exists()
+
+    def test_should_exclude_other_tenant_areas(self, fixture_area):
+        from explosionsschutz.services import get_area_queryset
+
+        qs = get_area_queryset(uuid.uuid4())
+        assert not qs.filter(pk=fixture_area.pk).exists()
+
+    def test_should_filter_by_search(self, fixture_tenant_id, fixture_area):
+        from explosionsschutz.services import get_area_queryset
+
+        qs = get_area_queryset(fixture_tenant_id, search="SVC-01")
+        assert qs.filter(pk=fixture_area.pk).exists()
+
+        qs_no_match = get_area_queryset(fixture_tenant_id, search="ZZZNOMATCH")
+        assert not qs_no_match.filter(pk=fixture_area.pk).exists()
+
+
+@pytest.mark.django_db
+class TestGetConceptQueryset:
+    def test_should_return_concepts_for_tenant(self, fixture_tenant_id, fixture_area):
+        from explosionsschutz.services import get_concept_queryset
+
+        concept = ExplosionConcept.objects.create(
+            tenant_id=fixture_tenant_id,
+            area=fixture_area,
+            title="Test Concept QS",
+            status="draft",
+        )
+        qs = get_concept_queryset(fixture_tenant_id)
+        assert qs.filter(pk=concept.pk).exists()
+
+    def test_should_filter_by_status(self, fixture_tenant_id, fixture_area):
+        from explosionsschutz.services import get_concept_queryset
+
+        ExplosionConcept.objects.create(
+            tenant_id=fixture_tenant_id,
+            area=fixture_area,
+            title="Draft Concept",
+            status="draft",
+        )
+        approved = ExplosionConcept.objects.create(
+            tenant_id=fixture_tenant_id,
+            area=fixture_area,
+            title="Approved Concept",
+            status="approved",
+        )
+        qs = get_concept_queryset(fixture_tenant_id, status_filter="approved")
+        assert qs.filter(pk=approved.pk).exists()
+        assert not qs.filter(title="Draft Concept").exists()
+
+
+@pytest.mark.django_db
+class TestGetEquipmentQueryset:
+    def test_should_return_equipment_for_tenant(self, fixture_tenant_id):
+        from explosionsschutz.models import Equipment
+        from explosionsschutz.services import get_equipment_queryset
+
+        eq_type = EquipmentType.objects.create(atex_category="2G")
+        area = Area.objects.create(
+            tenant_id=fixture_tenant_id,
+            site_id=fixture_tenant_id,
+            code="EQ-QS-01",
+            name="Equipment QS Area",
+        )
+        eq = Equipment.objects.create(
+            tenant_id=fixture_tenant_id,
+            equipment_type=eq_type,
+            area=area,
+            serial_number="SN-001",
+        )
+        qs = get_equipment_queryset(fixture_tenant_id)
+        assert qs.filter(pk=eq.pk).exists()
+
+    def test_should_filter_by_search(self, fixture_tenant_id):
+        from explosionsschutz.models import Equipment
+        from explosionsschutz.services import get_equipment_queryset
+
+        eq_type = EquipmentType.objects.create(atex_category="2G")
+        area = Area.objects.create(
+            tenant_id=fixture_tenant_id,
+            site_id=fixture_tenant_id,
+            code="EQ-QS-02",
+            name="Equipment QS Area 2",
+        )
+        eq = Equipment.objects.create(
+            tenant_id=fixture_tenant_id,
+            equipment_type=eq_type,
+            area=area,
+            serial_number="SEARCH-42",
+        )
+        qs = get_equipment_queryset(fixture_tenant_id, search="SEARCH-42")
+        assert qs.filter(pk=eq.pk).exists()
+
+        qs_no_match = get_equipment_queryset(fixture_tenant_id, search="ZZZNOMATCH")
+        assert not qs_no_match.filter(pk=eq.pk).exists()
+
+
+# =============================================================================
+# AREA MUTATIONS (ADR-041)
+# =============================================================================
+
+
+@pytest.mark.django_db
+class TestCreateArea:
+    def test_should_persist_area_with_tenant(self, fixture_tenant_id):
+        from explosionsschutz.services import create_area
+
+        area = Area(code="CRE-01", name="Create Test Area")
+        result = create_area(fixture_tenant_id, area)
+
+        assert result.pk is not None
+        assert result.tenant_id == fixture_tenant_id
+        assert result.site_id == fixture_tenant_id
+        assert Area.objects.filter(pk=result.pk).exists()
+
+
+@pytest.mark.django_db
+class TestUpdateArea:
+    def test_should_persist_area_changes(self, fixture_tenant_id, fixture_area):
+        from explosionsschutz.services import update_area
+
+        fixture_area.name = "Updated Name"
+        update_area(fixture_area)
+
+        refreshed = Area.objects.get(pk=fixture_area.pk)
+        assert refreshed.name == "Updated Name"
+
+
+# =============================================================================
+# CONCEPT MUTATIONS (ADR-041)
+# =============================================================================
+
+
+@pytest.mark.django_db
+class TestCreateConceptFromForm:
+    def test_should_persist_concept_with_tenant(self, fixture_tenant_id, fixture_area):
+        from explosionsschutz.services import create_concept_from_form
+
+        concept = ExplosionConcept(area=fixture_area, title="New Concept", status="draft")
+        result = create_concept_from_form(fixture_tenant_id, concept)
+
+        assert result.pk is not None
+        assert result.tenant_id == fixture_tenant_id
+        assert ExplosionConcept.objects.filter(pk=result.pk).exists()
+
+
+@pytest.mark.django_db
+class TestUpdateConceptFromForm:
+    def test_should_persist_concept_changes(self, fixture_tenant_id, fixture_area):
+        from explosionsschutz.services import update_concept_from_form
+
+        concept = ExplosionConcept.objects.create(
+            tenant_id=fixture_tenant_id,
+            area=fixture_area,
+            title="Original",
+            status="draft",
+        )
+        concept.title = "Updated Title"
+        update_concept_from_form(concept)
+
+        refreshed = ExplosionConcept.objects.get(pk=concept.pk)
+        assert refreshed.title == "Updated Title"
+
+
+@pytest.mark.django_db
+class TestSubmitConceptForReview:
+    def test_should_transition_draft_to_in_review(self, fixture_tenant_id, fixture_area, fixture_user_id):
+        from explosionsschutz.services import submit_concept_for_review
+
+        concept = ExplosionConcept.objects.create(
+            tenant_id=fixture_tenant_id,
+            area=fixture_area,
+            title="Review Me",
+            status=ExplosionConcept.Status.DRAFT,
+        )
+        result = submit_concept_for_review(concept.pk, fixture_tenant_id, user_id=fixture_user_id)
+
+        assert result.status == ExplosionConcept.Status.REVIEW
+        assert result.is_validated is True
+        assert result.validated_by_id == fixture_user_id
+
+    def test_should_be_idempotent_when_already_in_review(self, fixture_tenant_id, fixture_area):
+        from explosionsschutz.services import submit_concept_for_review
+
+        concept = ExplosionConcept.objects.create(
+            tenant_id=fixture_tenant_id,
+            area=fixture_area,
+            title="Already In Review",
+            status=ExplosionConcept.Status.REVIEW,
+        )
+        result = submit_concept_for_review(concept.pk, fixture_tenant_id)
+        assert result.status == ExplosionConcept.Status.REVIEW
+
+
+@pytest.mark.django_db
+class TestLinkConceptToProject:
+    def test_should_not_overwrite_existing_project(self, fixture_tenant_id, fixture_area):
+        """Concept with project_id already set should not be overwritten."""
+        from explosionsschutz.services import link_concept_to_project
+        from projects.models import Project
+        from tenancy.models import Organization, Site
+
+        org = Organization.objects.create(
+            slug=f"org-lcp-{fixture_tenant_id.hex[:6]}",
+            name="Link Test Org",
+        )
+        site = Site.objects.create(
+            tenant_id=org.tenant_id,
+            organization=org,
+            name="LCP Site",
+        )
+        project_a = Project.objects.create(
+            tenant_id=org.tenant_id,
+            site=site,
+            name="Project A",
+        )
+        project_b = Project.objects.create(
+            tenant_id=org.tenant_id,
+            site=site,
+            name="Project B",
+        )
+        concept = ExplosionConcept.objects.create(
+            tenant_id=fixture_tenant_id,
+            area=fixture_area,
+            title="Link Test 2",
+            status=ExplosionConcept.Status.DRAFT,
+            project=project_a,
+        )
+        result = link_concept_to_project(concept.pk, project_b.pk, fixture_tenant_id)
+        assert result.project_id == project_a.pk
+
+
+# =============================================================================
+# EQUIPMENT MUTATIONS (ADR-041)
+# =============================================================================
+
+
+@pytest.mark.django_db
+class TestCreateEquipmentFromForm:
+    def test_should_persist_equipment_with_tenant(self, fixture_tenant_id):
+        from explosionsschutz.models import Equipment
+        from explosionsschutz.services import create_equipment_from_form
+
+        eq_type = EquipmentType.objects.create(atex_category="2G")
+        area = Area.objects.create(
+            tenant_id=fixture_tenant_id,
+            site_id=fixture_tenant_id,
+            code="EQ-MUT-01",
+            name="Equipment Mut Area",
+        )
+        eq = Equipment(equipment_type=eq_type, area=area, serial_number="VLV-001")
+        result = create_equipment_from_form(fixture_tenant_id, eq)
+
+        assert result.pk is not None
+        assert result.tenant_id == fixture_tenant_id
+        assert Equipment.objects.filter(pk=result.pk).exists()

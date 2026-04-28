@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import json
+import logging
+
 from django.db.models import Count
+
+logger = logging.getLogger(__name__)
 
 
 def get_all_organizations():
@@ -252,3 +257,114 @@ def get_user_memberships(user):
         .select_related("organization")
         .order_by("organization__name")
     )
+
+
+# ---------------------------------------------------------------------------
+# Facility services
+# ---------------------------------------------------------------------------
+
+
+def get_facilities_for_site(site_id, tenant_id):
+    """Return active Facilities for a given site."""
+    from tenancy.models import Facility
+
+    return Facility.objects.filter(
+        tenant_id=tenant_id, site_id=site_id, is_active=True
+    ).order_by("name")
+
+
+def get_all_facilities(tenant_id):
+    """Return all active Facilities for a tenant."""
+    from tenancy.models import Facility
+
+    return Facility.objects.filter(
+        tenant_id=tenant_id, is_active=True
+    ).select_related("site").order_by("site__name", "name")
+
+
+def create_facility(tenant_id, site, name: str, code: str = "", facility_type: str = "production", description: str = ""):
+    """Create and return a new Facility."""
+    from tenancy.models import Facility
+
+    return Facility.objects.create(
+        tenant_id=tenant_id,
+        site=site,
+        name=name,
+        code=code,
+        facility_type=facility_type,
+        description=description,
+    )
+
+
+def update_facility(facility, **kwargs):
+    """Update a Facility and return it."""
+    for field, value in kwargs.items():
+        setattr(facility, field, value)
+    facility.save()
+    return facility
+
+
+def delete_facility(facility) -> None:
+    """Soft-delete a Facility."""
+    facility.is_active = False
+    facility.save(update_fields=["is_active", "updated_at"])
+
+
+# -----------------------------------------------------------------------
+# AI: Facility data extraction from PDF text
+# -----------------------------------------------------------------------
+
+_FACILITY_EXTRACT_PROMPT = """Extrahiere strukturierte Standortdaten aus dem folgenden Dokumenttext.
+Antworte NUR mit einem JSON-Objekt (kein Markdown, keine Erklärung) mit diesen Feldern:
+
+{{
+  "name": "Name der Anlage/des Standorts oder null",
+  "code": "Kürzel z.B. H1 oder null",
+  "facility_type": "production|storage|lab|office|workshop|other oder null",
+  "description": "Kurzbeschreibung max. 300 Zeichen oder null",
+  "address": "Vollständige Adresse oder null",
+  "area_sqm": Zahl oder null,
+  "notes": "Weitere relevante Infos oder null"
+}}
+
+Dokumenttext (Auszug):
+{text}"""
+
+
+def extract_facility_data_from_text(extracted_text: str) -> dict:
+    """Use aifw (Groq fast inference) to extract structured facility fields from PDF text.
+
+    Returns a dict with keys: name, code, facility_type, description, address, area_sqm, notes.
+    Empty dict on failure (caller decides what to do).
+    """
+    if not extracted_text or len(extracted_text.strip()) < 50:
+        return {}
+
+    snippet = extracted_text[:3000]
+    prompt = _FACILITY_EXTRACT_PROMPT.format(text=snippet)
+
+    try:
+        from aifw.service import sync_completion
+
+        result = sync_completion(
+            "facility_extraction",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        if not result.success:
+            logger.warning("facility_extraction LLM failed: %s", result.error)
+            return {}
+
+        raw = result.content.strip()
+        if raw.startswith("```"):
+            raw = raw.split("```")[1]
+            if raw.startswith("json"):
+                raw = raw[4:]
+        data = json.loads(raw)
+        return {k: v for k, v in data.items() if v is not None}
+
+    except json.JSONDecodeError as exc:
+        logger.warning("facility_extraction JSON parse error: %s", exc)
+        return {}
+    except Exception as exc:
+        logger.exception("facility_extraction failed: %s", exc)
+        return {}

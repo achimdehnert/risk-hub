@@ -4,7 +4,6 @@ from django.contrib import admin
 
 from projects.models import (
     DocumentSection,
-    DocumentTemplate,
     OutputDocument,
     Project,
     ProjectDocument,
@@ -54,9 +53,3 @@ class OutputDocumentAdmin(admin.ModelAdmin):
     inlines = [DocumentSectionInline]
 
 
-@admin.register(DocumentTemplate)
-class DocumentTemplateAdmin(admin.ModelAdmin):
-    list_display = ("name", "kind", "status", "section_count", "updated_at")
-    list_filter = ("status", "kind")
-    search_fields = ("name", "description")
-    readonly_fields = ("uuid", "created_at", "updated_at")

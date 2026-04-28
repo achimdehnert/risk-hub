@@ -4,6 +4,7 @@
 - ProjectModule als Tabelle statt JSONField
 - ProjectDocument: hochgeladene Unterlagen
 - OutputDocument + DocumentSection: generierte Dokumente
+- DocumentTemplate: ENTFERNT (war toter Code, FK immer NULL, 0 DB-Einträge)
 """
 
 import uuid
@@ -160,109 +161,6 @@ class ProjectModule(models.Model):
         return f"{self.module} ({self.get_status_display()})"
 
 
-class DocumentTemplate(models.Model):
-    """Wiederverwendbare Dokumentvorlage (modulübergreifend).
-
-    Struktur als JSON:
-    {
-      "sections": [
-        {
-          "key": "section_1",
-          "label": "1. Allgemeines",
-          "fields": [
-            {"key": "inhalt", "label": "Inhalt", "type": "textarea"}
-          ]
-        }
-      ]
-    }
-    """
-
-    class Status(models.TextChoices):
-        DRAFT = "draft", "Entwurf"
-        ACCEPTED = "accepted", "Akzeptiert"
-        ARCHIVED = "archived", "Archiviert"
-
-    uuid = models.UUIDField(
-        default=uuid.uuid4,
-        unique=True,
-        editable=False,
-    )
-    tenant_id = models.UUIDField(db_index=True)
-    name = models.CharField(max_length=255)
-    description = models.TextField(blank=True, default="")
-    kind = models.CharField(
-        max_length=50,
-        blank=True,
-        default="",
-        help_text="Dokumenttyp, z.B. ex_schutz, gbu, brandschutz",
-    )
-    structure_json = models.TextField(
-        default='{"sections": []}',
-        help_text="Template-Struktur als JSON",
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=Status.choices,
-        default=Status.DRAFT,
-    )
-    source_filename = models.CharField(
-        max_length=255,
-        blank=True,
-        default="",
-    )
-    source_text = models.TextField(blank=True, default="")
-
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    objects = TenantManager()
-
-    class Meta:
-        db_table = "project_doc_template"
-        verbose_name = "Dokumentvorlage"
-        verbose_name_plural = "Dokumentvorlagen"
-        ordering = ["-updated_at"]
-        indexes = [
-            models.Index(
-                fields=["tenant_id", "status"],
-                name="ix_doctmpl_tenant_status",
-            ),
-        ]
-
-    def __str__(self) -> str:
-        return f"{self.name} ({self.get_status_display()})"
-
-    @property
-    def section_count(self) -> int:
-        import json as _json
-
-        try:
-            data = _json.loads(self.structure_json)
-            return len(data.get("sections", []))
-        except (_json.JSONDecodeError, TypeError):
-            return 0
-
-    @property
-    def field_count(self) -> int:
-        import json as _json
-
-        try:
-            data = _json.loads(self.structure_json)
-            return sum(len(s.get("fields", [])) for s in data.get("sections", []))
-        except (_json.JSONDecodeError, TypeError):
-            return 0
-
-    def get_sections(self) -> list[dict]:
-        """Parse and return sections from structure_json."""
-        import json as _json
-
-        try:
-            data = _json.loads(self.structure_json)
-            return data.get("sections", [])
-        except (_json.JSONDecodeError, TypeError):
-            return []
-
-
 class ProjectDocument(models.Model):
     """Hochgeladene Projektunterlage (ADR-041 Phase 2)."""
 
@@ -345,14 +243,6 @@ class OutputDocument(models.Model):
         related_name="output_documents",
     )
 
-    template = models.ForeignKey(
-        DocumentTemplate,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="output_documents",
-        help_text="Verwendete Dokumentvorlage",
-    )
     kind = models.CharField(
         max_length=50,
         help_text="Dokumenttyp, z.B. ex_schutz, gbu, brandschutz",
@@ -410,6 +300,16 @@ class DocumentSection(models.Model):
         help_text="Feldwerte als JSON {field_key: value}",
     )
     is_ai_generated = models.BooleanField(default=False)
+    ai_context_hint = models.TextField(
+        blank=True,
+        default="",
+        help_text="LLM-generierte Retrieval-Hinweise für diesen Abschnitt (beim Erstellen generiert)",
+    )
+    ai_prompt = models.TextField(
+        blank=True,
+        default="",
+        help_text="Editierbarer KI-Prompt für diesen Abschnitt (wird beim KI ausfüllen/verbessern verwendet)",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

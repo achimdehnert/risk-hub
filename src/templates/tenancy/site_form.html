@@ -3,36 +3,138 @@
 {% block title %}{{ title }} — Schutztat{% endblock %}
 
 {% block content %}
-<div class="space-y-6 max-w-xl mx-auto">
+<div class="max-w-2xl mx-auto space-y-6">
+
+    <!-- Breadcrumb + Header -->
     <div>
-        <nav class="text-sm text-gray-500 mb-2">
-            <span>Standortverwaltung</span>
-            <span class="mx-2">/</span>
-            <span>Neuer Standort</span>
+        <nav class="flex items-center text-sm text-gray-500 mb-3 gap-1">
+            <a href="{% url 'tenancy:site-list' %}" class="hover:text-orange-600 flex items-center gap-1">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                Standorte
+            </a>
+            <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+            <span class="text-gray-700">{% if site %}Bearbeiten{% else %}Neuer Standort{% endif %}</span>
         </nav>
         <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
     </div>
 
-    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            {% for field in form %}
+    <form method="post" class="space-y-5" data-testid="site-form">
+        {% csrf_token %}
+
+        <!-- Typ auswählen -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Standorttyp</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                {% for value, label in form.site_type.field.choices %}
+                <label class="relative flex flex-col items-center gap-2 p-3 rounded-xl border-2 cursor-pointer transition-all
+                    {% if form.site_type.value == value %}border-orange-500 bg-orange-50{% else %}border-gray-200 hover:border-orange-300 hover:bg-orange-50/40{% endif %}">
+                    <input type="radio" name="{{ form.site_type.html_name }}" value="{{ value }}"
+                           class="sr-only"
+                           {% if form.site_type.value == value %}checked{% endif %}
+                           data-testid="site-type-{{ value }}">
+                    <span class="text-2xl">
+                        {% if value == "plant" %}🏭
+                        {% elif value == "warehouse" %}🏗️
+                        {% elif value == "office" %}🏢
+                        {% elif value == "lab" %}🔬
+                        {% else %}📍{% endif %}
+                    </span>
+                    <span class="text-xs font-medium text-gray-700 text-center">{{ label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+            {% if form.site_type.errors %}
+            <p class="text-xs text-red-600 mt-2">{{ form.site_type.errors.0 }}</p>
+            {% endif %}
+        </div>
+
+        <!-- Bezeichnung & Kürzel -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Bezeichnung</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="sm:col-span-2">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Name <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ form.name.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        Kürzel
+                        <span class="text-xs text-gray-400 font-normal ml-1">(z.B. HH-1)</span>
+                    </label>
+                    {{ form.code }}
+                    {% if form.code.errors %}
+                    <p class="text-xs text-red-600 mt-1">{{ form.code.errors.0 }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Adresse -->
+        <div class="bg-white rounded-xl border border-gray-200 p-6 space-y-4">
+            <h2 class="text-sm font-semibold text-gray-700 uppercase tracking-wide">Anschrift</h2>
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
-                {{ field }}
-                {% if field.errors %}
-                <p class="text-xs text-red-600 mt-1">{{ field.errors.0 }}</p>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                {{ form.address }}
+                {% if form.address.errors %}
+                <p class="text-xs text-red-600 mt-1">{{ form.address.errors.0 }}</p>
                 {% endif %}
             </div>
-            {% endfor %}
-            <div class="flex justify-between items-center pt-4">
-                <a href="javascript:history.back()" class="text-sm text-gray-500 hover:text-gray-700">Abbrechen</a>
+        </div>
+
+        <!-- Status -->
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+            <label class="flex items-center gap-3 cursor-pointer">
+                {{ form.is_active }}
+                <div>
+                    <span class="text-sm font-medium text-gray-900">Standort aktiv</span>
+                    <p class="text-xs text-gray-500">Inaktive Standorte werden in Auswahllisten ausgeblendet</p>
+                </div>
+            </label>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-between items-center pt-1">
+            <a href="{% url 'tenancy:site-list' %}"
+               class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
+                Abbrechen
+            </a>
+            <div class="flex items-center gap-3">
+                {% if site %}
+                <a href="{% url 'tenancy:site-delete' site.pk %}"
+                   class="px-4 py-2 text-sm text-red-600 border border-red-200 rounded-lg hover:bg-red-50"
+                   data-testid="site-delete-btn">
+                    <i data-lucide="trash-2" class="w-4 h-4 inline"></i> Löschen
+                </a>
+                {% endif %}
                 <button type="submit"
-                        class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium">
-                    Standort anlegen
+                        class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-sm font-medium"
+                        data-testid="site-submit-btn">
+                    {% if site %}Änderungen speichern{% else %}Standort anlegen{% endif %}
                 </button>
             </div>
-        </form>
-    </div>
+        </div>
+    </form>
 </div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    lucide.createIcons();
+    // Highlight selected radio card
+    document.querySelectorAll('input[name="site_type"]').forEach(radio => {
+        radio.addEventListener('change', () => {
+            document.querySelectorAll('input[name="site_type"]').forEach(r => {
+                r.closest('label').classList.remove('border-orange-500', 'bg-orange-50');
+                r.closest('label').classList.add('border-gray-200');
+            });
+            radio.closest('label').classList.add('border-orange-500', 'bg-orange-50');
+            radio.closest('label').classList.remove('border-gray-200');
+        });
+    });
+</script>
 {% endblock %}

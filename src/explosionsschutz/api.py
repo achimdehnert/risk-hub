@@ -18,7 +18,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from django.db.models import Q
 from django.http import HttpRequest
 from ninja import Router, Schema
 from ninja.errors import HttpError
@@ -143,11 +142,10 @@ class MengenIn(Schema):
 
 def _get_area(area_id: int, request: HttpRequest):
     """Lädt Area mit Tenant-Filter."""
-    from explosionsschutz.models import Area
+    from explosionsschutz.services import get_area_for_tenant
 
     tenant_id = getattr(request, "tenant_id", None)
-    base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-    area = Area.objects.filter(base_filter, pk=area_id).first()
+    area = get_area_for_tenant(tenant_id, area_id)
     if not area:
         raise HttpError(404, f"Area {area_id} nicht gefunden")
     return area
@@ -166,7 +164,7 @@ def _require_dxf_analysis(area) -> dict[str, Any]:
 
 def _dxf_model_from_analysis(analysis: dict):
     """Rekonstruiert DXFModel-Objekt aus gecachtem JSON für Re-Analyse."""
-    from nl2cad.core.models.dxf import DXFModel, DXFRoom, DXFLayer, Point2D
+    from nl2cad.core.models.dxf import DXFLayer, DXFModel, DXFRoom, Point2D
 
     model = DXFModel(
         source_file=analysis.get("source_file", ""),

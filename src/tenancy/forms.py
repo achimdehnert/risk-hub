@@ -5,7 +5,7 @@ from django.utils.text import slugify
 from django_tenancy.module_models import ModuleMembership, ModuleSubscription
 
 from identity.models import User
-from tenancy.models import Membership, Organization, Site
+from tenancy.models import Facility, Membership, Organization, Site
 
 _TW_INPUT = (
     "block w-full rounded-md border-gray-300 shadow-sm "
@@ -21,14 +21,59 @@ class SiteForm(forms.ModelForm):
 
     class Meta:
         model = Site
-        fields = ["name", "address"]
+        fields = ["name", "code", "site_type", "address", "is_active"]
         widgets = {
             "name": forms.TextInput(
-                attrs={"class": _TW_INPUT, "placeholder": "z.B. Hauptstandort"}
+                attrs={"class": _TW_INPUT, "placeholder": "z.B. Hauptwerk Hamburg", "data-testid": "site-name"}
+            ),
+            "code": forms.TextInput(
+                attrs={"class": _TW_INPUT, "placeholder": "z.B. HH-1", "data-testid": "site-code"}
+            ),
+            "site_type": forms.Select(
+                attrs={"class": _TW_SELECT, "data-testid": "site-type"}
             ),
             "address": forms.Textarea(
-                attrs={"class": _TW_TEXTAREA, "placeholder": "Adresse...", "rows": 2}
+                attrs={"class": _TW_TEXTAREA, "placeholder": "Straße, PLZ, Ort", "rows": 3, "data-testid": "site-address"}
             ),
+            "is_active": forms.CheckboxInput(
+                attrs={"class": "rounded border-gray-300 text-orange-500 focus:ring-orange-500", "data-testid": "site-is-active"}
+            ),
+        }
+        labels = {
+            "code": "Kürzel",
+            "site_type": "Typ",
+            "is_active": "Aktiv",
+        }
+
+
+class FacilityForm(forms.ModelForm):
+    """Form für Produktionsstätten."""
+
+    class Meta:
+        model = Facility
+        fields = ["name", "code", "facility_type", "description", "is_active"]
+        widgets = {
+            "name": forms.TextInput(
+                attrs={"class": _TW_INPUT, "placeholder": "z.B. Halle A, Reaktor 2", "data-testid": "facility-name"}
+            ),
+            "code": forms.TextInput(
+                attrs={"class": _TW_INPUT, "placeholder": "z.B. H1, R2", "data-testid": "facility-code"}
+            ),
+            "facility_type": forms.Select(
+                attrs={"class": _TW_SELECT, "data-testid": "facility-type"}
+            ),
+            "description": forms.Textarea(
+                attrs={"class": _TW_TEXTAREA, "rows": 3, "data-testid": "facility-description"}
+            ),
+            "is_active": forms.CheckboxInput(
+                attrs={"class": "rounded border-gray-300 text-orange-500 focus:ring-orange-500", "data-testid": "facility-is-active"}
+            ),
+        }
+        labels = {
+            "code": "Kürzel",
+            "facility_type": "Typ",
+            "is_active": "Aktiv",
+            "description": "Beschreibung",
         }
 
 
