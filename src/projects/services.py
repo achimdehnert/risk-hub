@@ -119,7 +119,54 @@ def upload_project_document(
         page_count,
         len(extracted_text),
     )
+
+    if extracted_text and doc_type in {"plan", "other"}:
+        _try_enrich_facility_from_document(project, extracted_text)
+
     return doc
+
+
+def _try_enrich_facility_from_document(project, extracted_text: str) -> None:
+    """Best-effort: extract facility fields from document text and patch the project's facility.
+
+    Only fills empty fields — never overwrites existing values.
+    Runs synchronously; move to Celery task if latency becomes an issue.
+    """
+    from tenancy.services import extract_facility_data_from_text
+
+    try:
+        data = extract_facility_data_from_text(extracted_text)
+        if not data:
+            return
+
+        facility = getattr(project, "facility", None)
+        if facility is None:
+            logger.debug("No facility linked to project %s — skipping enrichment", project.pk)
+            return
+
+        update_fields = []
+        field_map = {
+            "name": "name",
+            "code": "code",
+            "facility_type": "facility_type",
+            "description": "description",
+        }
+        for src_key, model_field in field_map.items():
+            if src_key in data:
+                current = getattr(facility, model_field, None)
+                if not current or current in {"", "other"}:
+                    setattr(facility, model_field, data[src_key])
+                    update_fields.append(model_field)
+
+        if update_fields:
+            facility.save(update_fields=update_fields)
+            logger.info(
+                "Facility %s enriched from document: %s",
+                facility.pk,
+                update_fields,
+            )
+    except Exception as exc:
+        logger.warning("Facility enrichment failed (non-fatal): %s", exc)
 
 
 def delete_project_document(doc) -> None:
