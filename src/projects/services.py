@@ -391,8 +391,92 @@ def generate_section_hints(doc) -> None:
         logger.warning("generate_section_hints non-fatal error: %s", exc)
 
 
+def _strip_section_prefix(title: str) -> str:
+    """Remove leading letter/number prefix from a section title.
+
+    'A. Angaben des...' -> 'Angaben des...'
+    '3.2.1. Erstinertisierung...' -> 'Erstinertisierung...'
+    '12. Maßnahmenplan...' -> 'Maßnahmenplan...'
+    """
+    return re.sub(r"^[A-Z0-9]+(?:\.[A-Z0-9]+)*\.?\s*", "", title).strip()
+
+
+_HEADING_PREFIX_RE = re.compile(r"^[A-Z0-9]+(?:\.[A-Z0-9]*)*[\.\s]*$")
+
+
+def _heading_at_line_start(text: str, idx: int) -> bool:
+    """Return True if idx is at the start of a content heading line.
+
+    Accepts:
+      - Bare heading at actual line start: '\nAngaben des...'
+      - Heading after a number/letter prefix: '\n1. Anlagenbeschreibung...'
+        (prefix on the same line is only digits/letters/dots/spaces)
+    """
+    line_start = text.rfind("\n", 0, idx)
+    line_start = line_start + 1 if line_start >= 0 else 0
+    prefix = text[line_start:idx]
+    return not prefix or bool(_HEADING_PREFIX_RE.match(prefix))
+
+
+def _parse_document_sections(text: str, known_titles: list[str]) -> dict[str, str]:
+    """Extract section content from an extracted document text.
+
+    For each known_title, finds its content heading (distinct from TOC entries
+    which are followed by a tab + page number).
+    Returns {bare_title: content_text}.
+    """
+    result: dict[str, str] = {}
+
+    # Build sorted list of (position, bare_title) for content headings only
+    heading_positions: list[tuple[int, str]] = []
+    for title in known_titles:
+        bare = _strip_section_prefix(title)
+        if not bare:
+            continue
+        pos = 0
+        while True:
+            idx = text.find(bare, pos)
+            if idx < 0:
+                break
+            rest = text[idx + len(bare):]
+            # Content heading: followed by \n (allow trailing spaces; \t = TOC separator)
+            rest_stripped = rest.lstrip(" ")
+            after_is_newline = rest_stripped.startswith("\n") or rest_stripped == ""
+            if _heading_at_line_start(text, idx) and after_is_newline:
+                heading_positions.append((idx, bare))
+                break
+            pos = idx + 1
+
+    # Sort by position in document
+    heading_positions.sort(key=lambda x: x[0])
+
+    # Extract content between consecutive headings
+    for i, (pos, bare) in enumerate(heading_positions):
+        content_start = pos + len(bare)
+        # Skip whitespace/newlines directly after heading
+        while content_start < len(text) and text[content_start] in ("\n", "\r", " "):
+            content_start += 1
+        # Content ends at next heading or end of text
+        if i + 1 < len(heading_positions):
+            content_end = heading_positions[i + 1][0]
+        else:
+            content_end = len(text)
+        content = text[content_start:content_end].strip()
+        # Skip trivial content like "3" or "3.1" (just a next-section number)
+        if content and not re.match(r"^[0-9]+(?:\.[0-9]+)*\.?\s*$", content):
+            result[bare] = content
+
+    return result
+
+
 def prefill_sections_from_documents(doc, force: bool = False) -> int:
-    """Directly fill sections with relevant text from uploaded project documents (no LLM).
+    """Fill sections directly from the text of uploaded project documents.
+
+    Strategy (in priority order):
+    1. Direct section matching: find headings matching the section title in the
+       uploaded document text and extract the content between consecutive headings.
+       Works best with structure documents (Explosionsschutzdokument, concepts).
+    2. Fallback keyword search for sections not found via direct matching.
 
     force=False (default, auto): only fills empty sections.
     force=True (manual re-fill): overwrites all sections including non-empty ones.
@@ -414,45 +498,64 @@ def prefill_sections_from_documents(doc, force: bool = False) -> int:
     if not uploaded_docs:
         return 0
 
+    section_titles = [s.title for s in sections]
+
+    # --- Pass 1: Direct section matching (structure documents) ---
+    section_map: dict[str, str] = {}  # bare_title -> content
+    for uploaded in uploaded_docs:
+        parsed = _parse_document_sections(uploaded["extracted_text"], section_titles)
+        for bare, content in parsed.items():
+            if bare not in section_map:  # First match wins
+                section_map[bare] = content
+
+    # --- Fill sections ---
     filled = 0
     for section in sections:
-        hint = section.ai_context_hint or ""
-        if hint:
-            keywords = [k.strip().lower() for k in hint.replace(",", " ").split() if len(k.strip()) > 2]
-        else:
-            keywords = _keywords_from_title(section.title)
+        bare = _strip_section_prefix(section.title)
+        content_text = section_map.get(bare, "")
 
-        best_text = ""
-        best_score = 0
-        for d in uploaded_docs:
-            text = d["extracted_text"]
-            text_lower = text.lower()
-            score = sum(text_lower.count(kw) for kw in keywords)
-            if score > best_score:
-                best_score = score
-                best_text = _extract_relevant_paragraphs(text, keywords, max_chars=1500)
+        # --- Pass 2 fallback: keyword search if no direct match ---
+        if not content_text:
+            hint = section.ai_context_hint or ""
+            keywords = (
+                [k.strip().lower() for k in hint.replace(",", " ").split() if len(k.strip()) > 2]
+                if hint else _keywords_from_title(section.title)
+            )
+            best_score = 0
+            for d in uploaded_docs:
+                text_lower = d["extracted_text"].lower()
+                score = sum(text_lower.count(kw) for kw in keywords)
+                if score > best_score:
+                    best_score = score
+                    content_text = _extract_relevant_paragraphs(
+                        d["extracted_text"], keywords, max_chars=1500
+                    )
+            if not best_score:
+                content_text = ""
 
-        if best_text and best_score > 0:
-            update_fields = ["content", "is_ai_generated"]
-            section.content = best_text
-            section.is_ai_generated = False
+        if not content_text:
+            continue
 
-            if section.fields_json and section.fields_json not in ("[]", "", None):
-                try:
-                    fields = json.loads(section.fields_json)
-                    values = json.loads(section.values_json or "{}")
-                    for f in fields:
-                        fkey = f.get("key", "")
-                        if f.get("type") in ("textarea", None) and fkey:
-                            if force or not values.get(fkey):
-                                values[fkey] = best_text
-                    section.values_json = json.dumps(values, ensure_ascii=False)
-                    update_fields.append("values_json")
-                except (json.JSONDecodeError, KeyError):
-                    pass
+        update_fields = ["content", "is_ai_generated"]
+        section.content = content_text
+        section.is_ai_generated = False
 
-            section.save(update_fields=update_fields)
-            filled += 1
+        if section.fields_json and section.fields_json not in ("[]", "", None):
+            try:
+                fields = json.loads(section.fields_json)
+                values = json.loads(section.values_json or "{}")
+                for f in fields:
+                    fkey = f.get("key", "")
+                    if f.get("type") in ("textarea", None) and fkey:
+                        if force or not values.get(fkey):
+                            values[fkey] = content_text
+                section.values_json = json.dumps(values, ensure_ascii=False)
+                update_fields.append("values_json")
+            except (json.JSONDecodeError, KeyError):
+                pass
+
+        section.save(update_fields=update_fields)
+        filled += 1
 
     logger.info("prefill_sections_from_documents: %d/%d sections filled for doc %s", filled, len(sections), doc.pk)
     return filled
