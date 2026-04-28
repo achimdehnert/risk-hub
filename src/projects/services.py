@@ -637,8 +637,116 @@ def save_section_values(
 # -----------------------------------------------------------------------
 
 
-def _build_documents_context(project) -> str:
-    """Serialisiert extrahierten Text aus hochgeladenen Projektunterlagen als Prompt-Kontext."""
+_SECTION_KEYWORDS: dict[str, list[str]] = {
+    "allgemein": [
+        "betrieb", "standort", "anlage", "unternehmen", "beschreibung", "zweck",
+        "gegenstand", "einleitung", "überblick", "zusammenfassung",
+    ],
+    "gefahr": [
+        "gefahr", "risiko", "explosiv", "entzündbar", "brennbar", "toxisch",
+        "gefahrstoff", "ghs", "h-satz", "cas", "siedepunkt", "flammpunkt",
+        "zündtemperatur", "explosionsgrenze", "ugw", "ogw",
+    ],
+    "zone": [
+        "zone", "bereich", "ex-zone", "atex", "zoneneinteilung", "zone 0",
+        "zone 1", "zone 2", "zone 20", "zone 21", "zone 22", "abstand",
+    ],
+    "schutz": [
+        "schutzmaßnahme", "sicherheit", "schutzeinrichtung", "ex-schutz",
+        "lüftung", "erdung", "ableitung", "explosionsschutz", "zündquellen",
+        "betriebsmittel", "kategorie",
+    ],
+    "stoff": [
+        "stoff", "substanz", "gefahrstoff", "chemikalie", "lösemittel",
+        "gas", "dampf", "staub", "flüssigkeit", "siedepunkt", "dampfdruck",
+        "viskosität", "dichte", "molmasse", "cas-nr",
+    ],
+    "notfall": [
+        "notfall", "erste hilfe", "brandbekämpfung", "rettung", "alarm",
+        "feuerwehr", "notausgang", "evakuierung", "notruf",
+    ],
+    "organisation": [
+        "verantwortlich", "beauftragte", "organisation", "pflichten",
+        "unterweisung", "schulung", "prüfung", "wartung", "inspektion",
+    ],
+    "lager": [
+        "lager", "lagerung", "lagermenge", "lagerbereich", "tank",
+        "behälter", "gebinde", "fass", "container",
+    ],
+}
+
+_SECTION_SYSTEM_PROMPTS: dict[str, str] = {
+    "gefahr": (
+        "Du bist Gefahrstoffexperte (TRGS 200, GHS-Verordnung). "
+        "Fokus: Gefahreneigenschaften, H/P-Sätze, physikalisch-chemische Daten."
+    ),
+    "zone": (
+        "Du bist ATEX-Zonenexperte (TRGS 721, EN 60079-10-1). "
+        "Fokus: Zoneneinteilung, Ausdehnung, Begründung nach Freisetzungsquellen."
+    ),
+    "schutz": (
+        "Du bist Explosionsschutzexperte (TRGS 722, EN 1127-1). "
+        "Fokus: primäre/sekundäre/tertiäre Schutzmaßnahmen, Zündquellenvermeidung."
+    ),
+    "stoff": (
+        "Du bist Gefahrstoffsachverständiger. "
+        "Fokus: Stoffeigenschaften, Mengen, Handhabung, SDS-Daten."
+    ),
+    "notfall": (
+        "Du bist Sicherheitsbeauftragter. "
+        "Fokus: Notfallmaßnahmen, Erste Hilfe, Alarmierung, Evakuierung."
+    ),
+    "organisation": (
+        "Du bist Arbeitssicherheitsexperte. "
+        "Fokus: Verantwortlichkeiten, Unterweisungen, Prüfpflichten."
+    ),
+}
+
+
+def _section_type(section_title: str) -> str:
+    """Derive a section category key from section title for keyword/prompt lookup."""
+    title_lower = section_title.lower()
+    for key in _SECTION_KEYWORDS:
+        if key in title_lower:
+            return key
+    keyword_map = {
+        "allgemein": "allgemein", "einleitung": "allgemein", "überblick": "allgemein",
+        "explosionsgefährdete": "zone", "bereich": "zone",
+        "maßnahme": "schutz", "sicherung": "schutz",
+        "substanz": "stoff", "chemikali": "stoff",
+        "notfall": "notfall", "erste hilfe": "notfall",
+        "verantwortlich": "organisation", "schulung": "organisation",
+    }
+    for fragment, category in keyword_map.items():
+        if fragment in title_lower:
+            return category
+    return "allgemein"
+
+
+def _extract_relevant_paragraphs(text: str, keywords: list[str], max_chars: int = 1200) -> str:
+    """Return paragraphs from text that contain at least one keyword — up to max_chars."""
+    paragraphs = [p.strip() for p in text.split("\n") if len(p.strip()) > 30]
+    scored = []
+    kw_lower = [k.lower() for k in keywords]
+    for para in paragraphs:
+        para_lower = para.lower()
+        score = sum(para_lower.count(kw) for kw in kw_lower)
+        if score:
+            scored.append((score, para))
+    scored.sort(key=lambda x: -x[0])
+    result, total = [], 0
+    for _, para in scored:
+        if total + len(para) > max_chars:
+            break
+        result.append(para)
+        total += len(para)
+    if not result and paragraphs:
+        result = paragraphs[:3]
+    return "\n".join(result)
+
+
+def _build_documents_context(project, section_title: str = "") -> str:
+    """Liefert abschnittsspezifisch gefilterte Textauszüge aus hochgeladenen Dokumenten."""
     try:
         from projects.models import ProjectDocument
 
@@ -648,7 +756,10 @@ def _build_documents_context(project) -> str:
         if not all_docs:
             return ""
 
-        parts = ["Hochgeladene Projektunterlagen:"]
+        sec_type = _section_type(section_title) if section_title else "allgemein"
+        keywords = _SECTION_KEYWORDS.get(sec_type, _SECTION_KEYWORDS["allgemein"])
+
+        parts = [f"Relevante Auszüge aus Projektunterlagen (Fokus: {sec_type}):"]
         for d in all_docs:
             try:
                 label = ProjectDocument.DocType(d["doc_type"]).label
@@ -656,11 +767,11 @@ def _build_documents_context(project) -> str:
                 label = "Unterlage"
             text = (d["extracted_text"] or "").strip()
             if text:
-                snippet = text[:1200]
-                parts.append(f"\n[{label}: {d['title']}]\n{snippet}")
-            else:
-                parts.append(f"\n[{label}: {d['title']}]\n(kein extrahierbarer Text — Binärdatei oder Bild)")
-        return "\n".join(parts)
+                snippet = _extract_relevant_paragraphs(text, keywords, max_chars=900)
+                if snippet:
+                    parts.append(f"\n[{label}: {d['title']}]\n{snippet}")
+            # Dokumente ohne Text werden nicht erwähnt — sparen Tokens
+        return "\n".join(parts) if len(parts) > 1 else ""
     except Exception:
         return ""
 
@@ -704,11 +815,16 @@ def generate_section_content(
     """
     doc = section.document
     project = doc.project
+    sec_type = _section_type(section.title)
+    system_role = _SECTION_SYSTEM_PROMPTS.get(
+        sec_type,
+        f"Du bist ein Experte für {doc.kind or 'Arbeitsschutz'}-Dokumentation.",
+    )
     concept_context = _build_concept_context(project)
-    documents_context = _build_documents_context(project)
+    documents_context = _build_documents_context(project, section_title=section.title)
 
     prompt_parts = [
-        f"Du bist ein Experte für {doc.kind or 'Arbeitsschutz'}-Dokumentation.",
+        system_role,
         f"Projekt: {project.name}.",
         f"Dokument: {doc.title}.",
         f"Abschnitt: {section.title}.",
@@ -717,10 +833,11 @@ def generate_section_content(
         prompt_parts.append(documents_context)
     if concept_context:
         prompt_parts.append(concept_context)
+    task = llm_hint or section.title
     prompt_parts.append(
-        f"Aufgabe: {llm_hint or section.title}. "
-        f"Schreibe einen fachlich korrekten, professionellen Text für diesen Abschnitt auf Deutsch. "
-        f"Nutze die obigen Unterlagen und Konzeptdaten als Grundlage, wo sie zum Abschnitt passen."
+        f"Aufgabe: Schreibe den Abschnitt '{task}' auf Deutsch. "
+        f"Nutze AUSSCHLIESSLICH die oben genannten Daten aus den Projektunterlagen. "
+        f"Erfinde keine Werte. Gib nur den Fließtext ohne Überschriften aus."
     )
     prompt = "\n".join(prompt_parts)
 
