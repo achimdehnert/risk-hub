@@ -13,7 +13,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django_tenancy.managers import TenantManager
 
-__all__ = ["Department", "Membership", "Organization", "Site"]
+__all__ = ["Department", "Facility", "Membership", "Organization", "Site"]
 
 
 class Organization(models.Model):
@@ -174,6 +174,64 @@ class Site(models.Model):
             models.UniqueConstraint(
                 fields=["tenant_id", "code"],
                 name="uq_site_code_per_tenant",
+                condition=~models.Q(code=""),
+            ),
+        ]
+
+    def __str__(self) -> str:
+        if self.code:
+            return f"{self.name} ({self.code})"
+        return self.name
+
+
+class Facility(models.Model):
+    """Physical production unit within a Site (Werk, Halle, Labor)."""
+
+    class FacilityType(models.TextChoices):
+        PRODUCTION = "production", _("Produktion")
+        STORAGE = "storage", _("Lager")
+        LAB = "lab", _("Labor")
+        OFFICE = "office", _("Büro")
+        WORKSHOP = "workshop", _("Werkstatt")
+        OTHER = "other", _("Sonstiges")
+
+    tenant_id = models.UUIDField(db_index=True)
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.CASCADE,
+        related_name="facilities",
+    )
+    name = models.CharField(max_length=200)
+    code = models.CharField(
+        max_length=20,
+        blank=True,
+        default="",
+        help_text=_("Kürzel (z.B. 'H1', 'R2')"),
+    )
+    facility_type = models.CharField(
+        max_length=20,
+        choices=FacilityType.choices,
+        default=FacilityType.PRODUCTION,
+    )
+    description = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    objects = TenantManager()
+
+    class Meta:
+        app_label = "tenancy"
+        db_table = "tenancy_facility"
+        ordering = ["name"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["tenant_id", "site", "name"],
+                name="uq_facility_name_per_site",
+            ),
+            models.UniqueConstraint(
+                fields=["tenant_id", "site", "code"],
+                name="uq_facility_code_per_site",
                 condition=~models.Q(code=""),
             ),
         ]

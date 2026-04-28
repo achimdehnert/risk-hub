@@ -252,3 +252,54 @@ def get_user_memberships(user):
         .select_related("organization")
         .order_by("organization__name")
     )
+
+
+# ---------------------------------------------------------------------------
+# Facility services
+# ---------------------------------------------------------------------------
+
+
+def get_facilities_for_site(site_id, tenant_id):
+    """Return active Facilities for a given site."""
+    from tenancy.models import Facility
+
+    return Facility.objects.filter(
+        tenant_id=tenant_id, site_id=site_id, is_active=True
+    ).order_by("name")
+
+
+def get_all_facilities(tenant_id):
+    """Return all active Facilities for a tenant."""
+    from tenancy.models import Facility
+
+    return Facility.objects.filter(
+        tenant_id=tenant_id, is_active=True
+    ).select_related("site").order_by("site__name", "name")
+
+
+def create_facility(tenant_id, site, name: str, code: str = "", facility_type: str = "production", description: str = "") -> "Facility":
+    """Create and return a new Facility."""
+    from tenancy.models import Facility
+
+    return Facility.objects.create(
+        tenant_id=tenant_id,
+        site=site,
+        name=name,
+        code=code,
+        facility_type=facility_type,
+        description=description,
+    )
+
+
+def update_facility(facility, **kwargs) -> "Facility":
+    """Update a Facility and return it."""
+    for field, value in kwargs.items():
+        setattr(facility, field, value)
+    facility.save()
+    return facility
+
+
+def delete_facility(facility) -> None:
+    """Soft-delete a Facility."""
+    facility.is_active = False
+    facility.save(update_fields=["is_active", "updated_at"])

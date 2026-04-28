@@ -423,6 +423,14 @@ class SiteInventoryItem(TenantScopedModel):
     site = models.ForeignKey(
         "tenancy.Site", on_delete=models.CASCADE, related_name="substance_inventory"
     )
+    facility = models.ForeignKey(
+        "tenancy.Facility",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="substance_inventory",
+        help_text="Produktionsstätte / Werk (optional)",
+    )
 
     quantity = models.DecimalField(max_digits=12, decimal_places=3, help_text="Menge")
     unit = models.CharField(max_length=20, default="kg", help_text="Einheit (kg, l, m³)")
@@ -864,6 +872,14 @@ class SubstanceUsage(TenantScopedModel):
         null=True,
         blank=True,
         related_name="substance_usages",
+    )
+    facility = models.ForeignKey(
+        "tenancy.Facility",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="substance_usages",
+        help_text="Produktionsstätte / Werk (optional)",
     )
 
     usage_description = models.TextField(
@@ -1314,6 +1330,14 @@ class KatasterRevision(TenantScopedModel):
         "tenancy.Site",
         on_delete=models.CASCADE,
         related_name="kataster_revisions",
+    )
+    facility = models.ForeignKey(
+        "tenancy.Facility",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="kataster_revisions",
+        help_text="Produktionsstätte / Werk (optional)",
     )
     revision_number = models.PositiveIntegerField(
         help_text="Fortlaufende Revisionsnummer pro Standort",

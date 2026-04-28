@@ -66,4 +66,9 @@ urlpatterns = [
     path("sites/new/", views.site_create, name="site-create"),
     path("sites/<int:pk>/edit/", views.site_edit, name="site-edit"),
     path("sites/<int:pk>/delete/", views.site_delete, name="site-delete"),
+    # Facility management (Produktionsstätten)
+    path("sites/<int:site_pk>/facilities/", views.facility_list, name="facility-list"),
+    path("sites/<int:site_pk>/facilities/new/", views.facility_create, name="facility-create"),
+    path("sites/<int:site_pk>/facilities/<int:pk>/edit/", views.facility_edit, name="facility-edit"),
+    path("sites/<int:site_pk>/facilities/<int:pk>/delete/", views.facility_delete, name="facility-delete"),
 ]

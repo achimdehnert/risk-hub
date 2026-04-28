@@ -117,10 +117,15 @@
                     {% endif %}
                 </div>
             </div>
-            <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 rounded-b-xl flex items-center justify-between">
-                <span class="text-xs text-gray-400">Angelegt {{ site.created_at|date:"d.m.Y" }}</span>
+            <div class="px-5 py-3 bg-gray-50 border-t border-gray-100 rounded-b-xl flex items-center justify-between gap-3">
+                <a href="{% url 'tenancy:facility-list' site_pk=site.pk %}"
+                   class="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-orange-600 font-medium"
+                   data-testid="facility-list-btn-{{ site.pk }}">
+                    <i data-lucide="factory" class="w-3.5 h-3.5"></i>
+                    Produktionsstätten
+                </a>
                 <a href="{% url 'tenancy:site-edit' site.pk %}"
-                   class="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-800 font-medium"
+                   class="inline-flex items-center gap-1 text-xs text-orange-600 hover:text-orange-800 font-medium ml-auto"
                    data-testid="site-edit-btn-{{ site.pk }}">
                     <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                     Bearbeiten
