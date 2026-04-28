@@ -314,7 +314,7 @@ def _generate_hints_batch(doc, sections: list, doc_kind: str, project_name: str)
         "doc_title": doc.title,
         "section_list": "\n".join(f"{i+1}. {s.title}" for i, s in enumerate(sections)),
     })
-    result = sync_completion("concept_prefill", messages=messages)
+    result = sync_completion("section_hint", messages=messages)
     if not result.success:
         logger.warning("generate_section_hints batch failed: %s", result.error)
         return 0, 0
