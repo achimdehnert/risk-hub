@@ -407,8 +407,7 @@ def prefill_sections_from_documents(doc) -> int:
         if hint:
             keywords = [k.strip().lower() for k in hint.replace(",", " ").split() if len(k.strip()) > 2]
         else:
-            sec_type = _section_type(section.title)
-            keywords = [k.lower() for k in _SECTION_KEYWORDS.get(sec_type, _SECTION_KEYWORDS["allgemein"])]
+            keywords = _keywords_from_title(section.title)
 
         best_text = ""
         best_score = 0
@@ -781,90 +780,24 @@ def save_section_values(
 # -----------------------------------------------------------------------
 
 
-_SECTION_KEYWORDS: dict[str, list[str]] = {
-    "allgemein": [
-        "betrieb", "standort", "anlage", "unternehmen", "beschreibung", "zweck",
-        "gegenstand", "einleitung", "überblick", "zusammenfassung",
-    ],
-    "gefahr": [
-        "gefahr", "risiko", "explosiv", "entzündbar", "brennbar", "toxisch",
-        "gefahrstoff", "ghs", "h-satz", "cas", "siedepunkt", "flammpunkt",
-        "zündtemperatur", "explosionsgrenze", "ugw", "ogw",
-    ],
-    "zone": [
-        "zone", "bereich", "ex-zone", "atex", "zoneneinteilung", "zone 0",
-        "zone 1", "zone 2", "zone 20", "zone 21", "zone 22", "abstand",
-    ],
-    "schutz": [
-        "schutzmaßnahme", "sicherheit", "schutzeinrichtung", "ex-schutz",
-        "lüftung", "erdung", "ableitung", "explosionsschutz", "zündquellen",
-        "betriebsmittel", "kategorie",
-    ],
-    "stoff": [
-        "stoff", "substanz", "gefahrstoff", "chemikalie", "lösemittel",
-        "gas", "dampf", "staub", "flüssigkeit", "siedepunkt", "dampfdruck",
-        "viskosität", "dichte", "molmasse", "cas-nr",
-    ],
-    "notfall": [
-        "notfall", "erste hilfe", "brandbekämpfung", "rettung", "alarm",
-        "feuerwehr", "notausgang", "evakuierung", "notruf",
-    ],
-    "organisation": [
-        "verantwortlich", "beauftragte", "organisation", "pflichten",
-        "unterweisung", "schulung", "prüfung", "wartung", "inspektion",
-    ],
-    "lager": [
-        "lager", "lagerung", "lagermenge", "lagerbereich", "tank",
-        "behälter", "gebinde", "fass", "container",
-    ],
-}
-
-_SECTION_SYSTEM_PROMPTS: dict[str, str] = {
-    "gefahr": (
-        "Du bist Gefahrstoffexperte (TRGS 200, GHS-Verordnung). "
-        "Fokus: Gefahreneigenschaften, H/P-Sätze, physikalisch-chemische Daten."
-    ),
-    "zone": (
-        "Du bist ATEX-Zonenexperte (TRGS 721, EN 60079-10-1). "
-        "Fokus: Zoneneinteilung, Ausdehnung, Begründung nach Freisetzungsquellen."
-    ),
-    "schutz": (
-        "Du bist Explosionsschutzexperte (TRGS 722, EN 1127-1). "
-        "Fokus: primäre/sekundäre/tertiäre Schutzmaßnahmen, Zündquellenvermeidung."
-    ),
-    "stoff": (
-        "Du bist Gefahrstoffsachverständiger. "
-        "Fokus: Stoffeigenschaften, Mengen, Handhabung, SDS-Daten."
-    ),
-    "notfall": (
-        "Du bist Sicherheitsbeauftragter. "
-        "Fokus: Notfallmaßnahmen, Erste Hilfe, Alarmierung, Evakuierung."
-    ),
-    "organisation": (
-        "Du bist Arbeitssicherheitsexperte. "
-        "Fokus: Verantwortlichkeiten, Unterweisungen, Prüfpflichten."
-    ),
-}
+_DE_STOPWORDS = frozenset({
+    "und", "der", "die", "das", "des", "dem", "den", "ein", "eine", "einer",
+    "für", "mit", "von", "bei", "nach", "aus", "ist", "sind", "wird", "werden",
+    "im", "am", "an", "auf", "in", "zu", "zum", "zur", "als", "noch", "nicht",
+    "über", "unter", "sowie", "oder", "aber", "auch", "noch", "durch",
+})
 
 
-def _section_type(section_title: str) -> str:
-    """Derive a section category key from section title for keyword/prompt lookup."""
-    title_lower = section_title.lower()
-    for key in _SECTION_KEYWORDS:
-        if key in title_lower:
-            return key
-    keyword_map = {
-        "allgemein": "allgemein", "einleitung": "allgemein", "überblick": "allgemein",
-        "explosionsgefährdete": "zone", "bereich": "zone",
-        "maßnahme": "schutz", "sicherung": "schutz",
-        "substanz": "stoff", "chemikali": "stoff",
-        "notfall": "notfall", "erste hilfe": "notfall",
-        "verantwortlich": "organisation", "schulung": "organisation",
-    }
-    for fragment, category in keyword_map.items():
-        if fragment in title_lower:
-            return category
-    return "allgemein"
+def _keywords_from_title(title: str) -> list[str]:
+    """Derive search keywords from a section title by tokenizing and filtering stopwords.
+
+    Replaces the old hardcoded _SECTION_KEYWORDS map — works for any section title.
+    When ai_context_hint is available it takes priority over this fallback.
+    """
+    import re
+    words = re.sub(r"[^a-zA-ZäöüÄÖÜß\s]", " ", title.lower()).split()
+    return [w for w in words if len(w) > 3 and w not in _DE_STOPWORDS]
+
 
 
 def _extract_relevant_paragraphs(text: str, keywords: list[str], max_chars: int = 1200) -> str:
@@ -902,12 +835,10 @@ def _build_documents_context(project, section_title: str = "", ai_context_hint: 
 
         if ai_context_hint:
             keywords = [k.strip() for k in ai_context_hint.replace(",", " ").split() if len(k.strip()) > 2]
-            sec_type = "KI-generiert"
         else:
-            sec_type = _section_type(section_title) if section_title else "allgemein"
-            keywords = _SECTION_KEYWORDS.get(sec_type, _SECTION_KEYWORDS["allgemein"])
+            keywords = _keywords_from_title(section_title) if section_title else []
 
-        parts = [f"Relevante Auszüge aus Projektunterlagen (Fokus: {sec_type}):"]
+        parts = ["Relevante Auszüge aus Projektunterlagen:"]
         for d in all_docs:
             try:
                 label = ProjectDocument.DocType(d["doc_type"]).label
