@@ -69,7 +69,7 @@ urlpatterns = [
     path("gbu/", include("gbu.urls")),
     path("tenants/", include("tenancy.urls")),
     *(
-        [path("billing/modules/", include("django_module_shop.urls"))]
+        [path("billing/modules/", include(("django_module_shop.urls", "module_shop")))]
         if importlib.util.find_spec("django_module_shop")
         else []
     ),
