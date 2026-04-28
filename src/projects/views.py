@@ -15,7 +15,6 @@ from common.tenant import require_tenant as _require_tenant
 from projects.constants import DOCUMENT_KIND_META
 from projects.models import (
     DocumentSection,
-    DocumentTemplate,
     Project,
     ProjectDocument,
 )
@@ -23,14 +22,11 @@ from projects.services import (
     CreateProjectCmd,
     create_output_document,
     create_project,
-    create_template,
     delete_document_section,
     delete_project_document,
-    delete_template,
     export_document_pdf,
     generate_section_content,
     get_active_document_templates,
-    get_document_templates,
     get_or_create_site,
     get_output_documents,
     get_project_module_details,
@@ -39,7 +35,6 @@ from projects.services import (
     get_tenant_sites,
     recommend_modules_from_description,
     save_section_values,
-    update_template,
     upload_project_document,
 )
 
@@ -547,224 +542,4 @@ def output_document_pdf(
     )
 
 
-# ─── DocumentTemplate CRUD ──────────────────────────────────
 
-
-@login_required
-def template_list(request: HttpRequest) -> HttpResponse:
-    """List all document templates for current tenant."""
-    tenant_response = _require_tenant(request)
-    if tenant_response is not None:
-        return tenant_response
-
-    templates = get_active_document_templates(request.tenant_id).order_by("-updated_at")
-
-    return render(
-        request,
-        "projects/templates/template_list.html",
-        {"templates": templates},
-    )
-
-
-@login_required
-def template_create(request: HttpRequest) -> HttpResponse:
-    """Create a new empty document template."""
-    tenant_response = _require_tenant(request)
-    if tenant_response is not None:
-        return tenant_response
-
-    if request.method == "POST":
-        name = request.POST.get("name", "").strip()
-        kind = request.POST.get("kind", "").strip()
-        desc = request.POST.get("description", "").strip()
-
-        if not name:
-            messages.error(request, "Name ist Pflichtfeld.")
-            return render(
-                request,
-                "projects/templates/template_create.html",
-                {"form_data": request.POST},
-            )
-
-        structure = {
-            "sections": [
-                {
-                    "key": "section_1",
-                    "label": "1. Allgemeines",
-                    "fields": [
-                        {
-                            "key": "inhalt",
-                            "label": "Inhalt",
-                            "type": "textarea",
-                            "required": False,
-                        }
-                    ],
-                },
-            ],
-        }
-
-        tmpl = create_template(
-            tenant_id=request.tenant_id,
-            name=name,
-            kind=kind,
-            description=desc,
-            structure=structure,
-        )
-        messages.success(request, f"Vorlage '{name}' erstellt.")
-        return redirect(
-            "projects:template-edit",
-            tmpl_pk=tmpl.pk,
-        )
-
-    return render(
-        request,
-        "projects/templates/template_create.html",
-    )
-
-
-@login_required
-def template_upload(request: HttpRequest) -> HttpResponse:
-    """Upload PDF to create a document template."""
-    tenant_response = _require_tenant(request)
-    if tenant_response is not None:
-        return tenant_response
-
-    if request.method == "POST":
-        pdf_file = request.FILES.get("pdf_file")
-        if not pdf_file:
-            messages.error(request, "Keine Datei ausgewählt.")
-            return render(
-                request,
-                "projects/templates/template_upload.html",
-            )
-
-        name = request.POST.get("name", "").strip()
-        if not name:
-            name = pdf_file.name.replace(".pdf", "").replace(
-                "_",
-                " ",
-            )
-        kind = request.POST.get("kind", "").strip()
-
-        from projects.pdf_utils import extract_pdf_text, text_to_structure
-
-        text = extract_pdf_text(pdf_file)
-        if not text:
-            messages.warning(
-                request,
-                "Kein Text aus PDF extrahiert. Leere Vorlage erstellt.",
-            )
-
-        structure = text_to_structure(text) if text else {"sections": []}
-
-        tmpl = create_template(
-            tenant_id=request.tenant_id,
-            name=name,
-            kind=kind,
-            description=request.POST.get("description", ""),
-            structure=structure,
-            source_filename=pdf_file.name,
-            source_text=text or "",
-        )
-        messages.success(
-            request,
-            f"Vorlage '{name}' aus PDF erstellt ({tmpl.section_count} Abschnitte).",
-        )
-        return redirect(
-            "projects:template-edit",
-            tmpl_pk=tmpl.pk,
-        )
-
-    return render(
-        request,
-        "projects/templates/template_upload.html",
-    )
-
-
-@login_required
-def template_edit(
-    request: HttpRequest,
-    tmpl_pk: int,
-) -> HttpResponse:
-    """Edit a document template's structure."""
-    tenant_response = _require_tenant(request)
-    if tenant_response is not None:
-        return tenant_response
-
-    tmpl = get_object_or_404(
-        DocumentTemplate,
-        pk=tmpl_pk,
-        tenant_id=request.tenant_id,
-    )
-
-    if request.method == "POST":
-        raw_json = request.POST.get("structure_json", "")
-        try:
-            structure = json.loads(raw_json)
-            if "sections" not in structure:
-                raise ValueError("Missing 'sections' key")
-        except (json.JSONDecodeError, ValueError) as exc:
-            messages.error(request, f"Ungültiges JSON: {exc}")
-            return render(
-                request,
-                "projects/templates/template_edit.html",
-                {
-                    "tmpl": tmpl,
-                    "structure": {"sections": []},
-                    "structure_json": raw_json,
-                },
-            )
-
-        update_template(
-            tmpl,
-            structure=structure,
-            name=request.POST.get("name", tmpl.name),
-            description=request.POST.get(
-                "description",
-                tmpl.description,
-            ),
-            status=request.POST.get("status", tmpl.status),
-        )
-
-        messages.success(request, "Vorlage gespeichert.")
-        return redirect("projects:template-list")
-
-    try:
-        structure = json.loads(tmpl.structure_json)
-    except (json.JSONDecodeError, TypeError):
-        structure = {"sections": []}
-
-    return render(
-        request,
-        "projects/templates/template_edit.html",
-        {
-            "tmpl": tmpl,
-            "structure": structure,
-            "structure_json": json.dumps(
-                structure,
-                ensure_ascii=False,
-                indent=2,
-            ),
-        },
-    )
-
-
-@login_required
-def template_delete(
-    request: HttpRequest,
-    tmpl_pk: int,
-) -> HttpResponse:
-    """Delete a document template."""
-    tenant_response = _require_tenant(request)
-    if tenant_response is not None:
-        return tenant_response
-
-    tmpl = get_object_or_404(
-        DocumentTemplate,
-        pk=tmpl_pk,
-        tenant_id=request.tenant_id,
-    )
-    if request.method == "POST":
-        delete_template(tmpl)
-        messages.success(request, "Vorlage gelöscht.")
-    return redirect("projects:template-list")

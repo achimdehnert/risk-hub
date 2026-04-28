@@ -6,7 +6,6 @@ from projects import services
 from projects.models import DocumentSection, OutputDocument, Project
 from projects.tests.factories import (
     DocumentSectionFactory,
-    DocumentTemplateFactory,
     OutputDocumentFactory,
     ProjectFactory,
 )

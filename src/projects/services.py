@@ -142,67 +142,6 @@ def create_output_document(
     return doc
 
 
-# -----------------------------------------------------------------------
-# DocumentTemplate CRUD
-# -----------------------------------------------------------------------
-
-
-def create_template(
-    tenant_id: UUID,
-    name: str,
-    kind: str = "",
-    description: str = "",
-    structure: dict | None = None,
-    source_filename: str = "",
-    source_text: str = "",
-):
-    """Create a DocumentTemplate."""
-    from projects.models import DocumentTemplate
-
-    structure = structure or {"sections": []}
-    tmpl = DocumentTemplate.objects.create(
-        tenant_id=tenant_id,
-        name=name,
-        kind=kind,
-        description=description,
-        structure_json=json.dumps(
-            structure,
-            ensure_ascii=False,
-        ),
-        source_filename=source_filename,
-        source_text=source_text[:50000] if source_text else "",
-    )
-    return tmpl
-
-
-def update_template(
-    tmpl,
-    structure: dict,
-    name: str | None = None,
-    description: str | None = None,
-    status: str | None = None,
-) -> None:
-    """Update a DocumentTemplate's structure and metadata."""
-    from projects.models import DocumentTemplate
-
-    tmpl.structure_json = json.dumps(
-        structure,
-        ensure_ascii=False,
-    )
-    if name is not None:
-        tmpl.name = name
-    if description is not None:
-        tmpl.description = description
-    if status and status in dict(DocumentTemplate.Status.choices):
-        tmpl.status = status
-    tmpl.save()
-
-
-def delete_template(tmpl) -> None:
-    """Delete a DocumentTemplate."""
-    tmpl.delete()
-
-
 def delete_document_section(section) -> None:
     """Delete a single DocumentSection from an output document."""
     section.delete()
@@ -718,13 +657,6 @@ def get_tenant_sites(tenant_id):
     from tenancy.models import Site
 
     return Site.objects.filter(tenant_id=tenant_id)
-
-
-def get_document_templates(tenant_id):
-    """Return DocumentTemplates for a tenant ordered by kind/name."""
-    from projects.models import DocumentTemplate
-
-    return DocumentTemplate.objects.filter(tenant_id=tenant_id)
 
 
 def get_active_document_templates(tenant_id):

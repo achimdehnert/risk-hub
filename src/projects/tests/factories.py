@@ -5,7 +5,7 @@ import uuid
 import factory
 from factory.django import DjangoModelFactory
 
-from projects.models import DocumentSection, DocumentTemplate, OutputDocument, Project
+from projects.models import DocumentSection, OutputDocument, Project
 
 
 class OrganizationFactory(DjangoModelFactory):
@@ -35,21 +35,6 @@ class ProjectFactory(DjangoModelFactory):
     description = "Automatisch generiertes Testprojekt"
     project_number = factory.Sequence(lambda n: f"P-{n:04d}")
     client_name = "Test GmbH"
-
-
-class DocumentTemplateFactory(DjangoModelFactory):
-    class Meta:
-        model = DocumentTemplate
-
-    tenant_id = factory.LazyFunction(__import__("uuid").uuid4)
-    name = factory.Sequence(lambda n: f"Vorlage {n}")
-    kind = "custom"
-    description = ""
-    structure_json = factory.LazyFunction(
-        lambda: __import__("json").dumps(
-            {"sections": [{"key": "s_intro", "label": "Einleitung", "fields": []}]}
-        )
-    )
 
 
 class OutputDocumentFactory(DjangoModelFactory):
