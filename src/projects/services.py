@@ -298,6 +298,64 @@ def create_output_document(
     return doc
 
 
+def generate_section_hints(doc) -> None:
+    """Use LLM (Groq fast) to generate retrieval hints for each section of a document.
+
+    Called once after create_output_document. Stores hints in DocumentSection.ai_context_hint.
+    Runs outside the create transaction — failures are non-fatal.
+    """
+    sections = list(doc.sections.filter(ai_context_hint="").select_related("document"))
+    if not sections:
+        return
+
+    doc_kind = doc.kind or "Arbeitsschutz"
+    section_titles = [s.title for s in sections]
+
+    prompt = (
+        f"Du bist Experte für {doc_kind}-Dokumentation.\n"
+        f"Für jede der folgenden Abschnittsüberschriften, schreibe EINE Zeile: "
+        f"die wichtigsten 5-8 deutschen Fachbegriffe, die in Quelldokumenten auftauchen "
+        f"sollten, damit der Abschnitt korrekt ausgefüllt werden kann.\n"
+        f"Format: 'AbschnittsNr. Titel: Begriff1, Begriff2, ...'\n\n"
+        + "\n".join(f"{i+1}. {t}" for i, t in enumerate(section_titles))
+    )
+
+    try:
+        from aifw.service import sync_completion
+
+        result = sync_completion(
+            "facility_extraction",
+            messages=[{"role": "user", "content": prompt}],
+        )
+        if not result.success:
+            logger.warning("generate_section_hints failed: %s", result.error)
+            return
+
+        lines = result.content.strip().splitlines()
+        hint_map: dict[str, str] = {}
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+            for i, title in enumerate(section_titles):
+                prefix = f"{i+1}."
+                if line.startswith(prefix):
+                    after_colon = line.split(":", 1)[-1].strip() if ":" in line else line
+                    hint_map[title] = after_colon
+                    break
+
+        for section in sections:
+            hint = hint_map.get(section.title, "")
+            if hint:
+                section.ai_context_hint = hint
+                section.save(update_fields=["ai_context_hint"])
+
+        logger.info("Generated section hints for %d sections of doc %s", len(hint_map), doc.pk)
+
+    except Exception as exc:
+        logger.warning("generate_section_hints non-fatal error: %s", exc)
+
+
 def delete_document_section(section) -> None:
     """Delete a single DocumentSection from an output document."""
     section.delete()
@@ -745,7 +803,7 @@ def _extract_relevant_paragraphs(text: str, keywords: list[str], max_chars: int 
     return "\n".join(result)
 
 
-def _build_documents_context(project, section_title: str = "") -> str:
+def _build_documents_context(project, section_title: str = "", ai_context_hint: str = "") -> str:
     """Liefert abschnittsspezifisch gefilterte Textauszüge aus hochgeladenen Dokumenten."""
     try:
         from projects.models import ProjectDocument
@@ -756,8 +814,12 @@ def _build_documents_context(project, section_title: str = "") -> str:
         if not all_docs:
             return ""
 
-        sec_type = _section_type(section_title) if section_title else "allgemein"
-        keywords = _SECTION_KEYWORDS.get(sec_type, _SECTION_KEYWORDS["allgemein"])
+        if ai_context_hint:
+            keywords = [k.strip() for k in ai_context_hint.replace(",", " ").split() if len(k.strip()) > 2]
+            sec_type = "KI-generiert"
+        else:
+            sec_type = _section_type(section_title) if section_title else "allgemein"
+            keywords = _SECTION_KEYWORDS.get(sec_type, _SECTION_KEYWORDS["allgemein"])
 
         parts = [f"Relevante Auszüge aus Projektunterlagen (Fokus: {sec_type}):"]
         for d in all_docs:
@@ -821,7 +883,10 @@ def generate_section_content(
         f"Du bist ein Experte für {doc.kind or 'Arbeitsschutz'}-Dokumentation.",
     )
     concept_context = _build_concept_context(project)
-    documents_context = _build_documents_context(project, section_title=section.title)
+    hint = getattr(section, "ai_context_hint", "") or ""
+    documents_context = _build_documents_context(
+        project, section_title=section.title, ai_context_hint=hint
+    )
 
     prompt_parts = [
         system_role,

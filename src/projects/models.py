@@ -300,6 +300,11 @@ class DocumentSection(models.Model):
         help_text="Feldwerte als JSON {field_key: value}",
     )
     is_ai_generated = models.BooleanField(default=False)
+    ai_context_hint = models.TextField(
+        blank=True,
+        default="",
+        help_text="LLM-generierte Retrieval-Hinweise für diesen Abschnitt (beim Erstellen generiert)",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

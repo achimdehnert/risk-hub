@@ -26,6 +26,7 @@ from projects.services import (
     delete_project_document,
     export_document_pdf,
     generate_section_content,
+    generate_section_hints,
     get_active_document_templates,
     get_or_create_site,
     get_output_documents,
@@ -344,6 +345,7 @@ def output_document_create(
             created_by=request.user,
             imported_values=imported_values,
         )
+        generate_section_hints(doc)
 
         return redirect(
             "projects:output-document-edit",
