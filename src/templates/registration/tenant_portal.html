@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="de">
+<head>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Mandantenportal – Schutztat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+        }
+        .glass {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+        }
+        .card-hover:hover {
+            background: rgba(255,255,255,0.08);
+            border-color: rgba(234,88,12,0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <header class="border-b border-white/10 px-6 py-4 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 bg-orange-600 rounded-xl flex items-center justify-center">
+                <i data-lucide="shield" class="w-5 h-5 text-white"></i>
+            </div>
+            <span class="text-white font-bold text-lg">Schutztat</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-white/50 text-sm">{{ user.get_full_name|default:user.username }}</span>
+            <form method="post" action="{% url 'logout' %}">
+                {% csrf_token %}
+                <button type="submit" class="flex items-center gap-2 text-white/40 hover:text-white/70 text-sm transition-colors">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    Abmelden
+                </button>
+            </form>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-center px-4 py-12">
+
+        <div class="mb-10 text-center">
+            <h1 class="text-white text-2xl font-bold mb-2">
+                Guten Tag, {{ user.get_full_name|default:user.username }}.
+            </h1>
+            <p class="text-white/50 text-sm">Wählen Sie einen Mandanten, um mit der Arbeit zu beginnen.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full max-w-4xl">
+            {% for entry in entries %}
+            {% with m=entry.membership org=entry.membership.organization %}
+            <a href="{% url 'tenant-pick' org.slug %}"
+               data-testid="portal-card-{{ org.slug }}"
+               class="glass card-hover rounded-2xl p-6 flex flex-col gap-4 transition-all duration-200 cursor-pointer no-underline group">
+
+                <div class="flex items-start justify-between">
+                    <div class="w-12 h-12 rounded-xl bg-orange-500/20 flex items-center justify-center flex-shrink-0">
+                        <i data-lucide="building-2" class="w-6 h-6 text-orange-400"></i>
+                    </div>
+                    <span class="text-xs font-semibold px-2 py-1 rounded-full
+                        {% if m.role == 'admin' %}bg-orange-500/20 text-orange-300
+                        {% elif m.role == 'editor' %}bg-blue-500/20 text-blue-300
+                        {% else %}bg-white/10 text-white/50{% endif %}">
+                        {{ m.get_role_display }}
+                    </span>
+                </div>
+
+                <div class="flex-1">
+                    <h2 class="text-white font-semibold text-base mb-1">{{ org.name }}</h2>
+                    <p class="text-white/40 text-xs">{{ org.slug }}.schutztat.de</p>
+                </div>
+
+                <div class="flex items-center gap-4 pt-2 border-t border-white/10">
+                    <div class="flex items-center gap-1.5 text-white/50 text-xs">
+                        <i data-lucide="map-pin" class="w-3.5 h-3.5"></i>
+                        <span>{{ entry.site_count }} Standort{{ entry.site_count|pluralize:"e" }}</span>
+                    </div>
+                    <div class="ml-auto flex items-center gap-1 text-orange-400 text-xs font-medium group-hover:gap-2 transition-all">
+                        Öffnen
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </div>
+                </div>
+            </a>
+            {% endwith %}
+            {% empty %}
+            <div class="col-span-3 text-center text-white/40 py-12">
+                <i data-lucide="building" class="w-12 h-12 mx-auto mb-4 opacity-30"></i>
+                <p>Keine aktiven Mandanten gefunden.</p>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if entries|length > 3 %}
+        <p class="mt-6 text-white/30 text-xs">{{ entries|length }} Mandanten verfügbar</p>
+        {% endif %}
+
+    </main>
+
+    <script>lucide.createIcons();</script>
+</body>
+</html>
