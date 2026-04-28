@@ -78,6 +78,20 @@ def _extract_text_from_file(file) -> tuple[str, int | None]:
             logger.warning("PDF extraction failed for '%s': %s", name, exc)
             return "", None
 
+    if ext in {"docx"}:
+        try:
+            import io
+            import docx as python_docx
+
+            raw = file.read()
+            file.seek(0)
+            doc = python_docx.Document(io.BytesIO(raw))
+            paragraphs = [p.text for p in doc.paragraphs if p.text.strip()]
+            return "\n\n".join(paragraphs).strip(), None
+        except Exception as exc:
+            logger.warning("DOCX extraction failed for '%s': %s", name, exc)
+            return "", None
+
     if ext in {"txt", "md", "csv"}:
         try:
             raw = file.read()
@@ -87,6 +101,55 @@ def _extract_text_from_file(file) -> tuple[str, int | None]:
             return "", None
 
     return "", None
+
+
+_DOCTYPE_KEYWORDS: list[tuple[str, list[str]]] = [
+    ("sds", [
+        "sicherheitsdatenblatt", "safety data sheet", "gefährliche inhaltsstoffe",
+        "h-satz", "p-satz", "ghs", "cas-nr", "physikalische und chemische eigenschaften",
+        "abschnitt 1", "abschnitt 2", "chemische bezeichnung",
+    ]),
+    ("plan", [
+        "grundriss", "lageplan", "anlagenplan", "schnittzeichnung", "draufsicht",
+        "maßstab", "floor plan", "site plan", "zeichnungsnummer", "ex-zonen",
+        "zoneneinteilung", "atex zone",
+    ]),
+    ("gutachten", [
+        "gutachten", "prüfbericht", "sachverständiger", "beurteilung",
+        "bewertung durch", "prüfzeichen", "zertifikat", "tüv", "dekra", "bericht nr",
+    ]),
+    ("regulation", [
+        "trgs", "betriebssicherheitsverordnung", "betrsi", "din en", "iso ",
+        "vde ", "dvgw", "norm", "regelwerk", "richtlinie", "gefstoffv",
+        "bundesgesetzblatt", "vde-norm",
+    ]),
+    ("process", [
+        "verfahrensbeschreibung", "ablaufbeschreibung", "prozessbeschreibung",
+        "arbeitsanweisung", "betriebsanweisung", "sop ", "standard operating",
+        "verfahrensanweisung", "prozessablauf",
+    ]),
+]
+
+
+def detect_doc_type(extracted_text: str, filename: str = "") -> str:
+    """Keyword-based automatic document type detection.
+
+    Scores each DocType by keyword frequency — no LLM call needed.
+    Returns DocType string or 'other' as fallback.
+    """
+    if not extracted_text:
+        return "other"
+
+    haystack = (extracted_text[:3000] + " " + filename).lower()
+    scores: dict[str, int] = {}
+    for doc_type, keywords in _DOCTYPE_KEYWORDS:
+        score = sum(haystack.count(kw) for kw in keywords)
+        if score:
+            scores[doc_type] = score
+
+    if not scores:
+        return "other"
+    return max(scores, key=scores.__getitem__)
 
 
 def upload_project_document(
@@ -101,6 +164,9 @@ def upload_project_document(
 
     title = file.name.rsplit(".", 1)[0] if "." in file.name else file.name
     extracted_text, page_count = _extract_text_from_file(file)
+
+    if doc_type == "other" and extracted_text:
+        doc_type = detect_doc_type(extracted_text, filename=file.name)
 
     doc = ProjectDocument.objects.create(
         tenant_id=tenant_id,
@@ -576,16 +642,24 @@ def _build_documents_context(project) -> str:
     try:
         from projects.models import ProjectDocument
 
-        docs = ProjectDocument.objects.filter(
-            project=project,
-        ).exclude(extracted_text="").values("title", "doc_type", "extracted_text")[:5]
-        if not docs:
+        all_docs = ProjectDocument.objects.filter(project=project).values(
+            "title", "doc_type", "extracted_text"
+        )[:10]
+        if not all_docs:
             return ""
-        parts = ["Hochgeladene Projektunterlagen (Auszüge):"]
-        for d in docs:
-            label = ProjectDocument.DocType(d["doc_type"]).label if d["doc_type"] else "Unterlage"
-            snippet = d["extracted_text"][:800].strip()
-            parts.append(f"\n[{label}: {d['title']}]\n{snippet}")
+
+        parts = ["Hochgeladene Projektunterlagen:"]
+        for d in all_docs:
+            try:
+                label = ProjectDocument.DocType(d["doc_type"]).label
+            except ValueError:
+                label = "Unterlage"
+            text = (d["extracted_text"] or "").strip()
+            if text:
+                snippet = text[:1200]
+                parts.append(f"\n[{label}: {d['title']}]\n{snippet}")
+            else:
+                parts.append(f"\n[{label}: {d['title']}]\n(kein extrahierbarer Text — Binärdatei oder Bild)")
         return "\n".join(parts)
     except Exception:
         return ""
