@@ -427,8 +427,9 @@ def _parse_document_sections(text: str, known_titles: list[str]) -> dict[str, st
     """
     result: dict[str, str] = {}
 
-    # Build sorted list of (position, bare_title) for content headings only
-    heading_positions: list[tuple[int, str]] = []
+    # Build sorted list of (line_start, bare_idx, bare_title) for content headings only.
+    # line_start points to the beginning of the full heading line (incl. number prefix like '5. ').
+    heading_positions: list[tuple[int, int, str]] = []
     for title in known_titles:
         bare = _strip_section_prefix(title)
         if not bare:
@@ -443,7 +444,10 @@ def _parse_document_sections(text: str, known_titles: list[str]) -> dict[str, st
             rest_stripped = rest.lstrip(" ")
             after_is_newline = rest_stripped.startswith("\n") or rest_stripped == ""
             if _heading_at_line_start(text, idx) and after_is_newline:
-                heading_positions.append((idx, bare))
+                # line_start: beginning of the full line (before any '5. ' prefix)
+                ls = text.rfind("\n", 0, idx)
+                line_start = ls + 1 if ls >= 0 else 0
+                heading_positions.append((line_start, idx, bare))
                 break
             pos = idx + 1
 
@@ -451,14 +455,14 @@ def _parse_document_sections(text: str, known_titles: list[str]) -> dict[str, st
     heading_positions.sort(key=lambda x: x[0])
 
     # Extract content between consecutive headings
-    for i, (pos, bare) in enumerate(heading_positions):
+    for i, (line_start, pos, bare) in enumerate(heading_positions):
         content_start = pos + len(bare)
         # Skip whitespace/newlines directly after heading
         while content_start < len(text) and text[content_start] in ("\n", "\r", " "):
             content_start += 1
-        # Content ends at next heading or end of text
+        # Content ends at the LINE start of the next heading (incl. its number prefix)
         if i + 1 < len(heading_positions):
-            content_end = heading_positions[i + 1][0]
+            content_end = heading_positions[i + 1][0]  # line_start of next heading
         else:
             content_end = len(text)
         content = text[content_start:content_end].strip()
