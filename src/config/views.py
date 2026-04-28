@@ -271,9 +271,6 @@ def tenant_portal(request: HttpRequest) -> HttpResponse:
     memberships = get_user_memberships(request.user)
     active = [m for m in memberships if m.organization.is_active]
 
-    if len(active) == 1:
-        return redirect("tenant-pick", slug=active[0].organization.slug)
-
     enriched = []
     for m in active:
         site_count = Site.objects.filter(tenant_id=m.organization.tenant_id).count()
