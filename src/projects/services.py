@@ -981,6 +981,16 @@ def generate_section_content(
         project, section_title=section.title, ai_context_hint=hint
     )
 
+    existing_content = (section.content or "").strip()
+    if field_key:
+        try:
+            values = json.loads(section.values_json or "{}")
+            existing_content = (values.get(field_key) or existing_content).strip()
+        except (json.JSONDecodeError, KeyError):
+            pass
+
+    improve_mode = bool(existing_content)
+
     prompt_parts = [
         system_role,
         f"Projekt: {project.name}.",
@@ -991,12 +1001,24 @@ def generate_section_content(
         prompt_parts.append(documents_context)
     if concept_context:
         prompt_parts.append(concept_context)
+
     task = llm_hint or section.title
-    prompt_parts.append(
-        f"Aufgabe: Schreibe den Abschnitt '{task}' auf Deutsch. "
-        f"Nutze AUSSCHLIESSLICH die oben genannten Daten aus den Projektunterlagen. "
-        f"Erfinde keine Werte. Gib nur den Fließtext ohne Überschriften aus."
-    )
+    if improve_mode:
+        prompt_parts.append(
+            f"Vorhandener Inhalt des Abschnitts:\n{existing_content[:1500]}"
+        )
+        prompt_parts.append(
+            f"Aufgabe: Verbessere den obigen Text für den Abschnitt '{task}'. "
+            f"Korrigiere fachliche Ungenauigkeiten, verbessere Formulierungen, "
+            f"ergänze fehlende Aspekte aus den Projektunterlagen. "
+            f"Behalte korrekte Fakten bei. Gib nur den verbesserten Fließtext aus."
+        )
+    else:
+        prompt_parts.append(
+            f"Aufgabe: Schreibe den Abschnitt '{task}' auf Deutsch. "
+            f"Nutze AUSSCHLIESSLICH die oben genannten Daten aus den Projektunterlagen. "
+            f"Erfinde keine Werte. Gib nur den Fließtext ohne Überschriften aus."
+        )
     prompt = "\n".join(prompt_parts)
 
     try:
