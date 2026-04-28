@@ -1,5 +1,15 @@
 <!-- Top-level KPI summary cards -->
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+    <!-- Standorte (always visible) -->
+    <a href="{% url 'tenancy:site-list' %}" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition-shadow">
+        <div class="flex items-center gap-2 mb-2">
+            <i data-lucide="map-pin" class="w-4 h-4 text-orange-500"></i>
+            <span class="text-xs font-medium text-gray-500 uppercase">Standorte</span>
+        </div>
+        <div class="text-3xl font-bold text-gray-900">{{ kpis.sites_total }}</div>
+        <div class="text-xs text-gray-400 mt-1">aktive Standorte</div>
+    </a>
+
     <!-- Inspections (ex module) -->
     {% if "ex" in active_modules %}
     <div class="bg-white rounded-lg shadow p-4">
