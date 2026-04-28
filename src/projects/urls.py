@@ -69,4 +69,9 @@ urlpatterns = [
         views.output_document_pdf,
         name="output-document-pdf",
     ),
+    path(
+        "<int:pk>/documents/<int:doc_pk>/prefill-from-docs/",
+        views.document_prefill_from_docs,
+        name="document-prefill-from-docs",
+    ),
 ]

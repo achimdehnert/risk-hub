@@ -384,6 +384,71 @@ def generate_section_hints(doc) -> None:
         logger.warning("generate_section_hints non-fatal error: %s", exc)
 
 
+def prefill_sections_from_documents(doc) -> int:
+    """Directly fill sections with relevant text extracted from uploaded project documents.
+
+    For each section with an ai_context_hint (or fallback keywords from section title):
+    - Scores all uploaded docs by keyword relevance
+    - Inserts the most relevant paragraphs directly into section.content (no LLM)
+    - Only fills sections that are currently empty
+    Returns the number of sections filled.
+    """
+    from projects.models import ProjectDocument
+
+    sections = list(doc.sections.filter(content=""))
+    if not sections:
+        return 0
+
+    project = doc.project
+    uploaded_docs = list(
+        ProjectDocument.objects.filter(project=project)
+        .exclude(extracted_text="")
+        .values("title", "doc_type", "extracted_text")
+    )
+    if not uploaded_docs:
+        return 0
+
+    filled = 0
+    for section in sections:
+        hint = section.ai_context_hint or ""
+        if hint:
+            keywords = [k.strip().lower() for k in hint.replace(",", " ").split() if len(k.strip()) > 2]
+        else:
+            sec_type = _section_type(section.title)
+            keywords = [k.lower() for k in _SECTION_KEYWORDS.get(sec_type, _SECTION_KEYWORDS["allgemein"])]
+
+        best_text = ""
+        best_score = 0
+        for d in uploaded_docs:
+            text = d["extracted_text"]
+            text_lower = text.lower()
+            score = sum(text_lower.count(kw) for kw in keywords)
+            if score > best_score:
+                best_score = score
+                best_text = _extract_relevant_paragraphs(text, keywords, max_chars=1500)
+
+        if best_text and best_score > 0:
+            section.content = best_text
+            section.is_ai_generated = False
+            section.save(update_fields=["content", "is_ai_generated"])
+            filled += 1
+
+            if section.fields_json and section.fields_json != "[]":
+                try:
+                    fields = json.loads(section.fields_json)
+                    values = json.loads(section.values_json or "{}")
+                    for f in fields:
+                        if f.get("type") in ("textarea",) and not values.get(f["key"]):
+                            values[f["key"]] = best_text
+                    section.values_json = json.dumps(values, ensure_ascii=False)
+                    section.save(update_fields=["values_json"])
+                except (json.JSONDecodeError, KeyError):
+                    pass
+
+    logger.info("prefill_sections_from_documents: %d/%d sections filled for doc %s", filled, len(sections), doc.pk)
+    return filled
+
+
 def delete_document_section(section) -> None:
     """Delete a single DocumentSection from an output document."""
     section.delete()

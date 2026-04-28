@@ -32,6 +32,15 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
+                <form method="post" action="{% url 'projects:document-prefill-from-docs' pk=project.pk doc_pk=doc.pk %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            data-testid="prefill-from-docs-btn"
+                            class="inline-flex items-center px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-700 rounded-lg hover:bg-blue-100 text-xs font-medium">
+                        <i data-lucide="file-input" class="w-3.5 h-3.5 mr-1"></i>
+                        Aus Unterlagen befüllen
+                    </button>
+                </form>
                 <a href="{% url 'projects:output-document-pdf' pk=project.pk doc_pk=doc.pk %}"
                    class="inline-flex items-center px-3 py-1.5 bg-orange-500 text-white rounded-lg hover:bg-orange-600 text-xs font-medium">
                     <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i>

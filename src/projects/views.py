@@ -27,6 +27,7 @@ from projects.services import (
     export_document_pdf,
     generate_section_content,
     generate_section_hints,
+    prefill_sections_from_documents,
     get_active_document_templates,
     get_or_create_site,
     get_output_documents,
@@ -346,6 +347,7 @@ def output_document_create(
             imported_values=imported_values,
         )
         generate_section_hints(doc)
+        prefill_sections_from_documents(doc)
 
         return redirect(
             "projects:output-document-edit",
@@ -524,6 +526,32 @@ def section_delete(
 
 
 # ─── PDF Export ──────────────────────────────────────────────
+
+
+@login_required
+def document_prefill_from_docs(
+    request: HttpRequest,
+    pk: int,
+    doc_pk: int,
+) -> HttpResponse:
+    """POST: Fill empty sections from extracted text of uploaded project documents."""
+    tenant_response = _require_tenant(request)
+    if tenant_response is not None:
+        return tenant_response
+
+    if request.method != "POST":
+        from django.http import HttpResponseNotAllowed
+        return HttpResponseNotAllowed(["POST"])
+
+    doc = get_object_or_404(
+        get_output_documents(request.tenant_id).prefetch_related("sections"),
+        pk=doc_pk,
+        project__pk=pk,
+        project__tenant_id=request.tenant_id,
+    )
+    filled = prefill_sections_from_documents(doc)
+    messages.success(request, f"{filled} Abschnitt(e) aus Unterlagen befüllt.")
+    return redirect("projects:output-document-edit", pk=pk, doc_pk=doc_pk)
 
 
 @login_required
