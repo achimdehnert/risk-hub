@@ -3,8 +3,6 @@
 Template-basierte Views für Explosionsschutz-Modul (HTML-Seiten)
 """
 
-import datetime as dt
-
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
@@ -61,124 +59,15 @@ class HomeView(LoginRequiredMixin, View):
 
     def _get_stats(self, tenant_id):
         """Berechnet Dashboard-Statistiken"""
-        from django.utils import timezone
+        from . import services
 
-        from substances.models import Substance
-
-        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-        today = timezone.now().date()
-
-        areas = Area.objects.filter(base_filter).count()
-        concepts = ExplosionConcept.objects.filter(base_filter)
-        zones = ZoneDefinition.objects.filter(base_filter).count()
-        equipment = Equipment.objects.filter(base_filter)
-
-        standards = ReferenceStandard.objects.filter(
-            Q(tenant_id__isnull=True) | Q(tenant_id=tenant_id) if tenant_id else Q()
-        ).count()
-
-        measures = MeasureCatalog.objects.filter(
-            Q(tenant_id__isnull=True) | Q(tenant_id=tenant_id) if tenant_id else Q()
-        ).count()
-
-        # Stoffe in DB — Ex-schutzrelevant (haben UEG oder Flammpunkt)
-        substances_in_db = (
-            Substance.objects.filter(
-                base_filter,
-                status="active",
-            )
-            .filter(Q(lower_explosion_limit__isnull=False) | Q(flash_point_c__isnull=False))
-            .count()
-        )
-
-        # Konzepte "In Bearbeitung" = draft + in_review
-        concepts_in_progress = concepts.filter(status__in=["draft", "in_review"]).count()
-
-        # Fällige Geräteprüfungen
-        inspections_overdue = equipment.filter(
-            next_inspection_date__lte=today,
-            next_inspection_date__isnull=False,
-        ).count()
-
-        return {
-            "areas": areas,
-            "concepts": concepts.count(),
-            "concepts_draft": concepts.filter(status="draft").count(),
-            "concepts_in_progress": concepts_in_progress,
-            "concepts_approved": concepts.filter(status="approved").count(),
-            "concepts_in_review": concepts.filter(status="in_review").count(),
-            "zones": zones,
-            "equipment": equipment.count(),
-            "inspections_due": equipment.filter(next_inspection_date__isnull=False).count(),
-            "inspections_overdue": inspections_overdue,
-            "standards": standards,
-            "measures": measures,
-            "substances_in_db": substances_in_db,
-        }
+        return services.get_dashboard_stats(tenant_id)
 
     def _get_recent_activities(self, tenant_id, limit: int = 8):
         """Holt letzte Aktivitäten aus Konzepten, Berechnungen und Prüfungen."""
-        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-        activities = []
+        from . import services
 
-        # Letzte Konzept-Änderungen
-        for c in ExplosionConcept.objects.filter(base_filter).order_by("-updated_at")[:4]:
-            activities.append(
-                {
-                    "type": "concept",
-                    "icon": "shield",
-                    "title": c.title,
-                    "subtitle": c.get_status_display(),
-                    "timestamp": c.updated_at,
-                    "url_name": "explosionsschutz:concept-detail-html",
-                    "url_pk": c.pk,
-                }
-            )
-
-        # Letzte Zonenberechnungen
-        for calc in (
-            ZoneCalculationResult.objects.filter(base_filter)
-            .select_related("zone")
-            .order_by("-calculated_at")[:3]
-        ):
-            activities.append(
-                {
-                    "type": "calculation",
-                    "icon": "calculator",
-                    "title": f"Zone {calc.calculated_zone_type} — {calc.substance_name}",
-                    "subtitle": f"r={calc.calculated_radius_m} m",
-                    "timestamp": calc.calculated_at,
-                    "url_name": None,
-                    "url_pk": None,
-                }
-            )
-
-        # Letzte Geräteprüfungen
-        for insp in (
-            Inspection.objects.filter(base_filter)
-            .select_related("equipment")
-            .order_by("-inspection_date")[:3]
-        ):
-            activities.append(
-                {
-                    "type": "inspection",
-                    "icon": "clipboard-check",
-                    "title": f"Prüfung: {insp.equipment}",
-                    "subtitle": (
-                        insp.get_result_display() if hasattr(insp, "get_result_display") else ""
-                    ),
-                    "timestamp": insp.inspection_date,
-                    "url_name": None,
-                    "url_pk": None,
-                }
-            )
-
-        # Nach Zeitstempel sortieren, neueste zuerst
-        activities.sort(
-            key=lambda x: x["timestamp"] if x["timestamp"] else dt.datetime.min,
-            reverse=True,
-        )
-        return activities[:limit]
+        return services.get_recent_activities(tenant_id, limit)
 
 
 class AreaListView(LoginRequiredMixin, View):
@@ -188,21 +77,11 @@ class AreaListView(LoginRequiredMixin, View):
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
-        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-
-        areas = Area.objects.filter(base_filter).prefetch_related("explosion_concepts", "equipment")
+        from . import services
 
         search = request.GET.get("search", "")
-        if search:
-            areas = areas.filter(Q(code__icontains=search) | Q(name__icontains=search))
-
         hazard = request.GET.get("hazard")
-        if hazard == "1":
-            areas = areas.filter(
-                explosion_concepts__status__in=["approved", "in_review"]
-            ).distinct()
-        elif hazard == "0":
-            areas = areas.exclude(explosion_concepts__status__in=["approved", "in_review"])
+        areas = services.get_area_queryset(tenant_id, search=search, hazard_filter=hazard)
 
         areas_list = []
         for area in areas:
@@ -272,23 +151,11 @@ class ConceptListView(LoginRequiredMixin, View):
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
-        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-
-        concepts = (
-            ExplosionConcept.objects.filter(base_filter)
-            .select_related("area")
-            .prefetch_related("zones")
-        )
+        from . import services
 
         search = request.GET.get("search", "")
-        if search:
-            concepts = concepts.filter(title__icontains=search)
-
         status_filter = request.GET.get("status")
-        if status_filter:
-            concepts = concepts.filter(status=status_filter)
-
-        concepts = concepts.order_by("-created_at")
+        concepts = services.get_concept_queryset(tenant_id, search=search, status_filter=status_filter)
 
         return render(request, self.template_name, {"concepts": concepts})
 
@@ -382,8 +249,9 @@ class ConceptDetailView(LoginRequiredMixin, View):
                     entity_id=concept.id,
                     user_id=user_id,
                 )
-                concept.status = "in_review"
-                concept.save(update_fields=["status"])
+                from . import services
+
+                services.submit_concept_approval_transition(concept.id, tenant_id)
                 messages.success(request, "Freigabeprozess gestartet.")
             except ValueError as exc:
                 messages.error(request, str(exc))
@@ -436,21 +304,11 @@ class EquipmentListView(LoginRequiredMixin, View):
 
     def get(self, request):
         tenant_id = getattr(request, "tenant_id", None)
-        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
-
-        equipment = Equipment.objects.filter(base_filter).select_related(
-            "equipment_type", "area", "zone"
-        )
+        from . import services
 
         search = request.GET.get("search", "")
-        if search:
-            equipment = equipment.filter(serial_number__icontains=search)
-
         status_filter = request.GET.get("status")
-        if status_filter:
-            equipment = equipment.filter(status=status_filter)
-
-        equipment = equipment.order_by("-created_at")
+        equipment = services.get_equipment_queryset(tenant_id, search=search, status_filter=status_filter)
 
         return render(request, self.template_name, {"equipment": equipment})
 
@@ -462,12 +320,9 @@ class EquipmentDetailView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         tenant_id = getattr(request, "tenant_id", None)
-        base_filter = Q(tenant_id=tenant_id) if tenant_id else Q()
+        from . import services
 
-        equipment = get_object_or_404(
-            Equipment.objects.filter(base_filter).select_related("equipment_type", "area", "zone"),
-            pk=pk,
-        )
+        equipment = get_object_or_404(services.get_equipment_queryset(tenant_id), pk=pk)
         inspections = equipment.inspections.order_by("-inspection_date")
 
         return render(
@@ -508,10 +363,10 @@ class AreaCreateView(LoginRequiredMixin, View):
             return redirect("explosionsschutz:area-list-html")
         form = AreaForm(request.POST)
         if form.is_valid():
+            from . import services
+
             area = form.save(commit=False)
-            area.tenant_id = tenant_id
-            area.site_id = tenant_id
-            area.save()
+            services.create_area(tenant_id, area)
             return redirect("explosionsschutz:area-detail-html", pk=area.pk)
         return render(
             request,
@@ -549,7 +404,10 @@ class AreaEditView(LoginRequiredMixin, View):
         area = get_object_or_404(Area.objects.filter(base_filter), pk=pk)
         form = AreaForm(request.POST, instance=area)
         if form.is_valid():
-            form.save()
+            from . import services
+
+            updated_area = form.save(commit=False)
+            services.update_area(updated_area)
             return redirect("explosionsschutz:area-detail-html", pk=area.pk)
         return render(
             request,
@@ -595,9 +453,10 @@ class ConceptCreateView(LoginRequiredMixin, View):
             return redirect("explosionsschutz:concept-list-html")
         form = ExplosionConceptForm(request.POST, tenant_id=tenant_id)
         if form.is_valid():
+            from . import services
+
             concept = form.save(commit=False)
-            concept.tenant_id = tenant_id
-            concept.save()
+            services.create_concept_from_form(tenant_id, concept)
             return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
         return render(
             request,
@@ -671,9 +530,9 @@ class ConceptFinalizeView(LoginRequiredMixin, View):
         )
 
         # Konzept mit Projekt verknüpfen falls noch nicht
-        if not concept.project_id:
-            concept.project = project
-            concept.save(update_fields=["project", "updated_at"])
+        from . import services
+
+        services.link_concept_to_project(concept.pk, project.pk, tenant_id)
 
         messages.success(request, f"Dokument '{doc.title}' erstellt — jetzt editieren.")
         return redirect("projects:output-document-edit", pk=project.pk, doc_pk=doc.pk)
@@ -703,7 +562,10 @@ class ConceptEditView(LoginRequiredMixin, View):
         concept = get_object_or_404(ExplosionConcept, pk=pk, tenant_id=tenant_id)
         form = ExplosionConceptForm(request.POST, instance=concept, tenant_id=tenant_id)
         if form.is_valid():
-            form.save()
+            from . import services
+
+            updated_concept = form.save(commit=False)
+            services.update_concept_from_form(updated_concept)
             return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
         return render(
             request,
@@ -723,13 +585,13 @@ class ConceptValidateView(LoginRequiredMixin, View):
         tenant_id = getattr(request, "tenant_id", None)
         concept = get_object_or_404(ExplosionConcept, pk=pk, tenant_id=tenant_id)
         if concept.status == ExplosionConcept.Status.DRAFT:
-            concept.status = ExplosionConcept.Status.IN_REVIEW
-            concept.is_validated = True
-            concept.validated_by = request.user
-            concept.validated_at = dt.datetime.now(tz=dt.UTC)
-            concept.save(update_fields=["status", "is_validated", "validated_by", "validated_at"])
-            messages.success(request, f'Konzept "{concept.title}" zur Prüfung freigegeben.')
-        return redirect("explosionsschutz:concept-detail-html", pk=concept.pk)
+            from . import services
+
+            updated = services.submit_concept_for_review(
+                concept.pk, tenant_id, user_id=request.user.pk
+            )
+            messages.success(request, f'Konzept "{updated.title}" zur Prüfung freigegeben.')
+        return redirect("explosionsschutz:concept-detail-html", pk=pk)
 
 
 class EquipmentCreateView(LoginRequiredMixin, View):
@@ -756,9 +618,10 @@ class EquipmentCreateView(LoginRequiredMixin, View):
             return redirect("explosionsschutz:equipment-list-html")
         form = EquipmentForm(request.POST, tenant_id=tenant_id)
         if form.is_valid():
+            from . import services
+
             equipment = form.save(commit=False)
-            equipment.tenant_id = tenant_id
-            equipment.save()
+            services.create_equipment_from_form(tenant_id, equipment)
             return redirect("explosionsschutz:equipment-detail-html", pk=equipment.pk)
         return render(
             request,
@@ -842,6 +705,8 @@ class AreaDxfUploadView(LoginRequiredMixin, View):
                 },
             )
 
+        from . import services
+
         area.dxf_file = dxf_file
         area.dxf_analysis_json = result.analysis_json
         area.brandschutz_analysis_json = None
@@ -853,7 +718,7 @@ class AreaDxfUploadView(LoginRequiredMixin, View):
         except Exception as exc:
             logger.warning("[AreaDxfUpload] SVG-Generierung: %s", exc)
 
-        area.save()
+        services.update_area(area)
 
         logger.info(
             "[AreaDxfUpload] %s: %d Räume, %.1f m² gespeichert (Plantyp: %s)",
@@ -952,9 +817,9 @@ class AreaIFCUploadView(LoginRequiredMixin, View):
             ],
         }
 
-        area.dxf_analysis_json = analysis
-        area.brandschutz_analysis_json = None
-        area.save()
+        from . import services
+
+        services.update_area_analysis(area, analysis)
 
         logger.info(
             "[AreaIFCUpload] %s: schema=%s, %d Räume, %.1f m² gespeichert",
