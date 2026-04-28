@@ -299,9 +299,12 @@ def create_output_document(
 
 
 def generate_section_hints(doc) -> None:
-    """Use LLM (Groq fast) to generate retrieval hints for each section of a document.
+    """One LLM call (Groq) per document creation:
+    1. Generates retrieval hints (keywords) for every section → stored in ai_context_hint
+    2. Pre-fills generic sections (legal basis, scope, methodology) with standard text → stored in content
 
-    Called once after create_output_document. Stores hints in DocumentSection.ai_context_hint.
+    Project-specific sections (zones, substances, measures) get only hints — filled later via
+    'KI ausfüllen' with project documents as context.
     Runs outside the create transaction — failures are non-fatal.
     """
     sections = list(doc.sections.filter(ai_context_hint="").select_related("document"))
@@ -309,14 +312,22 @@ def generate_section_hints(doc) -> None:
         return
 
     doc_kind = doc.kind or "Arbeitsschutz"
+    project_name = getattr(getattr(doc, "project", None), "name", "unbekannt")
     section_titles = [s.title for s in sections]
 
     prompt = (
-        f"Du bist Experte für {doc_kind}-Dokumentation.\n"
-        f"Für jede der folgenden Abschnittsüberschriften, schreibe EINE Zeile: "
-        f"die wichtigsten 5-8 deutschen Fachbegriffe, die in Quelldokumenten auftauchen "
-        f"sollten, damit der Abschnitt korrekt ausgefüllt werden kann.\n"
-        f"Format: 'AbschnittsNr. Titel: Begriff1, Begriff2, ...'\n\n"
+        f"Du bist Experte für {doc_kind}-Dokumentation (Deutschland, DGUV/TRGS/BetrSichV).\n"
+        f"Projekt: {project_name}. Dokument: {doc.title}.\n\n"
+        f"Für jeden Abschnitt liefere GENAU eine JSON-Zeile:\n"
+        f'{{ "nr": N, "hints": "Begriff1, Begriff2, ...", "generic": true/false, "content": "..." }}\n\n'
+        f"Regeln:\n"
+        f'- "hints": 5-8 Fachbegriffe die in Quelldokumenten vorkommen sollten\n'
+        f'- "generic": true wenn Abschnitt allgemeingültig ist (Rechtsgrundlagen, Geltungsbereich,\n'
+        f'  Vorgehensweise, Begriffsbestimmungen, Verantwortlichkeiten-allgemein)\n'
+        f'- "generic": false wenn projektspezifisch (Zonen, Gefahrstoffe, konkrete Maßnahmen, Anlagen)\n'
+        f'- "content": bei generic=true ein fachlich korrekter deutscher Standardtext (3-5 Sätze),\n'
+        f'  bei generic=false leer ("") lassen\n\n'
+        f"Abschnitte:\n"
         + "\n".join(f"{i+1}. {t}" for i, t in enumerate(section_titles))
     )
 
@@ -324,33 +335,50 @@ def generate_section_hints(doc) -> None:
         from aifw.service import sync_completion
 
         result = sync_completion(
-            "facility_extraction",
+            "concept_prefill",
             messages=[{"role": "user", "content": prompt}],
         )
         if not result.success:
             logger.warning("generate_section_hints failed: %s", result.error)
             return
 
-        lines = result.content.strip().splitlines()
-        hint_map: dict[str, str] = {}
-        for line in lines:
+        hints_applied = 0
+        content_applied = 0
+        for line in result.content.strip().splitlines():
             line = line.strip()
-            if not line:
+            if not line.startswith("{"):
                 continue
-            for i, title in enumerate(section_titles):
-                prefix = f"{i+1}."
-                if line.startswith(prefix):
-                    after_colon = line.split(":", 1)[-1].strip() if ":" in line else line
-                    hint_map[title] = after_colon
-                    break
+            try:
+                entry = json.loads(line)
+                nr = int(entry.get("nr", 0)) - 1
+                if nr < 0 or nr >= len(sections):
+                    continue
+                section = sections[nr]
+                update_fields = []
 
-        for section in sections:
-            hint = hint_map.get(section.title, "")
-            if hint:
-                section.ai_context_hint = hint
-                section.save(update_fields=["ai_context_hint"])
+                hints = (entry.get("hints") or "").strip()
+                if hints:
+                    section.ai_context_hint = hints
+                    update_fields.append("ai_context_hint")
+                    hints_applied += 1
 
-        logger.info("Generated section hints for %d sections of doc %s", len(hint_map), doc.pk)
+                content = (entry.get("content") or "").strip()
+                if content and entry.get("generic") and not section.content:
+                    section.content = content
+                    section.is_ai_generated = True
+                    update_fields += ["content", "is_ai_generated"]
+                    content_applied += 1
+
+                if update_fields:
+                    section.save(update_fields=update_fields)
+
+            except (json.JSONDecodeError, KeyError, ValueError):
+                continue
+
+        logger.info(
+            "Section init for doc %s: %d hints, %d generic sections pre-filled",
+            doc.pk, hints_applied, content_applied,
+        )
 
     except Exception as exc:
         logger.warning("generate_section_hints non-fatal error: %s", exc)
