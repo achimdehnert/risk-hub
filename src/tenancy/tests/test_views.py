@@ -181,6 +181,65 @@ class TestMemberRemoveView:
         assert not Membership.objects.filter(pk=ms.pk).exists()
 
 
+@pytest.fixture
+def tenant_org(db):
+    """An active organization for site tests."""
+    return Organization.objects.create(
+        slug="site-test-org",
+        name="Site Test Org",
+        status=Organization.Status.ACTIVE,
+    )
+
+
+@pytest.fixture
+def tenant_client(db, tenant_org):
+    """Client logged in as a user whose tenant_id matches tenant_org."""
+    from tests.factories import UserFactory
+
+    user = UserFactory(tenant_id=tenant_org.tenant_id)
+    client = Client()
+    client.force_login(user)
+    return client, tenant_org
+
+
+@pytest.mark.django_db
+class TestSiteListView:
+    """site_list tests."""
+
+    def test_should_deny_without_tenant_id(self):
+        from tests.factories import UserFactory
+
+        user = UserFactory()
+        client = Client()
+        client.force_login(user)
+        resp = client.get("/tenants/sites/")
+        assert resp.status_code == 403
+
+    def test_should_redirect_anonymous(self):
+        resp = Client().get("/tenants/sites/")
+        assert resp.status_code == 302
+
+    def test_should_render_for_tenant(self, tenant_client):
+        client, org = tenant_client
+        resp = client.get("/tenants/sites/")
+        assert resp.status_code == 200
+        assert b"Standorte" in resp.content
+
+    def test_should_show_existing_sites(self, tenant_client):
+        from tenancy.models import Site
+
+        client, org = tenant_client
+        Site.objects.create(
+            tenant_id=org.tenant_id,
+            organization=org,
+            name="Hauptwerk",
+            site_type="plant",
+        )
+        resp = client.get("/tenants/sites/")
+        assert resp.status_code == 200
+        assert b"Hauptwerk" in resp.content
+
+
 @pytest.mark.django_db
 class TestSiteCreateView:
     """site_create tests."""
@@ -193,3 +252,147 @@ class TestSiteCreateView:
         client.force_login(user)
         resp = client.get("/tenants/sites/new/")
         assert resp.status_code == 403
+
+    def test_should_render_form_for_tenant(self, tenant_client):
+        client, _org = tenant_client
+        resp = client.get("/tenants/sites/new/")
+        assert resp.status_code == 200
+        assert b"Standorttyp" in resp.content
+
+    def test_should_create_site_on_post(self, tenant_client):
+        from tenancy.models import Site
+
+        client, org = tenant_client
+        resp = client.post(
+            "/tenants/sites/new/",
+            {
+                "name": "Neues Werk",
+                "code": "NW-1",
+                "site_type": "plant",
+                "address": "Musterstraße 1, 20095 Hamburg",
+                "is_active": True,
+            },
+        )
+        assert resp.status_code == 302
+        assert Site.objects.filter(tenant_id=org.tenant_id, name="Neues Werk").exists()
+
+
+@pytest.mark.django_db
+class TestSiteEditView:
+    """site_edit tests."""
+
+    def test_should_deny_without_tenant_id(self):
+        from tenancy.models import Organization, Site
+
+        org2 = Organization.objects.create(slug="other-edit-org", name="Other")
+        site = Site.objects.create(
+            tenant_id=org2.tenant_id, organization=org2, name="Test Site"
+        )
+        from tests.factories import UserFactory
+
+        user = UserFactory()
+        client = Client()
+        client.force_login(user)
+        resp = client.get(f"/tenants/sites/{site.pk}/edit/")
+        assert resp.status_code == 403
+
+    def test_should_render_edit_form(self, tenant_client):
+        from tenancy.models import Site
+
+        client, org = tenant_client
+        site = Site.objects.create(
+            tenant_id=org.tenant_id,
+            organization=org,
+            name="Edit Werk",
+            site_type="plant",
+        )
+        resp = client.get(f"/tenants/sites/{site.pk}/edit/")
+        assert resp.status_code == 200
+        assert b"Edit Werk" in resp.content
+
+    def test_should_return_404_for_other_tenant_site(self, tenant_client):
+        from tenancy.models import Organization, Site
+
+        client, _org = tenant_client
+        other_org = Organization.objects.create(slug="other-tenant-org", name="Other Org")
+        other_site = Site.objects.create(
+            tenant_id=other_org.tenant_id,
+            organization=other_org,
+            name="Other Tenant Site",
+        )
+        resp = client.get(f"/tenants/sites/{other_site.pk}/edit/")
+        assert resp.status_code == 404
+
+    def test_should_update_site_on_post(self, tenant_client):
+        from tenancy.models import Site
+
+        client, org = tenant_client
+        site = Site.objects.create(
+            tenant_id=org.tenant_id,
+            organization=org,
+            name="Old Name",
+            site_type="plant",
+        )
+        resp = client.post(
+            f"/tenants/sites/{site.pk}/edit/",
+            {"name": "New Name", "code": "", "site_type": "office", "address": "", "is_active": True},
+        )
+        assert resp.status_code == 302
+        site.refresh_from_db()
+        assert site.name == "New Name"
+        assert site.site_type == "office"
+
+
+@pytest.mark.django_db
+class TestSiteDeleteView:
+    """site_delete tests."""
+
+    def test_should_deny_without_tenant_id(self):
+        from tenancy.models import Organization, Site
+
+        org2 = Organization.objects.create(slug="other-del-org", name="Other")
+        site = Site.objects.create(
+            tenant_id=org2.tenant_id, organization=org2, name="Del Site"
+        )
+        from tests.factories import UserFactory
+
+        user = UserFactory()
+        client = Client()
+        client.force_login(user)
+        resp = client.post(f"/tenants/sites/{site.pk}/delete/")
+        assert resp.status_code == 403
+
+    def test_should_show_confirm_page(self, tenant_client):
+        from tenancy.models import Site
+
+        client, org = tenant_client
+        site = Site.objects.create(
+            tenant_id=org.tenant_id, organization=org, name="Del Site"
+        )
+        resp = client.get(f"/tenants/sites/{site.pk}/delete/")
+        assert resp.status_code == 200
+        assert b"Del Site" in resp.content
+
+    def test_should_delete_site_on_post(self, tenant_client):
+        from tenancy.models import Site
+
+        client, org = tenant_client
+        site = Site.objects.create(
+            tenant_id=org.tenant_id, organization=org, name="Del Site"
+        )
+        resp = client.post(f"/tenants/sites/{site.pk}/delete/")
+        assert resp.status_code == 302
+        assert not Site.objects.filter(pk=site.pk).exists()
+
+    def test_should_return_404_for_other_tenant_site(self, tenant_client):
+        from tenancy.models import Organization, Site
+
+        client, _org = tenant_client
+        other_org = Organization.objects.create(slug="del-other-org", name="Other Org")
+        other_site = Site.objects.create(
+            tenant_id=other_org.tenant_id,
+            organization=other_org,
+            name="Other Tenant Del",
+        )
+        resp = client.post(f"/tenants/sites/{other_site.pk}/delete/")
+        assert resp.status_code == 404
