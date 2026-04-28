@@ -480,6 +480,26 @@ def save_section_values(
 # -----------------------------------------------------------------------
 
 
+def _build_documents_context(project) -> str:
+    """Serialisiert extrahierten Text aus hochgeladenen Projektunterlagen als Prompt-Kontext."""
+    try:
+        from projects.models import ProjectDocument
+
+        docs = ProjectDocument.objects.filter(
+            project=project,
+        ).exclude(extracted_text="").values("title", "doc_type", "extracted_text")[:5]
+        if not docs:
+            return ""
+        parts = ["Hochgeladene Projektunterlagen (Auszüge):"]
+        for d in docs:
+            label = ProjectDocument.DocType(d["doc_type"]).label if d["doc_type"] else "Unterlage"
+            snippet = d["extracted_text"][:800].strip()
+            parts.append(f"\n[{label}: {d['title']}]\n{snippet}")
+        return "\n".join(parts)
+    except Exception:
+        return ""
+
+
 def _build_concept_context(project) -> str:
     """Serialisiert Zonen und Maßnahmen des verknüpften ExplosionConzepts als Prompt-Kontext."""
     try:
@@ -520,6 +540,7 @@ def generate_section_content(
     doc = section.document
     project = doc.project
     concept_context = _build_concept_context(project)
+    documents_context = _build_documents_context(project)
 
     prompt_parts = [
         f"Du bist ein Experte für {doc.kind or 'Arbeitsschutz'}-Dokumentation.",
@@ -527,12 +548,14 @@ def generate_section_content(
         f"Dokument: {doc.title}.",
         f"Abschnitt: {section.title}.",
     ]
+    if documents_context:
+        prompt_parts.append(documents_context)
     if concept_context:
         prompt_parts.append(concept_context)
     prompt_parts.append(
         f"Aufgabe: {llm_hint or section.title}. "
         f"Schreibe einen fachlich korrekten, professionellen Text für diesen Abschnitt auf Deutsch. "
-        f"Nutze die obigen Konzeptdaten wenn sie zum Abschnitt passen."
+        f"Nutze die obigen Unterlagen und Konzeptdaten als Grundlage, wo sie zum Abschnitt passen."
     )
     prompt = "\n".join(prompt_parts)
 

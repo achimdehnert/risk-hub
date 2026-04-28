@@ -24,7 +24,7 @@
                 <select name="doc_type"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-orange-500 focus:border-orange-500">
                     {% for value, label in doc_types %}
-                    <option value="{{ value }}">{{ label }}</option>
+                    <option value="{{ value }}"{% if value == "other" %} selected{% endif %}>{{ label }}</option>
                     {% endfor %}
                 </select>
             </div>
