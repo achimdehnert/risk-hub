@@ -315,28 +315,21 @@ def generate_section_hints(doc) -> None:
     project_name = getattr(getattr(doc, "project", None), "name", "unbekannt")
     section_titles = [s.title for s in sections]
 
-    prompt = (
-        f"Du bist Experte für {doc_kind}-Dokumentation (Deutschland, DGUV/TRGS/BetrSichV).\n"
-        f"Projekt: {project_name}. Dokument: {doc.title}.\n\n"
-        f"Für jeden Abschnitt liefere GENAU eine JSON-Zeile:\n"
-        f'{{ "nr": N, "hints": "Begriff1, Begriff2, ...", "generic": true/false, "content": "..." }}\n\n'
-        f"Regeln:\n"
-        f'- "hints": 5-8 Fachbegriffe die in Quelldokumenten vorkommen sollten\n'
-        f'- "generic": true wenn Abschnitt allgemeingültig ist (Rechtsgrundlagen, Geltungsbereich,\n'
-        f'  Vorgehensweise, Begriffsbestimmungen, Verantwortlichkeiten-allgemein)\n'
-        f'- "generic": false wenn projektspezifisch (Zonen, Gefahrstoffe, konkrete Maßnahmen, Anlagen)\n'
-        f'- "content": bei generic=true ein fachlich korrekter deutscher Standardtext (3-5 Sätze),\n'
-        f'  bei generic=false leer ("") lassen\n\n'
-        f"Abschnitte:\n"
-        + "\n".join(f"{i+1}. {t}" for i, t in enumerate(section_titles))
-    )
+    from ai_analysis.prompts import get_section_hints_messages
+
+    messages = get_section_hints_messages({
+        "doc_kind": doc_kind,
+        "project_name": project_name,
+        "doc_title": doc.title,
+        "section_list": "\n".join(f"{i+1}. {t}" for i, t in enumerate(section_titles)),
+    })
 
     try:
         from aifw.service import sync_completion
 
         result = sync_completion(
             "concept_prefill",
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
         )
         if not result.success:
             logger.warning("generate_section_hints failed: %s", result.error)
@@ -970,11 +963,6 @@ def generate_section_content(
     """
     doc = section.document
     project = doc.project
-    sec_type = _section_type(section.title)
-    system_role = _SECTION_SYSTEM_PROMPTS.get(
-        sec_type,
-        f"Du bist ein Experte für {doc.kind or 'Arbeitsschutz'}-Dokumentation.",
-    )
     concept_context = _build_concept_context(project)
     hint = getattr(section, "ai_context_hint", "") or ""
     documents_context = _build_documents_context(
@@ -991,42 +979,30 @@ def generate_section_content(
 
     improve_mode = bool(existing_content)
 
-    prompt_parts = [
-        system_role,
-        f"Projekt: {project.name}.",
-        f"Dokument: {doc.title}.",
-        f"Abschnitt: {section.title}.",
-    ]
-    if documents_context:
-        prompt_parts.append(documents_context)
-    if concept_context:
-        prompt_parts.append(concept_context)
+    from ai_analysis.prompts import get_section_generate_messages, get_section_improve_messages
 
     task = llm_hint or section.title
+    ctx = {
+        "doc_kind": doc.kind or "Arbeitsschutz",
+        "project_name": project.name,
+        "doc_title": doc.title,
+        "section_title": section.title,
+        "task_hint": task,
+        "documents_context": documents_context,
+        "concept_context": concept_context,
+    }
     if improve_mode:
-        prompt_parts.append(
-            f"Vorhandener Inhalt des Abschnitts:\n{existing_content[:1500]}"
-        )
-        prompt_parts.append(
-            f"Aufgabe: Verbessere den obigen Text für den Abschnitt '{task}'. "
-            f"Korrigiere fachliche Ungenauigkeiten, verbessere Formulierungen, "
-            f"ergänze fehlende Aspekte aus den Projektunterlagen. "
-            f"Behalte korrekte Fakten bei. Gib nur den verbesserten Fließtext aus."
-        )
+        ctx["existing_content"] = existing_content[:1500]
+        messages = get_section_improve_messages(ctx)
     else:
-        prompt_parts.append(
-            f"Aufgabe: Schreibe den Abschnitt '{task}' auf Deutsch. "
-            f"Nutze AUSSCHLIESSLICH die oben genannten Daten aus den Projektunterlagen. "
-            f"Erfinde keine Werte. Gib nur den Fließtext ohne Überschriften aus."
-        )
-    prompt = "\n".join(prompt_parts)
+        messages = get_section_generate_messages(ctx)
 
     try:
         from aifw.service import sync_completion
 
         result = sync_completion(
             "concept_prefill",
-            messages=[{"role": "user", "content": prompt}],
+            messages=messages,
         )
         return result.content if result.success else f"[KI-Fehler: {result.error}]"
     except ImportError:
