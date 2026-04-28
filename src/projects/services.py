@@ -420,22 +420,24 @@ def prefill_sections_from_documents(doc) -> int:
                 best_text = _extract_relevant_paragraphs(text, keywords, max_chars=1500)
 
         if best_text and best_score > 0:
+            update_fields = ["content", "is_ai_generated"]
             section.content = best_text
             section.is_ai_generated = False
-            section.save(update_fields=["content", "is_ai_generated"])
-            filled += 1
 
-            if section.fields_json and section.fields_json != "[]":
+            if section.fields_json and section.fields_json not in ("[]", "", None):
                 try:
                     fields = json.loads(section.fields_json)
                     values = json.loads(section.values_json or "{}")
                     for f in fields:
-                        if f.get("type") in ("textarea",) and not values.get(f["key"]):
+                        if f.get("type") in ("textarea", None) and not values.get(f.get("key", "")):
                             values[f["key"]] = best_text
                     section.values_json = json.dumps(values, ensure_ascii=False)
-                    section.save(update_fields=["values_json"])
+                    update_fields.append("values_json")
                 except (json.JSONDecodeError, KeyError):
                     pass
+
+            section.save(update_fields=update_fields)
+            filled += 1
 
     logger.info("prefill_sections_from_documents: %d/%d sections filled for doc %s", filled, len(sections), doc.pk)
     return filled
