@@ -1,7 +1,5 @@
 """Factory Boy factories for projects app tests."""
 
-import uuid
-
 import factory
 from factory.django import DjangoModelFactory
 

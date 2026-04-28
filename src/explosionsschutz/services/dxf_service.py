@@ -155,6 +155,7 @@ class DXFService:
         """Zählt Entities im Modellraum ohne vollständige Analyse."""
         try:
             import io
+
             import ezdxf
             doc = ezdxf.read(io.StringIO(raw_bytes.decode("latin-1")))
             stats: dict[str, int] = {}

@@ -164,7 +164,7 @@ def _require_dxf_analysis(area) -> dict[str, Any]:
 
 def _dxf_model_from_analysis(analysis: dict):
     """Rekonstruiert DXFModel-Objekt aus gecachtem JSON für Re-Analyse."""
-    from nl2cad.core.models.dxf import DXFModel, DXFRoom, DXFLayer, Point2D
+    from nl2cad.core.models.dxf import DXFLayer, DXFModel, DXFRoom, Point2D
 
     model = DXFModel(
         source_file=analysis.get("source_file", ""),

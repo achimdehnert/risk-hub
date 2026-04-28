@@ -1,7 +1,6 @@
 """Django settings for Risk-Hub."""
 
 import importlib.util
-import os
 from pathlib import Path
 
 import dj_database_url

@@ -3,10 +3,9 @@
 import pytest
 
 from projects import services
-from projects.models import DocumentSection, OutputDocument, Project
+from projects.models import DocumentSection, OutputDocument
 from projects.tests.factories import (
     DocumentSectionFactory,
-    OutputDocumentFactory,
     ProjectFactory,
 )
 

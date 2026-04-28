@@ -28,11 +28,7 @@ from .models import (
     Equipment,
     ExplosionConcept,
     IgnitionSource,
-    Inspection,
-    MeasureCatalog,
     ProtectionMeasure,
-    ReferenceStandard,
-    ZoneCalculationResult,
     ZoneDefinition,
 )
 
@@ -510,6 +506,7 @@ class ConceptFinalizeView(LoginRequiredMixin, View):
             })
 
         from django.apps import apps
+
         from projects.models import Project
         from projects.services import create_output_document
 
@@ -1166,7 +1163,9 @@ class AreaExZonenAnalyseView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         import logging
+
         from nl2cad.core.analyzers.ex_zonen_analyzer import ExZonenAnalyzer
+
         from .services.dxf_service import reconstruct_dxf_model
 
         logger = logging.getLogger(__name__)
@@ -1212,7 +1211,9 @@ class AreaMengenView(LoginRequiredMixin, View):
 
     def get(self, request, pk):
         import logging
+
         from nl2cad.core.analyzers.bauteil_mengen_extractor import BauteilmengenExtractor
+
         from .services.dxf_service import reconstruct_dxf_model
 
         logger = logging.getLogger(__name__)

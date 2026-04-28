@@ -277,7 +277,7 @@ def get_all_facilities(tenant_id):
     ).select_related("site").order_by("site__name", "name")
 
 
-def create_facility(tenant_id, site, name: str, code: str = "", facility_type: str = "production", description: str = "") -> "Facility":
+def create_facility(tenant_id, site, name: str, code: str = "", facility_type: str = "production", description: str = ""):
     """Create and return a new Facility."""
     from tenancy.models import Facility
 
@@ -291,7 +291,7 @@ def create_facility(tenant_id, site, name: str, code: str = "", facility_type: s
     )
 
 
-def update_facility(facility, **kwargs) -> "Facility":
+def update_facility(facility, **kwargs):
     """Update a Facility and return it."""
     for field, value in kwargs.items():
         setattr(facility, field, value)

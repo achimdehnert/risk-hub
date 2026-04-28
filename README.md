@@ -1,7 +1,7 @@
 # Schutztat (risk-hub) — Enterprise SaaS for Safety Management
 
 > **Version:** 0.1.0 | **Production:** https://schutztat.de | **Demo:** https://demo.schutztat.de
-> **Stand:** April 2026
+> **Stand:** 2026-04-28
 
 Multi-Tenant SaaS platform for occupational safety, explosion protection, hazardous substances, fire safety, data privacy, and compliance management.
 
@@ -18,7 +18,7 @@ Multi-Tenant SaaS platform for occupational safety, explosion protection, hazard
 | **Brandschutz** | `/brandschutz/` | Brandschutzkonzepte, Fluchtpläne |
 | **Datenschutz (DSB)** | `/dsb/` | Verarbeitungsverzeichnis, TOMs, DSFA |
 | **Dokumente** | `/documents/` | Versioniertes Dokumentenmanagement |
-| **Projekte** | `/projects/` | Projektbasierte Workflows |
+| **Projekte** | `/projects/` | Projektbasierte Workflows (OutputDocument + KI-Abschnittsgenerierung) |
 | **Training** | `/training/` | Unterweisungen, Themen, Teilnahme-Tracking |
 | **Audit** | `/audit/` | Vollständiger Audit-Trail aller Änderungen |
 | **Dashboard** | `/dashboard/` | Compliance-Übersicht, Statistiken |
@@ -28,7 +28,7 @@ Multi-Tenant SaaS platform for occupational safety, explosion protection, hazard
 
 | Komponente | Technologie |
 |-----------|------------|
-| **Backend** | Django 5.1, Gunicorn |
+| **Backend** | Django 6.0.4, Gunicorn |
 | **Frontend** | HTMX 1.9 (raw headers, kein `django-htmx`), Bootstrap 5 |
 | **API** | Django Ninja (`/api/v1/`) |
 | **Database** | PostgreSQL 16 |
@@ -88,7 +88,7 @@ risk-hub/
 │   ├── config/            # Settings, URLs, API, Celery, WSGI
 │   ├── common/            # Middleware, Context Processors, S3, Progress
 │   ├── core/              # Health Checks (/livez/, /healthz/)
-│   ├── tenancy/           # Organization, Site, Tenant-Middleware
+│   ├── tenancy/           # Organization → Site (Standort) → Facility (Werk/Halle) + Tenant-Middleware
 │   ├── identity/          # Custom User Model
 │   ├── permissions/       # RBAC: Role, Scope, Assignment, ModuleAccess
 │   ├── audit/             # AuditEvent, Compliance-Log
