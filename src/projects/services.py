@@ -51,6 +51,44 @@ def get_or_create_site(
 # -----------------------------------------------------------------------
 
 
+def _extract_text_from_file(file) -> tuple[str, int | None]:
+    """Extract plain text and page count from an uploaded file.
+
+    Supports PDF (via pdfplumber) and plain text files.
+    Returns (extracted_text, page_count).
+    """
+    name = getattr(file, "name", "")
+    ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+
+    if ext == "pdf":
+        try:
+            import io
+            import pdfplumber
+
+            raw = file.read()
+            file.seek(0)
+            pages_text = []
+            with pdfplumber.open(io.BytesIO(raw)) as pdf:
+                page_count = len(pdf.pages)
+                for page in pdf.pages:
+                    text = page.extract_text() or ""
+                    pages_text.append(text)
+            return "\n\n".join(pages_text).strip(), page_count
+        except Exception as exc:
+            logger.warning("PDF extraction failed for '%s': %s", name, exc)
+            return "", None
+
+    if ext in {"txt", "md", "csv"}:
+        try:
+            raw = file.read()
+            file.seek(0)
+            return raw.decode("utf-8", errors="replace").strip(), None
+        except Exception:
+            return "", None
+
+    return "", None
+
+
 def upload_project_document(
     tenant_id: UUID,
     project,
@@ -58,10 +96,12 @@ def upload_project_document(
     doc_type: str = "other",
     uploaded_by=None,
 ):
-    """Upload a single project document."""
+    """Upload a single project document and extract its text content."""
     from projects.models import ProjectDocument
 
     title = file.name.rsplit(".", 1)[0] if "." in file.name else file.name
+    extracted_text, page_count = _extract_text_from_file(file)
+
     doc = ProjectDocument.objects.create(
         tenant_id=tenant_id,
         project=project,
@@ -69,11 +109,15 @@ def upload_project_document(
         doc_type=doc_type,
         file=file,
         uploaded_by=uploaded_by,
+        extracted_text=extracted_text,
+        page_count=page_count,
     )
     logger.info(
-        "Uploaded document '%s' to project %s",
+        "Uploaded document '%s' to project %s (pages=%s, chars=%s)",
         file.name,
         project.name,
+        page_count,
+        len(extracted_text),
     )
     return doc
 
