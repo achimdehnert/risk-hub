@@ -105,7 +105,6 @@ def create_output_document(
     doc = OutputDocument.objects.create(
         tenant_id=tenant_id,
         project=project,
-        template=None,
         kind=kind,
         title=title,
         created_by=created_by,
