@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import json
 import logging
+import math
+import re
 from dataclasses import dataclass
 from typing import Any
 from uuid import UUID
@@ -813,32 +815,72 @@ def _keywords_from_title(title: str) -> list[str]:
     Replaces the old hardcoded _SECTION_KEYWORDS map — works for any section title.
     When ai_context_hint is available it takes priority over this fallback.
     """
-    import re
     words = re.sub(r"[^a-zA-ZäöüÄÖÜß\s]", " ", title.lower()).split()
     return [w for w in words if len(w) > 3 and w not in _DE_STOPWORDS]
 
 
 
+_TOC_PATTERN = re.compile(
+    r"\.{3,}|"          # dots like "Kapitel......... 5"
+    r"\s{3,}\d+\s*$|"   # trailing spaces + page number
+    r"^\d+[\.\d]*\s+\S+.{0,40}$"  # short heading: "3.2.1 Title"
+)
+
+
+def _is_toc_line(para: str) -> bool:
+    """Return True if paragraph looks like a table-of-contents entry (not real content)."""
+    if len(para) < 80 and _TOC_PATTERN.search(para):
+        return True
+    return False
+
+
 def _extract_relevant_paragraphs(text: str, keywords: list[str], max_chars: int = 1200) -> str:
-    """Return paragraphs from text that contain at least one keyword — up to max_chars."""
-    paragraphs = [p.strip() for p in text.split("\n") if len(p.strip()) > 30]
-    scored = []
+    """Return content-rich paragraphs from text that contain at least one keyword.
+
+    Improvements over naïve line splitting:
+    - Prefers double-newline paragraphs (real paragraph boundaries)
+    - Filters out table-of-contents entries (trailing page numbers, dot chains)
+    - Scores by keyword density × paragraph length (favours informative content)
+    - Falls back to single-line split when no double-newline paragraphs exist
+    """
     kw_lower = [k.lower() for k in keywords]
-    for para in paragraphs:
-        para_lower = para.lower()
-        score = sum(para_lower.count(kw) for kw in kw_lower)
-        if score:
-            scored.append((score, para))
+
+    def _score_and_collect(candidates: list[str]) -> list[tuple[float, str]]:
+        result = []
+        for para in candidates:
+            para = para.strip()
+            if len(para) < 60 or _is_toc_line(para):
+                continue
+            para_lower = para.lower()
+            kw_hits = sum(para_lower.count(kw) for kw in kw_lower)
+            if kw_hits:
+                # Length bonus: log(len) ensures longer paragraphs rank higher at equal keyword density
+                result.append((kw_hits * math.log(max(len(para), 1)), para))
+        return result
+
+    # Try paragraph-level split first
+    double_split = [p for p in text.split("\n\n") if p.strip()]
+    scored = _score_and_collect(double_split)
+
+    # Fall back to line-level split if no matches
+    if not scored:
+        line_split = [p for p in text.split("\n") if p.strip()]
+        scored = _score_and_collect(line_split)
+
     scored.sort(key=lambda x: -x[0])
-    result, total = [], 0
+    result_parts, total = [], 0
     for _, para in scored:
         if total + len(para) > max_chars:
             break
-        result.append(para)
+        result_parts.append(para)
         total += len(para)
-    if not result and paragraphs:
-        result = paragraphs[:3]
-    return "\n".join(result)
+
+    if not result_parts:
+        # Last resort: first 3 non-TOC paragraphs
+        fallback = [p.strip() for p in text.split("\n\n") if len(p.strip()) > 80 and not _is_toc_line(p.strip())]
+        result_parts = fallback[:3]
+
+    return "\n\n".join(result_parts)
 
 
 def _build_documents_context(project, section_title: str = "", ai_context_hint: str = "") -> str:
