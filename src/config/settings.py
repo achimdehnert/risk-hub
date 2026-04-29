@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     "projects",
     "training",
     "exschutzdokument",
+    "intake",
 ]
 
 

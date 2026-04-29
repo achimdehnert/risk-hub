@@ -84,6 +84,7 @@ urlpatterns = [
     ),
     path("sds/", include("global_sds.urls")),
     path("training/", include("training.urls")),
+    path("intake/", include("intake.urls", namespace="intake")),
     # Shared Progress Rail (ADR-017 §8)
     path(
         "progress/<str:doc_type>/<str:doc_id>/",

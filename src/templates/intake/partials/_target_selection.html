@@ -1,0 +1,56 @@
+{% load static %}
+<div class="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+  <div class="flex items-center gap-2">
+    <i data-lucide="check-circle" class="w-5 h-5 text-green-500"></i>
+    <h2 class="font-semibold text-gray-900">Dokument erkannt</h2>
+  </div>
+
+  <div class="bg-gray-50 rounded-lg p-3 text-sm space-y-1">
+    <p><span class="font-medium">Datei:</span> {{ upload.original_filename }}</p>
+    <p>
+      <span class="font-medium">Typ:</span>
+      {{ upload.doc_type|default:"Unbekannt" }}
+      <span class="text-xs text-gray-400 ml-1">({{ upload.doc_type_confidence|lower }})</span>
+    </p>
+  </div>
+
+  <form hx-post="{% url 'intake:route' upload.pk %}"
+        hx-target="#intake-result"
+        hx-swap="innerHTML"
+        hx-indicator="#route-spinner"
+        class="space-y-4">
+    {% csrf_token %}
+
+    <p class="text-sm font-medium text-gray-700">Was soll mit diesem Dokument passieren?</p>
+
+    <div class="space-y-2">
+      {% for handler in handlers %}
+      <label class="flex items-center gap-3 p-3 rounded-lg border border-gray-200 hover:bg-orange-50 hover:border-orange-300 cursor-pointer transition-colors">
+        <input type="checkbox"
+               name="targets"
+               value="{{ handler.target_code }}"
+               {% if handler.target_code in upload.suggested_targets %}checked{% endif %}
+               class="rounded border-gray-300 text-orange-600 focus:ring-orange-500"
+               data-testid="intake-target-{{ handler.target_code }}">
+        <i data-lucide="{{ handler.icon }}" class="w-4 h-4 text-gray-500 shrink-0"></i>
+        <span class="text-sm text-gray-800">{{ handler.label }}</span>
+        {% if handler.target_code in upload.suggested_targets %}
+          <span class="ml-auto text-xs text-orange-600 font-medium">empfohlen</span>
+        {% endif %}
+      </label>
+      {% endfor %}
+    </div>
+
+    <div class="flex items-center gap-3 pt-2">
+      <button type="submit"
+              class="bg-orange-600 hover:bg-orange-700 text-white px-5 py-2 rounded-lg text-sm font-medium transition-colors"
+              data-testid="intake-route-btn">
+        Verarbeiten
+      </button>
+      <span id="route-spinner" class="htmx-indicator flex items-center gap-2 text-sm text-gray-500">
+        <i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i>
+        Wird verarbeitet…
+      </span>
+    </div>
+  </form>
+</div>
