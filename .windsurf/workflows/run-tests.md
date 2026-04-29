@@ -28,10 +28,10 @@ python -m pytest \
   -q \
   --cov=src \
   --cov-report=term-missing:skip-covered \
-  --cov-fail-under=75
+  --cov-fail-under=80
 ```
 
-Erwartung: alle Tests grün, Coverage ≥ 75%.
+Erwartung: alle Tests grün, Coverage ≥ 80%.
 
 ---
 

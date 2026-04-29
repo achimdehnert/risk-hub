@@ -15,7 +15,7 @@ version: "1.0"
 3. Baseline-Check:
 
 ```bash
-pytest --tb=short -q 2>&1 | tail -5
+python -m pytest --tb=short -q 2>&1 | tail -5
 ruff check src/ 2>&1 | tail -3
 ```
 
@@ -43,7 +43,7 @@ git checkout -b ai/developer/<task-id>
 ## Schritt 4: Quality Gates
 
 ```bash
-pytest tests/MODULE/ -v --tb=short --cov=src/apps/MODULE
+python -m pytest tests/MODULE/ -v --tb=short --cov=src/apps/MODULE
 ruff check src/
 ruff format --check src/
 ```
