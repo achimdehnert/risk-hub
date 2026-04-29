@@ -1,11 +1,28 @@
 # Schutztat (risk-hub) — Enterprise SaaS for Safety Management
 
-> **Version:** 0.1.0 | **Production:** https://schutztat.de | **Demo:** https://demo.schutztat.de
-> **Stand:** 2026-04-29
+[![Version](https://img.shields.io/badge/version-0.1.0-blue)]()  [![Production](https://img.shields.io/badge/prod-schutztat.de-green)]()  [![Django](https://img.shields.io/badge/django-6.0.4-green)]()  [![Python](https://img.shields.io/badge/python-3.12-blue)]()
 
-Multi-Tenant SaaS platform for occupational safety, explosion protection, hazardous substances, fire safety, data privacy, and compliance management.
+> Multi-Tenant SaaS-Plattform für Arbeitssicherheit, Explosionsschutz, Gefahrstoffe,
+> Brandschutz, Datenschutz und Compliance-Management.
+> **Produktion:** https://schutztat.de · **Demo:** https://demo.schutztat.de · **Stand:** 2026-04-29
 
-## Module
+---
+
+## 🧭 Schnellnavigation
+
+| Ich möchte... | Dann lies... |
+|---|---|
+| ...lokal starten | [Quick Start](#quick-start-lokal) |
+| ...deployen | [docs/deployment/](docs/deployment/) |
+| ...Architekturentscheidungen lesen | [docs/adr/](docs/adr/) |
+| ...Use Cases verstehen | [docs/use-cases/](docs/use-cases/) |
+| ...PDF-Dokumentation | [docs/pdf/](docs/pdf/) |
+| ...API nutzen | http://localhost:8090/api/v1/docs |
+| ...Feedback / Issue | [Issues](../../issues) |
+
+---
+
+## 📦 Module
 
 | Modul | URL-Prefix | Beschreibung |
 |-------|-----------|--------------|
@@ -168,7 +185,9 @@ from learnfw import ...                     # Lern-Management (iil-learnfw)
 | [USER_GUIDE.md](docs/USER_GUIDE.md) | Benutzerhandbuch |
 | [reflex.yaml](reflex.yaml) | REFLEX Test-Konfiguration |
 | [docs/use-cases/](docs/use-cases/) | Use Cases UC-001 bis UC-010 |
-| [docs/adr/](docs/adr/) | Architecture Decision Records |
+| [docs/adr/](docs/adr/) | Architecture Decision Records (ADR-001 bis ADR-005+) |
+| [docs/pdf/](docs/pdf/) | Generierte PDFs (via `/create-pdf` Workflow) |
+| [CHANGELOG.md](CHANGELOG.md) | Versionshistorie |
 
 ## License
 

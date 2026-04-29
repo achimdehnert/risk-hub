@@ -67,3 +67,7 @@ htmlcov/
 # IDE agent workflows (symlinked, not repo-specific)
 .windsurf/
 src/dev_db.sqlite3
+
+# PDF-Dateien (generiert via print_agent)
+*.pdf
+!docs/pdf/*.pdf
