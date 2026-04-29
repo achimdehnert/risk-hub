@@ -180,7 +180,7 @@ Falls NICHT alle grün:
 Für **Backend-Tasks** ersetze Step 4 mit:
 ```bash
 # pytest statt Playwright:
-DJANGO_SETTINGS_MODULE=config.settings.test python3 -m pytest apps/<app>/tests/ -v
+DJANGO_SETTINGS_MODULE=config.settings_test python -m pytest apps/<app>/tests/ -v
 ```
 
 Für **Infrastructure-Tasks** ersetze Step 4 mit:

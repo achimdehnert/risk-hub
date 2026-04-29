@@ -1,12 +1,15 @@
 ---
 description: Agent Task ausführen — ADR-086-konformer Sprint-Workflow für risk-hub (Schutztat)
 source_adr: ADR-086
-last_reviewed: 2026-03-03
+last_reviewed: 2026-04-29
 review_interval_days: 30
 version: "1.0"
 ---
 
 # risk-hub (Schutztat) — Agent Task Workflow (ADR-086)
+
+> **Tipp:** Für Tasks mit `complexity >= moderate` → `/agentic-coding` verwenden.
+> Dieser Workflow deckt Phase 0 PCV, Self-Review und AuditStore NICHT ab.
 
 ## Schritt 0: Pflicht-Setup
 
@@ -45,7 +48,7 @@ git checkout -b ai/developer/<task-id>
 ```bash
 python -m pytest tests/MODULE/ -v --tb=short --cov=src/apps/MODULE
 ruff check src/
-ruff format --check src/
+ruff format src/
 ```
 
 ## Schritt 5: PR erstellen
