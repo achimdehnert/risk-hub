@@ -11,9 +11,9 @@ from django.http import HttpRequest, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-ITEMS_PER_PAGE = 25
-
 from .models import ComplianceReview, KatasterRevision, SdsChangeLog, SubstanceUsage
+
+ITEMS_PER_PAGE = 25
 
 logger = logging.getLogger(__name__)
 

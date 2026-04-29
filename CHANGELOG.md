@@ -3,6 +3,13 @@
 ## [Unreleased]
 
 ### Added
+- **intake**: Neues Intake-Modul — Dokument-Upload-Pipeline (PDF → `ExDocIntakeHandler` → `IntakeResult`)
+  - `ExDocIntakeHandler.can_handle()` + `run()` — Upload an aktives Ex-Schutzdokument koppeln
+  - Templates: `src/templates/intake/`
+- projects: **Editierbarer KI-Prompt** — force re-fill + Hints in Batches konfigurierbar
+- ci: **QM Gate (ADR-174)** — `ASSUMPTION[unverified]` blockiert Merge automatisch via CI
+  - `qm-gate` Job in `.github/workflows/ci.yml` (skip auf Draft-PRs)
+  - Self-Review Gate in PR Template (`agent-pr.md`)
 - tenancy: **Facility-Modell** (Produktionsstätten) — neue Hierarchieebene `Organization → Site → Facility`
   - `FacilityType` choices: Produktion, Lager, Labor, Büro, Werkstatt, Sonstiges
   - CRUD-Services, Forms, Views, URLs (`/tenants/sites/<pk>/facilities/`)
@@ -11,6 +18,15 @@
 - dashboard: Standorte-KPI-Karte immer sichtbar (auch ohne Module)
 - tenancy: "Produktionsstätten"-Link pro Standort-Karte in `site_list.html`
 
+### Fixed
+- explosionsschutz: `logger` undefiniert in `template_views.py` (F821) — `import logging` ergänzt
+- explosionsschutz: ambiguous variable `l` → `layer` in `api.py` (E741)
+- substances: Import-Reihenfolge `compliance_views.py` korrigiert (E402)
+- projects: Zeilen-Prefix (z.B. `5.`) nicht in Vorgänger-Abschnitt übernehmen
+- projects: direktes Section-Matching aus Ex-Schutzdokument verbessert
+- projects: Paragraph-Extraktion — TOC-Filter + Length-Bonus
+- templates: kaputte Filter-Chain in `_section_card.html` behoben
+
 ### Removed
 - projects: `DocumentTemplate`-Modell + DB-Tabelle `project_doc_template` entfernt (war toter Code, 0 Einträge)
   - `OutputDocument.template`-FK (wurde intern nie gesetzt — immer NULL)
@@ -18,14 +34,9 @@
   - Services: `create_template`, `update_template`, `delete_template`, `get_document_templates`
   - `DocumentTemplateAdmin`, `DocumentTemplateFactory`
 
-### Fixed
+### Fixed (continued)
 - ruff: 12 Lint-Fehler automatisch behoben (F401, I001, UP037 across 8 files)
 - tenancy/services.py: falsche Forward-Reference-Annotationen in Facility-Services entfernt
-
-### Known Lint Issues (pre-existing, nicht durch diese Session eingeführt)
-- `explosionsschutz/api.py:191` E741 — ambiguous variable name `l`
-- `explosionsschutz/template_views.py:1337` F821 — `logger` undefiniert
-- `substances/services/sds_parser.py` B007 — unused loop variables (2x)
 
 ### Previous [Unreleased] additions (noch nicht released)
 - global-sds: Vollextraktion + PubChem-Anreicherung + JSON-View

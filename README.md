@@ -1,7 +1,7 @@
 # Schutztat (risk-hub) — Enterprise SaaS for Safety Management
 
 > **Version:** 0.1.0 | **Production:** https://schutztat.de | **Demo:** https://demo.schutztat.de
-> **Stand:** 2026-04-28
+> **Stand:** 2026-04-29
 
 Multi-Tenant SaaS platform for occupational safety, explosion protection, hazardous substances, fire safety, data privacy, and compliance management.
 
@@ -23,6 +23,7 @@ Multi-Tenant SaaS platform for occupational safety, explosion protection, hazard
 | **Audit** | `/audit/` | Vollständiger Audit-Trail aller Änderungen |
 | **Dashboard** | `/dashboard/` | Compliance-Übersicht, Statistiken |
 | **Benachrichtigungen** | `/notifications/` | Systemweite Alerts und Hinweise |
+| **Intake** | `/intake/` | Dokument-Upload-Pipeline (PDF → Ex-Schutzdokument) |
 
 ## Tech Stack
 
@@ -111,7 +112,8 @@ risk-hub/
 │   ├── dashboard/         # Compliance-Dashboard
 │   ├── approvals/         # Freigabe-Workflows
 │   ├── ai_analysis/       # KI-gestützte Analyse (aifw)
-│   ├── tests/             # Test Suite (188 files)
+│   ├── intake/            # Dokument-Intake-Pipeline (Upload → Handler → IntakeResult)
+│   ├── tests/             # Test Suite (95+ files)
 │   └── templates/         # Shared Templates (project root)
 ├── docker/app/Dockerfile
 ├── docker-compose.prod.yml
@@ -150,10 +152,9 @@ Rollen-Hierarchie: `viewer < member < manager < admin`
 ## iil-Packages
 
 ```python
-from aifw.service import sync_completion     # LLM-Calls
-from platform_context import get_context     # Request-Middleware
-from django_tenancy import TenantMixin       # Multi-Tenancy
-from django_module_shop import ...           # Modul-Shop/Billing
+from aifw import sync_completion             # LLM-Calls (iil-aifw)
+from concept_templates import ...           # PDF-Extraktion (iil-concept-templates)
+from learnfw import ...                     # Lern-Management (iil-learnfw)
 ```
 
 ## Dokumentation

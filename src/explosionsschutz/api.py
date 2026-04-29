@@ -188,11 +188,11 @@ def _dxf_model_from_analysis(analysis: dict):
             )
         model.rooms.append(room)
 
-    for l in analysis.get("layers", []):
+    for layer in analysis.get("layers", []):
         model.layers.append(DXFLayer(
-            name=l.get("name", ""),
-            color=l.get("color", 7),
-            classified_as=l.get("classified_as", ""),
+            name=layer.get("name", ""),
+            color=layer.get("color", 7),
+            classified_as=layer.get("classified_as", ""),
         ))
 
     return model

@@ -3,6 +3,8 @@
 Template-basierte Views für Explosionsschutz-Modul (HTML-Seiten)
 """
 
+import logging
+
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Q
@@ -31,6 +33,8 @@ from .models import (
     ProtectionMeasure,
     ZoneDefinition,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class HomeView(LoginRequiredMixin, View):

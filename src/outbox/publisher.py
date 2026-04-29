@@ -1,5 +1,6 @@
 """Outbox publisher worker."""
 
+import logging
 import os
 import time
 
@@ -8,8 +9,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 import django
 
 django.setup()
-
-import logging
 
 from django.db import transaction  # noqa: E402
 from django.utils import timezone  # noqa: E402

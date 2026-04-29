@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 """Test substances views."""
 
+import logging
 import os
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
@@ -9,8 +10,6 @@ os.environ["DJANGO_DEBUG"] = "1"  # hardcoded-ok: test bootstrap
 import django
 
 django.setup()
-
-import logging
 
 from django.test import Client, override_settings  # noqa: E402
 
