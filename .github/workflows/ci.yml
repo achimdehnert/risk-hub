@@ -6,6 +6,26 @@ on:
   workflow_dispatch:
 
 jobs:
+  qm-gate:
+    name: "QM Gate — ASSUMPTION Check (ADR-174)"
+    runs-on: self-hosted
+    if: github.event.pull_request.draft == false
+    steps:
+      - uses: actions/checkout@v4
+      - name: Block unverified assumptions
+        run: |
+          set -euo pipefail
+          COUNT=$(grep -rnF "ASSUMPTION[unverified]" --include="*.py" . 2>/dev/null | wc -l)
+          if [ "$COUNT" -gt 0 ]; then
+            echo "::error title=QM Gate::$COUNT offene ASSUMPTION[unverified] gefunden — vor Merge auflösen"
+            grep -rnF "ASSUMPTION[unverified]" --include="*.py" . | \
+              while IFS=: read file line content; do
+                echo "::error file=$file,line=$line::ASSUMPTION[unverified]: $content"
+              done
+            exit 1
+          fi
+          echo "✅ QM Gate: Keine offenen Assumptions ($COUNT)"
+
   test:
     name: "Lint + Test"
     runs-on: self-hosted
